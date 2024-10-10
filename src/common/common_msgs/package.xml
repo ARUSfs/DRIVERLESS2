@@ -3,7 +3,7 @@
 <package format="3">
   <name>common_msgs</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Custom messages package for DV pipeline</description>
   <maintainer email="alplepe02@gmail.com">alvaro</maintainer>
   <license>TODO: License declaration</license>
 
@@ -13,9 +13,12 @@
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>visualization_msgs</depend>
+  <depend>rosidl_default_generators</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>
     <build_type>ament_cmake</build_type>
