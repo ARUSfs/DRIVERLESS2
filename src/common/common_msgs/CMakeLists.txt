@@ -17,6 +17,8 @@ find_package(rosidl_default_generators REQUIRED) # for custom messages
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/State.msg"
   "msg/Cmd.msg"
+  "msg/FourWheelDrive.msg"
+  "msg/Cmd4WD.msg"
   DEPENDENCIES std_msgs
 )
 
