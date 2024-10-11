@@ -1,0 +1,3 @@
+path_planning:
+  ros__parameteres:
+    perception_topic: "/arussim/perception"
