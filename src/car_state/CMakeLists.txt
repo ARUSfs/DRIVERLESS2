@@ -18,10 +18,10 @@ find_package(tf2 REQUIRED)
 include_directories(include)
 
 # Añadir el ejecutable
-add_executable(car_state_node src/car_state.cpp)
+add_executable(car_state src/car_state.cpp)
 
 # Establecer dependencias del ejecutable
-ament_target_dependencies(car_state_node 
+ament_target_dependencies(car_state 
                 rclcpp 
                 std_msgs 
                 sensor_msgs 
@@ -30,7 +30,7 @@ ament_target_dependencies(car_state_node
 
 # Instalar el ejecutable
 install(TARGETS
-  car_state_node
+car_state
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch/
