@@ -1,0 +1,4 @@
+sphinx>=4.0.0
+myst-parser>=0.15.0
+furo>=2021.4.11
+numpydoc>=1.1.0
