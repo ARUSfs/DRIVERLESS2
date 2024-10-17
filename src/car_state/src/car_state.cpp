@@ -34,7 +34,7 @@ CarState::CarState()
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(static_cast<int>(1000.0 / 10)),
         [this]() {
-            process_data();
+            on_timer();
         });
 
     RCLCPP_INFO(this->get_logger(), "CarState node initialized");
@@ -58,15 +58,16 @@ void CarState::wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::Sha
     vx_ = (msg->front_right + msg->front_left + msg->rear_right + msg->rear_left) / 4.0;
 }
 
-void CarState::process_data()
+void CarState::on_timer()
 {
     auto state_msg = common_msgs::msg::State();
 
-    state_msg.vx = vx_;    
-    state_msg.vy = vy_;    
-    state_msg.yaw = yaw_;  
+    
     state_msg.x = x_;      
-    state_msg.y = y_;      
+    state_msg.y = y_;    
+    state_msg.yaw = yaw_;  
+    state_msg.vx = vx_;    
+    state_msg.vy = vy_;
     state_msg.r = r_;      
     state_msg.ax = ax_;
     state_msg.ay = ay_;
