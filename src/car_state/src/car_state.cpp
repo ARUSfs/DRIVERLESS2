@@ -9,7 +9,7 @@
  * @class CarState
  * @brief CarState class 
  * 
- * Description
+ * Node that collects car data, estimates parameters, and publishes them on /car_state/State.
  */
 
 CarState::CarState()

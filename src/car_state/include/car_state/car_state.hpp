@@ -16,7 +16,7 @@
  * @class CarState
  * @brief CarState class 
  * 
- * Description
+ * Header node car_state
  * 
  */
 
