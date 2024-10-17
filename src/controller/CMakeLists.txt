@@ -16,16 +16,16 @@ find_package(common_msgs REQUIRED)
 include_directories(include)
 
 # Add the executable for the controller node
-add_executable(controller_node src/controller.cpp)
+add_executable(controller src/controller.cpp)
 
 # Link the executable to the required packages
-ament_target_dependencies(controller_node 
+ament_target_dependencies(controller 
                             rclcpp 
                             std_msgs 
                             common_msgs)
 
 # Install the node executable
-install(TARGETS controller_node
+install(TARGETS controller
   DESTINATION lib/${PROJECT_NAME})
 
 # Install configuration and launch files

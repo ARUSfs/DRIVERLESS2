@@ -27,23 +27,20 @@ private:
     // Variable car state
     double x_;
     double y_;
-
-    double ax_;
-    double ay_;
-
+    double yaw_;
     double vx_;
     double vy_;
-
     double r_;
-    double yaw_;
+    double ax_;
+    double ay_;
     double delta_;
 
     //Trajectory variable
-    std::vector<common_msgs::msg::PointXY> pointsXY_;  //points on the trajectory
+    std::vector<common_msgs::msg::PointXY> pointsXY_;  
     std::vector<float> s_;                           // distance values of the points              
     std::vector<float> k_ ;                          // curvature values of the points
-    std::vector<float> speed_profile_;               // speed profile of the trajectory
-    std::vector<float> acc_profile_;              //acceleration profile of the trajectory   
+    std::vector<float> speed_profile_;               
+    std::vector<float> acc_profile_;                
 
     //Subscribers
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
