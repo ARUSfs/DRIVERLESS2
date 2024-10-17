@@ -1,6 +1,3 @@
-#ifndef CONTROLLER_HPP
-#define CONTROLLER_HPP
-
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/int32.hpp"
 #include "std_msgs/msg/int16.hpp"
@@ -49,12 +46,10 @@ private:
     rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trayectory_sub_;
 
     //Timers
-    rclcpp::TimerBase::SharedPtr timer_;  // Timer for executing control logic
+    rclcpp::TimerBase::SharedPtr timer_; 
     
     // Parameters for control type and frequency
     std::string controller_type_;
     double timer_frequency_;
 };
-
-#endif  // CONTROLLER_HPP
 
