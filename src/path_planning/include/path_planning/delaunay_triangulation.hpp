@@ -12,18 +12,22 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <path_planning/geom_lib/Fade_2D.h>
-#include <path_planning/geom_lib/Point2.h>
-#include <path_planning/geom_lib/Triangle2.h>
-#include "PointXYZColorScore.h"
-#include "common_msgs/msg/point_x_y.hpp"
+// #include <path_planning/geom_lib/Fade_2D.h>
+// #include <path_planning/geom_lib/Point2.h>
+// #include <path_planning/geom_lib/Triangle2.h>
+// #include "path_planning/delaunator.hpp"
+#include "ConeXYZColorScore.h"
+#include "CDT.h"
+#include <path_planning/Triangulation.h>
+#include <path_planning/CDTUtils.h>
+#include "common_msgs/msg/point_xy.hpp"
 #include "common_msgs/msg/simplex.hpp"
 #include "common_msgs/msg/triangulation.hpp"
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <iostream>
 
-
+// using namespace GEOM_FADE2D;
 /**
  * @class DelaunayTriangulation
  * @brief Construct a new Delaunay Triangulation object
@@ -41,14 +45,14 @@ class DelaunayTriangulation
      * 
      * @param input_perception The point cloud from the perception topic
      */
-    DelaunayTriangulation(sensor_msgs::msg::PointCloud2::SharedPtr input_perception);
+    DelaunayTriangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud);
 
     /**
      * @brief Get the triangulation object
      * 
      * @return Fade_2D The triangulation object
      */
-    GEOM_FADE2D::Fade_2D get_triangulation();
+    CDT::Triangulation<double> get_triangulation();
   
     /**
      * @brief Publish the triangulation to the triangulation topic as a triangulation msg. 
@@ -59,18 +63,18 @@ class DelaunayTriangulation
 
 
   private:
-    GEOM_FADE2D::Fade_2D triangulation_ = GEOM_FADE2D::Fade_2D();
-    std::vector<GEOM_FADE2D::Point2> cones_vector2_;
+    CDT::Triangulation<double> triangulation_;
+    std::vector<CDT::V2d<double>> cones_vector2_;
     visualization_msgs::msg::MarkerArray triangulation_array_;
     rclcpp::Clock::SharedPtr clock_;
-    std::vector<GEOM_FADE2D::Triangle2*> triangles_;
+    
 
     /**
      * @brief Convert the point cloud library msg to a vector of Point2 objects
      * 
      * @param input_perception The point cloud from the perception topic
      */
-    void pcl_to_vector2(sensor_msgs::msg::PointCloud2::SharedPtr input_perception);
+    void pcl_to_vector2(pcl::PointCloud<ConeXYZColorScore> input_cloud);
     
 
 };

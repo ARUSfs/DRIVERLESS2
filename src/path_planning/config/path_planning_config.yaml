@@ -1,3 +1,5 @@
 path_planning:
   ros__parameters:
     perception_topic: '/arussim/perception'
+    triangulation_topic: '/path_planning/triangulation'
+    visualization_topic: '/path_planning/triangulation_visualization'
