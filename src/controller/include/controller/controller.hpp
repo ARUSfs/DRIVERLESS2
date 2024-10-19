@@ -1,3 +1,8 @@
+/**
+ * @file controller.hpp
+ * @brief controller node header for ARUS Team Driverless pipeline
+ */
+
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/int32.hpp"
 #include "std_msgs/msg/int16.hpp"
@@ -5,6 +10,14 @@
 #include "common_msgs/msg/trajectory.hpp"
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/point_xy.hpp"
+#include "controller/pure_pursuit.hpp"
+
+/**
+ * @class pure_pursuit
+ * @brief pure_pursuit class 
+ * 
+ * Controller
+ */
 
 class Controller : public rclcpp::Node
 {
@@ -16,7 +29,6 @@ private:
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
-    void pp_callback();
 
     // Status AS
     int16_t as_status_;

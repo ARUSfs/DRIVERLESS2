@@ -24,7 +24,7 @@ Controller::Controller() : Node("controller")
         std::chrono::milliseconds(static_cast<int>(1000.0 / timer_frequency_)),
         [this]() {
             if (controller_type_ == "pure_pursuit") {
-                pp_callback();
+                RCLCPP_WARN(this->get_logger(), "Here, will go the funtions of pure pursuit and checks");
             }  else {
                 RCLCPP_WARN(this->get_logger(), "Unknown controller type: %s", controller_type_.c_str());
             }
@@ -69,10 +69,6 @@ void Controller::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
     RCLCPP_INFO(this->get_logger(), "AS_status updated: %d", as_status_);
 }
 
-void Controller::pp_callback()
-{
-    RCLCPP_INFO(this->get_logger(), "Executing Pure Pursuit control.");
-}
 
 int main(int argc, char **argv)
 {
