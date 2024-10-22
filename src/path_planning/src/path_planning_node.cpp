@@ -28,36 +28,39 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     CDT::Triangulation<double> triangulation_;
     std::vector<CDT::V2d<double>> points_;
     pcl::fromROSMsg(*per_msg, pcl_cloud_);
-    RCLCPP_INFO(this->get_logger(), "Received point cloud with %d points", pcl_cloud_.size());
+    // RCLCPP_INFO(this->get_logger(), "Received point cloud with %d points", pcl_cloud_.size());
     for (int i = 0; i<pcl_cloud_.size();i++){
         ConeXYZColorScore cone_ = pcl_cloud_.points[i];
+        std::cout << cone_.x << " " << cone_.y << std::endl;
         CDT::V2d<double> point_ = CDT::V2d<double>::make(cone_.x, cone_.y);
         points_.push_back(point_);
     }
     triangulation_.insertVertices(points_);
+    triangulation_.eraseSuperTriangle();
     std::cout << "Triangulation done" << std::endl;
     common_msgs::msg::Triangulation triangulation_msg;
-    CDT::Triangulation<double>::V2dVec vertices_ = triangulation_.vertices;
-    CDT::TriangleVec triangles_ = triangulation_.triangles;
-    for (int i = 0; i < triangles_.size(); i++){
-        std::cout << "Triangle " << i << std::endl;
-        common_msgs::msg::Simplex triangle;
-        common_msgs::msg::PointXY a, b, c;
-        CDT::Triangle triangle_ = triangles_[i];
-        CDT::VerticesArr3 vertices_index_ = triangle_.vertices;
-        CDT::VertInd a_ind_ = vertices_index_[0];
-        CDT::VertInd b_ind_ = vertices_index_[1];
-        CDT::VertInd c_ind_ = vertices_index_[2];
-        a.x = vertices_[a_ind_].x;
-        a.y = vertices_[a_ind_].y;
-        b.x = vertices_[b_ind_].x;
-        b.y = vertices_[b_ind_].y;
-        c.x = vertices_[c_ind_].x;
-        c.y = vertices_[c_ind_].y;
-        triangle.points = {a, b, c};
-        triangulation_msg.simplices.push_back(triangle);
+    // CDT::Triangulation<double>::V2dVec vertices_ = triangulation_.vertices;
+    if (triangulation_.isFinalized()){ // Si se va a usar el isFinalized hay que quitar el outer triangle
+        CDT::TriangleVec triangles_ = triangulation_.triangles;
+        for (int i = 0; i < triangles_.size(); i++){
+            // std::cout << "Triangle " << i << std::endl;
+            common_msgs::msg::Simplex triangle;
+            common_msgs::msg::PointXY a, b, c;
+            CDT::Triangle triangle_ = triangles_[i];
+            CDT::VerticesArr3 vertices_index_ = triangle_.vertices;
+            CDT::VertInd a_ind_ = vertices_index_[0];
+            CDT::VertInd b_ind_ = vertices_index_[1];
+            CDT::VertInd c_ind_ = vertices_index_[2];
+            a.x = points_[a_ind_].x;
+            a.y = points_[a_ind_].y;
+            b.x = points_[b_ind_].x;
+            b.y = points_[b_ind_].y;
+            c.x = points_[c_ind_].x;
+            c.y = points_[c_ind_].y;
+            triangle.points = {a, b, c};
+            triangulation_msg.simplices.push_back(triangle);
+        }
     }
-    
     triangulation_pub_ -> publish(triangulation_msg);
 
     // DelaunayTriangulation del(pcl_cloud_);    

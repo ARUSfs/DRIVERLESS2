@@ -12,10 +12,6 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-// #include <path_planning/geom_lib/Fade_2D.h>
-// #include <path_planning/geom_lib/Point2.h>
-// #include <path_planning/geom_lib/Triangle2.h>
-// #include "path_planning/delaunator.hpp"
 #include "ConeXYZColorScore.h"
 #include "CDT.h"
 #include <path_planning/Triangulation.h>
@@ -27,7 +23,6 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <iostream>
 
-// using namespace GEOM_FADE2D;
 /**
  * @class DelaunayTriangulation
  * @brief Construct a new Delaunay Triangulation object
