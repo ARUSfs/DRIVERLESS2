@@ -11,6 +11,18 @@ find_package(rclcpp REQUIRED)
 find_package(common_msgs REQUIRED)
 find_package(arussim_msgs REQUIRED)
 
+include_directories(
+  include
+)
 
+add_executable(arussim_interface_exec src/arussim_interface_node.cpp)
+ament_target_dependencies(arussim_interface_exec rclcpp 
+                            common_msgs 
+                            arussim_msgs)
+
+  
+install(TARGETS
+  arussim_interface_exec
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

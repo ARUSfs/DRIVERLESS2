@@ -10,8 +10,8 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
-  <depend>common_msgs</depend>
-  <depend>arussim_msgs</depend>
+  <build_depend>common_msgs</build_depend>
+  <build_depend>arussim_msgs</build_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
