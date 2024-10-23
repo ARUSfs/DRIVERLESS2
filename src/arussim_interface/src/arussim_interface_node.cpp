@@ -16,13 +16,23 @@ ARUSSimInterface::ARUSSimInterface() : Node("arussim_interface")
 {
     cmd_pub_ = this->create_publisher<arussim_msgs::msg::Cmd>("/arussim/cmd", 10);
     cmd4wd_pub_ = this->create_publisher<arussim_msgs::msg::Cmd4WD>("/arussim/cmd4wd", 10);
-    wheel_speeds_pub_ = this->create_publisher<common_msgs::msg::FourWheelDrive>("/arussim_interface/wheel_speeds", 10);
-    trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>("/arussim_interface/fixed_trajectory", 10);
+    wheel_speeds_pub_ = this->create_publisher<common_msgs::msg::FourWheelDrive>(
+        "/arussim_interface/wheel_speeds", 10);
+    trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(
+        "/arussim_interface/fixed_trajectory", 10);
 
-    cmd_sub_ = this->create_subscription<common_msgs::msg::Cmd>("/controller/cmd", 10, std::bind(&ARUSSimInterface::cmd_callback, this, std::placeholders::_1));
-    cmd4wd_sub_ = this->create_subscription<common_msgs::msg::Cmd4WD>("/controller/cmd4wd", 10, std::bind(&ARUSSimInterface::cmd4wd_callback, this, std::placeholders::_1));
-    wheel_speeds_sub_ = this->create_subscription<arussim_msgs::msg::FourWheelDrive>("/arussim/wheel_speeds", 10, std::bind(&ARUSSimInterface::wheel_speeds_callback, this, std::placeholders::_1));
-    trajectory_sub_ = this->create_subscription<arussim_msgs::msg::Trajectory>("/arussim/fixed_trajectory", 10, std::bind(&ARUSSimInterface::trajectory_callback, this, std::placeholders::_1));
+    cmd_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
+        "/controller/cmd", 10, 
+        std::bind(&ARUSSimInterface::cmd_callback, this, std::placeholders::_1));
+    cmd4wd_sub_ = this->create_subscription<common_msgs::msg::Cmd4WD>(
+        "/controller/cmd4wd", 10, 
+        std::bind(&ARUSSimInterface::cmd4wd_callback, this, std::placeholders::_1));
+    wheel_speeds_sub_ = this->create_subscription<arussim_msgs::msg::FourWheelDrive>(
+        "/arussim/wheel_speeds", 10, 
+        std::bind(&ARUSSimInterface::wheel_speeds_callback, this, std::placeholders::_1));
+    trajectory_sub_ = this->create_subscription<arussim_msgs::msg::Trajectory>(
+        "/arussim/fixed_trajectory", 10, 
+        std::bind(&ARUSSimInterface::trajectory_callback, this, std::placeholders::_1));
      
 }
 
