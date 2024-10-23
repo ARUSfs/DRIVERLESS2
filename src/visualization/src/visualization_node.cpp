@@ -32,7 +32,7 @@ void Visualization::triangulation_callback(const common_msgs::msg::Triangulation
     visualization_msgs::msg::MarkerArray marker_array_;
     for (int i = 0; i < msg -> simplices.size(); i++){
         visualization_msgs::msg::Marker marker_;
-        marker_.header.frame_id = "arussim/world";
+        marker_.header.frame_id = "arussim/vehicle_cog";
         marker_.header.stamp = clock_->now();
         marker_.ns = "visualization";
         marker_.id = i;
