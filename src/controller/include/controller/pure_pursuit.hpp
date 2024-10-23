@@ -51,10 +51,9 @@ private:
     // Configuration parameters
     std::string global_frame;
     std::string car_frame;
-    bool global_mode = true;
+    bool global_mode = false;
     double look_ahead_distance = 1.0;  // Default look-ahead distance
 
-    // Car state and ROS integration
     rclcpp::Node::SharedPtr node_;
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;

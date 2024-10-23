@@ -12,7 +12,9 @@
  * 
  */
 
-Controller::Controller() : Node("controller")
+Controller::Controller() : Node("controller"),  
+                            pure_pursuit_(this->shared_from_this()),
+                            pid_(this->shared_from_this())
 {
     this->declare_parameter<std::string>("controller_type", "pure_pursuit");
     this->declare_parameter<double>("timer_frequency", 5.0); 
@@ -24,11 +26,27 @@ Controller::Controller() : Node("controller")
         std::chrono::milliseconds(static_cast<int>(1000.0 / timer_frequency_)),
         [this]() {
             if (controller_type_ == "pure_pursuit") {
-                RCLCPP_WARN(this->get_logger(), "Here, will go the funtions of pure pursuit and checks");
+
+                pure_pursuit_.update_path(pointsXY_);
+                double delta = pure_pursuit_.get_steering_angle();
+
+                pid_.set_speed(vx_);
+                //pid_.set_target_speed(target_speed_);
+
+                double acc = pid_.compute_control();
+
+                common_msgs::msg::Cmd cmd_msg;
+                cmd_msg.header.stamp = this->now(); 
+                cmd_msg.acc = static_cast<float>(acc); 
+                cmd_msg.delta = static_cast<float>(delta); 
+
+                cmd_publisher_->publish(cmd_msg); 
+                
             }  else {
                 RCLCPP_WARN(this->get_logger(), "Unknown controller type: %s", controller_type_.c_str());
             }
-        });
+        }
+    );
 
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
         "/car_state/state", 1, std::bind(&Controller::car_state_callback, this, std::placeholders::_1));
@@ -38,6 +56,8 @@ Controller::Controller() : Node("controller")
 
     trayectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         "/trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
+
+    cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>("/cmd_topic", 10); 
 }
 
 void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg)

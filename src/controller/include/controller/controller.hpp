@@ -10,7 +10,9 @@
 #include "common_msgs/msg/trajectory.hpp"
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/point_xy.hpp"
+#include "common_msgs/msg/cmd.hpp"
 #include "controller/pure_pursuit.hpp"
+#include "controller/PID.hpp"
 
 /**
  * @class pure_pursuit
@@ -63,5 +65,10 @@ private:
     // Parameters for control type and frequency
     std::string controller_type_;
     double timer_frequency_;
+
+    
+    PurePursuit pure_pursuit_;
+    PID pid_;
+    rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_publisher_;
 };
 
