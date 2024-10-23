@@ -54,9 +54,5 @@ class Visualization : public rclcpp::Node
          */
         std::string kTriangulationVisualizationTopic;
 
-        /**
-         * @brief 
-         * 
-         */
         rclcpp::Clock::SharedPtr clock_;
 };
