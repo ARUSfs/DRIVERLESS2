@@ -1,4 +1,4 @@
 controller:
   ros__parameters:
     controller_type: "pure_pursuit"    # change between (can be "mpc", "pure_pursuit", "stanley", "pid", etc.)
-    timer_frequency: 5.0          # timer frecuency in Hz
+    timer_frequency: 100.0          # timer frecuency in Hz
