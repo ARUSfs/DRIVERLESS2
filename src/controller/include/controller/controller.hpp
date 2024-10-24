@@ -61,8 +61,8 @@ private:
     rclcpp::TimerBase::SharedPtr timer_; 
     
     // Parameters for control type and frequency
-    std::string controller_type_;
-    double timer_frequency_;
+    std::string kControllerType;
+    double kTimerFreq;
 
     rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_publisher_;
 };

@@ -17,11 +17,11 @@ Controller::Controller() : Node("controller")
     this->declare_parameter<std::string>("controller_type", "pure_pursuit");
     this->declare_parameter<double>("timer_frequency", 5.0); 
 
-    this->get_parameter("controller_type", controller_type_);
-    this->get_parameter("timer_frequency", timer_frequency_);
+    this->get_parameter("controller_type", kControllerType);
+    this->get_parameter("timer_frequency", kTimerFreq);
 
     timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(static_cast<int>(1000.0 / timer_frequency_)),
+        std::chrono::milliseconds(static_cast<int>(1000.0 / kTimerFreq)),
         std::bind(&Controller::on_timer, this));
 
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
