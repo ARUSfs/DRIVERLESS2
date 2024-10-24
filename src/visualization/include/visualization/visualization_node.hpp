@@ -6,6 +6,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
+#include <common_msgs/msg/trajectory.hpp>
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/point_xy.hpp>
@@ -27,32 +28,44 @@ class Visualization : public rclcpp::Node
     private:
         /**
          * @brief Subscriber to the triangulation topic.
-         * Callbacks the triangulation visualization.
          */
         rclcpp::Subscription<common_msgs::msg::Triangulation>::SharedPtr triangulation_sub_;
+        /**
+         * @brief Subscriber to the trajectory topic.
+         */
+        rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr arussim_trajectory_sub_;
 
         /**
          * @brief Publisher to the triangulation visualization topic. 
-         * Publishes the triangulation visualization.
          */
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr triangulation_visualization_pub_;
+        /**
+         * @brief Publisher to the trajectory visualization topic. 
+         */
+        rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr arussim_trajectory_visualization_pub_;
 
         /**
          * @brief Callback for the triangulation topic.
-         * Receives the triangulation and publishes the visualization.
          * @param msg common_msgs::msg::Triangulation::SharedPtr Triangulation message.
          */
         void triangulation_callback(const common_msgs::msg::Triangulation::SharedPtr msg);
+        /**
+         * @brief Callback for trajectory topics.
+         * @param msg common_msgs::msg::Trajectory::SharedPtr Trajectory message.
+         */
+        void arussim_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
 
         /**
          * @brief Topic name for the triangulation topic.
          */
         std::string kTriangulationTopic;
+        std::string kARUSSimTrajectoryTopic;
 
         /**
          * @brief Topic name for the triangulation visualization topic.
          */
         std::string kTriangulationVisualizationTopic;
+        std::string kARUSSimTrajectoryVisualizationTopic;
 
         rclcpp::Clock::SharedPtr clock_;
 };
