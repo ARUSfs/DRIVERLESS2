@@ -56,6 +56,14 @@ class Visualization : public rclcpp::Node
         void arussim_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
 
         /**
+         * @brief Creates markers for trajectory messages.
+         * @param msg common_msgs::msg::Trajectory::SharedPtr Trajectory message.
+         * @return visualization_msgs::msg::Marker Marker message.
+         */
+        visualization_msgs::msg::Marker create_trajectory_marker(
+            const common_msgs::msg::Trajectory::SharedPtr msg);
+
+        /**
          * @brief Topic name for the triangulation topic.
          */
         std::string kTriangulationTopic;

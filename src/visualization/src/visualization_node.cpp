@@ -77,7 +77,13 @@ void Visualization::triangulation_callback(const common_msgs::msg::Triangulation
 
 void Visualization::arussim_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg);
+    arussim_trajectory_visualization_pub_->publish(marker);
+}
+
+visualization_msgs::msg::Marker Visualization::create_trajectory_marker(
+    const common_msgs::msg::Trajectory::SharedPtr msg)
+{
     visualization_msgs::msg::Marker marker;
     marker.header.frame_id = "arussim/world";
     marker.header.stamp = clock_->now();
@@ -102,8 +108,7 @@ void Visualization::arussim_trajectory_callback(const common_msgs::msg::Trajecto
         p.z = 0;
         marker.points.push_back(p);
     }
-    
-    arussim_trajectory_visualization_pub_->publish(marker);
+    return marker;
 }
 
 int main(int argc, char * argv[])
