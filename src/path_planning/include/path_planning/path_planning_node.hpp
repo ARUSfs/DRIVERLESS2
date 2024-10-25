@@ -9,7 +9,6 @@
  */
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include "path_planning/delaunay_triangulation.hpp"
 #include "CDT.h"
 #include <path_planning/Triangulation.h>
 #include <path_planning/CDTUtils.h>
