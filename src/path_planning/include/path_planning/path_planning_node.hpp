@@ -8,10 +8,11 @@
  * @date 23-10-2024
  */
 #include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
 #include "CDT.h"
 #include <path_planning/Triangulation.h>
 #include <path_planning/CDTUtils.h>
+#include "ConeXYZColorScore.h"
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>

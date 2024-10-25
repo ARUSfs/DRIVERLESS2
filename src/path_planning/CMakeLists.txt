@@ -26,7 +26,7 @@ include_directories(
   
 # find_library(fade2d fade2d)
 
-add_executable(path_planning_exec src/path_planning_node.cpp src/delaunay_triangulation.cpp)
+add_executable(path_planning_exec src/path_planning_node.cpp)
 ament_target_dependencies(path_planning_exec rclcpp 
                             std_msgs 
                             geometry_msgs 
