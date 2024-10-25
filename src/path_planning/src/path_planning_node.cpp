@@ -32,13 +32,13 @@ PathPlanning::PathPlanning() : Node("path_planning")
  */
 void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {   
-    pcl::PointCloud<ConeXYZColorScore> pcl_cloud_;
-    pcl::fromROSMsg(*per_msg, pcl_cloud_);
-    CDT::Triangulation<double> triangulation_;
-    triangulation_ = PathPlanning::create_triangulation(pcl_cloud_);
+    pcl::PointCloud<ConeXYZColorScore> pcl_cloud;
+    pcl::fromROSMsg(*per_msg, pcl_cloud);
+    CDT::Triangulation<double> triangulation;
+    triangulation = PathPlanning::create_triangulation(pcl_cloud);
     common_msgs::msg::Triangulation triangulation_msg;
     if (triangulation_.isFinalized()){
-        triangulation_msg = PathPlanning::create_triangulation_msg(triangulation_);
+        triangulation_msg = PathPlanning::create_triangulation_msg(triangulation);
     }
     triangulation_pub_ -> publish(triangulation_msg);
 
@@ -47,37 +47,37 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
     CDT::Triangulation<double> triangulation;
-    std::vector<CDT::V2d<double>> points_;
+    std::vector<CDT::V2d<double>> points;
     for (int i = 0; i<input_cloud.size();i++){
-        ConeXYZColorScore cone_ = input_cloud.points[i];
-        CDT::V2d<double> point_ = CDT::V2d<double>::make(cone_.x, cone_.y);
-        points_.push_back(point_);
+        ConeXYZColorScore cone = input_cloud.points[i];
+        CDT::V2d<double> point = CDT::V2d<double>::make(cone.x, cone.y);
+        points.push_back(point);
     }
-    triangulation.insertVertices(points_);
+    triangulation.insertVertices(points);
     triangulation.eraseSuperTriangle();
     return triangulation;
 }
 
 common_msgs::msg::Triangulation PathPlanning::create_triangulation_msg(CDT::Triangulation<double> triangulation){
     common_msgs::msg::Triangulation triangulation_msg;
-    CDT::Triangulation<double>::V2dVec points_ = triangulation.vertices;
-    CDT::TriangleVec triangles_ = triangulation.triangles;
-    for (int i = 0; i < triangles_.size(); i++){
-        common_msgs::msg::Simplex triangle;
+    CDT::Triangulation<double>::V2dVec points = triangulation.vertices;
+    CDT::TriangleVec triangles = triangulation.triangles;
+    for (int i = 0; i < triangles.size(); i++){
+        common_msgs::msg::Simplex simplex;
         common_msgs::msg::PointXY a, b, c;
-        CDT::Triangle triangle_ = triangles_[i];
-        CDT::VerticesArr3 vertices_index_ = triangle_.vertices;
-        CDT::VertInd a_ind_ = vertices_index_[0];
-        CDT::VertInd b_ind_ = vertices_index_[1];
-        CDT::VertInd c_ind_ = vertices_index_[2];
-        a.x = points_[a_ind_].x;
-        a.y = points_[a_ind_].y;
-        b.x = points_[b_ind_].x;
-        b.y = points_[b_ind_].y;
-        c.x = points_[c_ind_].x;
-        c.y = points_[c_ind_].y;
-        triangle.points = {a, b, c};
-        triangulation_msg.simplices.push_back(triangle);
+        CDT::Triangle triangle = triangles[i];
+        CDT::VerticesArr3 vertices_index = triangle.vertices;
+        CDT::VertInd a_ind_ = vertices_index[0];
+        CDT::VertInd b_ind_ = vertices_index[1];
+        CDT::VertInd c_ind_ = vertices_index[2];
+        a.x = points[a_ind_].x;
+        a.y = points[a_ind_].y;
+        b.x = points[b_ind_].x;
+        b.y = points[b_ind_].y;
+        c.x = points[c_ind_].x;
+        c.y = points[c_ind_].y;
+        simplex.points = {a, b, c};
+        triangulation_msg.simplices.push_back(simplex);
     }
     return triangulation_msg;
 }
