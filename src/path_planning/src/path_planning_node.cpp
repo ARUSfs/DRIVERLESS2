@@ -37,7 +37,7 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     CDT::Triangulation<double> triangulation;
     triangulation = PathPlanning::create_triangulation(pcl_cloud);
     common_msgs::msg::Triangulation triangulation_msg;
-    if (triangulation_.isFinalized()){
+    if (triangulation.isFinalized()){
         triangulation_msg = PathPlanning::create_triangulation_msg(triangulation);
     }
     triangulation_pub_ -> publish(triangulation_msg);
