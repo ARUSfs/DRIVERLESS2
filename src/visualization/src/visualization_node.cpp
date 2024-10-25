@@ -41,7 +41,7 @@ void Visualization::triangulation_callback(const common_msgs::msg::Triangulation
     for (int i = 0; i < msg -> simplices.size(); i++){
         visualization_msgs::msg::Marker marker;
         marker.header.frame_id = "arussim/vehicle_cog";
-        marker.header.stamp = clock_->now();
+        // marker.header.stamp = clock_->now();
         marker.ns = "visualization";
         marker.id = i;
         marker.type = visualization_msgs::msg::Marker::LINE_STRIP;

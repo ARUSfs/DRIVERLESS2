@@ -67,15 +67,15 @@ common_msgs::msg::Triangulation PathPlanning::create_triangulation_msg(CDT::Tria
         common_msgs::msg::PointXY a, b, c;
         CDT::Triangle triangle = triangles[i];
         CDT::VerticesArr3 vertices_index = triangle.vertices;
-        CDT::VertInd a_ind_ = vertices_index[0];
-        CDT::VertInd b_ind_ = vertices_index[1];
-        CDT::VertInd c_ind_ = vertices_index[2];
-        a.x = points[a_ind_].x;
-        a.y = points[a_ind_].y;
-        b.x = points[b_ind_].x;
-        b.y = points[b_ind_].y;
-        c.x = points[c_ind_].x;
-        c.y = points[c_ind_].y;
+        CDT::VertInd a_ind = vertices_index[0];
+        CDT::VertInd b_ind = vertices_index[1];
+        CDT::VertInd c_ind = vertices_index[2];
+        a.x = points[a_ind].x;
+        a.y = points[a_ind].y;
+        b.x = points[b_ind].x;
+        b.y = points[b_ind].y;
+        c.x = points[c_ind].x;
+        c.y = points[c_ind].y;
         simplex.points = {a, b, c};
         triangulation_msg.simplices.push_back(simplex);
     }
