@@ -17,14 +17,12 @@ find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(common_msgs REQUIRED)
 
-add_subdirectory(include/${PROJECT_NAME}/CDT CDT)
-
 include_directories(
   include
   ${PCL_INCLUDE_DIRS}
+  include/${PROJECT_NAME}/CDT
   )
   
-# find_library(fade2d fade2d)
 
 add_executable(path_planning_exec src/path_planning_node.cpp)
 ament_target_dependencies(path_planning_exec rclcpp 

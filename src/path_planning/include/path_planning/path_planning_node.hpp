@@ -9,8 +9,8 @@
  */
 #include <rclcpp/rclcpp.hpp>
 #include "CDT.h"
-#include <path_planning/Triangulation.h>
-#include <path_planning/CDTUtils.h>
+#include <Triangulation.h>
+#include <CDTUtils.h>
 #include "ConeXYZColorScore.h"
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <common_msgs/msg/point_xy.hpp>
