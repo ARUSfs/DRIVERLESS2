@@ -1,3 +1,13 @@
+/**
+ * @file path_planning_node.cpp
+ * @author Ignacio Sánchez Isidro (igsais12@gmail.com)
+ * @brief Main file for the Path Planning node. Contains the main function and the implementation 
+ * of the methods to achieve a robust and reliable path planning algorithm for the ARUS Team 
+ * which extracts the midpoints of the track that the ART will follow.
+ * @version 0.1
+ * @date 25-10-2024
+ * 
+ */
 #include "path_planning/path_planning_node.hpp"
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
