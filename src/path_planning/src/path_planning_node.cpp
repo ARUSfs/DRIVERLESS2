@@ -1,5 +1,4 @@
 #include "path_planning/path_planning_node.hpp"
-// #include <path_planning/delaunay_triangulation.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 PathPlanning::PathPlanning() : Node("path_planning")
