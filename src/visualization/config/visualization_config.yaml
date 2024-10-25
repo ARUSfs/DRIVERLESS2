@@ -1,0 +1,10 @@
+visualization:
+  ros__parameters:
+    # Topics to subscribe
+    triangulation_topic: '/path_planning/triangulation'
+    optimized_trajectory_topic: '/trajectory_optimizer/trajectory'
+    arussim_trajectory_topic: '/arussim_interface/fixed_trajectory'
+    # Topics to publish
+    triangulation_visualization_topic: '/visualization/triangulation'
+    optimized_trajectory_visualization_topic: '/visualization/trajectory_optimized'
+    arussim_trajectory_visualization_topic: '/visualization/arussim_fixed_trajectory'
