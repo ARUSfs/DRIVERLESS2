@@ -12,7 +12,7 @@ content/howToDoc
 ```
 ## Doxygen documentation
 
-For the full Doxygen auto-generated documentation, please visit the following [link](https://arusfs.github.io/ARUSDRIVERLESS2/doxygen)
+For the full Doxygen auto-generated documentation, please visit the following [link](https://arusfs.github.io/DRIVERLESS2/doxygen)
 
 ## Download
 
