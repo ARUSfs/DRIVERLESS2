@@ -14,21 +14,32 @@
  * in rviz2
  */
 Visualization::Visualization() : Node("visualization")
-{
-    kTriangulationTopic = "/path_planning/triangulation";
-    kARUSSimTrajectoryTopic = "/arussim_interface/fixed_trajectory";
-    kTriangulationVisualizationTopic = "/visualization/triangulation";
-    kARUSSimTrajectoryVisualizationTopic = "/visualization/arussim_fixed_trajectory";
-
-    clock_ = this->get_clock();
+{   
+    this->declare_parameter("triangulation_topic", "/path_planning/triangulation");
+    this->declare_parameter("optimized_trajectory_topic", "/trajectory_optimizer/trajectory");
+    this->declare_parameter("arussim_trajectory_topic", "/arussim_interface/fixed_trajectory");
+    this->declare_parameter("triangulation_visualization_topic", "/visualization/triangulation");
+    this->declare_parameter("optimized_trajectory_visualization_topic", "/visualization/optimized_trajectory");
+    this->declare_parameter("arussim_trajectory_visualization_topic", "/visualization/arussim_fixed_trajectory");
+    
+    this->get_parameter("triangulation_topic", kTriangulationTopic);
+    this->get_parameter("optimized_trajectory_topic", kOptimizedTrajectoryTopic);
+    this->get_parameter("arussim_trajectory_topic", kARUSSimTrajectoryTopic);
+    this->get_parameter("triangulation_visualization_topic", kTriangulationVisualizationTopic);
+    this->get_parameter("optimized_trajectory_visualization_topic", kOptimizedTrajectoryVisualizationTopic);
+    this->get_parameter("arussim_trajectory_visualization_topic", kARUSSimTrajectoryVisualizationTopic);
 
     triangulation_visualization_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
         kTriangulationVisualizationTopic, 10);
+    optimized_trajectory_visualization_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        kOptimizedTrajectoryVisualizationTopic, 10);
     arussim_trajectory_visualization_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         kARUSSimTrajectoryVisualizationTopic, 10);
 
     triangulation_sub_ = this->create_subscription<common_msgs::msg::Triangulation>(
         kTriangulationTopic, 10, std::bind(&Visualization::triangulation_callback, this, std::placeholders::_1));
+    optimized_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
+        kOptimizedTrajectoryTopic, 10, std::bind(&Visualization::optimized_trajectory_callback, this, std::placeholders::_1));
     arussim_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kARUSSimTrajectoryTopic, 10, std::bind(&Visualization::arussim_trajectory_callback, this, std::placeholders::_1));
 
@@ -38,11 +49,13 @@ Visualization::Visualization() : Node("visualization")
 void Visualization::triangulation_callback(const common_msgs::msg::Triangulation::SharedPtr msg)
 {
     visualization_msgs::msg::MarkerArray marker_array;
+    visualization_msgs::msg::Marker delete_marker;
+    delete_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+    marker_array.markers.push_back(delete_marker);
     for (int i = 0; i < msg -> simplices.size(); i++){
         visualization_msgs::msg::Marker marker;
         marker.header.frame_id = "arussim/vehicle_cog";
-        marker.header.stamp = clock_->now();
-        marker.ns = "visualization";
+        marker.ns = "triangulation";
         marker.id = i;
         marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
         marker.action = visualization_msgs::msg::Marker::ADD;
@@ -53,8 +66,8 @@ void Visualization::triangulation_callback(const common_msgs::msg::Triangulation
         marker.scale.y = 0.1;
         marker.scale.z = 0.1;
         marker.color.a = 1.0;
-        marker.color.r = 1.0;
-        marker.color.g = 0.0;
+        marker.color.r = 0.0;
+        marker.color.g = 1.0;
         marker.color.b = 0.0;
         marker.lifetime = rclcpp::Duration::from_seconds(0.0);
         for (int j=0; j<3; j++){
@@ -81,13 +94,18 @@ void Visualization::arussim_trajectory_callback(const common_msgs::msg::Trajecto
     arussim_trajectory_visualization_pub_->publish(marker);
 }
 
+void Visualization::optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
+{
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg);
+    optimized_trajectory_visualization_pub_->publish(marker);
+}
+
 visualization_msgs::msg::Marker Visualization::create_trajectory_marker(
     const common_msgs::msg::Trajectory::SharedPtr msg)
 {
     visualization_msgs::msg::Marker marker;
     marker.header.frame_id = "arussim/world";
-    marker.header.stamp = clock_->now();
-    marker.ns = "visualization";
+    marker.ns = "trajectory";
     marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
     marker.action = visualization_msgs::msg::Marker::ADD;
     marker.pose.position.x = 0;
