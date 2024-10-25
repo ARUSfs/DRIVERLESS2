@@ -15,15 +15,14 @@ find_package(tf2 REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
-
-
-
+find_package(common_msgs REQUIRED)
 
 include_directories(
   include
   ${PCL_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_LIST_DIR}/include/geom_lib  
-)
+  include/${PROJECT_NAME}/CDT
+  )
+  
 
 add_executable(path_planning_exec src/path_planning_node.cpp)
 ament_target_dependencies(path_planning_exec rclcpp 
@@ -34,7 +33,8 @@ ament_target_dependencies(path_planning_exec rclcpp
                             tf2_ros
                             tf2
                             PCL
-                            pcl_conversions)
+                            pcl_conversions
+                            common_msgs)
 
   
 install(TARGETS
