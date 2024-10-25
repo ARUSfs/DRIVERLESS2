@@ -28,7 +28,7 @@
  * @brief Construct a new Delaunay Triangulation object
  * 
  * This class takes a point cloud from the perception topic as a msg and performs Delaunay 
- * triangulation on it. It uses the Fade2D library to perform the triangulation. This class
+ * triangulation on it. It uses the CDT library to perform the triangulation. This class
  * also generates the visualization of the triangulation.
  */
 
@@ -45,7 +45,7 @@ class DelaunayTriangulation
     /**
      * @brief Get the triangulation object
      * 
-     * @return Fade_2D The triangulation object
+     * @return CDT The triangulation object
      */
     CDT::Triangulation<double> get_triangulation();
   

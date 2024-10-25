@@ -15,7 +15,7 @@
 /**
  * @class DelaunayTriangulation
  * @brief Construct a new Delaunay Triangulation:: Delaunay Triangulation object to generate a new
- * triangulation Fade_2D object. 
+ * triangulation CDT object. 
  * 
  * @param input_perception sensor_msgs::msg::PointCloud2::SharedPtr object containing the point cloud
  * from which we are going to generate the triangulation.
@@ -27,7 +27,7 @@ DelaunayTriangulation::DelaunayTriangulation(pcl::PointCloud<ConeXYZColorScore> 
 }
 
 /**
- * @brief Get the triangulation object Fade_2D type.
+ * @brief Get the triangulation object CDT type.
  */
 CDT::Triangulation<double> DelaunayTriangulation::get_triangulation(){
   return triangulation_;
