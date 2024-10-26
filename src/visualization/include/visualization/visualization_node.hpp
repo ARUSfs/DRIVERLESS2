@@ -49,6 +49,8 @@ class Visualization : public rclcpp::Node
         visualization_msgs::msg::Marker create_trajectory_marker(
             const common_msgs::msg::Trajectory::SharedPtr msg);
 
+        double kAlpha;
+
         // Topics to subscribe
         std::string kTriangulationTopic;
         std::string kOptimizedTrajectoryTopic;

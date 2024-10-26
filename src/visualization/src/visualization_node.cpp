@@ -15,6 +15,7 @@
  */
 Visualization::Visualization() : Node("visualization")
 {   
+    this->declare_parameter("alpha", 1.0);
     this->declare_parameter("triangulation_topic", "/path_planning/triangulation");
     this->declare_parameter("optimized_trajectory_topic", "/trajectory_optimizer/trajectory");
     this->declare_parameter("arussim_trajectory_topic", "/arussim_interface/fixed_trajectory");
@@ -22,6 +23,7 @@ Visualization::Visualization() : Node("visualization")
     this->declare_parameter("optimized_trajectory_visualization_topic", "/visualization/optimized_trajectory");
     this->declare_parameter("arussim_trajectory_visualization_topic", "/visualization/arussim_fixed_trajectory");
     
+    this->get_parameter("alpha", kAlpha);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("optimized_trajectory_topic", kOptimizedTrajectoryTopic);
     this->get_parameter("arussim_trajectory_topic", kARUSSimTrajectoryTopic);
@@ -65,7 +67,7 @@ void Visualization::triangulation_callback(const common_msgs::msg::Triangulation
         marker.scale.x = 0.1;
         marker.scale.y = 0.1;
         marker.scale.z = 0.1;
-        marker.color.a = 1.0;
+        marker.color.a = kAlpha;
         marker.color.r = 0.0;
         marker.color.g = 1.0;
         marker.color.b = 0.0;
@@ -114,7 +116,7 @@ visualization_msgs::msg::Marker Visualization::create_trajectory_marker(
     marker.scale.x = 0.2;
     marker.scale.y = 0.2;
     marker.scale.z = 0.2;
-    marker.color.a = 1.0;
+    marker.color.a = kAlpha;
     marker.color.r = 1.0;
     marker.color.g = 0.0;
     marker.color.b = 0.0;
