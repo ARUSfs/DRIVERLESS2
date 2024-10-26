@@ -11,6 +11,9 @@
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/point_xy.hpp"
 #include "common_msgs/msg/cmd.hpp"
+#include "arussim_msgs/msg/state.hpp"
+#include "controller/pure_pursuit.h"
+
 /**
  * @class pure_pursuit
  * @brief pure_pursuit class 
@@ -25,7 +28,7 @@ public:
 
 private:
     // Callbacks
-    void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
+    void car_state_callback(const arussim_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void on_timer();
@@ -52,7 +55,7 @@ private:
     std::vector<float> acc_profile_;                
 
     //Subscribers
-    rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
+    rclcpp::Subscription<arussim_msgs::msg::State>::SharedPtr car_state_sub_;
     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr control_sub_;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr as_status_sub_;
     rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trayectory_sub_;

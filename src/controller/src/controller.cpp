@@ -24,14 +24,14 @@ Controller::Controller() : Node("controller")
         std::chrono::milliseconds(static_cast<int>(1000.0 / kTimerFreq)),
         std::bind(&Controller::on_timer, this));
 
-    car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
-        "/car_state/state", 1, std::bind(&Controller::car_state_callback, this, std::placeholders::_1));
+    car_state_sub_ = this->create_subscription<arussim_msgs::msg::State>(
+        "/arussim/state", 1, std::bind(&Controller::car_state_callback, this, std::placeholders::_1));
 
     as_status_sub_ = this->create_subscription<std_msgs::msg::Int16>(
         "/sensors/AS_status", 1, std::bind(&Controller::as_status_callback, this, std::placeholders::_1));
 
     trayectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        "/trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
+        "/arussim_interface/fixed_trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
 
     cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>("/controller/cmd", 10); 
 }
@@ -39,9 +39,24 @@ Controller::Controller() : Node("controller")
 void Controller::on_timer()
 {
     RCLCPP_INFO(this->get_logger(), "Executing timer");
+    if(!(pointsXY_.empty())){
+        PurePursuit::set_path(pointsXY_);
+
+        common_msgs::msg::PointXY position;
+        position.x = x_;
+        position.y = y_;
+        PurePursuit::set_position(position);
+
+        double delta = PurePursuit::get_steering_angle(6.0);
+        RCLCPP_INFO(this->get_logger(), "Delta: %f", delta);
+        common_msgs::msg::Cmd cmd;
+        cmd.acc = 0.1;
+        cmd.delta = delta;
+        cmd_publisher_ -> publish(cmd); 
+    }
 }
 
-void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg)
+void Controller::car_state_callback(const arussim_msgs::msg::State::SharedPtr msg)
 {
     x_ = msg -> x;
     y_ = msg -> y;
