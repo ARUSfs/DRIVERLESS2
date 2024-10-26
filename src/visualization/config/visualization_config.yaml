@@ -1,5 +1,7 @@
 visualization:
   ros__parameters:
+    alpha: 0.7
+
     # Topics to subscribe
     triangulation_topic: '/path_planning/triangulation'
     optimized_trajectory_topic: '/trajectory_optimizer/trajectory'

@@ -8,11 +8,15 @@ from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     package_name = "visualization"
+    package_share_directory = get_package_share_directory(package_name)
+    config_file = os.path.join(package_share_directory, "config", "visualization_config.yaml")
+
     return LaunchDescription([
         Node(
             package=package_name,
             executable="visualization_exec",
             name="visualization",
             output="screen",
+            parameters=[config_file]
         )
     ])
