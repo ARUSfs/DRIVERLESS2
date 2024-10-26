@@ -21,9 +21,9 @@ ARUSSimInterface::ARUSSimInterface() : Node("arussim_interface")
     cmd4wd_pub_ = this->create_publisher<arussim_msgs::msg::Cmd4WD>(
         kSimCmd4WDTopic, 10);
     wheel_speeds_pub_ = this->create_publisher<common_msgs::msg::FourWheelDrive>(
-        kSimWheelSpeedsTopic, 10);
+        kPipelineWheelSpeedsTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(
-        kSimTrajectoryTopic, 10);
+        kPipelineTrajectoryTopic, 10);
 
     cmd_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
         kPipelineCmdTopic, 10, 
@@ -32,10 +32,10 @@ ARUSSimInterface::ARUSSimInterface() : Node("arussim_interface")
         kPipelineCmd4WDTopic, 10, 
         std::bind(&ARUSSimInterface::cmd4wd_callback, this, std::placeholders::_1));
     wheel_speeds_sub_ = this->create_subscription<arussim_msgs::msg::FourWheelDrive>(
-        kPipelineWheelSpeedsTopic, 10, 
+        kSimWheelSpeedsTopic, 10, 
         std::bind(&ARUSSimInterface::wheel_speeds_callback, this, std::placeholders::_1));
     trajectory_sub_ = this->create_subscription<arussim_msgs::msg::Trajectory>(
-        kPipelineTrajectoryTopic, 10, 
+        kSimTrajectoryTopic, 10, 
         std::bind(&ARUSSimInterface::trajectory_callback, this, std::placeholders::_1));
      
 }
