@@ -3,16 +3,16 @@
 #include <limits>
 #include <cmath>
 
-inline std::vector<common_msgs::msg::PointXY> path;  
-inline bool path_updated = false; 
-inline common_msgs::msg::PointXY car_position;
-inline std::vector<double> distance_along_curve; 
-inline size_t pursuit_index;
+std::vector<common_msgs::msg::PointXY> path;  
+bool path_updated = false; 
+common_msgs::msg::PointXY car_position;
+std::vector<double> distance_along_curve; 
+size_t pursuit_index;
 double prev_steer;
 
 namespace PurePursuit {
 
-    inline void set_path(const std::vector<common_msgs::msg::PointXY> &new_path) {
+    void set_path(const std::vector<common_msgs::msg::PointXY> &new_path) {
         if (new_path.empty()) {
             return;
         }
@@ -20,11 +20,11 @@ namespace PurePursuit {
         path_updated = true;
     }
 
-    inline void set_position(const common_msgs::msg::PointXY &position) {
+    void set_position(const common_msgs::msg::PointXY &position) {
         car_position = position;
     }
 
-    inline common_msgs::msg::PointXY search_pursuit_point(double look_ahead_distance) {
+    common_msgs::msg::PointXY search_pursuit_point(double look_ahead_distance) {
 
         size_t closest_point_index = 0;
         double min_distance = std::numeric_limits<double>::infinity();
@@ -69,7 +69,7 @@ namespace PurePursuit {
         return path.back(); 
     }
 
-    inline double get_steering_angle(double look_ahead_distance) {
+    double get_steering_angle(double look_ahead_distance) {
         if (path.size() <= 1) {
             return prev_steer;
         }
