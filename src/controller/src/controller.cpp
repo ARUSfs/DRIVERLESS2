@@ -25,7 +25,7 @@ Controller::Controller() : Node("controller")
         std::bind(&Controller::on_timer, this));
 
     car_state_sub_ = this->create_subscription<arussim_msgs::msg::State>(
-        "/arussim/state", 1, std::bind(&Controller::car_state_callback, this, std::placeholders::_1));
+        "/car_state/state", 1, std::bind(&Controller::car_state_callback, this, std::placeholders::_1));
 
     as_status_sub_ = this->create_subscription<std_msgs::msg::Int16>(
         "/sensors/AS_status", 1, std::bind(&Controller::as_status_callback, this, std::placeholders::_1));
