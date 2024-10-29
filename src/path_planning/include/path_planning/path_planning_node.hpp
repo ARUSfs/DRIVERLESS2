@@ -38,6 +38,7 @@ class PathPlanning : public rclcpp::Node
         std::string kTriangulationTopic;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
+        rclcpp::Publisher<common_msgs::msg::Simplex>::SharedPtr midpoints_pub_;
         /**
          * @brief Callback function for the perception topic.
          * When the percetption topic recieves a message, this function is called and performs
@@ -62,5 +63,29 @@ class PathPlanning : public rclcpp::Node
          * @return common_msgs::msg::Triangulation ROS2 message containing all triangulation information
          */
         common_msgs::msg::Triangulation create_triangulation_msg(CDT::Triangulation<double> triangulation);
+
+        /**
+         * @brief Get the mid points of the edges of the triangulation. 
+         * It returns a vector of V2d points containing the mid points without duplicates.
+         * @param triangulation CDT object containing the triangulation.
+         * @return std::vector<CDT::V2d<double>> 
+         */
+        std::vector<CDT::V2d<double>> get_midpoints(CDT::Triangulation<double> triangulation);
+
+        /**
+         * @brief Calculate the euclidean norm of a vector. 
+         * i.e.: if v=(x,y), norm(v) = (x^2 + y^2)^(1/2).
+         * @param v Vector to calculate the norm.
+         * @return double 
+         */
+        double norm(CDT::V2d<double> v);
+
+        /**
+         * @brief Get the closest midpoint to the origin as a CDT 2D vector.
+         * 
+         * @param midpoint_arr Array of midpoints to calculate the closest one.
+         * @return CDT::V2d<double> 
+         */
+        CDT::V2d<double> get_closest_midpoint(std::vector<CDT::V2d<double>> midpoint_arr);
 
 };
