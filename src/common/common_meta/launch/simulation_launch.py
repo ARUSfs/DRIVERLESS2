@@ -11,6 +11,10 @@ from launch.substitutions import LaunchConfiguration
 def generate_launch_description():
     planning_launch_path = os.path.join(get_package_share_directory('path_planning'), 
                                         'launch', 'path_planning_launch.py')
+    controller_launch_path = os.path.join(get_package_share_directory('controller'),
+                                        'launch', 'controller_launch.py')
+    car_state_launch_path = os.path.join(get_package_share_directory('car_state'),
+                                        'launch', 'car_state_launch.py')
     visualization_launch_path = os.path.join(get_package_share_directory('visualization'), 
                                         'launch', 'visualization_launch.py')
     arussim_interface_launch_path = os.path.join(get_package_share_directory('arussim_interface'), 
@@ -20,6 +24,10 @@ def generate_launch_description():
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(planning_launch_path)),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(controller_launch_path)),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(car_state_launch_path)),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(visualization_launch_path)),
         IncludeLaunchDescription(
