@@ -17,10 +17,7 @@ namespace PID {
         double derivative = (error - previous_error) / delta_time.count();
         previous_error = error;
 
-        double feed_forward = (target - prev_target) / delta_time.count();
-        prev_target = target;
-
-        double control = (error * KP) + (KI * integral) + (KD * derivative) + feed_forward;
+        double control = (error * KP) + (KI * integral) + (KD * derivative) ;
 
         return control; 
     }
