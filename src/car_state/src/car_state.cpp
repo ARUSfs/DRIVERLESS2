@@ -12,8 +12,7 @@
  * Node that collects car data, estimates parameters, and publishes them on /car_state/State.
  */
 
-CarState::CarState()
-: Node("car_state")
+CarState::CarState(): Node("car_state")
 {   
     bool get_arussim_ground_truth;
     this->declare_parameter<bool>("get_arussim_ground_truth", false);
@@ -26,15 +25,15 @@ CarState::CarState()
     }
 
     sub_extensometer_ = this->create_subscription<std_msgs::msg::Float32>(
-        "/sensors/extensometer", 1, std::bind(&CarState::
+        "/arussim/extensometer", 1, std::bind(&CarState::
             extensometer_callback, this, std::placeholders::_1));
 
     sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>(
-        "/sensors/imu", 1, std::bind(&CarState::
+        "/arussim/imu", 1, std::bind(&CarState::
             imu_callback, this, std::placeholders::_1));
 
     sub_wheel_speeds_ = this->create_subscription<common_msgs::msg::FourWheelDrive>(
-        "/sensors/wheel_speeds", 1, std::bind(&CarState::
+        "/arussim_interface/wheel_speeds", 1, std::bind(&CarState::
             wheel_speeds_callback, this, std::placeholders::_1));
 
     pub_state_ = this->create_publisher<common_msgs::msg::State>(

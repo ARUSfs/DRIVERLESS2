@@ -33,7 +33,7 @@ install(TARGETS
 car_state_exec
   DESTINATION lib/${PROJECT_NAME})
 
-install(DIRECTORY launch/
+install(DIRECTORY config launch
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()
