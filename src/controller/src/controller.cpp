@@ -45,14 +45,16 @@ void Controller::on_timer()
         common_msgs::msg::PointXY position;
         position.x = x_;
         position.y = y_;
-        PurePursuit::set_position(position);
+        PurePursuit::set_position(position, yaw_);
 
         double delta = PurePursuit::get_steering_angle(5.0);
-        RCLCPP_INFO(this->get_logger(), "Delta: %f", delta);
+        // RCLCPP_INFO(this->get_logger(), "Delta: %f", delta);
         common_msgs::msg::Cmd cmd;
-        cmd.acc = 0.3;
+        cmd.acc = 1;
         cmd.delta = delta;
         cmd_publisher_ -> publish(cmd); 
+        RCLCPP_INFO(this->get_logger(), "Delta: %f", cmd.acc);
+
     }
 }
 
