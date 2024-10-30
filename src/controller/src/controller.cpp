@@ -25,7 +25,7 @@ Controller::Controller() : Node("controller")
         std::bind(&Controller::on_timer, this));
 
     car_state_sub_ = this->create_subscription<arussim_msgs::msg::State>(
-        "/car_state/state", 1, std::bind(&Controller::car_state_callback, this, std::placeholders::_1));
+        "/arussim/state", 1, std::bind(&Controller::car_state_callback, this, std::placeholders::_1));
 
     as_status_sub_ = this->create_subscription<std_msgs::msg::Int16>(
         "/sensors/AS_status", 1, std::bind(&Controller::as_status_callback, this, std::placeholders::_1));
@@ -47,10 +47,10 @@ void Controller::on_timer()
         position.y = y_;
         PurePursuit::set_position(position);
 
-        double delta = PurePursuit::get_steering_angle(6.0);
+        double delta = PurePursuit::get_steering_angle(5.0);
         RCLCPP_INFO(this->get_logger(), "Delta: %f", delta);
         common_msgs::msg::Cmd cmd;
-        cmd.acc = 0.1;
+        cmd.acc = 0.3;
         cmd.delta = delta;
         cmd_publisher_ -> publish(cmd); 
     }

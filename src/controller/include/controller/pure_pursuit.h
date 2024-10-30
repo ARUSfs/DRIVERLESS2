@@ -79,7 +79,7 @@ namespace PurePursuit {
         double alpha = std::atan2(pursuit_point.y - car_position.y, pursuit_point.x - car_position.x);
         double delta = std::atan2(2.0 * 1.535 * std::sin(alpha) / look_ahead_distance, 1.0);
 
-        delta = std::max(-19.9, std::min(180 * delta / M_PI, 19.9));
+        delta = std::max(-0.347, std::min(delta, 0.347));
         prev_steer = delta;
 
         return delta;
