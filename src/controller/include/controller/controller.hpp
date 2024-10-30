@@ -13,6 +13,7 @@
 #include "common_msgs/msg/cmd.hpp"
 #include "arussim_msgs/msg/state.hpp"
 #include "controller/pure_pursuit.h"
+#include "controller/PID.h"
 
 /**
  * @class pure_pursuit

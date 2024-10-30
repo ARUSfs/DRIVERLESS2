@@ -49,8 +49,12 @@ void Controller::on_timer()
 
         double delta = PurePursuit::get_steering_angle(5.0);
         // RCLCPP_INFO(this->get_logger(), "Delta: %f", delta);
-        common_msgs::msg::Cmd cmd;
-        cmd.acc = 1;
+
+        auto current_time = std::chrono::steady_clock::now();        
+        double acc = PID::compute_control(vx_, 4, 43.87, 1.29, 0, current_time);
+
+        common_msgs::msg::Cmd cmd;       
+        cmd.acc = acc/230;
         cmd.delta = delta;
         cmd_publisher_ -> publish(cmd); 
         RCLCPP_INFO(this->get_logger(), "Delta: %f", cmd.acc);
