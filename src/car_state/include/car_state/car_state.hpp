@@ -28,6 +28,7 @@ private:
     void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg);
     void extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::SharedPtr msg);
+    void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
 
     // Funtions
     void on_timer();
@@ -48,6 +49,7 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr sub_extensometer_;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr sub_imu_;
     rclcpp::Subscription<common_msgs::msg::FourWheelDrive>::SharedPtr sub_wheel_speeds_;
+    rclcpp::Subscription<common_msgs::msg::State>::SharedPtr sub_arussim_ground_truth_;
 
     // Publisher for the aggregated state
     rclcpp::Publisher<common_msgs::msg::State>::SharedPtr pub_state_;
