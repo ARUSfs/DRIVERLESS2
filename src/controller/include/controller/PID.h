@@ -1,20 +1,21 @@
-#include <chrono>
+#include "rclcpp/rclcpp.hpp" 
 
-std::chrono::steady_clock::time_point previous_time;
+rclcpp::Time previous_time;
 double previous_error;
 double integral;
-double prev_target;
+
 
 namespace PID {
 
-    double compute_control(double value, double target, double KP, double KI, double KD, std::chrono::steady_clock::time_point current_time) {
+    double compute_control(double value, double target, double KP, double KI, double KD, rclcpp::Clock::SharedPtr node_clock) {
         
-        std::chrono::duration<double> delta_time = current_time - previous_time;
+        auto current_time = node_clock->now();
+        double delta_time = (current_time - previous_time).seconds();
         previous_time = current_time;
 
         double error = target - value;
-        integral += error * delta_time.count();
-        double derivative = (error - previous_error) / delta_time.count();
+        integral += error * delta_time;
+        double derivative = (error - previous_error) / delta_time;
         previous_error = error;
 
         double control = (error * KP) + (KI * integral) + (KD * derivative) ;
@@ -22,12 +23,12 @@ namespace PID {
         return control; 
     }
 
-    void reset() {
+    void reset(rclcpp::Clock::SharedPtr node_clock) {
         
         previous_error = 0.0;
         integral = 0.0;
-        previous_time = std::chrono::steady_clock::now();
-        prev_target = 0.0;
+        previous_time = node_clock->now();
+
     }
 
 }

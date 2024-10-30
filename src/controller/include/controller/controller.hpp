@@ -15,6 +15,7 @@
 #include "controller/pure_pursuit.h"
 #include "controller/PID.h"
 
+
 /**
  * @class pure_pursuit
  * @brief pure_pursuit class 
@@ -63,6 +64,7 @@ private:
 
     //Timers
     rclcpp::TimerBase::SharedPtr timer_; 
+    rclcpp::Clock::SharedPtr clock_;
     
     // Parameters for control type and frequency
     std::string kControllerType;

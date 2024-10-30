@@ -20,6 +20,8 @@ Controller::Controller() : Node("controller")
     this->get_parameter("controller_type", kControllerType);
     this->get_parameter("timer_frequency", kTimerFreq);
 
+    clock_ = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);  // Este reloj usará tiempo simulado
+
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(static_cast<int>(1000.0 / kTimerFreq)),
         std::bind(&Controller::on_timer, this));
@@ -34,6 +36,8 @@ Controller::Controller() : Node("controller")
         "/arussim_interface/fixed_trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
 
     cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>("/controller/cmd", 10); 
+
+    PID::reset(clock_);
 }
 
 void Controller::on_timer()
@@ -50,15 +54,16 @@ void Controller::on_timer()
         double delta = PurePursuit::get_steering_angle(5.0);
         // RCLCPP_INFO(this->get_logger(), "Delta: %f", delta);
 
-        auto current_time = std::chrono::steady_clock::now();        
-        double par = PID::compute_control(vx_, 2, 43.87, 1.29, 0, current_time);
-        double acc = par/(240*0.2);
+        double par = PID::compute_control(vx_, 8.0, 43.87, 1.29, 0.0, clock_);
+        double acc = par/(230*0.2);
 
         common_msgs::msg::Cmd cmd;       
         cmd.acc = acc;
+        RCLCPP_INFO(this->get_logger(), "Acc: %f", cmd.acc);
         cmd.delta = delta;
+        RCLCPP_INFO(this->get_logger(), "Delta: %f", cmd.delta);
+
         cmd_publisher_ -> publish(cmd); 
-        RCLCPP_INFO(this->get_logger(), "Delta: %f", cmd.acc);
 
     }
 }
