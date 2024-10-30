@@ -24,6 +24,8 @@ ARUSSimInterface::ARUSSimInterface() : Node("arussim_interface")
         kPipelineWheelSpeedsTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(
         kPipelineTrajectoryTopic, 10);
+    ground_truth_pub_ = this->create_publisher<common_msgs::msg::State>(
+        kPipelineGroundTruthTopic, 10);
 
     cmd_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
         kPipelineCmdTopic, 10, 
@@ -31,12 +33,15 @@ ARUSSimInterface::ARUSSimInterface() : Node("arussim_interface")
     cmd4wd_sub_ = this->create_subscription<common_msgs::msg::Cmd4WD>(
         kPipelineCmd4WDTopic, 10, 
         std::bind(&ARUSSimInterface::cmd4wd_callback, this, std::placeholders::_1));
-    wheel_speeds_sub_ = this->create_subscription<arussim_msgs::msg::FourWheelDrive>(
+    sim_wheel_speeds_sub_ = this->create_subscription<arussim_msgs::msg::FourWheelDrive>(
         kSimWheelSpeedsTopic, 10, 
-        std::bind(&ARUSSimInterface::wheel_speeds_callback, this, std::placeholders::_1));
-    trajectory_sub_ = this->create_subscription<arussim_msgs::msg::Trajectory>(
+        std::bind(&ARUSSimInterface::sim_wheel_speeds_callback, this, std::placeholders::_1));
+    sim_trajectory_sub_ = this->create_subscription<arussim_msgs::msg::Trajectory>(
         kSimTrajectoryTopic, 10, 
-        std::bind(&ARUSSimInterface::trajectory_callback, this, std::placeholders::_1));
+        std::bind(&ARUSSimInterface::sim_trajectory_callback, this, std::placeholders::_1));
+    sim_state_sub_ = this->create_subscription<arussim_msgs::msg::State>(
+        kSimStateTopic, 10, 
+        std::bind(&ARUSSimInterface::sim_state_callback, this, std::placeholders::_1));
      
 }
 
@@ -60,7 +65,7 @@ void ARUSSimInterface::cmd4wd_callback(const common_msgs::msg::Cmd4WD::SharedPtr
     cmd4wd_pub_->publish(cmd4wd_msg);
 }
 
-void ARUSSimInterface::wheel_speeds_callback(const arussim_msgs::msg::FourWheelDrive::SharedPtr msg)
+void ARUSSimInterface::sim_wheel_speeds_callback(const arussim_msgs::msg::FourWheelDrive::SharedPtr msg)
 {
     common_msgs::msg::FourWheelDrive wheel_speeds_msg;
     wheel_speeds_msg.front_right = msg->front_right;
@@ -70,7 +75,7 @@ void ARUSSimInterface::wheel_speeds_callback(const arussim_msgs::msg::FourWheelD
     wheel_speeds_pub_->publish(wheel_speeds_msg);
 }
 
-void ARUSSimInterface::trajectory_callback(const arussim_msgs::msg::Trajectory::SharedPtr msg)
+void ARUSSimInterface::sim_trajectory_callback(const arussim_msgs::msg::Trajectory::SharedPtr msg)
 {
     common_msgs::msg::Trajectory trajectory_msg;
     trajectory_msg.header = msg->header;
@@ -81,6 +86,22 @@ void ARUSSimInterface::trajectory_callback(const arussim_msgs::msg::Trajectory::
         trajectory_msg.points.push_back(point);
     }
     trajectory_pub_->publish(trajectory_msg);
+}
+
+void ARUSSimInterface::sim_state_callback(const arussim_msgs::msg::State::SharedPtr msg)
+{
+    common_msgs::msg::State state_msg;
+    state_msg.header = msg->header;
+    state_msg.x = msg->x;
+    state_msg.y = msg->y;
+    state_msg.yaw = msg->yaw;
+    state_msg.vx = msg->vx;
+    state_msg.vy = msg->vy;
+    state_msg.r = msg->r;
+    state_msg.ax = msg->ax;
+    state_msg.ay = msg->ay;
+    state_msg.delta = msg->delta;
+    ground_truth_pub_->publish(state_msg);
 }
 
 int main(int argc, char * argv[])
