@@ -12,6 +12,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(common_msgs REQUIRED)
 find_package(arussim_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 # Include directories for header files
 include_directories(include)
@@ -23,6 +24,7 @@ add_executable(controller_exec src/controller_node.cpp)
 ament_target_dependencies(controller_exec 
                             rclcpp 
                             std_msgs 
+                            geometry_msgs
                             common_msgs
                             arussim_msgs
                           )

@@ -11,6 +11,7 @@
 
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
   <build_depend>common_msgs</build_depend>
   <build_depend>arussim_msgs</build_depend>
 

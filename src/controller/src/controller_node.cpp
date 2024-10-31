@@ -69,7 +69,7 @@ void Controller::on_timer()
     if(!(pointsXY_.empty())){
 
         PurePursuit::set_path(pointsXY_);
-        common_msgs::msg::PointXY position;
+        Point position;
         position.x = x_;
         position.y = y_;
         PurePursuit::set_position(position, yaw_);
@@ -103,7 +103,14 @@ void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg
 
 void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    pointsXY_ = msg -> points;
+    std::vector<common_msgs::msg::PointXY> points_common = msg -> points;
+     for (const auto &pointXY : points_common) {
+        Point point;
+        point.x = pointXY.x;
+        point.y = pointXY.y;
+        pointsXY_.push_back(point);
+     }
+
     s_= msg -> s;
     k_ = msg -> k;
     speed_profile_ = msg -> speed_profile;

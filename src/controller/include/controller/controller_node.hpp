@@ -14,7 +14,7 @@
 #include "arussim_msgs/msg/state.hpp"
 #include "controller/pure_pursuit.h"
 #include "controller/PID.h"
-
+#include "Point.h"
 
 /**
  * @class pure_pursuit
@@ -50,7 +50,7 @@ private:
     double delta_;
 
     //Trajectory variable
-    std::vector<common_msgs::msg::PointXY> pointsXY_;  
+    std::vector<Point> pointsXY_;  
     std::vector<float> s_;                           // distance values of the points              
     std::vector<float> k_ ;                          // curvature values of the points
     std::vector<float> speed_profile_;               
