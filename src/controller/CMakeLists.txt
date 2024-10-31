@@ -17,10 +17,10 @@ find_package(arussim_msgs REQUIRED)
 include_directories(include)
 
 # Add the executable for the controller node
-add_executable(controller src/controller.cpp)
+add_executable(controller_exec src/controller_node.cpp)
 
 # Link the executable to the required packages
-ament_target_dependencies(controller 
+ament_target_dependencies(controller_exec 
                             rclcpp 
                             std_msgs 
                             common_msgs
@@ -28,7 +28,7 @@ ament_target_dependencies(controller
                           )
 
 # Install the node executable
-install(TARGETS controller
+install(TARGETS controller_exec
   DESTINATION lib/${PROJECT_NAME})
 
 # Install configuration and launch files

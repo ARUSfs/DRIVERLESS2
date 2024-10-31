@@ -9,7 +9,7 @@ common_msgs::msg::PointXY car_position;
 std::vector<double> distance_along_curve; 
 size_t pursuit_index;
 double prev_steer;
-double yaw_;
+double yaw;
 
 namespace PurePursuit {
 
@@ -21,9 +21,9 @@ namespace PurePursuit {
         path_updated = true;
     }
 
-    void set_position(const common_msgs::msg::PointXY &position, double yaw) {
+    void set_position(const common_msgs::msg::PointXY &position, double yaw_) {
         car_position = position;
-        yaw_ = yaw;
+        yaw = yaw_;
     }
 
     common_msgs::msg::PointXY search_pursuit_point(double look_ahead_distance) {
@@ -78,7 +78,7 @@ namespace PurePursuit {
 
         common_msgs::msg::PointXY pursuit_point = search_pursuit_point(look_ahead_distance);
 
-        double alpha = std::atan2(pursuit_point.y - car_position.y, pursuit_point.x - car_position.x) - yaw_;
+        double alpha = std::atan2(pursuit_point.y - car_position.y, pursuit_point.x - car_position.x) - yaw;
         double delta = std::atan2(2.0 * 1.535 * std::sin(alpha) / look_ahead_distance, 1.0);
 
         delta = std::max(-0.347, std::min(delta, 0.347));

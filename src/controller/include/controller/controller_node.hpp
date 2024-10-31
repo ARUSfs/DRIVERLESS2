@@ -30,7 +30,7 @@ public:
 
 private:
     // Callbacks
-    void car_state_callback(const arussim_msgs::msg::State::SharedPtr msg);
+    void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void on_timer();
@@ -57,7 +57,7 @@ private:
     std::vector<float> acc_profile_;                
 
     //Subscribers
-    rclcpp::Subscription<arussim_msgs::msg::State>::SharedPtr car_state_sub_;
+    rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr control_sub_;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr as_status_sub_;
     rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trayectory_sub_;
@@ -66,9 +66,20 @@ private:
     rclcpp::TimerBase::SharedPtr timer_; 
     rclcpp::Clock::SharedPtr clock_;
     
-    // Parameters for control type and frequency
+    // Parameters
     std::string kControllerType;
-    double kTimerFreq;
+
+    std::string kStateTopic;
+    std::string kAsStatus;
+    std::string kTrajectory;
+    std::string kCmd;
+
+    double kTimerFreq = 0.0;
+    double look_ahead_distance_ = 0.0;
+    double target_ = 0;
+    double KP_ = 0.0;
+    double KI_ = 0.0;
+    double KD_ = 0.0;
 
     rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_publisher_;
 };

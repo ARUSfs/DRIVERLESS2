@@ -53,7 +53,7 @@ void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
 {
         ax_ = msg-> linear_acceleration.x;
         ay_ = msg-> linear_acceleration.y;
-        r_ = msg->angular_velocity.z;
+        r_ = msg -> angular_velocity.z;
 }
 
 void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg)

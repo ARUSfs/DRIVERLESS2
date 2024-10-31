@@ -1,4 +1,19 @@
 controller:
   ros__parameters:
-    controller_type: "pure_pursuit"    # change between (can be "mpc", "pure_pursuit", "stanley", "pid", etc.)
+    controller_type: "pure_pursuit"    
     timer_frequency: 100.0          # timer frecuency in Hz
+
+    # Topic
+    state: "/car_state/state"
+    as_status: "/sensors/AS_status"
+    trajectory: "/arussim_interface/fixed_trajectory"
+    cmd: "/controller/cmd"
+
+    # PP
+    look_ahead_distance: 6.0
+
+    # PID
+    target: 8.0
+    KP: 43.87
+    KI: 1.29
+    KD: 0.0
