@@ -7,9 +7,8 @@ double integral;
 
 namespace PID {
 
-    double compute_control(double value, double target, double KP, double KI, double KD, rclcpp::Clock::SharedPtr node_clock) {
+    double compute_control(double value, double target, double KP, double KI, double KD, rclcpp::Time current_time) {
         
-        auto current_time = node_clock->now();
         double delta_time = (current_time - previous_time).seconds();
         previous_time = current_time;
 

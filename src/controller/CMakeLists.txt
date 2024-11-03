@@ -11,7 +11,6 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(common_msgs REQUIRED)
-find_package(arussim_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
 # Include directories for header files
@@ -26,7 +25,6 @@ ament_target_dependencies(controller_exec
                             std_msgs 
                             geometry_msgs
                             common_msgs
-                            arussim_msgs
                           )
 
 # Install the node executable

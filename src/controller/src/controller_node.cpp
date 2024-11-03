@@ -75,7 +75,8 @@ void Controller::on_timer()
         PurePursuit::set_position(position, yaw_);
         double delta = PurePursuit::get_steering_angle(5.0);
 
-        double par = PID::compute_control(vx_, target_, KP_, KI_, KD_, clock_);
+        rclcpp::Time current_time = clock_->now();
+        double par = PID::compute_control(vx_, target_, KP_, KI_, KD_, current_time);
         double acc = par/(230*0.2);
 
         common_msgs::msg::Cmd cmd;       

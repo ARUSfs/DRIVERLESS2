@@ -11,7 +11,6 @@
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/point_xy.hpp"
 #include "common_msgs/msg/cmd.hpp"
-#include "arussim_msgs/msg/state.hpp"
 #include "controller/pure_pursuit.h"
 #include "controller/PID.h"
 #include "Point.h"
