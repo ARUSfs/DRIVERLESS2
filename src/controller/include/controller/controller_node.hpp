@@ -29,6 +29,7 @@ public:
 
 private:
     // Callbacks
+    void reset();
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
@@ -64,6 +65,7 @@ private:
     //Timers
     rclcpp::TimerBase::SharedPtr timer_; 
     rclcpp::Clock::SharedPtr clock_;
+    rclcpp::Time previous_time_ ;
     
     // Parameters
     std::string kControllerType;

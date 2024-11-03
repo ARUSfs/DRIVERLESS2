@@ -60,7 +60,8 @@ Controller::Controller() : Node("controller")
 
     cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>(kCmd, 10); 
 
-    PID::reset(clock_);
+    PID::reset();
+    Controller::reset();
 }
 
 void Controller::on_timer()
@@ -76,16 +77,22 @@ void Controller::on_timer()
         double delta = PurePursuit::get_steering_angle(5.0);
 
         rclcpp::Time current_time = clock_->now();
-        double par = PID::compute_control(vx_, target_, KP_, KI_, KD_, current_time);
+        double delta_time = (current_time - previous_time_).seconds();
+        double par = PID::compute_control(vx_, target_, KP_, KI_, KD_, delta_time);
         double acc = par/(230*0.2);
+        previous_time_ = current_time;
 
         common_msgs::msg::Cmd cmd;       
         cmd.acc = acc;
         cmd.delta = delta;
-
         cmd_publisher_ -> publish(cmd); 
 
     }
+}
+
+void Controller::reset()
+{
+    previous_time_ = clock_->now();
 }
 
 void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg)
@@ -122,7 +129,6 @@ void Controller::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
 {
     as_status_ = msg->data;
 }
-
 
 int main(int argc, char **argv)
 {
