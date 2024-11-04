@@ -11,6 +11,10 @@
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/point_xy.hpp"
 #include "common_msgs/msg/cmd.hpp"
+#include "controller/pure_pursuit.h"
+#include "controller/PID.h"
+#include "Point.h"
+
 /**
  * @class pure_pursuit
  * @brief pure_pursuit class 
@@ -45,7 +49,7 @@ private:
     double delta_;
 
     //Trajectory variable
-    std::vector<common_msgs::msg::PointXY> pointsXY_;  
+    std::vector<Point> pointsXY_;  
     std::vector<float> s_;                           // distance values of the points              
     std::vector<float> k_ ;                          // curvature values of the points
     std::vector<float> speed_profile_;               
@@ -59,10 +63,22 @@ private:
 
     //Timers
     rclcpp::TimerBase::SharedPtr timer_; 
+    rclcpp::Time previous_time_ ;
     
-    // Parameters for control type and frequency
+    // Parameters
     std::string kControllerType;
+
+    std::string kStateTopic;
+    std::string kAsStatus;
+    std::string kTrajectory;
+    std::string kCmd;
+
     double kTimerFreq;
+    double kLAD;
+    double kTargetSpeed;
+    double KP;
+    double KI;
+    double KD;
 
     rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_publisher_;
 };

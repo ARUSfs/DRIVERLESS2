@@ -11,23 +11,24 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(common_msgs REQUIRED)
-
+find_package(geometry_msgs REQUIRED)
 
 # Include directories for header files
 include_directories(include)
 
 # Add the executable for the controller node
-add_executable(controller src/controller.cpp)
+add_executable(controller_exec src/controller_node.cpp)
 
 # Link the executable to the required packages
-ament_target_dependencies(controller 
+ament_target_dependencies(controller_exec 
                             rclcpp 
                             std_msgs 
+                            geometry_msgs
                             common_msgs
                           )
 
 # Install the node executable
-install(TARGETS controller
+install(TARGETS controller_exec
   DESTINATION lib/${PROJECT_NAME})
 
 # Install configuration and launch files

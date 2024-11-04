@@ -13,7 +13,7 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='controller',  
-            executable='controller', 
+            executable='controller_exec', 
             name='controller',       
             output='screen',
             parameters=[config_file_path] 
