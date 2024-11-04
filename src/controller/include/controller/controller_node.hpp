@@ -29,7 +29,6 @@ public:
 
 private:
     // Callbacks
-    void reset();
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
@@ -64,7 +63,6 @@ private:
 
     //Timers
     rclcpp::TimerBase::SharedPtr timer_; 
-    rclcpp::Clock::SharedPtr clock_;
     rclcpp::Time previous_time_ ;
     
     // Parameters
@@ -75,12 +73,12 @@ private:
     std::string kTrajectory;
     std::string kCmd;
 
-    double kTimerFreq = 0.0;
-    double look_ahead_distance_ = 0.0;
-    double target_ = 0;
-    double KP_ = 0.0;
-    double KI_ = 0.0;
-    double KD_ = 0.0;
+    double kTimerFreq;
+    double kLAD;
+    double kTargetSpeed;
+    double KP;
+    double KI;
+    double KD;
 
     rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_publisher_;
 };

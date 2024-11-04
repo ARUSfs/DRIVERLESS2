@@ -15,7 +15,7 @@
 Controller::Controller() : Node("controller")
 {
     this->declare_parameter<std::string>("controller_type", "pure_pursuit");
-    this->declare_parameter<double>("timer_frequency", 5.0);
+    this->declare_parameter<double>("timer_frequency", 100.0);
     this->get_parameter("controller_type", kControllerType);
     this->get_parameter("timer_frequency", kTimerFreq);
 
@@ -31,19 +31,17 @@ Controller::Controller() : Node("controller")
 
     // Pure-Pursuit
     this->declare_parameter<double>("look_ahead_distance", 6.0);
-    this->get_parameter("look_ahead_distance", look_ahead_distance_);
+    this->get_parameter("look_ahead_distance", kLAD);
 
     // PID
     this->declare_parameter<double>("target", 8.0);
     this->declare_parameter<double>("KP", 43.87);
     this->declare_parameter<double>("KI", 1.29);
     this->declare_parameter<double>("KD", 0.0); 
-    this->get_parameter("target", target_);
-    this->get_parameter("KP", KP_);
-    this->get_parameter("KI", KI_);
-    this->get_parameter("KD", KD_);
-
-    clock_ = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+    this->get_parameter("target", kTargetSpeed);
+    this->get_parameter("KP", KP);
+    this->get_parameter("KI", KI);
+    this->get_parameter("KD", KD);
 
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(static_cast<int>(1000.0 / kTimerFreq)),
@@ -60,13 +58,11 @@ Controller::Controller() : Node("controller")
 
     cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>(kCmd, 10); 
 
-    PID::reset();
-    Controller::reset();
+    previous_time_ = this->get_clock()->now();
 }
 
 void Controller::on_timer()
 {
-    RCLCPP_INFO(this->get_logger(), "Executing timer");
     if(!(pointsXY_.empty())){
 
         PurePursuit::set_path(pointsXY_);
@@ -74,12 +70,12 @@ void Controller::on_timer()
         position.x = x_;
         position.y = y_;
         PurePursuit::set_position(position, yaw_);
-        double delta = PurePursuit::get_steering_angle(5.0);
+        double delta = PurePursuit::get_steering_angle(kLAD);
 
-        rclcpp::Time current_time = clock_->now();
-        double delta_time = (current_time - previous_time_).seconds();
-        double par = PID::compute_control(vx_, target_, KP_, KI_, KD_, delta_time);
-        double acc = par/(230*0.2);
+        rclcpp::Time current_time = this->get_clock()->now();
+        double dt = (current_time - previous_time_).seconds();
+        double acc = PID::compute_control(vx_, kTargetSpeed, KP, KI, KD, dt);
+        acc /= (230*0.2);
         previous_time_ = current_time;
 
         common_msgs::msg::Cmd cmd;       
@@ -90,10 +86,6 @@ void Controller::on_timer()
     }
 }
 
-void Controller::reset()
-{
-    previous_time_ = clock_->now();
-}
 
 void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg)
 {

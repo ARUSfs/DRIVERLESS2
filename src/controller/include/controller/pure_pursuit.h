@@ -1,14 +1,15 @@
 #include <vector>
 #include <limits>
 #include <cmath>
+#include <algorithm>
 #include "Point.h"
 
 std::vector<Point> path;  
 bool path_updated = false; 
-Point car_position;
 std::vector<double> distance_along_curve; 
 size_t pursuit_index;
-double prev_steer;
+double prev_steer = 0.0;
+Point car_position;
 double yaw;
 
 
@@ -83,6 +84,7 @@ namespace PurePursuit {
         double delta = std::atan2(2.0 * 1.535 * std::sin(alpha) / look_ahead_distance, 1.0);
 
         delta = std::max(-0.347, std::min(delta, 0.347));
+        delta = std::clamp(delta, -20*M_PI/180, 20*M_PI/180);
         prev_steer = delta;
 
         return delta;
