@@ -9,7 +9,7 @@
  * @version 0.1
  * @date 5-11-2024
  */
-#include "acc_planning_node.hpp"
+#include "acc_planning/acc_planning_node.hpp"
 
 AccPlanning::AccPlanning() :Node("acc_planning"){
 
@@ -18,7 +18,7 @@ AccPlanning::AccPlanning() :Node("acc_planning"){
 int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<Visualization>());
+    rclcpp::spin(std::make_shared<AccPlanning>());
     rclcpp::shutdown();
     return 0;
 }

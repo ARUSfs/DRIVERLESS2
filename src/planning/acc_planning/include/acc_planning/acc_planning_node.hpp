@@ -14,10 +14,7 @@
 class AccPlanning: public rclcpp::Node{
 public:
    
-    AccPlanning() {
-        
-        
-    };
+    AccPlanning();
 private:
 
 };

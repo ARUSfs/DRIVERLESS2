@@ -10,35 +10,36 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 find_package(visualization_msgs REQUIRED)
 
 find_package(common_msgs REQUIRED)
 
 
-# include_directories(
-#   include
+include_directories(
+  include
  
-#   )
+  )
   
-#   add_executable(acc_planning_exec src/acc_planning_node.cpp)
-#   ament_target_dependencies(acc_planning_exec rclcpp 
-#                               std_msgs 
-#                               geometry_msgs 
-#                               sensor_msgs 
-#                               visualization_msgs 
-#                               common_msgs)
+  add_executable(acc_planning_exec src/acc_planning_node.cpp)
+  ament_target_dependencies(acc_planning_exec rclcpp 
+                              std_msgs 
+                              geometry_msgs 
+                              sensor_msgs 
+                              visualization_msgs 
+                              common_msgs)
   
     
-#   install(TARGETS
-#     acc_planning_exec
-#     DESTINATION lib/${PROJECT_NAME})
+  install(TARGETS
+    acc_planning_exec
+    DESTINATION lib/${PROJECT_NAME})
   
-#   # share folders location
-#   install(DIRECTORY launch
-#     DESTINATION share/${PROJECT_NAME})
-#   install(DIRECTORY config
-#     DESTINATION share/${PROJECT_NAME})
+  # share folders location
+  install(DIRECTORY launch
+    DESTINATION share/${PROJECT_NAME})
+  install(DIRECTORY config
+    DESTINATION share/${PROJECT_NAME})
   
 
 ament_package()
