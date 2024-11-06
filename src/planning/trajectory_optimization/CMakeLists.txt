@@ -23,6 +23,8 @@ ament_target_dependencies(trajectory_optimization_exec rclcpp
                             common_msgs
 )
 
+target_link_libraries(trajectory_optimization_exec Eigen3::Eigen)
+
 install(TARGETS
   trajectory_optimization_exec
   DESTINATION lib/${PROJECT_NAME}

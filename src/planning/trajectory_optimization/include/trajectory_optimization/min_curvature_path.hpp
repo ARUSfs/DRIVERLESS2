@@ -136,8 +136,7 @@ namespace MinCurvaturepath {
 
         VectorXd temp_step = step_lengths;
         step_lengths.conservativeResize(step_lengths.size()+1);
-        step_lengths << 0, 
-                    temp_step;   // add the starting point
+        step_lengths << 0, temp_step;   // add the starting point
 
         VectorXd cumulative_len = cumsum(step_lengths); 
         VectorXd final_step_locks = VectorXd::LinSpaced(n_seg, 0, cumulative_len(cumulative_len.size()-1));
@@ -174,8 +173,10 @@ namespace MinCurvaturepath {
         }
 
         //normal direction for each vertex
-        VectorXd dx = gradient(xt); auto dx_a = dx.array();
-        VectorXd dy = gradient(yt); auto dy_a = dy.array();
+        VectorXd dx = gradient(xt); 
+        auto dx_a = dx.array();
+        VectorXd dy = gradient(yt); 
+        auto dy_a = dy.array();
         VectorXd dL = (dx_a*dx_a + dy_a*dy_a).sqrt().matrix();
 
         //Offset data
