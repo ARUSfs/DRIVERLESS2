@@ -6,7 +6,7 @@ controller:
     # Topic
     state: "/car_state/state"
     as_status: "/sensors/AS_status"
-    trajectory: "/arussim_interface/fixed_trajectory"
+    trajectory: "/trajectory_optimizer/trajectory"
     cmd: "/controller/cmd"
 
     # PP
