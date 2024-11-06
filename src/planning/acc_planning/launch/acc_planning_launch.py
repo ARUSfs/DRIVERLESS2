@@ -14,8 +14,8 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package="acc_planning",
-            executable="acc_planningexec",
-            name="acc_planning,
+            executable="acc_planning_exec",
+            name="acc_planning",
             output="screen"
             
         )
