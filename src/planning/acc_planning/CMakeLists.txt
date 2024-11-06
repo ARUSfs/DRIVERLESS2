@@ -12,6 +12,7 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
+
 find_package(visualization_msgs REQUIRED)
 
 find_package(common_msgs REQUIRED)
@@ -28,6 +29,7 @@ include_directories(
                               geometry_msgs 
                               sensor_msgs 
                               visualization_msgs 
+
                               common_msgs)
   
     
@@ -38,8 +40,6 @@ include_directories(
   # share folders location
   install(DIRECTORY launch
     DESTINATION share/${PROJECT_NAME})
-  install(DIRECTORY config
-    DESTINATION share/${PROJECT_NAME})
-  
+
 
 ament_package()

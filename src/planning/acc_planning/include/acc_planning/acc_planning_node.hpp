@@ -10,6 +10,7 @@
  * @date 5-11-2024
  */
 #include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 class AccPlanning: public rclcpp::Node{
 public:
