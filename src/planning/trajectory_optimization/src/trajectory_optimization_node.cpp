@@ -60,9 +60,17 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::Trajectory::S
     VectorXd traj_x = optimized_trajectory.col(0);
     VectorXd traj_y = optimized_trajectory.col(1);
 
+    //Get accumulated distance and curvature at each point
+    MatrixXd optimized_s_k = TrajectoryOptimization::get_distance_and_curvature_values(traj_x, traj_y);
+    VectorXd optimized_s = optimized_s_k.col(0);
+    VectorXd optimized_k = optimized_s_k.col(1);
+
+    //Generate speed profile
+    VectorXd speed_profile = TrajectoryOptimization::generate_speed_profile(optimized_s, optimized_k);
+
+
     //Create and publish trajectory message
-    common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(
-        traj_x, traj_y, VectorXd::Zero(n), VectorXd::Zero(n), VectorXd::Zero(n));
+    common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(traj_x, traj_y, optimized_s, optimized_k, speed_profile);
     optimized_trajectory_pub_ -> publish(optimized_traj_msg);
 }
 
@@ -182,6 +190,46 @@ MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj
     return res;
 }
 
+
+/**
+ * @brief Generates a speed profile for the trajectory
+ * 
+ * @param  s Accumulated distance at each point
+ * @param  k Curvature at each point
+ * 
+ * @return VectorXd Speed profile vector
+ */
+VectorXd TrajectoryOptimization::generate_speed_profile(VectorXd s, VectorXd k){
+    VectorXd speed_profile = VectorXd::Zero(s.size());
+    speed_profile(0) = speed_;
+
+    VectorXd v_grip(k.size());
+    for(int i = 0; i < k.size(); i++){
+        v_grip(i) = min(sqrt(KAyMax/abs(k(i)+0.0001)), KVMax);
+    }
+
+    VectorXd ds(speed_profile.size());
+    for(int j = 1; j < speed_profile.size(); j++){
+        ds(j) = s(j) - s(j-1);
+    }
+
+    for(int j = 1; j < speed_profile.size(); j++){
+        speed_profile(j) = sqrt(speed_profile(j-1)*speed_profile(j-1) + 2*KAxMax*ds(j));
+        if (speed_profile(j) > v_grip(j)){
+            speed_profile(j) = v_grip(j);
+        }
+    }
+
+    double v_max_braking;
+    for(int j = speed_profile.size()-2; j > -1; j--){
+        v_max_braking = sqrt(speed_profile(j+1)*speed_profile(j+1) + 2*KAxMax*ds(j));
+        if(speed_profile(j) > v_max_braking){
+            speed_profile(j) = v_max_braking;
+        }
+    }
+
+    return speed_profile;
+}
 
 int main(int argc, char * argv[])
 {

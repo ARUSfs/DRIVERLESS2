@@ -101,4 +101,14 @@ class TrajectoryOptimization : public rclcpp::Node
          * @return MatrixXd Matrix containing s and k: [s, k]
          */
         MatrixXd get_distance_and_curvature_values(VectorXd traj_x, VectorXd traj_y);
+
+        /**
+         * @brief Generates a speed profile for the trajectory
+         * 
+         * @param  s Accumulated distance at each point
+         * @param  k Curvature at each point
+         * 
+         * @return VectorXd Speed profile vector
+         */
+        VectorXd generate_speed_profile(VectorXd s, VectorXd k);
 };
