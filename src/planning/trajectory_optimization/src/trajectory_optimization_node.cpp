@@ -8,25 +8,35 @@
 #include "trajectory_optimization/min_curvature_path.hpp"
 
 
-//These parameters will be established in a configuration file
-const double KAxMax = 3;
-const double KAyMax = 1.5;
-const double KVMax = 8;
-const double KDMax = 0.7;
-
 /**
  * @brief Constructor for the TrajectoryOptimization class
  * 
- * It initializes the Trajectory Optimization node, declaring parameters if necessary
+ * It initializes the Trajectory Optimization node, declaring all necessary parameters  
  * and creating the subscribers and publishers
  */
 TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization")
-{
+{   
+    this->declare_parameter<double>("ax_max", 3.);
+    this->declare_parameter<double>("ay_max", 1.5);
+    this->declare_parameter<double>("v_max", 8.);
+    this->declare_parameter<double>("d_max", 0.7);
+    this->get_parameter("ax_max", KAxMax);
+    this->get_parameter("ay_max", KAyMax);
+    this->get_parameter("v_max", KVMax);
+    this->get_parameter("d_max", KDMax);
+
+    this->declare_parameter<std::string>("trajectory", "/arussim_interface/fixed_trajectory");
+    this->declare_parameter<std::string>("car_state", "/car_state/state");
+    this->declare_parameter<std::string>("optimized_trajectory", "/trajectory_optimizer/trajectory");
+    this->get_parameter("trajectory", KTrajectoryTopic);
+    this->get_parameter("car_state", KCarStateTopic);
+    this->get_parameter("optimized_trajectory", KOptimizedTrajectoryTopic);
+
     trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        "/arussim_interface/fixed_trajectory", 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
+        KTrajectoryTopic, 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
-        "/car_state/state", 1, std::bind(&TrajectoryOptimization::car_state_callback, this, std::placeholders::_1));
-    optimized_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>("/trajectory_optimizer/trajectory", 10);
+        KCarStateTopic, 1, std::bind(&TrajectoryOptimization::car_state_callback, this, std::placeholders::_1));
+    optimized_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(KOptimizedTrajectoryTopic, 10);
 }
 
 /**

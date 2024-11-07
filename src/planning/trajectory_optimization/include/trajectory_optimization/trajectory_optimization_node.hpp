@@ -29,16 +29,28 @@ class TrajectoryOptimization : public rclcpp::Node
         /**
          * @brief Constructor for the TrajectoryOptimization class
          * 
-         * It initializes the Trajectory Optimization node, declaring parameters if necessary
+         * It initializes the Trajectory Optimization node, declaring all necessary parameters  
          * and creating the subscribers and publishers
          */
         TrajectoryOptimization();
 
     private:
+        //Car state variables
         double vx_;
         double vy_;
         double speed_;
 
+        //Parameters
+        double KAxMax;
+        double KAyMax;
+        double KVMax;
+        double KDMax;
+
+        std::string KTrajectoryTopic;
+        std::string KCarStateTopic;
+        std::string KOptimizedTrajectoryTopic;
+
+        //Subscribers and publishers
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trajectory_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_pub_;
