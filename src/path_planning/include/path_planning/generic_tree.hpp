@@ -1,5 +1,5 @@
 /**
- * @file simplex_tree.hpp
+ * @file generic_tree.hpp
  * @author Ignacio Sánchez Isidro (igsais12@gmail.com)
  * @date 01-11-2024
  * @brief Creates a tree structure to store information about neighbor triangles.
@@ -11,7 +11,7 @@
  * @brief Class for the simlpex tree structure.
  * Nodes are indices of the triangles in the triangulation. Two nodes are connected if they share an edge.
  */
-class simplex_tree
+class generic_tree
 {
 public:
     /**
@@ -22,23 +22,23 @@ public:
     /**
      * @brief Right and left children of the node. Recursive structure for tree construction.
      */
-    simplex_tree *right, *left;
+    generic_tree *right, *left;
 
     /**
-     * @brief Construct a new simplex tree object.
+     * @brief Construct a new generic tree object.
      * @param key int index of the triangle.
      */
-    simplex_tree(int key);
+    generic_tree(int key);
 };
 
-simplex_tree::simplex_tree(int key)
+generic_tree::generic_tree(int key)
 {
     index = key;
     right = nullptr;
     left = nullptr;
 }
 
-bool tree_search (int key, simplex_tree *root){
+bool tree_search (int key, generic_tree *root){
     if (root == nullptr) return false;
     if (root->index == key) return true;
     return tree_search(key, root->left) || tree_search(key, root->right);
