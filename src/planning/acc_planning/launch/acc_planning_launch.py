@@ -8,7 +8,8 @@ from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     package_name = "acc_planning"
-
+    package_share_directory = get_package_share_directory(package_name)
+    config_file = os.path.join(package_share_directory, "config", "acc_planning_config.yaml")
 
 
     return LaunchDescription([
@@ -16,7 +17,7 @@ def generate_launch_description():
             package="acc_planning",
             executable="acc_planning_exec",
             name="acc_planning",
-            output="screen"
-            
+            output="screen",
+            parameters=[config_file]
         )
     ])

@@ -13,6 +13,19 @@
 
 AccPlanning::AccPlanning() :Node("acc_planning"){
 
+
+perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+   "/arussim/perception", 10, std::bind(&AccPlanning::perception_callback, this, std::placeholders::_1));
+
+}
+
+void AccPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
+{   
+    pcl::PointCloud<ConeXYZColorScore> pcl_cloud;
+    pcl::fromROSMsg(*per_msg, pcl_cloud);
+    RCLCPP_INFO(this->get_logger(), "Callback ejecutado: nube de puntos recibida con %lu puntos.", pcl_cloud.size());
+
+
 }
 
 int main(int argc, char * argv[])
