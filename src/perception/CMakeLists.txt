@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(PCL REQUIRED)
 
 include_directories(
@@ -19,7 +20,8 @@ include_directories(
 add_executable(perception_exec src/perception_node.cpp)
 ament_target_dependencies(perception_exec rclcpp 
                             std_msgs 
-                            geometry_msgs 
+                            geometry_msgs
+                            sensor_msgs 
                             PCL)
 
   
