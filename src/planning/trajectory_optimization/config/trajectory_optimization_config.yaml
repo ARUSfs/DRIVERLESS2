@@ -1,0 +1,13 @@
+trajectory_optimization:
+  ros__parameters:
+    ax_max: 3.
+    ay_max: 1.5
+    v_max: 8.
+    d_max: 0.7
+
+    #Topic
+    trajectory_topic: "/arussim_interface/fixed_trajectory"
+    car_state_topic: "/car_state/state"
+    optimized_trajectory_topic: "/trajectory_optimization/trajectory"
+
+    

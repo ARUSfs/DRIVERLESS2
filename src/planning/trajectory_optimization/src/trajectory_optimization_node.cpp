@@ -8,25 +8,35 @@
 #include "trajectory_optimization/min_curvature_path.hpp"
 
 
-//These parameters will be established in a configuration file
-const double KAxMax = 3;
-const double KAyMax = 1.5;
-const double KVMax = 8;
-const double KDMax = 0.7;
-
 /**
  * @brief Constructor for the TrajectoryOptimization class
  * 
- * It initializes the Trajectory Optimization node, declaring parameters if necessary
+ * It initializes the Trajectory Optimization node, declaring all necessary parameters  
  * and creating the subscribers and publishers
  */
 TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization")
-{
+{   
+    this->declare_parameter<double>("ax_max", 3.);
+    this->declare_parameter<double>("ay_max", 1.5);
+    this->declare_parameter<double>("v_max", 8.);
+    this->declare_parameter<double>("d_max", 0.7);
+    this->get_parameter("ax_max", kAxMax);
+    this->get_parameter("ay_max", kAyMax);
+    this->get_parameter("v_max", kVMax);
+    this->get_parameter("d_max", kDMax);
+
+    this->declare_parameter<std::string>("trajectory_topic", "/arussim_interface/fixed_trajectory");
+    this->declare_parameter<std::string>("car_state_topic", "/car_state/state");
+    this->declare_parameter<std::string>("optimized_trajectory_topic", "/trajectory_optimization/trajectory");
+    this->get_parameter("trajectory_topic", kTrajectoryTopic);
+    this->get_parameter("car_state_topic", kCarStateTopic);
+    this->get_parameter("optimized_trajectory_topic", kOptimizedTrajectoryTopic);
+
     trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        "/arussim_interface/fixed_trajectory", 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
+        kTrajectoryTopic, 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
-        "/car_state/state", 1, std::bind(&TrajectoryOptimization::car_state_callback, this, std::placeholders::_1));
-    optimized_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>("/trajectory_optimizer/trajectory", 10);
+        kCarStateTopic, 1, std::bind(&TrajectoryOptimization::car_state_callback, this, std::placeholders::_1));
+    optimized_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kOptimizedTrajectoryTopic, 10);
 }
 
 /**
@@ -52,7 +62,7 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::Trajectory::S
     //Generate track width vectors
     MatrixXd original_s_k = TrajectoryOptimization::get_distance_and_curvature_values(x, y);
     VectorXd original_k = original_s_k.col(1); //This step won't be necessary when we receive k from the message
-    VectorXd twr = TrajectoryOptimization::generate_track_width(original_k, KDMax);
+    VectorXd twr = TrajectoryOptimization::generate_track_width(original_k, kDMax);
     VectorXd twl = twr;
 
     //Get minimal curvature path
@@ -60,9 +70,17 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::Trajectory::S
     VectorXd traj_x = optimized_trajectory.col(0);
     VectorXd traj_y = optimized_trajectory.col(1);
 
+    //Get accumulated distance and curvature at each point
+    MatrixXd optimized_s_k = TrajectoryOptimization::get_distance_and_curvature_values(traj_x, traj_y);
+    VectorXd optimized_s = optimized_s_k.col(0);
+    VectorXd optimized_k = optimized_s_k.col(1);
+
+    //Generate speed profile
+    VectorXd speed_profile = TrajectoryOptimization::generate_speed_profile(optimized_s, optimized_k);
+
+
     //Create and publish trajectory message
-    common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(
-        traj_x, traj_y, VectorXd::Zero(n), VectorXd::Zero(n), VectorXd::Zero(n));
+    common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(traj_x, traj_y, optimized_s, optimized_k, speed_profile);
     optimized_trajectory_pub_ -> publish(optimized_traj_msg);
 }
 
@@ -182,6 +200,45 @@ MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj
     return res;
 }
 
+
+/**
+ * @brief Generates a speed profile for the trajectory
+ * 
+ * @param  s Accumulated distance at each point
+ * @param  k Curvature at each point
+ * 
+ * @return VectorXd Speed profile vector
+ */
+VectorXd TrajectoryOptimization::generate_speed_profile(VectorXd s, VectorXd k){
+    int m = s.size();
+
+    VectorXd speed_profile = VectorXd::Zero(m);
+    speed_profile(0) = speed_;                                  // Begin at current car's speed
+    VectorXd v_grip(m), ds(m);
+    double v_max_braking;
+
+    for(int i = 0; i < m; i++){
+        v_grip(i) = min(sqrt(kAyMax/abs(k(i)+0.0001)), kVMax);  // Calculate maximum speed not to loose grip
+    }
+
+    for(int i = 1; i < m; i++){
+        ds(i) = s(i) - s(i-1);
+
+        speed_profile(i) = sqrt(speed_profile(i-1)*speed_profile(i-1) + 2*kAxMax*ds(i));
+        if (speed_profile(i) > v_grip(i)){                      // If speed profile generated is greater than grip speed,
+            speed_profile(i) = v_grip(i);                       // keep it at grip speed
+        }
+    }
+    
+    for(int j = m-2; j > -1; j--){
+        v_max_braking = sqrt(speed_profile(j+1)*speed_profile(j+1) + 2*kAxMax*ds(j));   //Maximum allowed speed for safety
+        if(speed_profile(j) > v_max_braking){                   // If speed profile generated is greater than safe speed,
+            speed_profile(j) = v_max_braking;                   // keep it at safe speed
+        }
+    }
+
+    return speed_profile;
+}
 
 int main(int argc, char * argv[])
 {

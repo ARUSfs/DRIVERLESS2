@@ -29,16 +29,28 @@ class TrajectoryOptimization : public rclcpp::Node
         /**
          * @brief Constructor for the TrajectoryOptimization class
          * 
-         * It initializes the Trajectory Optimization node, declaring parameters if necessary
+         * It initializes the Trajectory Optimization node, declaring all necessary parameters  
          * and creating the subscribers and publishers
          */
         TrajectoryOptimization();
 
     private:
+        //Car state variables
         double vx_;
         double vy_;
         double speed_;
 
+        //Parameters
+        double kAxMax;
+        double kAyMax;
+        double kVMax;
+        double kDMax;
+
+        std::string kTrajectoryTopic;
+        std::string kCarStateTopic;
+        std::string kOptimizedTrajectoryTopic;
+
+        //Subscribers and publishers
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trajectory_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_pub_;
@@ -101,4 +113,14 @@ class TrajectoryOptimization : public rclcpp::Node
          * @return MatrixXd Matrix containing s and k: [s, k]
          */
         MatrixXd get_distance_and_curvature_values(VectorXd traj_x, VectorXd traj_y);
+
+        /**
+         * @brief Generates a speed profile for the trajectory
+         * 
+         * @param  s Accumulated distance at each point
+         * @param  k Curvature at each point
+         * 
+         * @return VectorXd Speed profile vector
+         */
+        VectorXd generate_speed_profile(VectorXd s, VectorXd k);
 };
