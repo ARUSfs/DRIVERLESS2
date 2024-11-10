@@ -6,8 +6,8 @@ trajectory_optimization:
     d_max: 0.7
 
     #Topic
-    trajectory: "/arussim_interface/fixed_trajectory"
-    car_state: "/car_state/state"
-    optimized_trajectory: "/trajectory_optimizer/trajectory"
+    trajectory_topic: "/arussim_interface/fixed_trajectory"
+    car_state_topic: "/car_state/state"
+    optimized_trajectory_topic: "/trajectory_optimization/trajectory"
 
     

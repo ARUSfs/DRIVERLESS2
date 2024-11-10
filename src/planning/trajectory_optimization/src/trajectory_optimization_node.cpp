@@ -20,23 +20,23 @@ TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization
     this->declare_parameter<double>("ay_max", 1.5);
     this->declare_parameter<double>("v_max", 8.);
     this->declare_parameter<double>("d_max", 0.7);
-    this->get_parameter("ax_max", KAxMax);
-    this->get_parameter("ay_max", KAyMax);
-    this->get_parameter("v_max", KVMax);
-    this->get_parameter("d_max", KDMax);
+    this->get_parameter("ax_max", kAxMax);
+    this->get_parameter("ay_max", kAyMax);
+    this->get_parameter("v_max", kVMax);
+    this->get_parameter("d_max", kDMax);
 
-    this->declare_parameter<std::string>("trajectory", "/arussim_interface/fixed_trajectory");
-    this->declare_parameter<std::string>("car_state", "/car_state/state");
-    this->declare_parameter<std::string>("optimized_trajectory", "/trajectory_optimizer/trajectory");
-    this->get_parameter("trajectory", KTrajectoryTopic);
-    this->get_parameter("car_state", KCarStateTopic);
-    this->get_parameter("optimized_trajectory", KOptimizedTrajectoryTopic);
+    this->declare_parameter<std::string>("trajectory_topic", "/arussim_interface/fixed_trajectory");
+    this->declare_parameter<std::string>("car_state_topic", "/car_state/state");
+    this->declare_parameter<std::string>("optimized_trajectory_topic", "/trajectory_optimization/trajectory");
+    this->get_parameter("trajectory_topic", kTrajectoryTopic);
+    this->get_parameter("car_state_topic", kCarStateTopic);
+    this->get_parameter("optimized_trajectory_topic", kOptimizedTrajectoryTopic);
 
     trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        KTrajectoryTopic, 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
+        kTrajectoryTopic, 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
-        KCarStateTopic, 1, std::bind(&TrajectoryOptimization::car_state_callback, this, std::placeholders::_1));
-    optimized_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(KOptimizedTrajectoryTopic, 10);
+        kCarStateTopic, 1, std::bind(&TrajectoryOptimization::car_state_callback, this, std::placeholders::_1));
+    optimized_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kOptimizedTrajectoryTopic, 10);
 }
 
 /**
@@ -62,7 +62,7 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::Trajectory::S
     //Generate track width vectors
     MatrixXd original_s_k = TrajectoryOptimization::get_distance_and_curvature_values(x, y);
     VectorXd original_k = original_s_k.col(1); //This step won't be necessary when we receive k from the message
-    VectorXd twr = TrajectoryOptimization::generate_track_width(original_k, KDMax);
+    VectorXd twr = TrajectoryOptimization::generate_track_width(original_k, kDMax);
     VectorXd twl = twr;
 
     //Get minimal curvature path
@@ -210,31 +210,30 @@ MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj
  * @return VectorXd Speed profile vector
  */
 VectorXd TrajectoryOptimization::generate_speed_profile(VectorXd s, VectorXd k){
-    VectorXd speed_profile = VectorXd::Zero(s.size());
-    speed_profile(0) = speed_;
+    int m = s.size();
 
-    VectorXd v_grip(k.size());
-    for(int i = 0; i < k.size(); i++){
-        v_grip(i) = min(sqrt(KAyMax/abs(k(i)+0.0001)), KVMax);
+    VectorXd speed_profile = VectorXd::Zero(m);
+    speed_profile(0) = speed_;                                  // Begin at current car's speed
+    VectorXd v_grip(m), ds(m);
+    double v_max_braking;
+
+    for(int i = 0; i < m; i++){
+        v_grip(i) = min(sqrt(kAyMax/abs(k(i)+0.0001)), kVMax);  // Calculate maximum speed not to loose grip
     }
 
-    VectorXd ds(speed_profile.size());
-    for(int j = 1; j < speed_profile.size(); j++){
-        ds(j) = s(j) - s(j-1);
-    }
+    for(int i = 1; i < m; i++){
+        ds(i) = s(i) - s(i-1);
 
-    for(int j = 1; j < speed_profile.size(); j++){
-        speed_profile(j) = sqrt(speed_profile(j-1)*speed_profile(j-1) + 2*KAxMax*ds(j));
-        if (speed_profile(j) > v_grip(j)){
-            speed_profile(j) = v_grip(j);
+        speed_profile(i) = sqrt(speed_profile(i-1)*speed_profile(i-1) + 2*kAxMax*ds(i));
+        if (speed_profile(i) > v_grip(i)){                      // If speed profile generated is greater than grip speed,
+            speed_profile(i) = v_grip(i);                       // keep it at grip speed
         }
     }
-
-    double v_max_braking;
-    for(int j = speed_profile.size()-2; j > -1; j--){
-        v_max_braking = sqrt(speed_profile(j+1)*speed_profile(j+1) + 2*KAxMax*ds(j));
-        if(speed_profile(j) > v_max_braking){
-            speed_profile(j) = v_max_braking;
+    
+    for(int j = m-2; j > -1; j--){
+        v_max_braking = sqrt(speed_profile(j+1)*speed_profile(j+1) + 2*kAxMax*ds(j));   //Maximum allowed speed for safety
+        if(speed_profile(j) > v_max_braking){                   // If speed profile generated is greater than safe speed,
+            speed_profile(j) = v_max_braking;                   // keep it at safe speed
         }
     }
 

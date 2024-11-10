@@ -41,14 +41,14 @@ class TrajectoryOptimization : public rclcpp::Node
         double speed_;
 
         //Parameters
-        double KAxMax;
-        double KAyMax;
-        double KVMax;
-        double KDMax;
+        double kAxMax;
+        double kAyMax;
+        double kVMax;
+        double kDMax;
 
-        std::string KTrajectoryTopic;
-        std::string KCarStateTopic;
-        std::string KOptimizedTrajectoryTopic;
+        std::string kTrajectoryTopic;
+        std::string kCarStateTopic;
+        std::string kOptimizedTrajectoryTopic;
 
         //Subscribers and publishers
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trajectory_sub_;
