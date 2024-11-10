@@ -41,7 +41,7 @@ CarState::CarState(): Node("car_state")
 
     // Configure timer once in the constructor based on the selected controller and frequency
     timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(static_cast<int>(1000.0 / 10)),
+        std::chrono::milliseconds(static_cast<int>(1000.0 / 100)),
         [this]() {
             on_timer();
         });

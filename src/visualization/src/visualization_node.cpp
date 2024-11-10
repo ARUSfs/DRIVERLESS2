@@ -17,7 +17,7 @@ Visualization::Visualization() : Node("visualization")
 {   
     this->declare_parameter("alpha", 1.0);
     this->declare_parameter("triangulation_topic", "/path_planning/triangulation");
-    this->declare_parameter("optimized_trajectory_topic", "/trajectory_optimizer/trajectory");
+    this->declare_parameter("optimized_trajectory_topic", "/trajectory_optimization/trajectory");
     this->declare_parameter("arussim_trajectory_topic", "/arussim_interface/fixed_trajectory");
     this->declare_parameter("triangulation_visualization_topic", "/visualization/triangulation");
     this->declare_parameter("optimized_trajectory_visualization_topic", "/visualization/optimized_trajectory");
@@ -92,18 +92,18 @@ void Visualization::triangulation_callback(const common_msgs::msg::Triangulation
 
 void Visualization::arussim_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg);
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, 1.0, 0.0, 0.0);
     arussim_trajectory_visualization_pub_->publish(marker);
 }
 
 void Visualization::optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg);
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, 1.0, 0.5, 0.0);
     optimized_trajectory_visualization_pub_->publish(marker);
 }
 
 visualization_msgs::msg::Marker Visualization::create_trajectory_marker(
-    const common_msgs::msg::Trajectory::SharedPtr msg)
+    const common_msgs::msg::Trajectory::SharedPtr msg, double red, double green, double blue)
 {
     visualization_msgs::msg::Marker marker;
     marker.header.frame_id = "arussim/world";
@@ -117,9 +117,9 @@ visualization_msgs::msg::Marker Visualization::create_trajectory_marker(
     marker.scale.y = 0.2;
     marker.scale.z = 0.2;
     marker.color.a = kAlpha;
-    marker.color.r = 1.0;
-    marker.color.g = 0.0;
-    marker.color.b = 0.0;
+    marker.color.r = red;
+    marker.color.g = green;
+    marker.color.b = blue;
     marker.lifetime = rclcpp::Duration::from_seconds(0.0);
     for (int i=0; i<msg->points.size(); i++){
         geometry_msgs::msg::Point p;
