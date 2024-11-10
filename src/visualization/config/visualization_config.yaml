@@ -4,7 +4,7 @@ visualization:
 
     # Topics to subscribe
     triangulation_topic: '/path_planning/triangulation'
-    optimized_trajectory_topic: '/trajectory_optimizer/trajectory'
+    optimized_trajectory_topic: '/trajectory_optimization/trajectory'
     arussim_trajectory_topic: '/arussim_interface/fixed_trajectory'
     # Topics to publish
     triangulation_visualization_topic: '/visualization/triangulation'
