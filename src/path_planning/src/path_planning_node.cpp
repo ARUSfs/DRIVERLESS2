@@ -22,7 +22,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
     midpoints_pub_ = this->create_publisher<common_msgs::msg::Simplex>("/midpoints", 10); // Temporary publisher for testing
-    
+    tree_visualization_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("/visualization/tree", 10); // Temporary publisher for testing
 
 }
 
@@ -83,11 +83,19 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
 
     visited_ = {closest_triangle_ind_};
     simplex_tree_ = PathPlanning::create_triangulation_tree(closest_triangle_ind_);
-    
+    routes_ = {};
+    PathPlanning::get_routes(simplex_tree_, {});
     // TEST AREA
     print_tree(simplex_tree_);
+    for (const auto& innerSet : routes_) {
+        for (const auto& element : innerSet) {
+            std::cout << element << " ";
+        }
+        std::cout << std::endl;
+    }
     // END TEST AREA
-    
+    PathPlanning::visualize_tree();
+
 }
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
@@ -221,6 +229,52 @@ CDT::V2d<double> PathPlanning::compute_centroid(int triangle_ind){
     c = vertices_[c_ind];
     CDT::V2d<double> centroid = CDT::V2d<double>::make((a.x+b.x+c.x)/3, (a.y+b.y+c.y)/3);
     return centroid;
+}
+
+void PathPlanning::get_routes(generic_tree *root, std::set<int> routes){
+    if (root==nullptr) {
+        routes_.insert(routes);
+        return;
+    }
+    routes.insert(root->index);
+    get_routes(root->left, routes);
+    get_routes(root->right, routes);
+}
+
+void PathPlanning::visualize_tree(){
+    visualization_msgs::msg::MarkerArray marker_array;
+    int i = 0;
+    for (const auto &route : routes_){
+        visualization_msgs::msg::Marker marker;
+        marker.header.frame_id = "arussim/vehicle_cog";
+        marker.ns = "routes";
+        marker.id = i;
+        i++;
+        marker.type = 4;
+        marker.action = visualization_msgs::msg::Marker::ADD;
+        marker.pose.position.x = 0;
+        marker.pose.position.y = 0;
+        marker.pose.position.z = 0;
+        marker.scale.x = 0.2;
+        marker.scale.y = 0.2;
+        marker.scale.z = 0.2;
+        marker.color.a = 0.7;
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 0.0;
+        marker.lifetime = rclcpp::Duration::from_seconds(0.0);
+        for (const auto &id : route){
+            CDT::V2d<double> p = PathPlanning::compute_centroid(id);
+            geometry_msgs::msg::Point point;
+            point.x = p.x;
+            point.y = p.y;
+            point.z = 0;
+            marker.points.push_back(point);
+        }
+        marker_array.markers.push_back(marker);
+    }
+    tree_visualization_pub->publish(marker_array);
+    
 }
 
 int main(int argc, char * argv[])

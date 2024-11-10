@@ -17,6 +17,8 @@
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 /**
  * @brief Class containing the Path Planning node.
@@ -40,6 +42,8 @@ class PathPlanning : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Simplex>::SharedPtr midpoints_pub_;
+        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr tree_visualization_pub;
+        
         CDT::TriangleVec triangles_;
         CDT::Triangulation<double>::V2dVec vertices_;
 
@@ -49,6 +53,7 @@ class PathPlanning : public rclcpp::Node
         int max_index_;
         std::unordered_set<int> visited_;
         generic_tree *simplex_tree_;
+        std::set<std::set<int>> routes_;
 
         /**
          * @brief Callback function for the perception topic.
@@ -120,4 +125,8 @@ class PathPlanning : public rclcpp::Node
          * @return CDT::V2d<double> point containing the centroid of the triangle.
          */
         CDT::V2d<double> compute_centroid(int triangle_ind);
+
+        void get_routes(generic_tree *root, std::set<int> routes);
+
+        void visualize_tree();
 };
