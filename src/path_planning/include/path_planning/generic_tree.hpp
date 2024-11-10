@@ -6,7 +6,7 @@
  * It also contain helper functions such as a search function.
  * 
  */
-
+#include <iostream>
 /**
  * @brief Class for the simlpex tree structure.
  * Nodes are indices of the triangles in the triangulation. Two nodes are connected if they share an edge.
@@ -38,9 +38,15 @@ generic_tree::generic_tree(int key)
     left = nullptr;
 }
 
+void print_tree(generic_tree *root){
+    if (root == nullptr) return;
+    std::cout << root->index << std::endl;
+    print_tree(root->left);
+    print_tree(root->right);
+}
+
 bool tree_search (int key, generic_tree *root){
     if (root == nullptr) return false;
     if (root->index == key) return true;
     return tree_search(key, root->left) || tree_search(key, root->right);
 }
-
