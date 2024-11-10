@@ -12,6 +12,7 @@
 #include <Triangulation.h>
 #include <CDTUtils.h>
 #include "ConeXYZColorScore.h"
+#include "generic_tree.hpp"
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/simplex.hpp>
@@ -39,6 +40,16 @@ class PathPlanning : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Simplex>::SharedPtr midpoints_pub_;
+        CDT::TriangleVec triangles_;
+        CDT::Triangulation<double>::V2dVec vertices_;
+
+
+        CDT::V2d<double> closest_midpoint_;
+        int closest_triangle_ind_;
+        int max_index_;
+        std::unordered_set<int> visited_;
+        generic_tree *simplex_tree_;
+
         /**
          * @brief Callback function for the perception topic.
          * When the percetption topic recieves a message, this function is called and performs
@@ -65,6 +76,14 @@ class PathPlanning : public rclcpp::Node
         common_msgs::msg::Triangulation create_triangulation_msg(CDT::Triangulation<double> triangulation);
 
         /**
+         * @brief Create a generic_tree object from the triangulation,
+         * connecting the triangles that share an edge.
+         * @param triangulation CDT::Triangulation<double> object containing the triangulation.
+         * @return generic_tree 
+         */
+        generic_tree* create_triangulation_tree(int index);
+
+        /**
          * @brief Get the mid points of the edges of the triangulation. 
          * It returns a vector of V2d points containing the mid points without duplicates.
          * @param triangulation CDT object containing the triangulation.
@@ -88,4 +107,17 @@ class PathPlanning : public rclcpp::Node
          */
         CDT::V2d<double> get_closest_midpoint(std::vector<CDT::V2d<double>> midpoint_arr);
 
+        /**
+         * @brief Get the closest triangle object using the centroid as reference.
+         * @return int Index of the closest triangle found.
+         */
+        int get_closest_triangle();
+
+        /**
+         * @brief Calulate the centroid of a triangle given its index in the triangulation.
+         * Centroid is defined as the average of the vertices of the triangle.
+         * @param triangle_ind int index of the triangle in the triangulation.
+         * @return CDT::V2d<double> point containing the centroid of the triangle.
+         */
+        CDT::V2d<double> compute_centroid(int triangle_ind);
 };

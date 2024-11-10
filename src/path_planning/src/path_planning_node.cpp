@@ -5,7 +5,7 @@
  * of the methods to achieve a robust and reliable path planning algorithm for the ARUS Team 
  * which extracts the midpoints of the track that the ART will follow.
  * @version 0.1
- * @date 25-10-2024
+ * @date 29-10-2024
  * 
  */
 #include "path_planning/path_planning_node.hpp"
@@ -21,7 +21,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
-    midpoints_pub_ = this->create_publisher<common_msgs::msg::Simplex>("/midpoints", 10);
+    midpoints_pub_ = this->create_publisher<common_msgs::msg::Simplex>("/midpoints", 10); // Temporary publisher for testing
     
 
 }
@@ -40,24 +40,53 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     common_msgs::msg::Triangulation triangulation_msg;
     if (triangulation.isFinalized()){
         triangulation_msg = PathPlanning::create_triangulation_msg(triangulation);
+        
     }
     triangulation_pub_ -> publish(triangulation_msg);
+    vertices_ = triangulation.vertices;
+    triangles_ = triangulation.triangles;
+    max_index_ = triangles_.size();
+
+    // TEST AREA
+    // simplex_tree triangulation_tree = PathPlanning::create_triangulation_tree(triangulation);
+    CDT::NeighborsArr3 neig = triangles_[0].neighbors;
+    CDT::TriInd n = neig[0];
+    CDT::VerticesArr3 v = triangles_[n].vertices;
+    CDT::V2d<double> vert = vertices_[v[0]];
+    // END TEST AREA
 
     std::vector<CDT::V2d<double>> midpoints = PathPlanning::get_midpoints(triangulation);
 
     common_msgs::msg::Simplex midpoints_msg;
+
+    // TEST AREA
     for (std::vector<CDT::V2d<double> >::size_type i = 0; i <midpoints.size(); i++){
         common_msgs::msg::PointXY point;
         point.x = midpoints[i].x;
         point.y = midpoints[i].y;
         midpoints_msg.points.push_back(point);
     }
-    midpoints_pub_ -> publish(midpoints_msg); // Quitar después
+    midpoints_pub_ -> publish(midpoints_msg); 
+    // END TEST AREA
+
+    closest_midpoint_ = PathPlanning::get_closest_midpoint(midpoints);
+    closest_triangle_ind_ = PathPlanning::get_closest_triangle();
+
+    // TEST AREA
+    CDT::Triangle closest_triangle = triangles_[closest_triangle_ind_];
+    CDT::NeighborsArr3 neighbors = closest_triangle.neighbors;
+    for (int i =0; i<3; i++){
+        // std::cout << "Vecino " << i << " " << neighbors[i] << std::endl;
+    }
+    std::cout << "max_index " << max_index_ << std::endl;
+    // END TEST AREA
+
+    visited_ = {closest_triangle_ind_};
+    simplex_tree_ = PathPlanning::create_triangulation_tree(closest_triangle_ind_);
     
-
-    CDT::V2d<double> closest_midpoint = PathPlanning::get_closest_midpoint(midpoints);
-    std::cout << "Closest midpoint: " << closest_midpoint.x << ", " << closest_midpoint.y << std::endl;
-
+    // TEST AREA
+    print_tree(simplex_tree_);
+    // END TEST AREA
     
 }
 
@@ -96,6 +125,30 @@ common_msgs::msg::Triangulation PathPlanning::create_triangulation_msg(CDT::Tria
         triangulation_msg.simplices.push_back(simplex);
     }
     return triangulation_msg;
+}
+
+generic_tree* PathPlanning::create_triangulation_tree(int index){
+    generic_tree *root = new generic_tree(index);
+    CDT::Triangle triangle = triangles_[index];
+    CDT::NeighborsArr3 neighbors = triangle.neighbors;
+    std::vector<int> ind = {};
+    for (int i = 0; i<3; i++){
+        if ((neighbors[i] <= max_index_) and !(visited_.count(neighbors[i]))){
+            ind.push_back(neighbors[i]);
+            visited_.insert(neighbors[i]);
+        }
+    }
+    if ((ind.size() == 0) or (ind.size() == 3))return root;
+    if (ind.size() == 1){
+        root->right = PathPlanning::create_triangulation_tree(ind[0]);
+        root->left = nullptr;
+        return root;
+    }
+    if (ind.size() == 2){
+        root->right = PathPlanning::create_triangulation_tree(ind[0]);
+        root->left = PathPlanning::create_triangulation_tree(ind[1]);
+        return root;
+    }
 }
 
 std::vector<CDT::V2d<double>> PathPlanning::get_midpoints(CDT::Triangulation<double> triangulation){
@@ -140,6 +193,34 @@ CDT::V2d<double> PathPlanning::get_closest_midpoint(std::vector<CDT::V2d<double>
         }
     }
     return closest;
+}
+
+int PathPlanning::get_closest_triangle(){
+    int closest = 0;
+    double min_norm = 100;
+    for (int i = 0; i < triangles_.size(); i++){
+        CDT::V2d<double> centroid = PathPlanning::compute_centroid(i);
+        double current_norm = PathPlanning::norm(centroid);
+        if (current_norm < min_norm){
+            min_norm = current_norm;
+            closest = i;
+        }
+    }
+    return closest;
+}
+
+CDT::V2d<double> PathPlanning::compute_centroid(int triangle_ind){
+    CDT::V2d<double> a, b, c;
+    CDT::Triangle triangle = triangles_[triangle_ind];
+    CDT::VerticesArr3 vertices_index = triangle.vertices;
+    CDT::VertInd a_ind = vertices_index[0];
+    CDT::VertInd b_ind = vertices_index[1];
+    CDT::VertInd c_ind = vertices_index[2];
+    a = vertices_[a_ind];
+    b = vertices_[b_ind];
+    c = vertices_[c_ind];
+    CDT::V2d<double> centroid = CDT::V2d<double>::make((a.x+b.x+c.x)/3, (a.y+b.y+c.y)/3);
+    return centroid;
 }
 
 int main(int argc, char * argv[])
