@@ -10,6 +10,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <pcl_conversions/pcl_conversions.h>
 
 /**
  * @class Perception
@@ -22,13 +23,19 @@ class Perception : public rclcpp::Node
     public:
         /**
          * @brief Construct a new Perception object.
-         * This initializes the Path Planning node, declares parameters, creates
+         * This initializes the perception node, declares parameters, creates
          * the subscribers and publishers and contains all the necessary variables to
          * set up the algorithm.
          */
         Perception();
 
     private:
+        //Parameters
+        double kMaxXFov;
+        double kMaxYFov;
+        double kMaxZFov;
+        double kHFov;
+
         //Subscriber
         std::string kLidarTopic;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_sub_;

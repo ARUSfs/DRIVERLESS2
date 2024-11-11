@@ -1,0 +1,10 @@
+perception:
+  ros__parameters:
+    #Topic
+    lidar_topic: "/rslidar_points"
+
+    #Parameters of FOV
+    kMaxXFov: 25.0
+    kMaxYFov: 20.0
+    kMaxZFov: 0.0
+    kHFov: 180.0
