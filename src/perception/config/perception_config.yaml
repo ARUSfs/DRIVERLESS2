@@ -4,7 +4,10 @@ perception:
     lidar_topic: "/rslidar_points"
 
     #Parameters of FOV
-    kMaxXFov: 25.0
-    kMaxYFov: 20.0
-    kMaxZFov: 0.0
-    kHFov: 180.0
+    max_x_fov: 25.0
+    max_y_fov: 20.0
+    max_z_fov: 0.0
+    h_fov: 180.0
+
+    #Parameter of ground filter
+    threshold: 0.05

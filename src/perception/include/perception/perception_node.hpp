@@ -11,6 +11,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>
+#include "perception/ground_filtering.h"
 
 /**
  * @class Perception
@@ -35,10 +36,14 @@ class Perception : public rclcpp::Node
         double kMaxYFov;
         double kMaxZFov;
         double kHFov;
+        double kThreshold;
 
         //Subscriber
         std::string kLidarTopic;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_sub_;
+
+        //Publisher
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
 
         /**
          * @brief Callback function for the lidar topic.
