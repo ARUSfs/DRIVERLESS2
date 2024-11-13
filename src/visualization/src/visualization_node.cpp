@@ -106,7 +106,7 @@ visualization_msgs::msg::Marker Visualization::create_trajectory_marker(
     const common_msgs::msg::Trajectory::SharedPtr msg)
 {
     visualization_msgs::msg::Marker marker;
-    marker.header.frame_id = "arussim/world";
+    marker.header.frame_id = "arussim/vehicle_cog";
     marker.ns = "trajectory";
     marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
     marker.action = visualization_msgs::msg::Marker::ADD;

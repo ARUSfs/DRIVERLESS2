@@ -15,6 +15,7 @@ public:
 private:
     // Node parameters
     std::string kPerceptionTopic;
+    std::string kTrajectoryTopic;
 
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
@@ -42,9 +43,6 @@ private:
 
     /**
      * @brief Method that processes the point cloud and generates the planning data.
-     * 
-     * @param per_msg The point cloud message received in the callback.
-     * @return common_msgs::msg::ConeXYZColorScore Object containing the processed planning results.
      */ 
     void generate_planning();
     void publish_trajectory();
