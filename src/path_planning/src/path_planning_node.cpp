@@ -21,18 +21,12 @@ PathPlanning::PathPlanning() : Node("path_planning")
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
-    midpoints_pub_ = this->create_publisher<common_msgs::msg::Simplex>("/midpoints", 10); // Temporary publisher for testing
-    tree_visualization_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("/visualization/tree", 10); // Temporary publisher for testing
 
 }
 
-/**
- * @brief Create callback function for the perception topic. Main pipeline of the path planning node.
- * 
- * @param msg Point Cloud 2 message from the perception topic.
- */
 void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {   
+    // Conform triangulation from the point cloud
     pcl::PointCloud<ConeXYZColorScore> pcl_cloud;
     pcl::fromROSMsg(*per_msg, pcl_cloud);
     CDT::Triangulation<double> triangulation;
@@ -40,62 +34,26 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     common_msgs::msg::Triangulation triangulation_msg;
     if (triangulation.isFinalized()){
         triangulation_msg = PathPlanning::create_triangulation_msg(triangulation);
-        
     }
     triangulation_pub_ -> publish(triangulation_msg);
+
+    // Get attributes from the triangulation
     vertices_ = triangulation.vertices;
-    int vertices_size = vertices_.size();
     triangles_ = triangulation.triangles;
-    max_index_ = triangles_.size();
-    std::vector<std::vector<std::vector<int>>> routes;
-    //% TEST AREA
-    //// simplex_tree triangulation_tree = PathPlanning::create_triangulation_tree(triangulation);
-    CDT::NeighborsArr3 neig = triangles_[0].neighbors;
-    CDT::TriInd n = neig[0];
-    CDT::VerticesArr3 v = triangles_[n].vertices;
-    CDT::V2d<double> vert = vertices_[v[0]];
-    //% END TEST AREA
 
-    std::vector<CDT::V2d<double>> midpoints = PathPlanning::get_midpoints(triangulation);
-    common_msgs::msg::Simplex midpoints_msg;
-
-    //% TEST AREA
-    for (std::vector<CDT::V2d<double> >::size_type i = 0; i <midpoints.size(); i++){
-        common_msgs::msg::PointXY point;
-        point.x = midpoints[i].x;
-        point.y = midpoints[i].y;
-        midpoints_msg.points.push_back(point);
-    }
-    midpoints_pub_ -> publish(midpoints_msg); 
-    //% END TEST AREA
-
-    closest_midpoint_ = PathPlanning::get_closest_midpoint(midpoints);
-    closest_triangle_ind_ = PathPlanning::get_closest_triangle();
-
-    std::cout << "max_index " << max_index_ << std::endl;
-
+    // Construct the tree from the triangulation
     int orig_index = PathPlanning::get_orig_index();
     std::vector<int> o_triangles = PathPlanning::get_triangles_from_vert(orig_index);
     std::vector<SimplexTree> trees;
-    
+    routes_ = {};
     for (int i = 0; i<o_triangles.size(); i++){
         SimplexTree tree(triangles_, vertices_, o_triangles[i], o_triangles);
         trees.push_back(tree);
-        routes.push_back(tree.routes);
-    }
-
-    for (const auto &tree_routes : routes){
-        for (const auto &route : tree_routes){
-            for (const auto &element : route){
-                std::cout << element << " ";
-            }
-            std::cout << std::endl;
+        for (int j = 0; j<tree.routes.size(); j++){
+            routes_.push_back(tree.routes[j]);
         }
-        std::cout << "------" << std::endl;
     }
 
-    // PathPlanning::visualize_tree(routes[0]);
-    // PathPlanning::visualize_tree(routes[1]);
 }
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
@@ -217,8 +175,7 @@ int PathPlanning::get_orig_index(){
             return o_ind;
         }
     }
-    //% Borrar cuando se depure
-    std::cout << "Algo mal (index orig)" << std::endl;
+    return 0;
 }
 
 std::vector<int> PathPlanning::get_triangles_from_vert(int vert_index){
@@ -230,45 +187,6 @@ std::vector<int> PathPlanning::get_triangles_from_vert(int vert_index){
     }
     return o_triangles;
 }
-
-//% TEST AREA
-void PathPlanning::visualize_tree(std::vector<std::vector<int>> routes){
-    visualization_msgs::msg::MarkerArray marker_array;
-    int i = 0;
-    for (const auto &route : routes){
-        visualization_msgs::msg::Marker marker;
-        marker.header.frame_id = "arussim/vehicle_cog";
-        marker.ns = "routes";
-        marker.id = i;
-        i++;
-        marker.type = 4;
-        marker.action = visualization_msgs::msg::Marker::ADD;
-        marker.pose.position.x = 0;
-        marker.pose.position.y = 0;
-        marker.pose.position.z = 0;
-        marker.scale.x = 0.2;
-        marker.scale.y = 0.2;
-        marker.scale.z = 0.2;
-        marker.color.a = 0.7;
-        marker.color.r = 1.0;
-        marker.color.g = 0.0;
-        marker.color.b = 0.0;
-        marker.lifetime = rclcpp::Duration::from_seconds(0.0);
-        for (const auto &id : route){
-            CDT::V2d<double> p = PathPlanning::compute_centroid(id);
-            geometry_msgs::msg::Point point;
-            point.x = p.x;
-            point.y = p.y;
-            point.z = 0;
-            marker.points.push_back(point);
-        }
-        marker_array.markers.push_back(marker);
-    }
-    tree_visualization_pub->publish(marker_array);
-    
-}
-//% END TEST AREA
-
 
 int main(int argc, char * argv[])
 {

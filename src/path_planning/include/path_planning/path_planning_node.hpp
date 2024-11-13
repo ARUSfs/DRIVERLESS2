@@ -41,23 +41,19 @@ class PathPlanning : public rclcpp::Node
         std::string kTriangulationTopic;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
-        rclcpp::Publisher<common_msgs::msg::Simplex>::SharedPtr midpoints_pub_;
-        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr tree_visualization_pub;
-        
+
         CDT::TriangleVec triangles_;
         CDT::Triangulation<double>::V2dVec vertices_;
         
         std::vector<std::vector<std::vector<int>>> routes;
         CDT::V2d<double> closest_midpoint_;
         int closest_triangle_ind_;
-        int max_index_;
-        std::unordered_set<int> visited_;
-        SimplexTree *simplex_tree_;
-        // std::set<std::set<int>> routes_;
+
+        std::vector<std::vector<int>> routes_;
 
         /**
          * @brief Callback function for the perception topic.
-         * When the percetption topic recieves a message, this function is called and performs
+         * When the perception topic recieves a message, this function is called and performs
          * all the necessary steps to generate the planning.
          * 
          * @param per_msg The point cloud received from the perception.
@@ -79,14 +75,6 @@ class PathPlanning : public rclcpp::Node
          * @return common_msgs::msg::Triangulation ROS2 message containing all triangulation information
          */
         common_msgs::msg::Triangulation create_triangulation_msg(CDT::Triangulation<double> triangulation);
-
-        /**
-         * @brief Create a GenericTree object from the triangulation,
-         * connecting the triangles that share an edge.
-         * @param triangulation CDT::Triangulation<double> object containing the triangulation.
-         * @return GenericTree 
-         */
-        // GenericTree* create_triangulation_tree(int index);
 
         /**
          * @brief Get the mid points of the edges of the triangulation. 
@@ -126,11 +114,16 @@ class PathPlanning : public rclcpp::Node
          */
         CDT::V2d<double> compute_centroid(int triangle_ind);
 
-        // void get_routes(GenericTree *root, std::set<int> routes);
-
-        void visualize_tree(std::vector<std::vector<int>> routes);
-
+        /**
+         * @brief Get the index of the origin vertex in the triangulation.
+         * @return int index of the origin vertex.
+         */
         int get_orig_index();
 
+        /**
+         * @brief Get the triangles adjacent to a vertex from its index.
+         * @param vert_index int index of the vertex.
+         * @return std::vector<int> vector of index of the triangles adjacent to the vertex.
+         */
         std::vector<int> get_triangles_from_vert(int vert_index);
 };
