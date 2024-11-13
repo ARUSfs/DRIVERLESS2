@@ -12,7 +12,7 @@
 #include <Triangulation.h>
 #include <CDTUtils.h>
 #include "ConeXYZColorScore.h"
-#include "generic_tree.hpp"
+#include "path_planning/simplex_tree.hpp"
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/simplex.hpp>
@@ -46,14 +46,14 @@ class PathPlanning : public rclcpp::Node
         
         CDT::TriangleVec triangles_;
         CDT::Triangulation<double>::V2dVec vertices_;
-
-
+        
+        std::vector<std::vector<std::vector<int>>> routes;
         CDT::V2d<double> closest_midpoint_;
         int closest_triangle_ind_;
         int max_index_;
         std::unordered_set<int> visited_;
-        generic_tree *simplex_tree_;
-        std::set<std::set<int>> routes_;
+        SimplexTree *simplex_tree_;
+        // std::set<std::set<int>> routes_;
 
         /**
          * @brief Callback function for the perception topic.
@@ -81,12 +81,12 @@ class PathPlanning : public rclcpp::Node
         common_msgs::msg::Triangulation create_triangulation_msg(CDT::Triangulation<double> triangulation);
 
         /**
-         * @brief Create a generic_tree object from the triangulation,
+         * @brief Create a GenericTree object from the triangulation,
          * connecting the triangles that share an edge.
          * @param triangulation CDT::Triangulation<double> object containing the triangulation.
-         * @return generic_tree 
+         * @return GenericTree 
          */
-        generic_tree* create_triangulation_tree(int index);
+        // GenericTree* create_triangulation_tree(int index);
 
         /**
          * @brief Get the mid points of the edges of the triangulation. 
@@ -126,7 +126,11 @@ class PathPlanning : public rclcpp::Node
          */
         CDT::V2d<double> compute_centroid(int triangle_ind);
 
-        void get_routes(generic_tree *root, std::set<int> routes);
+        // void get_routes(GenericTree *root, std::set<int> routes);
 
-        void visualize_tree();
+        void visualize_tree(std::vector<std::vector<int>> routes);
+
+        int get_orig_index();
+
+        std::vector<int> get_triangles_from_vert(int vert_index);
 };
