@@ -1,5 +1,5 @@
 /**
- * @file generic_tree.hpp
+ * @file simplex_tree.hpp
  * @author Ignacio Sánchez Isidro (igsais12@gmail.com)
  * @date 01-11-2024
  * @brief Creates a tree structure to store information about neighbor triangles.
@@ -15,9 +15,8 @@
  * @brief Class for the simlpex tree structure.
  * Nodes are indices of the triangles in the triangulation. Two nodes are connected if they share an edge.
  */
-class SimplexTree
-{
-public:
+class SimplexTree {
+    public:
     /**
      * @brief Right and left children of the node. Recursive structure for tree construction.
      */
@@ -33,15 +32,27 @@ public:
      * @param key int index of the triangle.
      */
     SimplexTree(CDT::TriangleVec triangle_list, CDT::Triangulation<double>::V2dVec vertices, 
-int origin, std::vector<int> o_triangles);
+    int origin, std::vector<int> o_triangles);
 
+    /**
+     * @brief Recursive function to create the tree structure.
+     * From a triangle list and an index from which to start, it creates a tree structure containing all 
+     * the routes through the triangles that share an edge.
+     * Left is the default path, right is created when there are two valid neighbors.
+     * @param triangle_list triangulation.triangles object containing all the triangles.
+     * @param index triangle index from which to start
+     * @param visited array containing the visited triangle in the current route.
+     * @return SimplexNode* pointer to the created tree.
+     */
     SimplexNode* create_tree_aux(CDT::TriangleVec triangle_list, int index, std::vector<int> visited);
 };
 
-SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, CDT::Triangulation<double>::V2dVec vertices, 
-int origin_ind, std::vector<int> o_triangles){
-    CDT::Triangle origin = triangle_list[origin_ind];
-    CDT::NeighborsArr3 neighbors = origin.neighbors;
+SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, CDT::Triangulation<double>::V2dVec vertices,
+                         int origin_ind, std::vector<int> o_triangles) {
+    CDT::Triangle origin = triangle_list[origin_ind]; // Get triangle from index
+    CDT::NeighborsArr3 neighbors = origin.neighbors;  // Get neighbors of the triangle
+
+    // Filter neighbors to find which of them are valid
     std::vector<int> valid_neighbors = {};
     for (int i = 0; i<3; i++){
         if ((neighbors[i]<=triangle_list.size()) and 
@@ -49,55 +60,50 @@ int origin_ind, std::vector<int> o_triangles){
             valid_neighbors.push_back(neighbors[i]);
         }
     }
-    std::vector<int> visited = {origin_ind};
-    root.index = origin_ind;
+
+    std::vector<int> visited = {origin_ind}; // Initialize visited array with the origin index
+    root.index = origin_ind;                 // Set the root index to the origin index
+
+    // Create the tree recursively, there should only be one valid neighbor
     if (valid_neighbors.size() == 1){
         root.left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited);
     } else if (valid_neighbors.size() == 2){
-        std::cout << "Algo mal" << std::endl;
         root.left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited);
         root.right = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[1], visited);
     }
 } 
 
 
-SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int index, std::vector<int> visited){
-    visited.push_back(index);
-    SimplexNode* node;
-    node->index = index;
-    CDT::Triangle triangle = triangle_list[index];
-    CDT::NeighborsArr3 neighbors = triangle.neighbors;
+SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int index,
+                                          std::vector<int> visited) {
+    visited.push_back(index); // Add the current index to the visited array
+    SimplexNode* node;        // Create an empty node
+    node->index = index;      // Set the index of the node to the current index
+    
+    CDT::Triangle triangle = triangle_list[index];     // Get the triangle from the index
+    CDT::NeighborsArr3 neighbors = triangle.neighbors; // Get the neighbors of the triangle
+    
+    // Perform the same filtering as in the constructor
     std::vector<int> valid_neighbors = {};
     for (int i = 0; i<3; i++){
         if ((neighbors[i]<=triangle_list.size()) and (std::find(visited.begin(),visited.end(),neighbors[i])==visited.end())){
             valid_neighbors.push_back(neighbors[i]);
         }
     }
+    // Only change is that the node is returned when there is only one valid neighbor
     if (valid_neighbors.size() == 1){
+        // In case only one neighbor is valid, create the left child and return the node
         node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited);
         return node;
     }
     else if (valid_neighbors.size() == 2){
+        // In case two neighbors are valid, create both children and return the node
         node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited);
         node->right = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[1], visited);
         return node;
     }
+    /* In case there are no valid neighbors, return the node with no children 
+    and add the visited route to the routes array in the tree attribute */
     routes.push_back(visited);
     return node;
 }
-
-// void print_tree(SimplexTree *root){
-//     if (root == nullptr) {
-//         std::cout<< "fin de rama" <<std::endl;
-//         return;
-//     }
-//     std::cout << root->index << std::endl;
-//     print_tree(root->left);
-//     print_tree(root->right);
-// }
-
-// bool tree_search (int key, SimplexTree *root){
-//     if (root == nullptr) return false;
-//     if (root->index == key) return true;
-//     return tree_search(key, root->left) || tree_search(key, root->right);
-// }
