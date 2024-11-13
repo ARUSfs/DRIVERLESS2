@@ -45,9 +45,7 @@ Perception::Perception() : Node("Perception")
  */
 void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg)
 {   
-    //Keep the time at the start of the function
-    rclcpp::Clock kClock;
-    rclcpp::Time kInicialTime = kClock.now();
+    double start_time = this->now().seconds();
     
     //Transform the message into a pcl point cloud
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
@@ -72,10 +70,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Apply the ransac ground filter fuction
     GroundFiltering::ransac_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThreshold);
-
-    //Calculate the duration of the ground filter fuction
-    rclcpp::Time kFinalGroundFilterTime = kClock.now();
-    rclcpp::Duration kGroundFilterTime = kFinalGroundFilterTime - kInicialTime;
+   
+    std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
 
     //Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;
