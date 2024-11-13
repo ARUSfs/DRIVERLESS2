@@ -1,3 +1,4 @@
 acc_planning:
   ros__parameters:
     perception_topic: "/arussim/perception"
+    trajectory_topic: "/acc/planning/trajectory"

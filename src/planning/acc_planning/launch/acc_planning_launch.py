@@ -19,5 +19,7 @@ def generate_launch_description():
             name="acc_planning",
             output="screen",
             parameters=[config_file]
-        )
+        ),
+
+
     ])
