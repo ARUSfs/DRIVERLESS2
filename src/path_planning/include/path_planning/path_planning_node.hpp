@@ -43,7 +43,6 @@ class PathPlanning : public rclcpp::Node
         CDT::TriangleVec triangles_;
         CDT::Triangulation<double>::V2dVec vertices_;
         
-        std::vector<std::vector<std::vector<int>>> routes;
         CDT::V2d<double> closest_midpoint_;
         int closest_triangle_ind_;
 
