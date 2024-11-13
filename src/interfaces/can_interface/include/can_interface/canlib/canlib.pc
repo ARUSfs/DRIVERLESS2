@@ -1,0 +1,12 @@
+ prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: canlib
+Description: Kvaser Gnu/Linux canlib
+Version: 1.10.7
+
+Requires: 
+Libs: -L${libdir} -lcanlib
+Cflags: -I${includedir}

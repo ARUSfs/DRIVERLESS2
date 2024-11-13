@@ -8,6 +8,7 @@ from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     package_name = "can_interface"
+    package_share_directory = get_package_share_directory(package_name)
 
     return LaunchDescription([
         Node(
