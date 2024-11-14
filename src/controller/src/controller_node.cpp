@@ -42,6 +42,9 @@ Controller::Controller() : Node("controller")
     this->get_parameter("KP", KP);
     this->get_parameter("KI", KI);
     this->get_parameter("KD", KD);
+    std::cout << "Valor de KP: " << KP << std::endl;
+
+    pid_ = std::make_unique<PID>(KP, KI, KD);
 
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(static_cast<int>(1000.0 / kTimerFreq)),
@@ -69,12 +72,14 @@ void Controller::on_timer()
         Point position;
         position.x = x_;
         position.y = y_;
+
         PurePursuit::set_position(position, yaw_);
         double delta = PurePursuit::get_steering_angle(kLAD);
 
         rclcpp::Time current_time = this->get_clock()->now();
         double dt = (current_time - previous_time_).seconds();
-        double acc = PID::compute_control(vx_, kTargetSpeed, KP, KI, KD, dt);
+        double acc = pid_->compute_control(vx_, kTargetSpeed, dt);
+        
         acc /= (230*0.2);
         previous_time_ = current_time;
 

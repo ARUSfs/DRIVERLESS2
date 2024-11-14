@@ -12,7 +12,7 @@
 #include "common_msgs/msg/point_xy.hpp"
 #include "common_msgs/msg/cmd.hpp"
 #include "controller/pure_pursuit.h"
-#include "controller/PID.h"
+#include "controller/PID.hpp"
 #include "Point.h"
 
 /**
@@ -28,6 +28,9 @@ public:
     Controller();
 
 private:
+    // Instances
+    std::unique_ptr<PID> pid_;
+    
     // Callbacks
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
@@ -50,8 +53,8 @@ private:
 
     //Trajectory variable
     std::vector<Point> pointsXY_;  
-    std::vector<float> s_;                           // distance values of the points              
-    std::vector<float> k_ ;                          // curvature values of the points
+    std::vector<float> s_;                                         
+    std::vector<float> k_ ; 
     std::vector<float> speed_profile_;               
     std::vector<float> acc_profile_;                
 
