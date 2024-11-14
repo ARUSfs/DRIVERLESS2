@@ -14,13 +14,16 @@
 PathPlanning::PathPlanning() : Node("path_planning")
 {
     this->declare_parameter<std::string>("perception_topic", "/perception");
-    this->declare_parameter<std::string>("triangulation_topic", "/triangulation"); 
+    this->declare_parameter<std::string>("triangulation_topic", "/triangulation");
+    this->declare_parameter<std::string>("trajectory_topic", "/trajectory");
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
+    this->get_parameter("trajectory_topic", kTrajectoryTopic);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
+    trajectory_pub_ = this->create_publisher<common_msgs::msg::Simplex>(kTrajectoryTopic, 10);
 
 }
 
@@ -45,15 +48,51 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     int orig_index = PathPlanning::get_orig_index();
     std::vector<int> o_triangles = PathPlanning::get_triangles_from_vert(orig_index);
     std::vector<SimplexTree> trees;
-    routes_ = {};
+    triangle_routes_ = {};
     for (int i = 0; i<o_triangles.size(); i++){
         SimplexTree tree(triangles_, vertices_, o_triangles[i], o_triangles);
         trees.push_back(tree);
-        for (int j = 0; j<tree.routes.size(); j++){
-            routes_.push_back(tree.routes[j]);
+        for (int j = 0; j<tree.index_routes.size(); j++){
+            triangle_routes_.push_back(tree.index_routes[j]);
         }
     }
 
+    // Get the midpoints routes from triangles routes
+    midpoint_routes_ = {};
+    PathPlanning::get_midpoint_routes();
+
+    //% TEST
+    //% std::vector<int> ind_r = triangle_routes_[0];
+    //% std::vector<CDT::V2d<double>> route = midpoint_routes_[0];
+    //% for (const auto &ind : ind_r){
+    //%     std::cout << ind << ", ";
+    //% }
+    //% std::cout << std::endl;
+    //% for (const auto &midpoint : route){
+    //%     std::cout << "(" << midpoint.x << ", " << midpoint.y << "); ";
+    //% }
+    //% std::cout << std::endl;
+
+    // Get the cost of each route
+    int best_route_ind;
+    float min_cost = INFINITY;
+    for (int i = 0; i<midpoint_routes_.size(); i++){
+        double cost = PathPlanning::get_route_cost(midpoint_routes_[i]);
+        if (cost < min_cost){
+            min_cost = cost;
+            best_route_ind = i;
+        }
+    }
+    std::cout << "Best route " << best_route_ind << " cost: " << min_cost << std::endl;
+    std::vector<CDT::V2d<double>> best_route = midpoint_routes_[best_route_ind];
+    common_msgs::msg::Simplex trajectory_msg;
+    for (const auto &midpoint : best_route){
+        common_msgs::msg::PointXY point;
+        point.x = midpoint.x;
+        point.y = midpoint.y;
+        trajectory_msg.points.push_back(point);
+    }
+    trajectory_pub_ -> publish(trajectory_msg);
 }
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
@@ -186,6 +225,55 @@ std::vector<int> PathPlanning::get_triangles_from_vert(int vert_index){
         }
     }
     return o_triangles;
+}
+
+CDT::Edge PathPlanning::get_share_edge(CDT::Triangle triangle1, CDT::Triangle triangle2){
+    CDT::VerticesArr3 vertices1 = triangle1.vertices;
+    CDT::VerticesArr3 vertices2 = triangle2.vertices;
+    std::vector<int> shared_vertices = {};
+    for (int i = 0; i<3; i++){
+        if (std::find(vertices2.begin(), vertices2.end(), vertices1[i])!=vertices2.end()){
+            shared_vertices.push_back(vertices1[i]);
+        };
+    }
+    CDT::Edge shared_edge(shared_vertices[0], shared_vertices[1]);
+    return shared_edge;
+}
+
+void PathPlanning::get_midpoint_routes(){
+    for (const auto &ind_route : triangle_routes_){
+        std::vector<CDT::V2d<double>> mid_route = {};
+        for (int i = 0; i < ind_route.size()-1; i++){
+            CDT::Triangle triangle = triangles_[ind_route[i]];
+            CDT::Triangle next_triangle = triangles_[ind_route[i+1]];
+            CDT::Edge share_edge = PathPlanning::get_share_edge(triangle, next_triangle);
+            CDT::VertInd v1 = share_edge.v1();
+            CDT::VertInd v2 = share_edge.v2();
+            CDT::V2d<double> midpoint = CDT::V2d<double>::make((vertices_[v1].x+vertices_[v2].x)/2, 
+                                                               (vertices_[v1].y+vertices_[v2].y)/2);
+            mid_route.push_back(midpoint);
+        }
+        midpoint_routes_.push_back(mid_route);
+    }
+}
+
+double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> route){
+    int route_size = route.size();
+    double prev_angle = 0;
+    double cost = 0;
+
+    if (route_size == 0){
+        return INFINITY; // If the route is empty, return an infinite cost
+    }
+    for (int i = 0; i<route_size-1; i++){
+        cost += abs(CDT::distanceSquared(route[i], route[i+1]));
+        std::vector<double> current_dir = {route[i+1].x-route[i].x, route[i+1].y-route[i].y};
+        cost += abs(atan2(current_dir[1], current_dir[0])-prev_angle);
+        prev_angle = atan2(current_dir[1], current_dir[0]);
+
+        cost/=route_size;
+    }
+    return cost;
 }
 
 int main(int argc, char * argv[])

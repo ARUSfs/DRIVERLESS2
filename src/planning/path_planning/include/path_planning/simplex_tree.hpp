@@ -25,7 +25,7 @@ class SimplexTree {
     /**
      * @brief Array of arrays containing all the posible routes through the tree.
      */
-    std::vector<std::vector<int>> routes;
+    std::vector<std::vector<int>> index_routes;
 
     /**
      * @brief Construct a new generic tree object.
@@ -104,6 +104,6 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
     }
     /* In case there are no valid neighbors, return the node with no children 
     and add the visited route to the routes array in the tree attribute */
-    routes.push_back(visited);
+    index_routes.push_back(visited);
     return node;
 }
