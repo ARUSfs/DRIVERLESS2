@@ -38,6 +38,11 @@ class PathPlanning : public rclcpp::Node
         std::string kPerceptionTopic;
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
+        float kDistCoeff;
+        float kAngleCoeff;
+        float kMaxDist;
+        float kMaxAngle;
+        int kMaxRouteLength;
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;

@@ -16,9 +16,19 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<std::string>("perception_topic", "/perception");
     this->declare_parameter<std::string>("triangulation_topic", "/triangulation");
     this->declare_parameter<std::string>("trajectory_topic", "/trajectory");
+    this->declare_parameter<double>("dist_coeff", 1.0);
+    this->declare_parameter<double>("angle_coeff", 1.0);
+    this->declare_parameter<double>("max_dist", 100.0);
+    this->declare_parameter<double>("max_angle", 3.1416);
+    this->declare_parameter<int>("max_route", 10);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
+    this->get_parameter("dist_coeff", kDistCoeff);
+    this->get_parameter("angle_coeff", kAngleCoeff);
+    this->get_parameter("max_dist", kMaxDist);
+    this->get_parameter("max_angle", kMaxAngle);
+    this->get_parameter("max_route", kMaxRouteLength);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
@@ -63,7 +73,7 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
 
     // Get the cost of each route
     int best_route_ind;
-    float min_cost = INFINITY;
+    double min_cost = INFINITY;
     for (int i = 0; i<midpoint_routes_.size(); i++){
         double cost = PathPlanning::get_route_cost(midpoint_routes_[i]);
         if (cost < min_cost){
@@ -253,15 +263,25 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> route){
     if (route_size == 0){
         return INFINITY; // If the route is empty, return an infinite cost
     }
-    for (int i = 0; i<route_size-1; i++){
-        cost += abs(CDT::distanceSquared(route[i], route[i+1]));
-        std::vector<double> current_dir = {route[i+1].x-route[i].x, route[i+1].y-route[i].y};
-        cost += abs(atan2(current_dir[1], current_dir[0])-prev_angle);
-        prev_angle = atan2(current_dir[1], current_dir[0]);
+    for (int i = 0; i<std::min(route_size-1, kMaxRouteLength); i++){
+        double dist = CDT::distanceSquared(route[i], route[i+1]);
+        if (dist > kMaxDist){
+            cost*=10; 
+        } else {
+            cost += kDistCoeff*dist;
+        }
 
-        cost/=route_size;
+        std::vector<double> curr_dir = {route[i+1].x-route[i].x, route[i+1].y-route[i].y};
+        double curr_angle = atan2(curr_dir[1], curr_dir[0]);
+        double angle_diff = abs(curr_angle-prev_angle);
+        if (angle_diff > kMaxAngle){
+            cost*=10; 
+        } else {
+            cost += kAngleCoeff*angle_diff;
+            prev_angle = curr_angle;
+        }
     }
-    return cost;
+    return cost/route_size;
 }
 
 int main(int argc, char * argv[])
