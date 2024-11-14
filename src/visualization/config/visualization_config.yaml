@@ -1,12 +1,17 @@
 visualization:
   ros__parameters:
-    alpha: 0.7
+    alpha: 0.8
 
     # Topics to subscribe
     triangulation_topic: '/path_planning/triangulation'
     optimized_trajectory_topic: '/trajectory_optimization/trajectory'
     arussim_trajectory_topic: '/arussim_interface/fixed_trajectory'
+    delaunay_trajectory_topic: '/path_planning/trajectory'
+    acc_trajectory_topic: '/acc_planning/trajectory'
+    skidpad_trajectory_topic: '/skidpad_planning/trajectory'
+
     # Topics to publish
     triangulation_visualization_topic: '/visualization/triangulation'
     optimized_trajectory_visualization_topic: '/visualization/trajectory_optimized'
     arussim_trajectory_visualization_topic: '/visualization/arussim_fixed_trajectory'
+    trajectory_visualization_topic: '/visualization/trajectory'
