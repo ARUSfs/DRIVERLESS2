@@ -12,6 +12,7 @@
 #include <Triangulation.h>
 #include <CDTUtils.h>
 #include "ConeXYZColorScore.h"
+#include "path_planning/simplex_tree.hpp"
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/simplex.hpp>
@@ -38,9 +39,18 @@ class PathPlanning : public rclcpp::Node
         std::string kTriangulationTopic;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
+
+        CDT::TriangleVec triangles_;
+        CDT::Triangulation<double>::V2dVec vertices_;
+        
+        CDT::V2d<double> closest_midpoint_;
+        int closest_triangle_ind_;
+
+        std::vector<std::vector<int>> routes_;
+
         /**
          * @brief Callback function for the perception topic.
-         * When the percetption topic recieves a message, this function is called and performs
+         * When the perception topic recieves a message, this function is called and performs
          * all the necessary steps to generate the planning.
          * 
          * @param per_msg The point cloud received from the perception.
@@ -63,4 +73,54 @@ class PathPlanning : public rclcpp::Node
          */
         common_msgs::msg::Triangulation create_triangulation_msg(CDT::Triangulation<double> triangulation);
 
+        /**
+         * @brief Get the mid points of the edges of the triangulation. 
+         * It returns a vector of V2d points containing the mid points without duplicates.
+         * @param triangulation CDT object containing the triangulation.
+         * @return std::vector<CDT::V2d<double>> 
+         */
+        std::vector<CDT::V2d<double>> get_midpoints(CDT::Triangulation<double> triangulation);
+
+        /**
+         * @brief Calculate the euclidean norm of a vector. 
+         * i.e.: if v=(x,y), norm(v) = (x^2 + y^2)^(1/2).
+         * @param v Vector to calculate the norm.
+         * @return double 
+         */
+        double norm(CDT::V2d<double> v);
+
+        /**
+         * @brief Get the closest midpoint to the origin as a CDT 2D vector.
+         * 
+         * @param midpoint_arr Array of midpoints to calculate the closest one.
+         * @return CDT::V2d<double> 
+         */
+        CDT::V2d<double> get_closest_midpoint(std::vector<CDT::V2d<double>> midpoint_arr);
+
+        /**
+         * @brief Get the closest triangle object using the centroid as reference.
+         * @return int Index of the closest triangle found.
+         */
+        int get_closest_triangle();
+
+        /**
+         * @brief Calulate the centroid of a triangle given its index in the triangulation.
+         * Centroid is defined as the average of the vertices of the triangle.
+         * @param triangle_ind int index of the triangle in the triangulation.
+         * @return CDT::V2d<double> point containing the centroid of the triangle.
+         */
+        CDT::V2d<double> compute_centroid(int triangle_ind);
+
+        /**
+         * @brief Get the index of the origin vertex in the triangulation.
+         * @return int index of the origin vertex.
+         */
+        int get_orig_index();
+
+        /**
+         * @brief Get the triangles adjacent to a vertex from its index.
+         * @param vert_index int index of the vertex.
+         * @return std::vector<int> vector of index of the triangles adjacent to the vertex.
+         */
+        std::vector<int> get_triangles_from_vert(int vert_index);
 };
