@@ -61,18 +61,6 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     midpoint_routes_ = {};
     PathPlanning::get_midpoint_routes();
 
-    //% TEST
-    //% std::vector<int> ind_r = triangle_routes_[0];
-    //% std::vector<CDT::V2d<double>> route = midpoint_routes_[0];
-    //% for (const auto &ind : ind_r){
-    //%     std::cout << ind << ", ";
-    //% }
-    //% std::cout << std::endl;
-    //% for (const auto &midpoint : route){
-    //%     std::cout << "(" << midpoint.x << ", " << midpoint.y << "); ";
-    //% }
-    //% std::cout << std::endl;
-
     // Get the cost of each route
     int best_route_ind;
     float min_cost = INFINITY;
