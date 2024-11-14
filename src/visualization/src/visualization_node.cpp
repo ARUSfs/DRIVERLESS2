@@ -149,7 +149,7 @@ visualization_msgs::msg::Marker Visualization::create_trajectory_marker(
     marker.scale.x = 0.2;
     marker.scale.y = 0.2;
     marker.scale.z = 0.2;
-    marker.color.a = kAlpha;
+    marker.color.a = alpha;
     marker.color.r = red;
     marker.color.g = green;
     marker.color.b = blue;
