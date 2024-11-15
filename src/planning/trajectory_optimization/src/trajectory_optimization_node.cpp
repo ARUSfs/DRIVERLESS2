@@ -220,7 +220,7 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
     int m = s.size();
 
     VectorXd speed_profile = VectorXd::Zero(m);
-    speed_profile(0) = speed_;                                  // Begin at current car's speed
+    speed_profile(0) = speed_;                                  // Begin at car's current speed
     VectorXd v_grip(m), ds(m);
     double v_max_braking;
 
@@ -244,9 +244,37 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
         }
     }
 
+    speed_profile(0) = speed_profile(m-1);                      // Begin at final speed and repeat process to get a smooth closed loop
+
+    for(int i = 0; i < m; i++){
+        v_grip(i) = min(sqrt(kAyMax/abs(k(i)+0.0001)), kVMax);  
+    }
+
+    for(int i = 1; i < m; i++){
+        ds(i) = s(i) - s(i-1);
+
+        speed_profile(i) = sqrt(speed_profile(i-1)*speed_profile(i-1) + 2*kAxMax*ds(i));
+        if (speed_profile(i) > v_grip(i)){                     
+            speed_profile(i) = v_grip(i);                       
+        }
+    }
+    
+    for(int j = m-2; j > -1; j--){
+        v_max_braking = sqrt(speed_profile(j+1)*speed_profile(j+1) + 2*kAxMax*ds(j));  
+        if(speed_profile(j) > v_max_braking){                   
+            speed_profile(j) = v_max_braking;                  
+        }
+    }
+
     // Generate acceleration profile
     VectorXd acc_profile = VectorXd::Zero(m);
-    acc_profile(0) = acc_;
+    acc_profile(0) = acc_;                                      // Begin at car's current acceleration
+
+    for(int i = 1; i < m; i++){
+        acc_profile(i) = (speed_profile(i)*speed_profile(i) - speed_profile(i-1)*speed_profile(i-1)) / (2*ds(i));
+    }
+
+    acc_profile(0) = acc_profile(m-1);                          // Begin at final acceleration and repeat process to get a smooth closed loop
 
     for(int i = 1; i < m; i++){
         acc_profile(i) = (speed_profile(i)*speed_profile(i) - speed_profile(i-1)*speed_profile(i-1)) / (2*ds(i));
