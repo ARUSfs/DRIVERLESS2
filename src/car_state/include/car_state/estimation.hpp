@@ -79,7 +79,7 @@ class Estimation
             Vector2d z(wheelspeed_avg, 0);  // measurement vector
 
             // Kalman gain
-            Matrix2d K = ((P_pred*H_.transpose()).array() / (H_*P_pred*H_.transpose() + R_).array()).matrix();
+            Matrix2d K = (P_pred*H_.transpose()) * (H_*P_pred*H_.transpose() + R_).inverse();
 
             // Update
             Vector2d x_est = x_pred + K*(z - H_*x_pred);
