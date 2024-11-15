@@ -246,12 +246,8 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
 
     speed_profile(0) = speed_profile(m-1);                      // Begin at final speed and repeat process to get a smooth closed loop
 
-    for(int i = 0; i < m; i++){
-        v_grip(i) = min(sqrt(kAyMax/abs(k(i)+0.0001)), kVMax);  
-    }
 
     for(int i = 1; i < m; i++){
-        ds(i) = s(i) - s(i-1);
 
         speed_profile(i) = sqrt(speed_profile(i-1)*speed_profile(i-1) + 2*kAxMax*ds(i));
         if (speed_profile(i) > v_grip(i)){                     
