@@ -12,6 +12,7 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(common_msgs REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 
 # Incluir el directorio de encabezados
@@ -27,6 +28,8 @@ ament_target_dependencies(car_state_exec
                 sensor_msgs 
                 common_msgs
                 tf2)
+
+target_link_libraries(car_state_exec Eigen3::Eigen)
 
 # Instalar el ejecutable
 install(TARGETS
