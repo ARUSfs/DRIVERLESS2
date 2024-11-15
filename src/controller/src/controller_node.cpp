@@ -1,15 +1,18 @@
 /**
- * @file controller.cpp
- * @brief Controller node implementaion for ARUS Team Driverless pipeline
+ * @file controller_node.cpp
+ * 
+ * @author Francis Rojas (frarojram@gmail.com)
+ * 
+ * @brief Controller node implementation for ARUS Team Driverless pipeline
+ * 
+ * @date 15-11-2024
  */
-
 #include "controller/controller_node.hpp"
-
 /**
- * @class Controller
- * @brief Controller class 
+ * @brief Constructor for the Controller class
  * 
- * 
+ * @details This constructor declares all the necessary variables and
+ *          instantiates all the controls required for the ART-25 to be autonomous.
  */
 
 Controller::Controller() : Node("controller")
@@ -64,6 +67,13 @@ Controller::Controller() : Node("controller")
     previous_time_ = this->get_clock()->now();
 }
 
+/**
+ * @brief Callback function timer of controller
+ * 
+ * @author Francis Rojas (frarojram@gmail.com)
+ * 
+ * @details Implement the control algorithm with calls to the controller libraries. 
+ */  
 void Controller::on_timer()
 {
     if(!(pointsXY_.empty())){
@@ -72,7 +82,6 @@ void Controller::on_timer()
         Point position;
         position.x = x_;
         position.y = y_;
-
         PurePursuit::set_position(position, yaw_);
         double delta = PurePursuit::get_steering_angle(kLAD);
 

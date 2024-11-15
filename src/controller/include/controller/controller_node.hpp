@@ -1,6 +1,8 @@
 /**
- * @file controller.hpp
- * @brief controller node header for ARUS Team Driverless pipeline
+ * @file controller_node.hpp
+ * @author Francis Rojas (frarojram@gmail.com)
+ * @brief Controller node header for ARUS Team Driverless pipeline
+ * @date 15-11-2024
  */
 
 #include "rclcpp/rclcpp.hpp"
@@ -16,10 +18,9 @@
 #include "Point.h"
 
 /**
- * @class pure_pursuit
- * @brief pure_pursuit class 
+ * @brief The Controller class
  * 
- * Controller
+ * @details Create the controller object.
  */
 
 class Controller : public rclcpp::Node

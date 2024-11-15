@@ -1,3 +1,13 @@
+/**
+ * @file PID.hpp
+ * 
+ * @author Francis Rojas (frarojram@gmail.com).
+ * 
+ * @brief PID,header and implementation for ARUS Team Driverless pipeline.
+ * 
+ * @date 15-11-2024
+ */
+
 class PID {
 public:
     PID(double kp, double ki, double kd)
@@ -8,7 +18,10 @@ public:
     /**
      * @brief Calculate acceleration.
      * 
+     * @author Team driverless ARUS.
+     * 
      * @param  value current value.
+     * 
      * @param  target goal value.
      * 
      * @return control for get the goal.
