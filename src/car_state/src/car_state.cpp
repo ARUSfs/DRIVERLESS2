@@ -83,7 +83,7 @@ void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::Shar
 void CarState::on_timer()
 {
     // Estimate velocity
-    state_estimation_.set_data(v_front_right_, v_front_left_, v_rear_right_, v_rear_left_, ax_, ay_);
+    state_estimation_.set_measurement_data(v_front_right_, v_front_left_, v_rear_right_, v_rear_left_, ax_, ay_);
 
     Vector2d v_est = state_estimation_.kalman_velocity_estimation();
     vx_ = v_est(0);
