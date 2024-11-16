@@ -11,7 +11,11 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include "perception/ground_filtering.h"
+#include "perception/clustering.h"
+#include "perception/cropping.h"
 
 /**
  * @class Perception
@@ -52,5 +56,4 @@ class Perception : public rclcpp::Node
          * @param lidar_msg The point cloud message received from the lidar.
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
-
 };

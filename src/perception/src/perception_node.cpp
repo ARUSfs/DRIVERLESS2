@@ -52,25 +52,21 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
     //Crop the point cloud
-    double Mx = kMaxXFov;
-    double My = kMaxYFov;
-    double Mz = kMaxZFov;
-    double H = kHFov;
-    auto condition = [Mx, My, Mz, H](const pcl::PointXYZI &point)
-    {
-        return !(point.x < Mx && abs(point.y) < My && point.z < Mz 
-        && abs(atan2(point.y, point.x)) < H / 2 && (abs(point.y) > 0.8 || point.x > 2));
-    };
-    cloud->erase(std::remove_if(cloud->points.begin(), cloud->points.end(), condition), cloud->points.end());
+    Cropping::crop_filter_condition(cloud, kMaxXFov, kMaxYFov, kMaxZFov, kHFov);
+
+    //print the number of filtered points and the time of the cropping function used
+    std::cout << "Puntos filtrados: " << cloud->size() << std::endl;
+    std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
 
     //Define the variables for the ground filter
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
-    //Apply the ransac ground filter fuction
+    //Apply the ground filter fuction
     GroundFiltering::ransac_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThreshold);
-   
+    
+    //Print the time of the ground filter algorithm used
     std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
 
     //Publish the filtered cloud
@@ -78,7 +74,10 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::toROSMsg(*cloud_filtered,filtered_msg);
     filtered_msg.header.frame_id="/rslidar";
     filtered_pub_->publish(filtered_msg);
-    
+
+    //Extract the clusters from the point cloud
+    std::vector<pcl::PointIndices> cluster_indices;
+    Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
 }
 
 int main(int argc, char * argv[])

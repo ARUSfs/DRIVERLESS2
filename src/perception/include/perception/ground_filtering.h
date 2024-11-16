@@ -1,8 +1,8 @@
 /**
- * @file segmentation.hp
+ * @file ground_filtering.hp
  * @author Alejandro Vallejo Mayo (alejandro.vm.1805@gmail.com)
  * @brief Auxiliar file for the Perception node.
- * Contains auxiliar fuctions used in the algorithm.
+ * Contains auxiliar functions used in the algorithm to remove the ground from the original point cloud.
  * @version 0.1
  * @date 12-11-2024
  */
@@ -13,10 +13,11 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/ModelCoefficients.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include <iostream>
 
 namespace GroundFiltering{
-
     /**
     * @brief Implements ground filtering using ransac segmentation.
     * @param cloud The raw point cloud that will be filtered.
