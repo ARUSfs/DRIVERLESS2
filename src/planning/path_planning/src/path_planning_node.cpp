@@ -81,10 +81,12 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
             best_route_ind = i;
         }
     }
+    std::cout << "Max_dist" << kMaxDist << std::endl;
     std::cout << "Best route " << best_route_ind << " cost: " << min_cost << std::endl;
-    std::vector<CDT::V2d<double>> best_route = midpoint_routes_[best_route_ind];
+    std::vector<CDT::V2d<double>> best_route_midp = midpoint_routes_[best_route_ind];
+    std::cout << "Angle first: " << atan2(best_route_midp[1].y-best_route_midp[0].y, best_route_midp[1].x-best_route_midp[0].x) << std::endl;
     common_msgs::msg::Simplex trajectory_msg;
-    for (const auto &midpoint : best_route){
+    for (const auto &midpoint : best_route_midp){
         common_msgs::msg::PointXY point;
         point.x = midpoint.x;
         point.y = midpoint.y;
@@ -240,7 +242,7 @@ CDT::Edge PathPlanning::get_share_edge(CDT::Triangle triangle1, CDT::Triangle tr
 
 void PathPlanning::get_midpoint_routes(){
     for (const auto &ind_route : triangle_routes_){
-        std::vector<CDT::V2d<double>> mid_route = {};
+        std::vector<CDT::V2d<double>> mid_route = {CDT::V2d<double>::make(0,0)}; // Start from the origin
         for (int i = 0; i < ind_route.size()-1; i++){
             CDT::Triangle triangle = triangles_[ind_route[i]];
             CDT::Triangle next_triangle = triangles_[ind_route[i+1]];
@@ -259,14 +261,17 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> route){
     int route_size = route.size();
     double prev_angle = 0;
     double cost = 0;
+    double first_angle = atan2(route[1].y-route[0].y, route[1].x-route[0].x);
 
-    if (route_size == 0){
-        return INFINITY; // If the route is empty, return an infinite cost
+    if (route_size <= 0){
+        return INFINITY; 
+    } else if (abs(first_angle) > kMaxAngle){
+        return INFINITY;
     }
     for (int i = 0; i<std::min(route_size-1, kMaxRouteLength); i++){
         double dist = CDT::distanceSquared(route[i], route[i+1]);
         if (dist > kMaxDist){
-            cost*=10; 
+            cost+=10; 
         } else {
             cost += kDistCoeff*dist;
         }
@@ -275,13 +280,13 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> route){
         double curr_angle = atan2(curr_dir[1], curr_dir[0]);
         double angle_diff = abs(curr_angle-prev_angle);
         if (angle_diff > kMaxAngle){
-            cost*=10; 
+            cost+=10; 
         } else {
             cost += kAngleCoeff*angle_diff;
             prev_angle = curr_angle;
         }
     }
-    return cost/route_size;
+    return cost/(std::min(route_size, kMaxRouteLength));
 }
 
 int main(int argc, char * argv[])
