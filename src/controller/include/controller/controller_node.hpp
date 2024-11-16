@@ -1,3 +1,5 @@
+#ifndef CONTROLLER_NODE_HPP
+#define CONTROLLER_NODE_HPP
 /**
  * @file controller_node.hpp
  * 
@@ -19,7 +21,7 @@
 #include "controller/pure_pursuit.h"
 #include "controller/PID.hpp"
 #include "Point.h"
-#include "controller/speed_control.h"
+#include "controller/speed_control.hpp"
 
 /**
  * @brief The Controller class
@@ -30,14 +32,20 @@
 class Controller : public rclcpp::Node
 {
 public:
-    Controller();
 
-private:    
+    Controller();
+    PID pid_;
+    
+private:
+    // Instances
+    SpeedControl speedcontrol_;
+
     // Callbacks
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void on_timer();
+    int get_global_index(const std::vector<Point>& pointsXY_);
 
     // Status AS
     int16_t as_status_;
@@ -60,8 +68,8 @@ private:
     std::vector<float> speed_profiles_;               
     std::vector<float> acc_profiles_;
     int index_global_;
-    double s_profile_;
-    double a_profile_;             
+    double tv_;
+    double ta_;             
 
     //Subscribers
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
@@ -75,7 +83,6 @@ private:
     
     // Parameters
     std::string kControllerType;
-
     std::string kStateTopic;
     std::string kAsStatus;
     std::string kTrajectory;
@@ -91,3 +98,4 @@ private:
     rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_publisher_;
 };
 
+#endif
