@@ -1,3 +1,13 @@
+/**
+ * @file pure_pursuit.hpp
+ * 
+ * @author Francis Rojas (frarojram@gmail.com).
+ * 
+ * @brief Pure Pursuit implementation for ARUS Team Driverless pipeline.
+ * 
+ * @date 15-11-2024
+ */
+
 #include <vector>
 #include <limits>
 #include <cmath>
@@ -14,7 +24,13 @@ double yaw;
 
 
 namespace PurePursuit {
-
+    /**
+     * @brief Set path trayectory.
+     * 
+     * @param new_path
+     * 
+     * @details Update the current trayectory.
+     */
     void set_path(const std::vector<Point> &new_path) {
         if (new_path.empty()) {
             return;
@@ -23,11 +39,34 @@ namespace PurePursuit {
         path_updated = true;
     }
 
+    /**
+     * @brief Set global position.
+     * 
+     * @authors Team driverless ARUS
+     * 
+     * @param position
+     * 
+     * @param yaw_
+     * 
+     * @details Update the current position.
+     */
     void set_position(const Point &position, double yaw_) {
         car_position = position;
         yaw = yaw_;
     }
 
+    /**
+     * @brief Search pursuit point.
+     * 
+     * @authors Team driverless ARUS
+     * 
+     * @param look_ahead_distance
+     * 
+     * @details Through a position, it takes the point on the trajectory that matches
+     *          the look-ahead distances and returns the candidate.
+     * 
+     * @return Point to pursue.
+     */
     Point search_pursuit_point(double look_ahead_distance) {
 
         size_t closest_point_index = 0;
@@ -72,7 +111,18 @@ namespace PurePursuit {
 
         return path.back(); 
     }
-
+    /**
+     * @brief Get steering angle.
+     * 
+     * @authors Team driverless ARUS
+     * 
+     * @param look_ahead_distance
+     * 
+     * @details From the pursuit point, it calculates the steering 
+     *          angle to send in the command.
+     * 
+     * @return Point to pursue.
+     */
     double get_steering_angle(double look_ahead_distance) {
         if (path.size() <= 1) {
             return prev_steer;

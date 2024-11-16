@@ -1,6 +1,8 @@
 /**
- * @file controller.hpp
- * @brief controller node header for ARUS Team Driverless pipeline
+ * @file controller_node.hpp
+ * @author Francis Rojas (frarojram@gmail.com)
+ * @brief Controller node header for ARUS Team Driverless pipeline
+ * @date 15-11-2024
  */
 
 #include "rclcpp/rclcpp.hpp"
@@ -12,14 +14,13 @@
 #include "common_msgs/msg/point_xy.hpp"
 #include "common_msgs/msg/cmd.hpp"
 #include "controller/pure_pursuit.h"
-#include "controller/PID.h"
+#include "controller/PID.hpp"
 #include "Point.h"
 
 /**
- * @class pure_pursuit
- * @brief pure_pursuit class 
+ * @brief The Controller class
  * 
- * Controller
+ * @details Create the controller object.
  */
 
 class Controller : public rclcpp::Node
@@ -28,6 +29,9 @@ public:
     Controller();
 
 private:
+    // Instances
+    PID pid_;
+    
     // Callbacks
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
@@ -50,8 +54,8 @@ private:
 
     //Trajectory variable
     std::vector<Point> pointsXY_;  
-    std::vector<float> s_;                           // distance values of the points              
-    std::vector<float> k_ ;                          // curvature values of the points
+    std::vector<float> s_;                                         
+    std::vector<float> k_ ; 
     std::vector<float> speed_profile_;               
     std::vector<float> acc_profile_;                
 
