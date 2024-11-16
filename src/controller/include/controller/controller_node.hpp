@@ -30,7 +30,7 @@ public:
 
 private:
     // Instances
-    std::unique_ptr<PID> pid_;
+    PID pid_;
     
     // Callbacks
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);

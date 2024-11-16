@@ -9,11 +9,20 @@
  */
 
 class PID {
-public:
-    PID(double kp, double ki, double kd)
-        : KP_(kp), KI_(ki), KD_(kd), previous_error_(0.0), integral_(0.0) {}
-        
-    PID() : KP_(0.0), KI_(0.0), KD_(0.0), previous_error_(0.0), integral_(0.0) {}
+public: 
+    PID(){
+        KP_ = 0.0;
+        KI_ = 0.0;
+        KD_ = 0.0;
+        previous_error_ = 0.0;
+        integral_ = 0.0;
+    }
+
+    void set_params(double KP, double KI, double KD){
+        KP_ = KP;
+        KI_ = KI;
+        KD_ = KD;
+    }
 
     /**
      * @brief Calculate acceleration.
@@ -35,9 +44,9 @@ public:
     }
     
 private:
-    const double KP_;
-    const double KI_;
-    const double KD_;
+    double KP_;
+    double KI_;
+    double KD_;
 
     double previous_error_;
     double integral_;

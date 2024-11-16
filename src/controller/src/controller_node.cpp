@@ -47,7 +47,8 @@ Controller::Controller() : Node("controller")
     this->get_parameter("KD", KD);
     std::cout << "Valor de KP: " << KP << std::endl;
 
-    pid_ = std::make_unique<PID>(KP, KI, KD);
+    pid_ = PID();
+    pid_.set_params(KP, KI, KD);
 
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(static_cast<int>(1000.0 / kTimerFreq)),
@@ -87,7 +88,7 @@ void Controller::on_timer()
 
         rclcpp::Time current_time = this->get_clock()->now();
         double dt = (current_time - previous_time_).seconds();
-        double acc = pid_->compute_control(vx_, kTargetSpeed, dt);
+        double acc = pid_.compute_control(vx_, kTargetSpeed, dt);
         
         acc /= (230*0.2);
         previous_time_ = current_time;
