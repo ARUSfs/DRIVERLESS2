@@ -50,13 +50,15 @@ void AccPlanning::generate_planning() {
     std::mt19937 gen(rd());
     double best_a = 0.0;
     double best_b = 0.0;
-
+    double best_a1 = 0.0, best_b1 = 0.0;
+    double best_a2 = 0.0, best_b2 = 0.0;
 
     int max_inliers = 0;
 
     std::uniform_int_distribution<> distrib(0, cones_.points.size() - 1);
 
-
+    std::vector<int> inliers_indices1;
+    std::vector<int> inliers_indices2;
     for (int iter = 0; iter < max_iterations; ++iter) {
 
         int i = distrib(gen);
@@ -71,39 +73,114 @@ void AccPlanning::generate_planning() {
             continue;
         }
 
-
-        double a = (c2.y - c1.y) / (c2.x - c1.x);
-        double b1 = c1.y - c1.x * a;
-        double b2 = c3.y - a * c3.x;
+        double a1 = (c2.y - c1.y) / (c2.x - c1.x);
+        double b1_1 = c1.y - c1.x * a1;
+        double b1_2 = c3.y - c3.x * a1;
 
         
         int inliers = 0;
-        std::vector<int> inliers_indices;
+        std::vector<int> temp_inliers_indices;
+        temp_inliers_indices.clear();
         for (int idx = 0; idx < cones_.points.size(); ++idx) {
             const auto& cone = cones_.points[idx];
-            double d1 = std::abs(a * cone.x + b1 - cone.y) / std::sqrt(a * a + 1);
-            double d2 = std::abs(a * cone.x + b2 - cone.y) / std::sqrt(a * a + 1);
+            double d1 = std::abs(a1 * cone.x + b1_1 - cone.y) / std::sqrt(a1 * a1 + 1);
+            double d2 = std::abs(a1 * cone.x + b1_2 - cone.y) / std::sqrt(a1 * a1 + 1);
             if (std::min(d1, d2) < ransac_threshold) {
                 ++inliers;
-                inliers_indices.push_back(idx);
+                temp_inliers_indices.push_back(idx);
             }
         }
 
+        if (inliers > max_inliers) {
+            best_a1 = a1;
+            best_b1 = (b1_1 + b1_2) / 2.0;
+            max_inliers = inliers;
+            inliers_indices1.clear();
+            inliers_indices1 = temp_inliers_indices;
+        }
+    }
+        std::cout << "Percentage of inliers: " 
+          << (static_cast<double>(inliers_indices1.size()) / cones_.points.size()) * 100 
+          << "%" << std::endl;
+
+    pcl::PointCloud<ConeXYZColorScore> remaining_cones;
+    for (int idx = 0; idx < cones_.points.size(); ++idx) {
+        if (std::find(inliers_indices1.begin(), inliers_indices1.end(), idx) == inliers_indices1.end()) {
+            remaining_cones.push_back(cones_.points[idx]);
+        }
+    }
+    std::cout << "Total points in cones_: " << cones_.points.size() << std::endl;
+    std::cout << "Points in inliers_indices1: " << inliers_indices1.size() << std::endl;
+    std::cout << "Points in remaining_cones: " << remaining_cones.size() << std::endl;
+
+
+    if (remaining_cones.size() < 3) {
+        std::cout << "Warning: Not enough points in remaining cones for second line fitting." << std::endl;
+        return;
+    }
+
+    std::uniform_int_distribution<> distrib_remaining(0, remaining_cones.size() - 1);
+    for (int iter = 0; iter < max_iterations; ++iter) {
+        int i = distrib_remaining(gen), j = distrib_remaining(gen), k = distrib_remaining(gen);
+        const auto& c1 = remaining_cones.points[i];
+        const auto& c2 = remaining_cones.points[j];
+        const auto& c3 = remaining_cones.points[k];
+
+        if (std::abs(c1.x - c2.x) < 0.1 || (std::abs(c1.y - c3.y) < 0.1 && std::abs(c2.y - c3.y) < 0.1)) {
+            continue;
+        }
+        double a2 = (c2.y - c1.y) / (c2.x - c1.x);
+        double b2_1 = c1.y - c1.x * a2;
+        double b2_2 = c3.y - c3.x * a2;
+
+        int inliers = 0;
+        for (const auto& cone : remaining_cones.points) {
+            double d1 = std::abs(a2 * cone.x + b2_1 - cone.y) / std::sqrt(a2 * a2 + 1);
+            double d2 = std::abs(a2 * cone.x + b2_2 - cone.y) / std::sqrt(a2 * a2 + 1);
+            if (std::min(d1, d2) < ransac_threshold) {
+                ++inliers;
+            }
+        }
 
         if (inliers > max_inliers) {
-            best_a = a;
-            best_b = (b1 + b2)/2.0;
+            best_a2 = a2;
+            best_b2 = (b2_1 + b2_2) / 2.0;
             max_inliers = inliers;
         }
     }
+         if (max_inliers >= min_inliers_required) {
+        a_ = (best_a1 + best_a2) / 2;
+        b_ = (best_b1 + best_b2) / 2;
+        if (a_history_.size() >= history_size_) {
+        sum_a_ -= a_history_.front();
+        a_history_.erase(a_history_.begin());
+        }
+        if (b_history_.size() >= history_size_) {
+            sum_b_ -= b_history_.front();
+            b_history_.erase(b_history_.begin());
+        }
 
-    if (max_inliers >= min_inliers_required) {
-        a_ = best_a;
-        b_ = best_b;
+        a_history_.push_back(a_);
+        b_history_.push_back(b_);
+
+        sum_a_ += a_;
+        sum_b_ += b_;
+
+        a_ = sum_a_ / a_history_.size();
+        b_ = sum_b_ / b_history_.size();
+
+        std::cout << "sum_a_: " << sum_a_ << std::endl;
+        std::cout << "sum_b_: " << sum_b_ << std::endl;
+        std::cout << "a_history_.size(): " << a_history_.size() << std::endl;
+        std::cout << "b_history_.size(): " << b_history_.size() << std::endl;
+        std::cout << "a_: " << a_ << std::endl;
+        std::cout << "b_: " << b_ << std::endl;
+            std::cout << "Line parameters: a = " << a_ << ", b = " << b_ << std::endl;
+    } 
+    else {
+        std::cout << "Insufficient inliers for the first line." << std::endl;
     }
-    
 }
-
 
 void AccPlanning::publish_trajectory(){
     common_msgs::msg::Trajectory trajectory_msg;
