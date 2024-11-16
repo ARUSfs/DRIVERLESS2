@@ -1,3 +1,4 @@
 nlohmann-json3-dev
 libpcl-dev
 ros-humble-pcl-ros
+libeigen3-dev
