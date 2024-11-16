@@ -1,0 +1,8 @@
+ID,subID,nMssg,BitIn,BitFin,LE/BE,Scale,Offset,Publisher,Type
+0x181,0x30,1,1,2,LE,-0.0008593133117,0,"""/motor_speed""",Float32
+0x182,0x01,1,2,2,BE,1,1,"""/can/AS_status""",Int16
+0x182,0x04,1,1,2,LE,0.06300748134795,-25,canWrite,uint8_t
+0x182,0x04,2,3,4,LE,0.06300748134795,-25,canWrite,uint8_t
+0x182,0x05,1,1,2,LE,10,0,canWrite,uint8_t
+0x182,0x05,2,3,4,LE,10,0,canWrite,uint8_t
+0x18B,NO,1,6,6,BE,1,0,"""/can/RESRange""",Float32

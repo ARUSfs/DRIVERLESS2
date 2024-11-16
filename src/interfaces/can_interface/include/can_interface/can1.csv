@@ -1,0 +1,15 @@
+0x380,NO,1,0,1,LE,0.01,0,"""can/IMU""",IMU
+0x380,NO,2,2,3,LE,0.01,0,"""can/IMU""",IMU
+0x380,NO,3,4,5,LE,0.01,0,"""can/IMU""",IMU
+0x394,NO,1,0,3,LE,1,0,"""can/gps""",int32_t
+0x394,NO,2,4,7,LE,1,0,"""can/gps""",int32_t
+0x392,NO,1,0,1,LE,0.01,0,"""can/gps_speed""",float
+0x392,NO,2,2,3,LE,0.01,0,"""can/gps_speed""",float
+0x392,NO,3,4,5,LE,0.01,0,"""can/gps_speed""",float
+0x384,NO,,,,,,,,
+0x382,NO,1,0,1,LE,0.001,0,"""can/IMU""",IMU
+0x382,NO,2,2,3,LE,0.001,0,"""can/IMU""",IMU
+0x382,NO,3,4,5,LE,0.001,0,"""can/IMU""",IMU
+0x187,0x01,1,1,2,LE,1,0,"""can/steering_angle""",Float32
+0x185,0x01,,,,,,,,
+0x453,NO,,,,,,,,
