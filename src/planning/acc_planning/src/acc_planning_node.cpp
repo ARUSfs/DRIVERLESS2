@@ -83,9 +83,8 @@ void AccPlanning::generate_planning() {
         temp_inliers_indices.clear();
         for (int idx = 0; idx < cones_.points.size(); ++idx) {
             const auto& cone = cones_.points[idx];
-            double d1 = std::abs(a1 * cone.x + b1_1 - cone.y) / std::sqrt(a1 * a1 + 1);
-            double d2 = std::abs(a1 * cone.x + b1_2 - cone.y) / std::sqrt(a1 * a1 + 1);
-            if (std::min(d1, d2) < ransac_threshold) {
+            double d = std::abs(a1 * cone.x + b1_1 - cone.y) / std::sqrt(a1 * a1 + 1);
+            if (d < ransac_threshold) {
                 ++inliers;
                 temp_inliers_indices.push_back(idx);
             }
@@ -135,9 +134,9 @@ void AccPlanning::generate_planning() {
 
         int inliers = 0;
         for (const auto& cone : remaining_cones.points) {
-            double d1 = std::abs(a2 * cone.x + b2_1 - cone.y) / std::sqrt(a2 * a2 + 1);
-            double d2 = std::abs(a2 * cone.x + b2_2 - cone.y) / std::sqrt(a2 * a2 + 1);
-            if (std::min(d1, d2) < ransac_threshold) {
+            double d = std::abs(a2 * cone.x + b2_1 - cone.y) / std::sqrt(a2 * a2 + 1);
+  
+            if (d < ransac_threshold) {
                 ++inliers;
             }
         }
