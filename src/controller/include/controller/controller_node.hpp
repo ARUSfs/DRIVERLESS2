@@ -1,7 +1,10 @@
 /**
  * @file controller_node.hpp
- * @author Francis Rojas (frarojram@gmail.com)
- * @brief Controller node header for ARUS Team Driverless pipeline
+ * 
+ * @author Francis Rojas (frarojram@gmail.com).
+ * 
+ * @brief Controller node header for ARUS Team Driverless pipeline.
+ * 
  * @date 15-11-2024
  */
 
@@ -16,6 +19,7 @@
 #include "controller/pure_pursuit.h"
 #include "controller/PID.hpp"
 #include "Point.h"
+#include "controller/speed_control.h"
 
 /**
  * @brief The Controller class
@@ -28,10 +32,7 @@ class Controller : public rclcpp::Node
 public:
     Controller();
 
-private:
-    // Instances
-    PID pid_;
-    
+private:    
     // Callbacks
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
@@ -56,8 +57,11 @@ private:
     std::vector<Point> pointsXY_;  
     std::vector<float> s_;                                         
     std::vector<float> k_ ; 
-    std::vector<float> speed_profile_;               
-    std::vector<float> acc_profile_;                
+    std::vector<float> speed_profiles_;               
+    std::vector<float> acc_profiles_;
+    int index_global_;
+    double s_profile_;
+    double a_profile_;             
 
     //Subscribers
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
