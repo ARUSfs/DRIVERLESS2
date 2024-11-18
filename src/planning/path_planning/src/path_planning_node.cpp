@@ -48,10 +48,10 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     pcl::PointCloud<ConeXYZColorScore> pcl_cloud;
     pcl::fromROSMsg(*per_msg, pcl_cloud);
     CDT::Triangulation<double> triangulation;
-    triangulation = PathPlanning::create_triangulation(pcl_cloud);
+    triangulation = this->create_triangulation(pcl_cloud);
     common_msgs::msg::Triangulation triangulation_msg;
     if (triangulation.isFinalized()){
-        triangulation_msg = PathPlanning::create_triangulation_msg(triangulation);
+        triangulation_msg = this->create_triangulation_msg(triangulation);
     }
     triangulation_pub_ -> publish(triangulation_msg);
 
@@ -60,8 +60,8 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     triangles_ = triangulation.triangles;
 
     // Construct the tree from the triangulation
-    int orig_index = PathPlanning::get_orig_index();
-    std::vector<int> o_triangles = PathPlanning::get_triangles_from_vert(orig_index);
+    int orig_index = this->get_orig_index();
+    std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
     std::vector<SimplexTree> trees;
     triangle_routes_ = {};
     for (int i = 0; i<o_triangles.size(); i++){
@@ -74,21 +74,20 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
 
     // Get the midpoints routes from triangles routes
     midpoint_routes_ = {};
-    PathPlanning::get_midpoint_routes();
+    this->get_midpoint_routes();
 
     // Get the cost of each route
     int best_route_ind = 0;
     double min_cost = INFINITY;
     for (int i = 0; i<midpoint_routes_.size(); i++){
-        double cost = PathPlanning::get_route_cost(midpoint_routes_[i]);
+        double cost = this->get_route_cost(midpoint_routes_[i]);
         if (cost < min_cost){
             min_cost = cost;
             best_route_ind = i;
         }
     }
-    std::cout <<"1"<<std::endl;
+    std::cout << "Best route: " << best_route_ind << std::endl;
     best_midpoint_route_ = midpoint_routes_[best_route_ind];
-    std::cout <<"2"<<std::endl;
 
     trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
 }
@@ -176,10 +175,10 @@ double PathPlanning::norm(CDT::V2d<double> v){
 
 CDT::V2d<double> PathPlanning::get_closest_midpoint(std::vector<CDT::V2d<double>> midpoint_arr){
     CDT::V2d<double> closest = midpoint_arr[0];
-    double min_norm = PathPlanning::norm(closest);
+    double min_norm = this->norm(closest);
 
     for (std::vector<CDT::V2d<double>>::iterator it = midpoint_arr.begin(); it != midpoint_arr.end(); it++){
-        double current_norm = PathPlanning::norm(*it);
+        double current_norm = this->norm(*it);
         if (current_norm < min_norm){
             min_norm = current_norm;
             closest = *it;
@@ -192,8 +191,8 @@ int PathPlanning::get_closest_triangle(){
     int closest = 0;
     double min_norm = 100;
     for (int i = 0; i < triangles_.size(); i++){
-        CDT::V2d<double> centroid = PathPlanning::compute_centroid(i);
-        double current_norm = PathPlanning::norm(centroid);
+        CDT::V2d<double> centroid = this->compute_centroid(i);
+        double current_norm = this->norm(centroid);
         if (current_norm < min_norm){
             min_norm = current_norm;
             closest = i;
@@ -257,7 +256,7 @@ void PathPlanning::get_midpoint_routes(){
         for (int i = 0; i < ind_route.size()-1; i++){
             CDT::Triangle triangle = triangles_[ind_route[i]];
             CDT::Triangle next_triangle = triangles_[ind_route[i+1]];
-            CDT::Edge share_edge = PathPlanning::get_share_edge(triangle, next_triangle);
+            CDT::Edge share_edge = this->get_share_edge(triangle, next_triangle);
             CDT::VertInd v1 = share_edge.v1();
             CDT::VertInd v2 = share_edge.v2();
             CDT::V2d<double> midpoint = CDT::V2d<double>::make((vertices_[v1].x+vertices_[v2].x)/2, 
@@ -274,17 +273,23 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> route){
     double route_len = 0;
     double angle_diff_sum = 0;
     for (int i = 0; i<route_size-1; i++){
-        route_len += CDT::distance(route[i], route[i+1]);
+        double dist = CDT::distance(route[i], route[i+1]);
+        if (dist > kMaxDist){
+            return INFINITY;
+        } else{
+            route_len += dist;
+        }
     }
     for (int i = 0; i<route_size-2;i++){
         double angle_diff = abs(atan2(route[i+2].y-route[i+1].y, route[i+2].x-route[i+1].x)-atan2(route[i+1].y-route[i].y, route[i+1].x-route[i].x));
-        angle_diff_sum += angle_diff;
         if (angle_diff > kMaxAngle){
             return INFINITY;
+        } else{
+            angle_diff_sum += angle_diff;
         }
     }
-    route_cost += kDistCoeff*abs(route_len - kSensorRange)/kSensorRange;
-    route_cost += kAngleCoeff*angle_diff_sum;
+    route_cost += kDistCoeff*abs(route_len - kSensorRange)/kSensorRange; // Rarete
+    route_cost += kAngleCoeff*angle_diff_sum/route_size; // Curvature
     return route_cost;
 }
 
