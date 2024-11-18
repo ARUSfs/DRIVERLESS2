@@ -1,3 +1,6 @@
+#ifndef PID_HPP
+#define PID_HPP
+
 /**
  * @file PID.hpp
  * 
@@ -7,7 +10,6 @@
  * 
  * @date 15-11-2024
  */
-
 class PID {
 public: 
     PID(){
@@ -51,3 +53,5 @@ private:
     double previous_error_;
     double integral_;
 };
+
+#endif 

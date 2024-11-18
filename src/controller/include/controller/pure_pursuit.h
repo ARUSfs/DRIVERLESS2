@@ -1,3 +1,5 @@
+#ifndef PURE_PURSUIT_H
+#define PURE_PURSUIT_H
 /**
  * @file pure_pursuit.hpp
  * 
@@ -141,3 +143,5 @@ namespace PurePursuit {
     }
 
 }
+
+#endif 
