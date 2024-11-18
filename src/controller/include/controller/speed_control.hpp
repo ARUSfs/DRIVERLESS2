@@ -22,7 +22,7 @@ public:
     : pid_(), 
       prev_TS_(0.0) {}
 
-    PID& get_pid() { return pid_; }
+    PID& get_pid() {return pid_;}
           
     /**
      * @brief Update speed target
