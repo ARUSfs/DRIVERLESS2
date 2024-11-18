@@ -17,6 +17,7 @@
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>
+#include <common_msgs/msg/trajectory.hpp>
 
 /**
  * @brief Class containing the Path Planning node.
@@ -38,15 +39,16 @@ class PathPlanning : public rclcpp::Node
         std::string kPerceptionTopic;
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
-        float kDistCoeff;
-        float kAngleCoeff;
-        float kMaxDist;
-        float kMaxAngle;
+        double kDistCoeff;
+        double kAngleCoeff;
+        double kMaxDist;
+        double kMaxAngle;
+        double kSensorRange;
         int kMaxRouteLength;
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
-        rclcpp::Publisher<common_msgs::msg::Simplex>::SharedPtr trajectory_pub_;
+        rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
 
         CDT::TriangleVec triangles_;
         CDT::Triangulation<double>::V2dVec vertices_;

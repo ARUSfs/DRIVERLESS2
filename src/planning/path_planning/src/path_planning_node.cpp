@@ -20,6 +20,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("angle_coeff", 1.0);
     this->declare_parameter<double>("max_dist", 100.0);
     this->declare_parameter<double>("max_angle", 3.1416);
+    this->declare_parameter<double>("sensor_range", 20.0);
     this->declare_parameter<int>("max_route", 10);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
@@ -28,12 +29,13 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("angle_coeff", kAngleCoeff);
     this->get_parameter("max_dist", kMaxDist);
     this->get_parameter("max_angle", kMaxAngle);
+    this->get_parameter("sensor_range", kSensorRange);
     this->get_parameter("max_route", kMaxRouteLength);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
-    trajectory_pub_ = this->create_publisher<common_msgs::msg::Simplex>(kTrajectoryTopic, 10);
+    trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
 
 }
 
@@ -72,20 +74,20 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     PathPlanning::get_midpoint_routes();
 
     // Get the cost of each route
-    int best_route_ind;
+    int best_route_ind = 0;
     double min_cost = INFINITY;
     for (int i = 0; i<midpoint_routes_.size(); i++){
         double cost = PathPlanning::get_route_cost(midpoint_routes_[i]);
+        if (cost < INFINITY){std::cout << "Cost: " << cost << std::endl;}
         if (cost < min_cost){
             min_cost = cost;
             best_route_ind = i;
         }
     }
-    std::cout << "Max_dist" << kMaxDist << std::endl;
     std::cout << "Best route " << best_route_ind << " cost: " << min_cost << std::endl;
     std::vector<CDT::V2d<double>> best_route_midp = midpoint_routes_[best_route_ind];
     std::cout << "Angle first: " << atan2(best_route_midp[1].y-best_route_midp[0].y, best_route_midp[1].x-best_route_midp[0].x) << std::endl;
-    common_msgs::msg::Simplex trajectory_msg;
+    common_msgs::msg::Trajectory trajectory_msg;
     for (const auto &midpoint : best_route_midp){
         common_msgs::msg::PointXY point;
         point.x = midpoint.x;
@@ -258,35 +260,23 @@ void PathPlanning::get_midpoint_routes(){
 }
 
 double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> route){
+    double route_cost = 0;
     int route_size = route.size();
-    double prev_angle = 0;
-    double cost = 0;
-    double first_angle = atan2(route[1].y-route[0].y, route[1].x-route[0].x);
-
-    if (route_size <= 0){
-        return INFINITY; 
-    } else if (abs(first_angle) > kMaxAngle){
-        return INFINITY;
+    double route_len = 0;
+    double angle_diff_sum = 0;
+    for (int i = 0; i<route_size-1; i++){
+        route_len += CDT::distance(route[i], route[i+1]);
     }
-    for (int i = 0; i<std::min(route_size-1, kMaxRouteLength); i++){
-        double dist = CDT::distanceSquared(route[i], route[i+1]);
-        if (dist > kMaxDist){
-            cost+=10; 
-        } else {
-            cost += kDistCoeff*dist;
-        }
-
-        std::vector<double> curr_dir = {route[i+1].x-route[i].x, route[i+1].y-route[i].y};
-        double curr_angle = atan2(curr_dir[1], curr_dir[0]);
-        double angle_diff = abs(curr_angle-prev_angle);
+    for (int i = 0; i<route_size-2;i++){
+        double angle_diff = abs(atan2(route[i+2].y-route[i+1].y, route[i+2].x-route[i+1].x)-atan2(route[i+1].y-route[i].y, route[i+1].x-route[i].x));
+        angle_diff_sum += angle_diff;
         if (angle_diff > kMaxAngle){
-            cost+=10; 
-        } else {
-            cost += kAngleCoeff*angle_diff;
-            prev_angle = curr_angle;
+            return INFINITY;
         }
     }
-    return cost/(std::min(route_size, kMaxRouteLength));
+    route_cost += kDistCoeff*abs(route_len - kSensorRange)/kSensorRange;
+    route_cost += kAngleCoeff*angle_diff_sum;
+    return route_cost;
 }
 
 int main(int argc, char * argv[])
