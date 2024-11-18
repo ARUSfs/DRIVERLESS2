@@ -11,7 +11,6 @@
 
 /**
  * @brief Constructor for the Controller class
- * 
  * @details This constructor declares all the necessary variables and
  *          instantiates all the controls required for the ART-25 to be autonomous.
  */
@@ -46,7 +45,7 @@ Controller::Controller() : Node("controller"),  speedcontrol_()
     this->get_parameter("KI", KI);
     this->get_parameter("KD", KD);
 
-    speedcontrol_.get_pid().set_params(KP,KI,KD);
+    speedcontrol_.pid_.set_params(KP,KI,KD);
 
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(static_cast<int>(1000.0 / kTimerFreq)),
@@ -68,30 +67,33 @@ Controller::Controller() : Node("controller"),  speedcontrol_()
 
 /**
  * @brief Callback function timer of controller
- * 
- * @author Francis Rojas (frarojram@gmail.com)
- * 
  * @details Implement the control algorithm with calls to the controller libraries. 
  */  
 void Controller::on_timer()
 {
     if(!(pointsXY_.empty())){
-        index_global_ = get_global_index(pointsXY_);
-        tv_ = speed_profiles_.at(index_global_);
-        ta_ = acc_profiles_.at(index_global_);
+        get_global_index(pointsXY_);
+
+        double target_speed = kTargetSpeed;
+        if(!(speed_profile_.empty())){
+            double target_speed = speed_profile_.at(index_global_);
+        }
+
+        double target_acc = 0.0;
+        if(!(acc_profile_.empty())){
+            double target_acc = acc_profile_.at(index_global_);
+        }
 
         PurePursuit::set_path(pointsXY_);
         Point position;
         position.x = x_;
         position.y = y_;
         PurePursuit::set_position(position, yaw_);
-        double delta = PurePursuit::get_steering_angle(tv_/1.5);
+        double delta = PurePursuit::get_steering_angle(target_speed/1.5);
 
         rclcpp::Time current_time = this->get_clock()->now();
         double dt = (current_time - previous_time_).seconds();
-        double acc = speedcontrol_.update_target(
-            tv_, ta_, vx_, dt
-        );
+        double acc = speedcontrol_.get_acc_command(target_speed, target_acc, vx_, dt);
         previous_time_ = current_time;
 
         common_msgs::msg::Cmd cmd;       
@@ -102,16 +104,13 @@ void Controller::on_timer()
 }
 
 /**
- * @brief get global index 
- * 
- * @author Francis Rojas (frarojram@gmail.com)
- * 
+ * @brief get global index of the vehicle in the trajectory
  * @details Use the global position to calculate the speed 
  * and acceleration profile at each moment. 
  */ 
 int Controller::get_global_index(const std::vector<Point>& pointsXY_) {
     double min_distance_sq = std::numeric_limits<double>::max();
-    int i_global_ = -1;
+    int i_global = -1;
 
     for (size_t i = 0; i < pointsXY_.size(); ++i) {
             double dx = pointsXY_[i].x - x_;
@@ -120,11 +119,11 @@ int Controller::get_global_index(const std::vector<Point>& pointsXY_) {
 
             if (distance_sq < min_distance_sq) {
                 min_distance_sq = distance_sq;
-                i_global_ = i;
+                i_global = i;
             }
     }
 
-        return i_global_;
+    index_global_ = i_global;
 }
 
 void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg)
@@ -152,8 +151,8 @@ void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedP
     }
     s_= msg -> s;
     k_ = msg -> k;
-    speed_profiles_ = msg -> speed_profile;
-    acc_profiles_ = msg -> acc_profile; 
+    speed_profile_ = msg -> speed_profile;
+    acc_profile_ = msg -> acc_profile; 
 }
 
 void Controller::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)

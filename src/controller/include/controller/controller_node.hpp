@@ -65,11 +65,9 @@ private:
     std::vector<Point> pointsXY_;  
     std::vector<float> s_;                                         
     std::vector<float> k_ ; 
-    std::vector<float> speed_profiles_;               
-    std::vector<float> acc_profiles_;
-    int index_global_;
-    double tv_;
-    double ta_;             
+    std::vector<float> speed_profile_;               
+    std::vector<float> acc_profile_;
+    int index_global_;         
 
     //Subscribers
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;

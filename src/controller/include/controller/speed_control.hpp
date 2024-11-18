@@ -18,41 +18,37 @@
 
 class SpeedControl {
 public:
-    SpeedControl() 
-    : pid_(), 
-      prev_TS_(0.0) {}
+    SpeedControl(){
+        pid_= PID();
+    }
 
-    PID& get_pid() {return pid_;}
+    PID pid_;
           
     /**
-     * @brief Update speed target
+     * @brief Get acceleration command.
      * 
-     * @param sp Target speed.
-     * @param ap Feedforward acceleration parameter.
-     * @param vx_ Current velocity.
+     * @param target_speed Speed profile target.
+     * @param target_acc Acceleration profile target.
+     * @param vx Current velocity.
      * @param dt Time delta.
      * 
      * @return A pair containing the acceleration.
      */
-    double update_target(const float tv, 
-                         const float ta, 
-                         double vx_,  
+    double get_acc_command(double target_speed, 
+                         double target_acc, 
+                         double vx,  
                          double dt) 
     {
         double acc;
-        double control = pid_.compute_control(vx_, tv, dt);
-        double feedforward = ta;
+        double control = pid_.compute_control(vx, target_speed, dt);
+        double feed_forward = target_acc;
 
-        prev_TS_ = tv;
-        acc = control + feedforward;
+        acc = control + feed_forward;
         acc /= (230 * 0.2);
 
         return acc;
     }
 
-private:
-    PID pid_;
-    double prev_TS_;
 };
 
 #endif // SPEED_CONTROL_H
