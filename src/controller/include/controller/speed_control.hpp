@@ -34,16 +34,16 @@ public:
      * 
      * @return A pair containing the acceleration.
      */
-    double update_target(const float sp, 
-                         const float ap, 
+    double update_target(const float tv, 
+                         const float ta, 
                          double vx_,  
-                         double dt) {
-
+                         double dt) 
+    {
         double acc;
-        double control = pid_.compute_control(vx_, sp, dt);
-        double feedforward = ap;
+        double control = pid_.compute_control(vx_, tv, dt);
+        double feedforward = ta;
 
-        prev_TS_ = sp;
+        prev_TS_ = tv;
         acc = control + feedforward;
         acc /= (230 * 0.2);
 
