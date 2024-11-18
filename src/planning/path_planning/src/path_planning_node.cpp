@@ -14,8 +14,9 @@
 PathPlanning::PathPlanning() : Node("path_planning")
 {
     this->declare_parameter<std::string>("perception_topic", "/perception");
-    this->declare_parameter<std::string>("triangulation_topic", "/triangulation");
+    this->declare_parameter<std::string>("triangulation_topic", "/triangulation"); 
     this->declare_parameter<std::string>("trajectory_topic", "/trajectory");
+    this->declare_parameter<double>("max_tri_len", 7);
     this->declare_parameter<double>("dist_coeff", 1.0);
     this->declare_parameter<double>("angle_coeff", 1.0);
     this->declare_parameter<double>("max_dist", 100.0);
@@ -25,12 +26,14 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
+    this->get_parameter("max_tri_len", kMaxTriLen);
     this->get_parameter("dist_coeff", kDistCoeff);
     this->get_parameter("angle_coeff", kAngleCoeff);
     this->get_parameter("max_dist", kMaxDist);
     this->get_parameter("max_angle", kMaxAngle);
     this->get_parameter("sensor_range", kSensorRange);
     this->get_parameter("max_route", kMaxRouteLength);
+    this->get_parameter("perception_topic", kPerceptionTopic);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
@@ -62,7 +65,7 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     std::vector<SimplexTree> trees;
     triangle_routes_ = {};
     for (int i = 0; i<o_triangles.size(); i++){
-        SimplexTree tree(triangles_, vertices_, o_triangles[i], o_triangles);
+        SimplexTree tree(triangles_, o_triangles[i], o_triangles);
         trees.push_back(tree);
         for (int j = 0; j<tree.index_routes.size(); j++){
             triangle_routes_.push_back(tree.index_routes[j]);
@@ -78,23 +81,16 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     double min_cost = INFINITY;
     for (int i = 0; i<midpoint_routes_.size(); i++){
         double cost = PathPlanning::get_route_cost(midpoint_routes_[i]);
-        if (cost < INFINITY){std::cout << "Cost: " << cost << std::endl;}
         if (cost < min_cost){
             min_cost = cost;
             best_route_ind = i;
         }
     }
-    std::cout << "Best route " << best_route_ind << " cost: " << min_cost << std::endl;
-    std::vector<CDT::V2d<double>> best_route_midp = midpoint_routes_[best_route_ind];
-    std::cout << "Angle first: " << atan2(best_route_midp[1].y-best_route_midp[0].y, best_route_midp[1].x-best_route_midp[0].x) << std::endl;
-    common_msgs::msg::Trajectory trajectory_msg;
-    for (const auto &midpoint : best_route_midp){
-        common_msgs::msg::PointXY point;
-        point.x = midpoint.x;
-        point.y = midpoint.y;
-        trajectory_msg.points.push_back(point);
-    }
-    trajectory_pub_ -> publish(trajectory_msg);
+    std::cout <<"1"<<std::endl;
+    best_midpoint_route_ = midpoint_routes_[best_route_ind];
+    std::cout <<"2"<<std::endl;
+
+    trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
 }
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
@@ -108,6 +104,19 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
     points.push_back(CDT::V2d<double>::make(0,0));
     triangulation.insertVertices(points);
     triangulation.eraseSuperTriangle();
+    CDT::TriangleVec triangles = triangulation.triangles;
+    CDT::Triangulation<double>::V2dVec vertices = triangulation.vertices;
+    CDT::TriIndUSet deleled_tri;
+    for (int i=0; i<triangles.size(); i++) {
+        CDT::VerticesArr3 vert_ind = triangles[i].vertices;
+        CDT::V2d<double> a = vertices[vert_ind[0]];
+        CDT::V2d<double> b = vertices[vert_ind[1]];
+        CDT::V2d<double> c = vertices[vert_ind[2]];
+        if (CDT::distance(a,b) > kMaxTriLen or CDT::distance(b,c) > kMaxTriLen or CDT::distance(c,a) > kMaxTriLen){
+            deleled_tri.insert(i);
+        }
+    }
+    triangulation.removeTriangles(deleled_tri);
     return triangulation;
 }
 
@@ -277,6 +286,17 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> route){
     route_cost += kDistCoeff*abs(route_len - kSensorRange)/kSensorRange;
     route_cost += kAngleCoeff*angle_diff_sum;
     return route_cost;
+}
+
+common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT::V2d<double>> route){
+    common_msgs::msg::Trajectory trajectory_msg;
+    for (const auto &midpoint : route){
+        common_msgs::msg::PointXY point;
+        point.x = midpoint.x;
+        point.y = midpoint.y;
+        trajectory_msg.points.push_back(point);
+    }
+    return trajectory_msg;
 }
 
 int main(int argc, char * argv[])

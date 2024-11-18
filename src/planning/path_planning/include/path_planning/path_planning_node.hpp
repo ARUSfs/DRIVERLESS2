@@ -39,13 +39,14 @@ class PathPlanning : public rclcpp::Node
         std::string kPerceptionTopic;
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
+        double kMaxTriLen;
         double kDistCoeff;
         double kAngleCoeff;
         double kMaxDist;
         double kMaxAngle;
         double kSensorRange;
         int kMaxRouteLength;
-
+        
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
@@ -58,6 +59,7 @@ class PathPlanning : public rclcpp::Node
 
         std::vector<std::vector<int>> triangle_routes_;
         std::vector<std::vector<CDT::V2d<double>>> midpoint_routes_;
+        std::vector<CDT::V2d<double>> best_midpoint_route_;
 
         /**
          * @brief Callback function for the perception topic.
@@ -155,4 +157,6 @@ class PathPlanning : public rclcpp::Node
          * @return float result of the cost function.
          */
         double get_route_cost(std::vector<CDT::V2d<double>> route);
+
+        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<CDT::V2d<double>> route);
 };
