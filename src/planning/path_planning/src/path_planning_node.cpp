@@ -291,7 +291,7 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> route){
             angle_diff_sum += angle_diff;
         }
     }
-    route_cost += kDistCoeff*abs(route_len - kSensorRange)/kSensorRange; // Rarete
+    route_cost += kDistCoeff*abs(route_len - kSensorRange)/kSensorRange; // Distance
     route_cost += kAngleCoeff*angle_diff_sum/route_size; // Curvature
     return route_cost;
 }
