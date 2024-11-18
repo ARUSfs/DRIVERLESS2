@@ -36,6 +36,7 @@ class PathPlanning : public rclcpp::Node
          */
         PathPlanning();
     private:
+        // Parameters from configuration file
         std::string kPerceptionTopic;
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
@@ -47,16 +48,16 @@ class PathPlanning : public rclcpp::Node
         double kSensorRange;
         int kMaxRouteLength;
         
+        // Suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
 
+        // Triangulation attributes
         CDT::TriangleVec triangles_;
         CDT::Triangulation<double>::V2dVec vertices_;
         
-        CDT::V2d<double> closest_midpoint_;
-        int closest_triangle_ind_;
-
+        // Routes
         std::vector<std::vector<int>> triangle_routes_;
         std::vector<std::vector<CDT::V2d<double>>> midpoint_routes_;
         std::vector<CDT::V2d<double>> best_midpoint_route_;
@@ -158,5 +159,10 @@ class PathPlanning : public rclcpp::Node
          */
         double get_route_cost(std::vector<CDT::V2d<double>> route);
 
+        /**
+         * @brief Create a trajectory msg object from a given route.
+         * @param route std::vector<CDT::V2d<double>> vector containing the route.
+         * @return common_msgs::msg::Trajectory parsed trajectory message to ROS2 format.
+         */
         common_msgs::msg::Trajectory create_trajectory_msg(std::vector<CDT::V2d<double>> route);
 };

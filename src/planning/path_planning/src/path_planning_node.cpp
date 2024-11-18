@@ -86,9 +86,9 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
             best_route_ind = i;
         }
     }
-    std::cout << "Best route: " << best_route_ind << std::endl;
     best_midpoint_route_ = midpoint_routes_[best_route_ind];
 
+    // Publish the best trajectory
     trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
 }
 
@@ -274,6 +274,7 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> route){
     double angle_diff_sum = 0;
     for (int i = 0; i<route_size-1; i++){
         double dist = CDT::distance(route[i], route[i+1]);
+        // Return infinity if two consecutive points of the route are too far apart
         if (dist > kMaxDist){
             return INFINITY;
         } else{
@@ -281,7 +282,9 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> route){
         }
     }
     for (int i = 0; i<route_size-2;i++){
-        double angle_diff = abs(atan2(route[i+2].y-route[i+1].y, route[i+2].x-route[i+1].x)-atan2(route[i+1].y-route[i].y, route[i+1].x-route[i].x));
+        double angle_diff = abs(atan2(route[i+2].y-route[i+1].y, route[i+2].x-route[i+1].x)-
+                                atan2(route[i+1].y-route[i].y, route[i+1].x-route[i].x));
+        // Return infinity if the difference in angle between two consecutive segments is too high
         if (angle_diff > kMaxAngle){
             return INFINITY;
         } else{
