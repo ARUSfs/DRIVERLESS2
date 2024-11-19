@@ -39,6 +39,9 @@ class TrajectoryOptimization : public rclcpp::Node
         double vx_;
         double vy_;
         double speed_;
+        double ax_;
+        double ay_;
+        double acc_;
 
         //Parameters
         double kAxMax;
@@ -60,7 +63,7 @@ class TrajectoryOptimization : public rclcpp::Node
          * 
          *  When a trajectory message is received, the callback extracts the track centerline 
          * (x,y) points from the message and executes all  necessary computations to get the 
-         *  optimized trajectory full message (except acceleration profile at this moment)
+         *  optimized trajectory full message 
          *  
          * @param trajectory_msg 
          */
@@ -69,7 +72,7 @@ class TrajectoryOptimization : public rclcpp::Node
         /**
          * @brief Callback function for the car_state topic
          * 
-         * We extract vx and vy to calculate the car's current speed
+         * We extract vx, vy, ax, ay to calculate the car's current speed and acceleration
          * 
          * @param car_state_msg 
          */        
@@ -97,11 +100,12 @@ class TrajectoryOptimization : public rclcpp::Node
          * @param  s Accumulated distance at each point
          * @param  k Curvature at each point
          * @param  speed_profile Speed profile for the given trajectory
+         * @param  acc_profile Acceleration profile for the given trajectory
          * 
          * @return common_msgs::msg::Trajectory 
          */
         common_msgs::msg::Trajectory create_trajectory_msg(VectorXd traj_x, VectorXd traj_y, 
-            VectorXd s, VectorXd k, VectorXd speed_profile);
+            VectorXd s, VectorXd k, VectorXd speed_profile, VectorXd acc_profile);
 
         /**
          * @brief Calculates the accumulated distance (s) and curvature (k) 
@@ -115,12 +119,12 @@ class TrajectoryOptimization : public rclcpp::Node
         MatrixXd get_distance_and_curvature_values(VectorXd traj_x, VectorXd traj_y);
 
         /**
-         * @brief Generates a speed profile for the trajectory
+         * @brief Generates speed and acceleration profiles for the trajectory
          * 
          * @param  s Accumulated distance at each point
          * @param  k Curvature at each point
          * 
-         * @return VectorXd Speed profile vector
+         * @return MatrixXd [speed_profile, acc_profile]
          */
-        VectorXd generate_speed_profile(VectorXd s, VectorXd k);
+        MatrixXd generate_speed_and_acc_profile(VectorXd s, VectorXd k);
 };
