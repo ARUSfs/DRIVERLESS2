@@ -1,5 +1,5 @@
 /**
- * @file cropping.hp
+ * @file cropping.h
  * @author Alejandro Vallejo Mayo (alejandro.vm.1805@gmail.com)
  * @brief Auxiliar file for the Perception node.
  * Contains auxiliar functions used in the algorithm to cropp the point cloud received from the lidar.
@@ -28,7 +28,7 @@ namespace Cropping{
     
         //Store the cropped cloud
         crop_box_filter.filter(*cloud);
-}   
+    }   
 
     /**
     * @brief Create crop filter function for the point cloud.

@@ -1,5 +1,5 @@
 /**
- * @file clustering.hp
+ * @file clustering.h
  * @author Alejandro Vallejo Mayo (alejandro.vm.1805@gmail.com)
  * @brief Auxiliar file for the Perception node.
  * Contains auxiliar functions used in the algorithm to make the clusters from the filtered point cloud.

@@ -35,8 +35,42 @@ Perception::Perception() : Node("Perception")
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kLidarTopic, 10, std::bind(&Perception::lidar_callback, this, std::placeholders::_1));
 
-    //Create the publisher
+    //Create the publishers
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/filtered_cloud", 10);
+    map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map_cloud", 10);
+}
+
+void Perception::get_clusters_centers(std::vector<pcl::PointIndices> cluster_indices, pcl::PointCloud<PointXYZColorScore>::Ptr map_cloud,
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered)
+{
+    for (const auto &cluster : cluster_indices)
+    {
+        //Create a temporal point cloud
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::copyPointCloud(*cloud_filtered, cluster, *cluster_cloud);
+
+        //Obtain the bounding box of the cluster
+        pcl::PointXYZI min_point, max_point;
+        pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
+        float max_x = max_point.x;
+        float min_x = min_point.x;
+        float max_y = max_point.y;
+        float min_y = min_point.y;
+        float max_z = max_point.z;
+        float min_z = min_point.z;
+
+        //filter the cluster by size and keep the center of the cloud
+        if ((max_z - min_z) > 0.1 && (max_z - min_z) < 0.4 && (max_x - min_x) < 0.4 && (max_y - min_y) < 0.4)
+        {
+            PointXYZColorScore cone;
+            cone.x = (max_x + min_x) / 2;
+            cone.y = (max_y + min_y) / 2;
+            cone.z = 0;
+            cone.color = 0;
+            cone.score = 1;
+            map_cloud->push_back(cone);
+        }
+    }
 }
 
 /**
@@ -55,7 +89,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Cropping::crop_filter_condition(cloud, kMaxXFov, kMaxYFov, kMaxZFov, kHFov);
 
     //print the number of filtered points and the time of the cropping function used
-    std::cout << "Puntos filtrados: " << cloud->size() << std::endl;
+    std::cout << "Number of filtered points: " << cloud->size() << std::endl;
     std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
 
     //Define the variables for the ground filter
@@ -69,15 +103,28 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Print the time of the ground filter algorithm used
     std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
 
+    //Extract the clusters from the point cloud
+    std::vector<pcl::PointIndices> cluster_indices;
+    Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
+
+    //Store the clusters centers in a new point cloud
+    pcl::PointCloud<PointXYZColorScore>::Ptr map_cloud(new pcl::PointCloud<PointXYZColorScore>);
+    Perception::get_clusters_centers(cluster_indices, map_cloud, cloud_filtered);
+
+    //Print the number of cones
+    std::cout << "Number of cones: " << map_cloud->size() << std::endl;
+
     //Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;
     pcl::toROSMsg(*cloud_filtered,filtered_msg);
     filtered_msg.header.frame_id="/rslidar";
     filtered_pub_->publish(filtered_msg);
 
-    //Extract the clusters from the point cloud
-    std::vector<pcl::PointIndices> cluster_indices;
-    Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
+    //Publish the map cloud
+    sensor_msgs::msg::PointCloud2 map_msg;
+    pcl::toROSMsg(*map_cloud,map_msg);
+    map_msg.header.frame_id="/rslidar";
+    map_pub_->publish(map_msg);
 }
 
 int main(int argc, char * argv[])

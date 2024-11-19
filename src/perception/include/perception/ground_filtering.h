@@ -1,5 +1,5 @@
 /**
- * @file ground_filtering.hp
+ * @file ground_filtering.h
  * @author Alejandro Vallejo Mayo (alejandro.vm.1805@gmail.com)
  * @brief Auxiliar file for the Perception node.
  * Contains auxiliar functions used in the algorithm to remove the ground from the original point cloud.

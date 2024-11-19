@@ -16,6 +16,8 @@
 #include "perception/ground_filtering.h"
 #include "perception/clustering.h"
 #include "perception/cropping.h"
+#include "PointXYZColorScore.h"
+#include <pcl/common/common.h>
 
 /**
  * @class Perception
@@ -46,8 +48,9 @@ class Perception : public rclcpp::Node
         std::string kLidarTopic;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_sub_;
 
-        //Publisher
+        //Publishers
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
 
         /**
          * @brief Callback function for the lidar topic.
@@ -56,4 +59,14 @@ class Perception : public rclcpp::Node
          * @param lidar_msg The point cloud message received from the lidar.
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
+
+        /**
+         * @brief Auxiliar function for the call back function.
+         * Extract the center of each cluster and keep it in a new point cloud.
+         * @param cluster_indices Indices from cluster.
+         * @param map_cloud Final cloud that will be publish.
+         * @param cloud_filtered The point cloud after the ground filtering.
+         */
+        void get_clusters_centers(std::vector<pcl::PointIndices> cluster_indices, pcl::PointCloud<PointXYZColorScore>::Ptr map_cloud,
+            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered);
 };
