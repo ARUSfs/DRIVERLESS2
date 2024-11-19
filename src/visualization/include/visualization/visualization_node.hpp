@@ -55,7 +55,7 @@ class Visualization : public rclcpp::Node
          * @return visualization_msgs::msg::Marker Marker message.
          */
         visualization_msgs::msg::Marker create_trajectory_marker(
-            const common_msgs::msg::Trajectory::SharedPtr msg, 
+            const common_msgs::msg::Trajectory::SharedPtr msg, bool global=true,
             double red=1.0, double green=0.0, double blue=0.0, double alpha=1.0);
 
         double kAlpha;
