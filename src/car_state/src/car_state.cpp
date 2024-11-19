@@ -86,8 +86,10 @@ void CarState::on_timer()
     state_estimation_.set_measurement_data(v_front_right_, v_front_left_, v_rear_right_, v_rear_left_, ax_, ay_);
 
     Vector2d v_est = state_estimation_.kalman_velocity_estimation();
-    vx_ = v_est(0);
-    vy_ = v_est(1);
+    // vx_ = v_est(0);
+    // vy_ = v_est(1);
+
+    vx_ = (v_front_right_ + v_front_left_ + v_rear_right_ + v_rear_left_)/4;
 
     // Publish state message
     auto state_msg = common_msgs::msg::State();
