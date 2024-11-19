@@ -55,7 +55,7 @@ Visualization::Visualization() : Node("visualization")
     arussim_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kARUSSimTrajectoryTopic, 10, std::bind(&Visualization::arussim_trajectory_callback, this, std::placeholders::_1));
     delaunay_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        kDelaunayTrajectoryTopic, 10, std::bind(&Visualization::optimized_trajectory_callback, this, std::placeholders::_1));
+        kDelaunayTrajectoryTopic, 10, std::bind(&Visualization::delaunay_trajectory_callback, this, std::placeholders::_1));
     acc_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kAccTrajectoryTopic, 10, std::bind(&Visualization::acc_trajectory_callback, this, std::placeholders::_1));
     skidpad_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
@@ -107,39 +107,44 @@ void Visualization::triangulation_callback(const common_msgs::msg::Triangulation
 
 void Visualization::arussim_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, 1.0, 0.0, 0.0, kAlpha/2);
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, true, 1.0, 0.0, 0.0, kAlpha/2);
     arussim_trajectory_visualization_pub_->publish(marker);
 }
 
 void Visualization::optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, 1.0, 0.5, 0.0, kAlpha);
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, true, 1.0, 0.5, 0.0, kAlpha);
     optimized_trajectory_visualization_pub_->publish(marker);
 }
 
 void Visualization::delaunay_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, 1.0, 0.0, 0.0, kAlpha);
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, false, 1.0, 0.0, 0.0, kAlpha);
     trajectory_visualization_pub_->publish(marker);
 }
 
 void Visualization::acc_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, 1.0, 0.0, 0.0, kAlpha);
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, false, 1.0, 0.0, 0.0, kAlpha);
     trajectory_visualization_pub_->publish(marker);
 }
 
 void Visualization::skidpad_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, 1.0, 0.0, 0.0, kAlpha);
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, false, 1.0, 0.0, 0.0, kAlpha);
     trajectory_visualization_pub_->publish(marker);
 }
 
 visualization_msgs::msg::Marker Visualization::create_trajectory_marker(
-    const common_msgs::msg::Trajectory::SharedPtr msg, double red, double green, double blue, double alpha)
+    const common_msgs::msg::Trajectory::SharedPtr msg, 
+    bool global, double red, double green, double blue, double alpha)
 {
     visualization_msgs::msg::Marker marker;
-    marker.header.frame_id = "arussim/world";
+    if(global){
+        marker.header.frame_id = "arussim/world";
+    } else {
+        marker.header.frame_id = "arussim/vehicle_cog";
+    }
     marker.ns = "trajectory";
     marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
     marker.action = visualization_msgs::msg::Marker::ADD;
