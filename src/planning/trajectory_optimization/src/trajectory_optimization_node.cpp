@@ -44,7 +44,7 @@ TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization
  * 
  *  When a trajectory message is received, the callback extracts the track centerline 
  * (x,y) points from the message and executes all  necessary computations to get the 
- *  optimized trajectory full message (except acceleration profile at this moment)
+ *  optimized trajectory full message 
  *  
  * @param trajectory_msg 
  */
@@ -75,27 +75,32 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::Trajectory::S
     VectorXd optimized_s = optimized_s_k.col(0);
     VectorXd optimized_k = optimized_s_k.col(1);
 
-    //Generate speed profile
-    VectorXd speed_profile = TrajectoryOptimization::generate_speed_profile(optimized_s, optimized_k);
+    //Generate speed and acceletation profile
+    MatrixXd profile = TrajectoryOptimization::generate_speed_and_acc_profile(optimized_s, optimized_k);
+    VectorXd speed_profile = profile.col(0);
+    VectorXd acc_profile = profile.col(1);    
 
 
     //Create and publish trajectory message
-    common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(traj_x, traj_y, optimized_s, optimized_k, speed_profile);
+    common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(traj_x, traj_y, optimized_s, optimized_k, speed_profile, acc_profile);
     optimized_trajectory_pub_ -> publish(optimized_traj_msg);
 }
 
 /**
  * @brief Callback function for the car_state topic
  * 
- * We extract vx and vy to calculate the car's current speed
+ * We extract vx, vy, ax, ay to calculate the car's current speed and acceleration
  * 
  * @param car_state_msg 
  */    
 void TrajectoryOptimization::car_state_callback(common_msgs::msg::State::SharedPtr car_state_msg){
     vx_ = car_state_msg -> vx;
     vy_ = car_state_msg -> vy;
+    ax_ = car_state_msg -> ax;
+    ay_ = car_state_msg -> ay;
 
     speed_ = sqrt(vx_*vx_ + vy_*vy_);
+    acc_ = sqrt(ax_*ax_ + ay_*ay_);
 }
 
 /**
@@ -128,11 +133,12 @@ VectorXd TrajectoryOptimization::generate_track_width(VectorXd k, double dmax){
  * @param  s Accumulated distance at each point
  * @param  k Curvature at each point
  * @param  speed_profile Speed profile for the given trajectory
+ * @param  acc_profile Acceleration profile for the given trajectory
  * 
  * @return common_msgs::msg::Trajectory 
  */
 common_msgs::msg::Trajectory TrajectoryOptimization::create_trajectory_msg(VectorXd traj_x, VectorXd traj_y, 
-    VectorXd s, VectorXd k, VectorXd speed_profile){
+    VectorXd s, VectorXd k, VectorXd speed_profile, VectorXd acc_profile){
     
     common_msgs::msg::Trajectory traj_msg;
 
@@ -144,6 +150,7 @@ common_msgs::msg::Trajectory TrajectoryOptimization::create_trajectory_msg(Vecto
         traj_msg.s.push_back(s(i));
         traj_msg.k.push_back(k(i));
         traj_msg.speed_profile.push_back(speed_profile(i));
+        traj_msg.acc_profile.push_back(acc_profile(i));
     }
 
     return traj_msg;
@@ -202,18 +209,18 @@ MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj
 
 
 /**
- * @brief Generates a speed profile for the trajectory
+ * @brief Generates speed and acceleration profiles for the trajectory
  * 
  * @param  s Accumulated distance at each point
  * @param  k Curvature at each point
  * 
- * @return VectorXd Speed profile vector
+ * @return MatrixXd [speed_profile, acc_profile]
  */
-VectorXd TrajectoryOptimization::generate_speed_profile(VectorXd s, VectorXd k){
+MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, VectorXd k){
     int m = s.size();
 
     VectorXd speed_profile = VectorXd::Zero(m);
-    speed_profile(0) = speed_;                                  // Begin at current car's speed
+    speed_profile(0) = speed_;                                  // Begin at car's current speed
     VectorXd v_grip(m), ds(m);
     double v_max_braking;
 
@@ -237,7 +244,42 @@ VectorXd TrajectoryOptimization::generate_speed_profile(VectorXd s, VectorXd k){
         }
     }
 
-    return speed_profile;
+    speed_profile(0) = speed_profile(m-1);                      // Begin at final speed and repeat process to get a smooth closed loop
+
+
+    for(int i = 1; i < m; i++){
+
+        speed_profile(i) = sqrt(speed_profile(i-1)*speed_profile(i-1) + 2*kAxMax*ds(i));
+        if (speed_profile(i) > v_grip(i)){                     
+            speed_profile(i) = v_grip(i);                       
+        }
+    }
+    
+    for(int j = m-2; j > -1; j--){
+        v_max_braking = sqrt(speed_profile(j+1)*speed_profile(j+1) + 2*kAxMax*ds(j));  
+        if(speed_profile(j) > v_max_braking){                   
+            speed_profile(j) = v_max_braking;                  
+        }
+    }
+
+    // Generate acceleration profile
+    VectorXd acc_profile = VectorXd::Zero(m);
+    acc_profile(0) = acc_;                                      // Begin at car's current acceleration
+
+    for(int i = 1; i < m; i++){
+        acc_profile(i) = (speed_profile(i)*speed_profile(i) - speed_profile(i-1)*speed_profile(i-1)) / (2*ds(i));
+    }
+
+    acc_profile(0) = acc_profile(m-1);                          // Begin at final acceleration and repeat process to get a smooth closed loop
+
+    for(int i = 1; i < m; i++){
+        acc_profile(i) = (speed_profile(i)*speed_profile(i) - speed_profile(i-1)*speed_profile(i-1)) / (2*ds(i));
+    }
+
+    MatrixXd res(m,2);
+    res << speed_profile, acc_profile;
+
+    return res;
 }
 
 int main(int argc, char * argv[])

@@ -10,6 +10,7 @@
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/four_wheel_drive.hpp"
 
+#include "car_state/estimation.hpp"
 /**
  * @class CarState
  * @brief CarState class 
@@ -37,12 +38,18 @@ private:
     double x_=0;
     double y_=0;
     double yaw_ = 0;
+    double v_front_right_ = 0;
+    double v_front_left_ = 0;
+    double v_rear_right_ = 0;
+    double v_rear_left_ = 0;
     double vx_ = 0;
     double vy_ = 0;
     double r_ = 0;
     double ax_ = 0;
     double ay_ = 0;
     double delta_ = 0;
+
+    Estimation state_estimation_;
 
 
     // Subscribers

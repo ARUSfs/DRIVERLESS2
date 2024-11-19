@@ -292,10 +292,6 @@ namespace MinCurvaturepath {
         Aeq(n-1) = -1;
         double beq = 0;
 
-        MatrixXd A(1, n); 
-        A.row(0)= Aeq;
-    
-
         VectorXd Alb(1), Aub(1);
         Alb << beq;
         Aub << beq;
@@ -305,7 +301,7 @@ namespace MinCurvaturepath {
         qpmad::Solver solver;
 
         H << 2*H;
-        qpmad::Solver::ReturnStatus status = solver.solve(res, H, B.transpose(), lb, ub, A, Alb, Aub);
+        qpmad::Solver::ReturnStatus status = solver.solve(res, H, B.transpose(), lb, ub, Aeq, Alb, Aub);
         if (status != qpmad::Solver::OK)
         {
             std::cerr << "Error" << std::endl;

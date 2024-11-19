@@ -47,13 +47,17 @@ CarState::CarState(): Node("car_state")
         });
 
     RCLCPP_INFO(this->get_logger(), "CarState node initialized");
+
+    //Create estimation object
+    state_estimation_ = Estimation();
+
 }
 
 void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
 {
-        ax_ = msg-> linear_acceleration.x;
-        ay_ = msg-> linear_acceleration.y;
-        r_ = msg->angular_velocity.z;
+    ax_ = msg-> linear_acceleration.x;
+    ay_ = msg-> linear_acceleration.y;
+    r_ = msg->angular_velocity.z;
 }
 
 void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -63,8 +67,10 @@ void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg
 
 void CarState::wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::SharedPtr msg)
 {
-
-    vx_ = (msg->front_right + msg->front_left + msg->rear_right + msg->rear_left) / 4.0;
+    v_front_right_ = msg-> front_right;
+    v_front_left_ = msg-> front_left;
+    v_rear_right_ = msg-> rear_right;
+    v_rear_left_ = msg-> rear_left;
 }
 
 void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg)
@@ -76,8 +82,17 @@ void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::Shar
 
 void CarState::on_timer()
 {
-    auto state_msg = common_msgs::msg::State();
+    // Estimate velocity
+    state_estimation_.set_measurement_data(v_front_right_, v_front_left_, v_rear_right_, v_rear_left_, ax_, ay_);
 
+    Vector2d v_est = state_estimation_.kalman_velocity_estimation();
+    // vx_ = v_est(0);
+    // vy_ = v_est(1);
+
+    vx_ = (v_front_right_ + v_front_left_ + v_rear_right_ + v_rear_left_)/4;
+
+    // Publish state message
+    auto state_msg = common_msgs::msg::State();
     
     state_msg.x = x_;      
     state_msg.y = y_;    
