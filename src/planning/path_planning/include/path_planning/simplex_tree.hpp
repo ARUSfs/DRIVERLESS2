@@ -25,14 +25,13 @@ class SimplexTree {
     /**
      * @brief Array of arrays containing all the posible routes through the tree.
      */
-    std::vector<std::vector<int>> routes;
+    std::vector<std::vector<int>> index_routes;
 
     /**
      * @brief Construct a new generic tree object.
      * @param key int index of the triangle.
      */
-    SimplexTree(CDT::TriangleVec triangle_list, CDT::Triangulation<double>::V2dVec vertices, 
-    int origin, std::vector<int> o_triangles);
+    SimplexTree(CDT::TriangleVec triangle_list, int origin, std::vector<int> o_triangles);
 
     /**
      * @brief Recursive function to create the tree structure.
@@ -47,8 +46,7 @@ class SimplexTree {
     SimplexNode* create_tree_aux(CDT::TriangleVec triangle_list, int index, std::vector<int> visited);
 };
 
-SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, CDT::Triangulation<double>::V2dVec vertices,
-                         int origin_ind, std::vector<int> o_triangles) {
+SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, std::vector<int> o_triangles) {
     CDT::Triangle origin = triangle_list[origin_ind]; // Get triangle from index
     CDT::NeighborsArr3 neighbors = origin.neighbors;  // Get neighbors of the triangle
 
@@ -104,6 +102,6 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
     }
     /* In case there are no valid neighbors, return the node with no children 
     and add the visited route to the routes array in the tree attribute */
-    routes.push_back(visited);
+    index_routes.push_back(visited);
     return node;
 }

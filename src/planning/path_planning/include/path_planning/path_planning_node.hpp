@@ -17,6 +17,7 @@
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>
+#include <common_msgs/msg/trajectory.hpp>
 
 /**
  * @brief Class containing the Path Planning node.
@@ -35,18 +36,31 @@ class PathPlanning : public rclcpp::Node
          */
         PathPlanning();
     private:
+        // Parameters from configuration file
         std::string kPerceptionTopic;
         std::string kTriangulationTopic;
+        std::string kTrajectoryTopic;
+        double kMaxTriLen;
+        double kDistCoeff;
+        double kAngleCoeff;
+        double kMaxDist;
+        double kMaxAngle;
+        double kSensorRange;
+        int kMaxRouteLength;
+        
+        // Suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
+        rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
 
+        // Triangulation attributes
         CDT::TriangleVec triangles_;
         CDT::Triangulation<double>::V2dVec vertices_;
         
-        CDT::V2d<double> closest_midpoint_;
-        int closest_triangle_ind_;
-
-        std::vector<std::vector<int>> routes_;
+        // Routes
+        std::vector<std::vector<int>> triangle_routes_;
+        std::vector<std::vector<CDT::V2d<double>>> midpoint_routes_;
+        std::vector<CDT::V2d<double>> best_midpoint_route_;
 
         /**
          * @brief Callback function for the perception topic.
@@ -123,4 +137,32 @@ class PathPlanning : public rclcpp::Node
          * @return std::vector<int> vector of index of the triangles adjacent to the vertex.
          */
         std::vector<int> get_triangles_from_vert(int vert_index);
+
+        /**
+         * @brief Get the edge shared by two neighbor triangles.
+         * @param triangle1 CDT::Triangle first triangle.
+         * @param triangle2 CDT::Triangle second triangle.
+         * @return CDT::Edge edge shared by the two triangles.
+         */
+        CDT::Edge get_share_edge(CDT::Triangle triangle1, CDT::Triangle triangle2);
+
+        /**
+         * @brief Transform the triangle routes into a vector of the midpoints crossed by the route.
+         */
+        void get_midpoint_routes();
+
+        /**
+         * @brief Calculate the cost of a given route based on the distance and angle between consecutive points and
+         * the total distance of the route.
+         * @param route vector of CDT::V2d<double> points containing the route through the midpoints.
+         * @return float result of the cost function.
+         */
+        double get_route_cost(std::vector<CDT::V2d<double>> route);
+
+        /**
+         * @brief Create a trajectory msg object from a given route.
+         * @param route std::vector<CDT::V2d<double>> vector containing the route.
+         * @return common_msgs::msg::Trajectory parsed trajectory message to ROS2 format.
+         */
+        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<CDT::V2d<double>> route);
 };

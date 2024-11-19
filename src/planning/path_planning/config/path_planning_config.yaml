@@ -2,3 +2,11 @@ path_planning:
   ros__parameters:
     perception_topic: '/arussim/perception'
     triangulation_topic: '/path_planning/triangulation'
+    trajectory_topic: '/path_planning/trajectory'
+    max_tri_len: 8.0
+    dist_coeff: 0.5
+    angle_coeff: 0.75
+    max_dist: 7.0
+    max_angle: 1.0
+    sensor_range: 25.0
+    max_route: 15
