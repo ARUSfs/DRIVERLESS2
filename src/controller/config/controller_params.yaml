@@ -13,7 +13,7 @@ controller:
     look_ahead_distance: 6.0
 
     # PID
-    target: 8.0
+    target: 9.0
     KP: 43.87
     KI: 1.29
     KD: 0.0

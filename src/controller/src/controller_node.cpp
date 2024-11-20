@@ -14,7 +14,9 @@
  * @details This constructor declares all the necessary variables and
  *          instantiates all the controls required for the ART-25 to be autonomous.
  */
-Controller::Controller() : Node("controller"),  speedcontrol_()
+Controller::Controller() : Node("controller"),  
+    speedcontrol_(),
+    pure_pursuit_()
 {
     this->declare_parameter<std::string>("controller_type", "pure_pursuit");
     this->declare_parameter<double>("timer_frequency", 100.0);
@@ -67,6 +69,7 @@ Controller::Controller() : Node("controller"),  speedcontrol_()
 
 /**
  * @brief Callback function timer of controller
+ * 
  * @details Implement the control algorithm with calls to the controller libraries. 
  */  
 void Controller::on_timer()
@@ -76,20 +79,20 @@ void Controller::on_timer()
 
         double target_speed = kTargetSpeed;
         if(!(speed_profile_.empty())){
-            double target_speed = speed_profile_.at(index_global_);
+            target_speed = speed_profile_.at(index_global_);
         }
 
         double target_acc = 0.0;
         if(!(acc_profile_.empty())){
-            double target_acc = acc_profile_.at(index_global_);
+            target_acc = acc_profile_.at(index_global_);
         }
-
-        PurePursuit::set_path(pointsXY_);
+        
+        pure_pursuit_.set_path(pointsXY_);
         Point position;
         position.x = x_;
         position.y = y_;
-        PurePursuit::set_position(position, yaw_);
-        double delta = PurePursuit::get_steering_angle(target_speed/1.5);
+        pure_pursuit_.set_position(position, yaw_);
+        double delta = pure_pursuit_.get_steering_angle(index_global_, target_speed / 1.5);
 
         rclcpp::Time current_time = this->get_clock()->now();
         double dt = (current_time - previous_time_).seconds();
@@ -108,7 +111,7 @@ void Controller::on_timer()
  * @details Use the global position to calculate the speed 
  * and acceleration profile at each moment. 
  */ 
-int Controller::get_global_index(const std::vector<Point>& pointsXY_) {
+void Controller::get_global_index(const std::vector<Point>& pointsXY_) {
     double min_distance_sq = std::numeric_limits<double>::max();
     int i_global = -1;
 
@@ -142,6 +145,12 @@ void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg
 
 void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
+    pointsXY_.clear();
+    s_.clear();
+    k_.clear();
+    speed_profile_.clear();
+    acc_profile_.clear();
+
     std::vector<common_msgs::msg::PointXY> points_common = msg -> points;
     for (const auto &pointXY : points_common) {
         Point point;

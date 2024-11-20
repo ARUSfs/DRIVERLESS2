@@ -18,10 +18,10 @@
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/point_xy.hpp"
 #include "common_msgs/msg/cmd.hpp"
-#include "controller/pure_pursuit.h"
+#include "controller/pure_pursuit.hpp"
+#include "controller/speed_control.hpp"
 #include "controller/PID.hpp"
 #include "Point.h"
-#include "controller/speed_control.hpp"
 
 /**
  * @brief The Controller class
@@ -34,18 +34,18 @@ class Controller : public rclcpp::Node
 public:
 
     Controller();
-    PID pid_;
     
 private:
     // Instances
     SpeedControl speedcontrol_;
+    Pure_pursuit pure_pursuit_;   
 
     // Callbacks
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void on_timer();
-    int get_global_index(const std::vector<Point>& pointsXY_);
+    void get_global_index(const std::vector<Point>& pointsXY_);
 
     // Status AS
     int16_t as_status_;

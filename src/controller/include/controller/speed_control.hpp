@@ -7,16 +7,13 @@
  * 
  * @date 15-11-2024
  */
-
-#ifndef SPEED_CONTROL_H
-#define SPEED_CONTROL_H
-
 #include "common_msgs/msg/trajectory.hpp"
 #include "controller/PID.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <utility>
 
-class SpeedControl {
+class SpeedControl
+{
 public:
     SpeedControl(){
         pid_= PID();
@@ -50,6 +47,4 @@ public:
     }
 
 };
-
-#endif // SPEED_CONTROL_H
 

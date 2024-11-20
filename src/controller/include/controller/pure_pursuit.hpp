@@ -1,0 +1,116 @@
+/**
+ * @file pure_pursuit.hpp
+ * 
+ * @author Francis Rojas (frarojram@gmail.com).
+ * 
+ * @brief Pure Pursuit, header and implementation for ARUS Team Driverless pipeline.
+ * 
+ * @date 20-11-2024
+ */
+
+#include <vector>
+#include <limits>
+#include <cmath>
+#include <algorithm>
+#include "Point.h"
+
+class Pure_pursuit
+{
+public:
+    Pure_pursuit(){
+        path_updated_ = false;
+        car_position_ = {0.0, 0.0};
+        prev_steer_ = 0.0;
+        pursuit_index_ = 0;
+        path_.clear();        
+    }
+
+    /**
+     * @brief Set path trayectory, set global position and yaw
+     * @param new_path
+     * @param position
+     * @param yaw
+     * @details Update the current trayectory.
+     */
+    void set_path(const std::vector<Point> &new_path) {
+        if (new_path.empty()) {
+            return;
+        }
+        path_.clear();
+        path_ = new_path;
+        path_updated_ = true;
+    }
+    
+    void set_position(const Point &position, double yaw){
+        car_position_ = position;
+        yaw_ = yaw;
+    }
+    /**
+     * @brief Search pursuit point.
+     * @author Francis Rojas (frarojram@gmail.com).
+     * @param index_global
+     * @param look_ahead_distance
+     * @details Through a position, it takes the point on the trajectory that matches
+     *          the look-ahead distances and returns the candidate.
+     * @return Point to pursue.
+     */
+    Point search_pursuit_point(size_t index_global, double look_ahead_distance) {
+        double accumulated_distance = 0.0;
+
+        for (size_t point_index = index_global; point_index < path_.size() - 1; ++point_index) {
+            const Point &current_point = path_[point_index];
+            const Point &next_point = path_[point_index + 1];
+
+            double dx = next_point.x - current_point.x;
+            double dy = next_point.y - current_point.y;
+            double segment_distance = std::sqrt(dx * dx + dy * dy);
+
+            accumulated_distance += segment_distance;
+
+            if (accumulated_distance >= look_ahead_distance) {
+                pursuit_index_ = point_index + 1;
+                return path_[pursuit_index_];
+            }
+        }
+        return path_.back();
+    }
+
+    /**
+     * @brief Get steering angle.
+     * @authors Team driverless ARUS
+     * @param index_global
+     * @param look_ahead_distance
+     * @details From the pursuit point, it calculates the steering 
+     *          angle to send in the command.
+     * @return Point to pursue.
+     */
+    double get_steering_angle(int index_global, double look_ahead_distance) {
+        if (path_.size() <= 1) {
+            return prev_steer_;
+        }
+
+        Point pursuit_point = search_pursuit_point(index_global, look_ahead_distance);
+
+        double alpha = std::atan2(pursuit_point.y - car_position_.y, pursuit_point.x - car_position_.x) - yaw_;
+        double delta = std::atan2(2.0 * 1.535 * std::sin(alpha) / look_ahead_distance, 1.0);
+
+        delta = std::max(-0.347, std::min(delta, 0.347));
+        delta = std::clamp(delta, -20*M_PI/180, 20*M_PI/180);
+        prev_steer_ = delta;
+
+        return delta;
+    }
+
+
+private:
+
+    bool path_updated_ = false; 
+    std::vector<Point> path_;
+
+    Point car_position_;
+    double yaw_;
+
+    size_t pursuit_index_;
+    double prev_steer_;
+
+};
