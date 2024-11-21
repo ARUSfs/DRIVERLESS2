@@ -8,6 +8,7 @@ controller:
     as_status: "/sensors/AS_status"
     trajectory: "/arussim_interface/fixed_trajectory"
     cmd: "/controller/cmd"
+    pursuit_point: "/controller/pursuit_point"
 
     # PP
     look_ahead_distance: 6.0

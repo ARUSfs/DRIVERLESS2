@@ -85,6 +85,7 @@ private:
     std::string kAsStatus;
     std::string kTrajectory;
     std::string kCmd;
+    std::string kPursuit_point;
 
     double kTimerFreq;
     double kLAD;
@@ -94,6 +95,7 @@ private:
     double KD;
 
     rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_publisher_;
+    rclcpp::Publisher<common_msgs::msg::PointXY>::SharedPtr pursuit_point_publisher_;
 };
 
 #endif

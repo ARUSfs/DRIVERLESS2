@@ -18,9 +18,9 @@ class Pure_pursuit
 {
 public:
     Pure_pursuit(){
-        path_updated_ = false;
         car_position_ = {0.0, 0.0};
         prev_steer_ = 0.0;
+        prev_pursuit_point_={0.0, 0.0};
         pursuit_index_ = 0;
         path_.clear();        
     }
@@ -38,7 +38,6 @@ public:
         }
         path_.clear();
         path_ = new_path;
-        path_updated_ = true;
     }
     
     void set_position(const Point &position, double yaw){
@@ -84,9 +83,9 @@ public:
      *          angle to send in the command.
      * @return Point to pursue.
      */
-    double get_steering_angle(int index_global, double look_ahead_distance) {
+    std::pair<double, Point> get_steering_angle(int index_global, double look_ahead_distance) {
         if (path_.size() <= 1) {
-            return prev_steer_;
+            return {prev_steer_, prev_pursuit_point_};
         }
 
         Point pursuit_point = search_pursuit_point(index_global, look_ahead_distance);
@@ -96,21 +95,23 @@ public:
 
         delta = std::max(-0.347, std::min(delta, 0.347));
         delta = std::clamp(delta, -20*M_PI/180, 20*M_PI/180);
-        prev_steer_ = delta;
 
-        return delta;
+        prev_steer_ = delta;
+        prev_pursuit_point_ = pursuit_point;
+
+        return {delta,pursuit_point};
     }
 
 
 private:
 
-    bool path_updated_ = false; 
     std::vector<Point> path_;
 
     Point car_position_;
     double yaw_;
 
     size_t pursuit_index_;
+    Point prev_pursuit_point_;
     double prev_steer_;
 
 };
