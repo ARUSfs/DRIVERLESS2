@@ -7,6 +7,13 @@
 #include <canlib.h>
 #include <thread>
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <map>
+#include <vector>
+#include <variant>
+#include <type_traits>
 
 /**
  * @class CanInterface
@@ -27,6 +34,8 @@ class CanInterface : public rclcpp::Node
          * @return the error in case there is a problem with the driver you are connected to
          */
         void check_can(canStatus stat);
+
+        void read_csv();
         
     private:
         /**
