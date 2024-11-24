@@ -84,8 +84,8 @@ private:
     std::string kStateTopic;
     std::string kAsStatus;
     std::string kTrajectory;
-    std::string kCmd;
-    std::string kPursuit_point;
+    std::string kCmdTopic;
+    std::string kPursuitPointTopic;
 
     double kTimerFreq;
     double kLAD;

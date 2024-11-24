@@ -32,8 +32,8 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("state", kStateTopic);
     this->get_parameter("as_status", kAsStatus);
     this->get_parameter("trajectory", kTrajectory);
-    this->get_parameter("cmd", kCmd);
-    this->get_parameter("pursuit_point",kPursuit_point);
+    this->get_parameter("cmd", kCmdTopic);
+    this->get_parameter("pursuit_point",kPursuitPointTopic);
 
     // Pure-Pursuit
     this->declare_parameter<double>("look_ahead_distance", 6.0);
@@ -64,9 +64,9 @@ Controller::Controller() : Node("controller"),
     trayectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kTrajectory, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
 
-    cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>(kCmd, 10);
+    cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
 
-    pursuit_point_publisher_ = this->create_publisher<common_msgs::msg::PointXY>(kPursuit_point, 10);
+    pursuit_point_publisher_ = this->create_publisher<common_msgs::msg::PointXY>(kPursuitPointTopic, 10);
 
     previous_time_ = this->get_clock()->now();
 }

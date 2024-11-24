@@ -3,7 +3,7 @@ controller:
     controller_type: "pure_pursuit"    
     timer_frequency: 100.0          # timer frecuency in Hz
 
-    # Topic
+    # Topics
     state: "/car_state/state"
     as_status: "/sensors/AS_status"
     trajectory: "/arussim_interface/fixed_trajectory"
