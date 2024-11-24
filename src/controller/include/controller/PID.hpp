@@ -28,13 +28,10 @@ public:
 
     /**
      * @brief Calculate acceleration.
-     * 
      * @author Team driverless ARUS.
-     * 
      * @param  value current value.
-     * 
      * @param  target goal value.
-     * 
+     * @param dt delta time.
      * @return control for get the goal.
      */
     double compute_control(double value, double target, double dt) {

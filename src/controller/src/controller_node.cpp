@@ -14,7 +14,9 @@
  * @details This constructor declares all the necessary variables and
  *          instantiates all the controls required for the ART-25 to be autonomous.
  */
-Controller::Controller() : Node("controller"),  speedcontrol_()
+Controller::Controller() : Node("controller"),  
+    speedcontrol_(),
+    pure_pursuit_()
 {
     this->declare_parameter<std::string>("controller_type", "pure_pursuit");
     this->declare_parameter<double>("timer_frequency", 100.0);
@@ -26,10 +28,12 @@ Controller::Controller() : Node("controller"),  speedcontrol_()
     this->declare_parameter<std::string>("as_status", "/sensors/AS_status");
     this->declare_parameter<std::string>("trajectory", "/arussim_interface/fixed_trajectory");
     this->declare_parameter<std::string>("cmd", "/controller/cmd");
+    this->declare_parameter<std::string>("pursuit_point", "/controller/pursuit_point");
     this->get_parameter("state", kStateTopic);
     this->get_parameter("as_status", kAsStatus);
     this->get_parameter("trajectory", kTrajectory);
-    this->get_parameter("cmd", kCmd);
+    this->get_parameter("cmd", kCmdTopic);
+    this->get_parameter("pursuit_point",kPursuitPointTopic);
 
     // Pure-Pursuit
     this->declare_parameter<double>("look_ahead_distance", 6.0);
@@ -60,13 +64,16 @@ Controller::Controller() : Node("controller"),  speedcontrol_()
     trayectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kTrajectory, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
 
-    cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>(kCmd, 10); 
+    cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
+
+    pursuit_point_publisher_ = this->create_publisher<common_msgs::msg::PointXY>(kPursuitPointTopic, 10);
 
     previous_time_ = this->get_clock()->now();
 }
 
 /**
  * @brief Callback function timer of controller
+ * 
  * @details Implement the control algorithm with calls to the controller libraries. 
  */  
 void Controller::on_timer()
@@ -76,20 +83,24 @@ void Controller::on_timer()
 
         double target_speed = kTargetSpeed;
         if(!(speed_profile_.empty())){
-            double target_speed = speed_profile_.at(index_global_);
+            target_speed = speed_profile_.at(index_global_);
         }
 
         double target_acc = 0.0;
         if(!(acc_profile_.empty())){
-            double target_acc = acc_profile_.at(index_global_);
+            target_acc = acc_profile_.at(index_global_);
         }
-
-        PurePursuit::set_path(pointsXY_);
+        
+        pure_pursuit_.set_path(pointsXY_);
         Point position;
         position.x = x_;
         position.y = y_;
-        PurePursuit::set_position(position, yaw_);
-        double delta = PurePursuit::get_steering_angle(target_speed/1.5);
+        pure_pursuit_.set_position(position, yaw_);
+        auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_, target_speed / 1.5);
+        common_msgs::msg::PointXY pursuit_point_msg;
+        pursuit_point_msg.x = pursuit_point.x;
+        pursuit_point_msg.y = pursuit_point.y;
+        pursuit_point_publisher_ -> publish(pursuit_point_msg);
 
         rclcpp::Time current_time = this->get_clock()->now();
         double dt = (current_time - previous_time_).seconds();
@@ -108,7 +119,7 @@ void Controller::on_timer()
  * @details Use the global position to calculate the speed 
  * and acceleration profile at each moment. 
  */ 
-int Controller::get_global_index(const std::vector<Point>& pointsXY_) {
+void Controller::get_global_index(const std::vector<Point>& pointsXY_) {
     double min_distance_sq = std::numeric_limits<double>::max();
     int i_global = -1;
 
@@ -142,6 +153,12 @@ void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg
 
 void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
+    pointsXY_.clear();
+    s_.clear();
+    k_.clear();
+    speed_profile_.clear();
+    acc_profile_.clear();
+
     std::vector<common_msgs::msg::PointXY> points_common = msg -> points;
     for (const auto &pointXY : points_common) {
         Point point;
