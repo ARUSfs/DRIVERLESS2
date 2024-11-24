@@ -25,6 +25,7 @@ void AccPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr p
   
     if (cones_.points.empty()) {
         std::cout << "No points in the PointCloud after conversion to PCL." << std::endl;
+        return;
     } else {
         std::cout << "PointCloud contains " << cones_.points.size() << " points." << std::endl;
     }
@@ -44,65 +45,133 @@ void AccPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr p
 
 void AccPlanning::generate_planning() {
     int max_iterations = 500;
-    double ransac_threshold = 0.2;
+    double ransac_threshold = 0.5;
     int min_inliers_required = 3; 
+    double max_allowed_deviation = 10;
     std::random_device rd;
     std::mt19937 gen(rd());
-    double best_a = 0.0;
-    double best_b = 0.0;
 
+    double a_initial = 0.0;
+    double b_initial = 0.0;
 
-    int max_inliers = 0;
+    double best_a1 = 0.0, best_b1 = 0.0;
+    double best_a2 = 0.0, best_b2 = 0.0;
+
+    double max_score = 0.0;
 
     std::uniform_int_distribution<> distrib(0, cones_.points.size() - 1);
 
+    std::vector<int> inliers_indices1;
 
     for (int iter = 0; iter < max_iterations; ++iter) {
-
         int i = distrib(gen);
         int j = distrib(gen);
-        int k = distrib(gen);
         auto& c1 = cones_.points[i];
         auto& c2 = cones_.points[j];
-        auto& c3 = cones_.points[k];
 
-
-        if (std::abs(c1.x - c2.x) < 0.1 || (std::abs(c1.y - c3.y) < 0.1 && std::abs(c2.y - c3.y) < 0.1)) {
+        if (std::abs(c1.x - c2.x) < 0.1) {
             continue;
         }
 
+        double a1 = (c2.y - c1.y) / (c2.x - c1.x);
+        double b1_1 = c1.y - c1.x * a1;
 
-        double a = (c2.y - c1.y) / (c2.x - c1.x);
-        double b1 = c1.y - c1.x * a;
-        double b2 = c3.y - a * c3.x;
+        double score = 0.0;
+        std::vector<int> temp_inliers_indices;
 
-        
-        int inliers = 0;
-        std::vector<int> inliers_indices;
         for (int idx = 0; idx < cones_.points.size(); ++idx) {
             const auto& cone = cones_.points[idx];
-            double d1 = std::abs(a * cone.x + b1 - cone.y) / std::sqrt(a * a + 1);
-            double d2 = std::abs(a * cone.x + b2 - cone.y) / std::sqrt(a * a + 1);
-            if (std::min(d1, d2) < ransac_threshold) {
-                ++inliers;
-                inliers_indices.push_back(idx);
+            double d = std::abs(a1 * cone.x + b1_1 - cone.y) / std::sqrt(a1 * a1 + 1);
+            if (d < ransac_threshold) {
+                score += 1.0 - (d / ransac_threshold);
+                temp_inliers_indices.push_back(idx);
+            }
+        }
+        
+        if (score > max_score) {
+            best_a1 = a1;
+            best_b1 = b1_1;
+            max_score = score;
+            inliers_indices1 = temp_inliers_indices;
+        }
+    }
+    a_initial = best_a1;
+    b_initial = best_b1;
+
+    pcl::PointCloud<ConeXYZColorScore> remaining_cones;
+    for (int idx = 0; idx < cones_.points.size(); ++idx) {
+        if (std::find(inliers_indices1.begin(), inliers_indices1.end(), idx) == inliers_indices1.end()) {
+            remaining_cones.push_back(cones_.points[idx]);
+        }
+    }
+
+    if (remaining_cones.size() < 2) {
+        return;
+    }
+
+    max_score = 0;
+    std::uniform_int_distribution<> distrib_remaining(0, remaining_cones.size() - 1);
+
+    for (int iter2 = 0; iter2 < max_iterations; ++iter2) {
+        int i = distrib_remaining(gen), j = distrib_remaining(gen);
+        const auto& c1 = remaining_cones.points[i];
+        const auto& c2 = remaining_cones.points[j];
+
+        if (std::abs(c1.x - c2.x) < 0.1) {
+            continue;
+        }
+
+        double a2 = (c2.y - c1.y) / (c2.x - c1.x);
+        double b2_1 = c1.y - c1.x * a2;
+
+        double score = 0.0;
+        for (const auto& cone : remaining_cones.points) {
+            double d = std::abs(a2 * cone.x + b2_1 - cone.y) / std::sqrt(a2 * a2 + 1);
+            if (d<ransac_threshold) {
+                score += 1.0 - (d / ransac_threshold);
             }
         }
 
-
-        if (inliers > max_inliers) {
-            best_a = a;
-            best_b = (b1 + b2)/2.0;
-            max_inliers = inliers;
+        if (score > max_score) {
+            best_a2 = a2;
+            best_b2 = b2_1;
+            max_score = score;
         }
     }
 
-    if (max_inliers >= min_inliers_required) {
-        a_ = best_a;
-        b_ = best_b;
+
+    double a_temp = (best_a1 + best_a2) / 2;
+    double b_temp = (best_b1 + best_b2) / 2;
+    if (std::abs(a_temp - a_initial) > max_allowed_deviation || std::abs(b_temp - b_initial) > max_allowed_deviation) {
+        std::cout << "Deviation too high. Keeping initial trajectory." << std::endl;
+        return;
     }
-    
+
+    a_ = a_temp;
+    b_ = b_temp;
+
+    if (a_history_.size() >= history_size_) {
+        sum_a_ -= a_history_.front();
+        a_history_.erase(a_history_.begin());
+    }
+    if (b_history_.size() >= history_size_) {
+        sum_b_ -= b_history_.front();
+        b_history_.erase(b_history_.begin());
+    }
+
+    a_history_.push_back(a_);
+    b_history_.push_back(b_);
+
+    sum_a_ += a_;
+    sum_b_ += b_;
+
+    a_ = sum_a_ / a_history_.size();
+    b_ = sum_b_ / b_history_.size();
+
 }
+
+
+
 
 
 void AccPlanning::publish_trajectory(){
