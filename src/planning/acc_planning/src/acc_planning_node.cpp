@@ -25,6 +25,7 @@ void AccPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr p
   
     if (cones_.points.empty()) {
         std::cout << "No points in the PointCloud after conversion to PCL." << std::endl;
+        return;
     } else {
         std::cout << "PointCloud contains " << cones_.points.size() << " points." << std::endl;
     }
@@ -56,12 +57,11 @@ void AccPlanning::generate_planning() {
     double best_a1 = 0.0, best_b1 = 0.0;
     double best_a2 = 0.0, best_b2 = 0.0;
 
-    int max_inliers = 0;
+    double max_score = 0.0;
 
     std::uniform_int_distribution<> distrib(0, cones_.points.size() - 1);
 
     std::vector<int> inliers_indices1;
-    std::vector<double> inliers_scores1;
 
     for (int iter = 0; iter < max_iterations; ++iter) {
         int i = distrib(gen);
@@ -76,37 +76,27 @@ void AccPlanning::generate_planning() {
         double a1 = (c2.y - c1.y) / (c2.x - c1.x);
         double b1_1 = c1.y - c1.x * a1;
 
-        int inliers = 0;
+        double score = 0.0;
         std::vector<int> temp_inliers_indices;
-        std::vector<double> temp_inliers_scores;
 
         for (int idx = 0; idx < cones_.points.size(); ++idx) {
             const auto& cone = cones_.points[idx];
             double d = std::abs(a1 * cone.x + b1_1 - cone.y) / std::sqrt(a1 * a1 + 1);
-            double score = 1.0 - (d / ransac_threshold);
-            if (score > 0.5) {
-                ++inliers;
+            if (d < ransac_threshold) {
+                score += 1.0 - (d / ransac_threshold);
                 temp_inliers_indices.push_back(idx);
-                
-                temp_inliers_scores.push_back(score);
             }
         }
         
-        if (inliers > max_inliers) {
+        if (score > max_score) {
             best_a1 = a1;
             best_b1 = b1_1;
-            max_inliers = inliers;
+            max_score = score;
             inliers_indices1 = temp_inliers_indices;
-            inliers_scores1 = temp_inliers_scores;
         }
     }
-    std::cout << "bestb1 " << best_b1 << std::endl;
     a_initial = best_a1;
     b_initial = best_b1;
-
-    std::cout << "Percentage of inliers: " 
-              << (static_cast<double>(inliers_indices1.size()) / cones_.points.size()) * 100 
-              << "%" << std::endl;
 
     pcl::PointCloud<ConeXYZColorScore> remaining_cones;
     for (int idx = 0; idx < cones_.points.size(); ++idx) {
@@ -114,13 +104,12 @@ void AccPlanning::generate_planning() {
             remaining_cones.push_back(cones_.points[idx]);
         }
     }
-    std::cerr << "Remaining cones size: " << remaining_cones.size() << std::endl;
 
     if (remaining_cones.size() < 2) {
         return;
     }
 
-    max_inliers = 0;
+    max_score = 0;
     std::uniform_int_distribution<> distrib_remaining(0, remaining_cones.size() - 1);
 
     for (int iter2 = 0; iter2 < max_iterations; ++iter2) {
@@ -135,28 +124,24 @@ void AccPlanning::generate_planning() {
         double a2 = (c2.y - c1.y) / (c2.x - c1.x);
         double b2_1 = c1.y - c1.x * a2;
 
-        int inliers = 0;
+        double score = 0.0;
         for (const auto& cone : remaining_cones.points) {
             double d = std::abs(a2 * cone.x + b2_1 - cone.y) / std::sqrt(a2 * a2 + 1);
-            double score = 1.0 - (d / ransac_threshold);
-            if (score > 0.5) {
-                ++inliers;
+            if (d<ransac_threshold) {
+                score += 1.0 - (d / ransac_threshold);
             }
         }
 
-        if (inliers > max_inliers) {
+        if (score > max_score) {
             best_a2 = a2;
             best_b2 = b2_1;
-            max_inliers = inliers;
+            max_score = score;
         }
     }
 
-    std::cout << "b2 " << best_b2 << std::endl;
 
     double a_temp = (best_a1 + best_a2) / 2;
     double b_temp = (best_b1 + best_b2) / 2;
-    std::cout << "a_temp " << a_temp << std::endl;
-     std::cout << "b_temp " << b_temp << std::endl;
     if (std::abs(a_temp - a_initial) > max_allowed_deviation || std::abs(b_temp - b_initial) > max_allowed_deviation) {
         std::cout << "Deviation too high. Keeping initial trajectory." << std::endl;
         return;
@@ -183,10 +168,6 @@ void AccPlanning::generate_planning() {
     a_ = sum_a_ / a_history_.size();
     b_ = sum_b_ / b_history_.size();
 
-    std::cout << "sum_a_: " << sum_a_ << std::endl;
-    std::cout << "sum_b_: " << sum_b_ << std::endl;
-    std::cout << "a_: " << a_ << std::endl;
-    std::cout << "b_: " << b_ << std::endl;
 }
 
 
