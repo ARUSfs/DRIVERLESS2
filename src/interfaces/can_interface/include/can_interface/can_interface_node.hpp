@@ -4,7 +4,6 @@
  */
 
 #include <rclcpp/rclcpp.hpp>
-#include <canlib.h>
 #include <thread>
 #include <iostream>
 #include <fstream>
@@ -33,7 +32,7 @@ class CanInterface : public rclcpp::Node
          * 
          * @return the error in case there is a problem with the driver you are connected to
          */
-        void check_can(canStatus stat);
+        void check_can();
 
         void read_csv();
         
