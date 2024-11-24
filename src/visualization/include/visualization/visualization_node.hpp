@@ -33,6 +33,7 @@ class Visualization : public rclcpp::Node
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr delaunay_trajectory_sub_;
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr acc_trajectory_sub_;
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr skidpad_trajectory_sub_;
+        rclcpp::Subscription<common_msgs::msg::PointXY>::SharedPtr pursuit_point_sub_;
 
 
         //Publishers
@@ -40,6 +41,7 @@ class Visualization : public rclcpp::Node
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr optimized_trajectory_visualization_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr arussim_trajectory_visualization_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr trajectory_visualization_pub_;
+        rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pursuit_point_visualization_pub_;
 
         //Callbacks
         void triangulation_callback(const common_msgs::msg::Triangulation::SharedPtr msg);
@@ -48,6 +50,7 @@ class Visualization : public rclcpp::Node
         void delaunay_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
         void acc_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
         void skidpad_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
+        void pursuit_point_callback(const common_msgs::msg::PointXY::SharedPtr msg);
 
         /**
          * @brief Creates markers for trajectory messages.
@@ -67,11 +70,13 @@ class Visualization : public rclcpp::Node
         std::string kDelaunayTrajectoryTopic;
         std::string kAccTrajectoryTopic;
         std::string kSkidpadTrajectoryTopic;
+        std::string kPursuitPointTopic;
 
         //Topics to publish
         std::string kTriangulationVisualizationTopic;
         std::string kOptimizedTrajectoryVisualizationTopic;
         std::string kARUSSimTrajectoryVisualizationTopic;
         std::string kTrajectoryVisualizationTopic;
+        std::string kPursuitPointVisualizationTopic;
 
 };

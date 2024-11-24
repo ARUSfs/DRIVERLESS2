@@ -26,6 +26,8 @@ Visualization::Visualization() : Node("visualization")
     this->declare_parameter("optimized_trajectory_visualization_topic", "/visualization/optimized_trajectory");
     this->declare_parameter("arussim_trajectory_visualization_topic", "/visualization/arussim_fixed_trajectory");
     this->declare_parameter("trajectory_visualization_topic", "/visualization/trajectory");
+    this->declare_parameter("pursuit_point_topic", "/controller/pursuit_point");
+    this->declare_parameter("pursuit_point_visualization_topic", "/visualization/pursuit_point");
 
     this->get_parameter("alpha", kAlpha);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
@@ -38,6 +40,9 @@ Visualization::Visualization() : Node("visualization")
     this->get_parameter("optimized_trajectory_visualization_topic", kOptimizedTrajectoryVisualizationTopic);
     this->get_parameter("arussim_trajectory_visualization_topic", kARUSSimTrajectoryVisualizationTopic);
     this->get_parameter("trajectory_visualization_topic", kTrajectoryVisualizationTopic);
+    this->get_parameter("pursuit_point_topic", kPursuitPointTopic);
+    this->get_parameter("pursuit_point_visualization_topic", kPursuitPointVisualizationTopic);
+
 
     triangulation_visualization_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
         kTriangulationVisualizationTopic, 10);
@@ -47,6 +52,8 @@ Visualization::Visualization() : Node("visualization")
         kARUSSimTrajectoryVisualizationTopic, 10);
     trajectory_visualization_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         kTrajectoryVisualizationTopic, 10);
+    pursuit_point_visualization_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        kPursuitPointVisualizationTopic, 10);
 
     triangulation_sub_ = this->create_subscription<common_msgs::msg::Triangulation>(
         kTriangulationTopic, 10, std::bind(&Visualization::triangulation_callback, this, std::placeholders::_1));
@@ -60,6 +67,8 @@ Visualization::Visualization() : Node("visualization")
         kAccTrajectoryTopic, 10, std::bind(&Visualization::acc_trajectory_callback, this, std::placeholders::_1));
     skidpad_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kSkidpadTrajectoryTopic, 10, std::bind(&Visualization::skidpad_trajectory_callback, this, std::placeholders::_1));
+    pursuit_point_sub_ = this->create_subscription<common_msgs::msg::PointXY>(
+        kPursuitPointTopic, 10, std::bind(&Visualization::pursuit_point_callback, this, std::placeholders::_1));
 
 }
 
@@ -133,6 +142,27 @@ void Visualization::skidpad_trajectory_callback(const common_msgs::msg::Trajecto
 {
     visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, false, 1.0, 0.0, 0.0, kAlpha);
     trajectory_visualization_pub_->publish(marker);
+}
+
+void Visualization::pursuit_point_callback(const common_msgs::msg::PointXY::SharedPtr msg)
+{
+    visualization_msgs::msg::Marker marker;
+    marker.header.frame_id = "arussim/world";
+    marker.ns = "pursuit_point";
+    marker.type = visualization_msgs::msg::Marker::SPHERE;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.pose.position.x = msg->x;
+    marker.pose.position.y = msg->y;
+    marker.pose.position.z = 0;
+    marker.scale.x = 0.5;
+    marker.scale.y = 0.5;
+    marker.scale.z = 0.5;
+    marker.color.a = 1.0;
+    marker.color.r = 1.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.0;
+    marker.lifetime = rclcpp::Duration::from_seconds(0.0);
+    pursuit_point_visualization_pub_->publish(marker);
 }
 
 visualization_msgs::msg::Marker Visualization::create_trajectory_marker(
