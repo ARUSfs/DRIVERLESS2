@@ -13,12 +13,8 @@ include_directories(
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 
-add_executable(can_interface_exec src/can_interface_node.cpp)
-ament_target_dependencies(can_interface_exec rclcpp)
-
 
 install(TARGETS
-  can_interface_exec
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch
