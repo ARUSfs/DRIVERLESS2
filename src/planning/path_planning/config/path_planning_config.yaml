@@ -7,6 +7,6 @@ path_planning:
     dist_coeff: 0.5
     angle_coeff: 0.75
     max_dist: 7.0
-    max_angle: 1.0
+    max_angle: 1.1
     sensor_range: 25.0
     max_route: 15

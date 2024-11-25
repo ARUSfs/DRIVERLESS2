@@ -18,7 +18,8 @@
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
-
+#include <visualization_msgs/msg/marker_array.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 /**
  * @brief Class containing the Path Planning node.
  * Manages subscribers and publisher for the different topics used in the algorithm.
@@ -52,7 +53,7 @@ class PathPlanning : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
-
+        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr text_tri_pub_;
         // Triangulation attributes
         CDT::TriangleVec triangles_;
         CDT::Triangulation<double>::V2dVec vertices_;

@@ -40,6 +40,9 @@ PathPlanning::PathPlanning() : Node("path_planning")
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
 
+    //% TEST
+    text_tri_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/triangulation_text", 10);
+
 }
 
 void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
@@ -59,6 +62,32 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     vertices_ = triangulation.vertices;
     triangles_ = triangulation.triangles;
 
+    //% TEST
+    visualization_msgs::msg::MarkerArray text_array;
+    visualization_msgs::msg::Marker delete_marker;
+    delete_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+    text_array.markers.push_back(delete_marker);
+    for (int i = 0; i<triangles_.size(); i++){
+        CDT::V2d<double> centroid = this->compute_centroid(i);
+        visualization_msgs::msg::Marker text_marker;
+        text_marker.header.frame_id = "arussim/vehicle_cog";
+        text_marker.ns = "centroid";
+        text_marker.id = i;
+        text_marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+        text_marker.action = visualization_msgs::msg::Marker::ADD;
+        text_marker.pose.position.x = centroid.x;
+        text_marker.pose.position.y = centroid.y;
+        text_marker.pose.position.z = 0;
+        text_marker.scale.z = 1;
+        text_marker.color.a = 1.0;
+        text_marker.color.r = 1.0;
+        text_marker.lifetime = rclcpp::Duration::from_seconds(0.0);
+        text_marker.text = std::to_string(i);
+        text_array.markers.push_back(text_marker);
+    }
+    text_tri_pub_ -> publish(text_array);
+
+    std::cout << "Control 1" << std::endl;
     // Construct the tree from the triangulation
     int orig_index = this->get_orig_index();
     std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
@@ -71,11 +100,11 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
             triangle_routes_.push_back(tree.index_routes[j]);
         }
     }
-
+    std::cout << "Control 2" << std::endl;
     // Get the midpoints routes from triangles routes
     midpoint_routes_ = {};
     this->get_midpoint_routes();
-
+    std::cout << "Control 3" << std::endl;
     // Get the cost of each route
     int best_route_ind = 0;
     double min_cost = INFINITY;
@@ -87,7 +116,14 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
         }
     }
     best_midpoint_route_ = midpoint_routes_[best_route_ind];
-
+    std::cout << "Control 4" << std::endl;
+    for (const auto &route : triangle_routes_){
+        for (const auto &triangle : route){
+            std::cout << triangle << ", ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "Coste: " << min_cost << std::endl;
     // Publish the best trajectory
     trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
 }

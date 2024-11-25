@@ -44,6 +44,8 @@ class SimplexTree {
      * @return SimplexNode* pointer to the created tree.
      */
     SimplexNode* create_tree_aux(CDT::TriangleVec triangle_list, int index, std::vector<int> visited);
+
+    SimplexNode* create_ending_node(std::vector<int> visited);
 };
 
 SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, std::vector<int> o_triangles) {
@@ -64,6 +66,7 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, std::ve
 
     // Create the tree recursively, there should only be one valid neighbor
     if (valid_neighbors.size() == 1){
+    std::cout << "Valid neighbors: " << valid_neighbors[0] << std::endl;
         root.left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited);
     } else if (valid_neighbors.size() == 2){
         root.left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited);
@@ -88,10 +91,12 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
             valid_neighbors.push_back(neighbors[i]);
         }
     }
+    std::cout << "Control 1.1" << std::endl;
     // Only change is that the node is returned when there is only one valid neighbor
     if (valid_neighbors.size() == 1){
         // In case only one neighbor is valid, create the left child and return the node
         node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited);
+        node->right = SimplexTree::create_ending_node(visited);
         return node;
     }
     else if (valid_neighbors.size() == 2){
@@ -102,6 +107,14 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
     }
     /* In case there are no valid neighbors, return the node with no children 
     and add the visited route to the routes array in the tree attribute */
+    index_routes.push_back(visited);
+    return node;
+}
+
+SimplexNode* SimplexTree::create_ending_node(std::vector<int> visited){
+    std::cout << "Control 1.2" << std::endl;
+    SimplexNode* node;
+    node->index = 4294967295;
     index_routes.push_back(visited);
     return node;
 }
