@@ -9,5 +9,8 @@ perception:
     max_z_fov: 0.0
     h_fov: 180.0
 
-    #Parameter of ground filter
+    #Parameters of ground filter
     threshold: 0.05
+
+    #Parameters of clustering
+    radius: 1.0

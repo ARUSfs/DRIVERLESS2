@@ -19,6 +19,7 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<double>("max_z_fov", 0.0);
     this->declare_parameter<double>("h_fov", 180.0);
     this->declare_parameter<double>("threshold", 0.05);
+    this->declare_parameter<double>("radius", 1.0);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
@@ -27,6 +28,7 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("max_z_fov", kMaxZFov);
     this->get_parameter("h_fov", kHFov);
     this->get_parameter("threshold", kThreshold);
+    this->get_parameter("radius", kRadius);
 
     //Transform into radians
     kHFov *= (M_PI/180);
@@ -40,8 +42,15 @@ Perception::Perception() : Node("Perception")
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map_cloud", 10);
 }
 
+/**
+ * @brief Extract the center of each cluster.
+ * @param cluster_indices The indices of the points that form each cluster.
+ * @param map_cloud The result point cloud that will be publish.
+ * @param cloud_filtered The input point cloud.
+ * @param cluster_centers The center of each cluster.
+ */
 void Perception::get_clusters_centers(std::vector<pcl::PointIndices> cluster_indices, pcl::PointCloud<PointXYZColorScore>::Ptr map_cloud,
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered)
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
 {
     for (const auto &cluster : cluster_indices)
     {
@@ -52,23 +61,66 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices> cluster_ind
         //Obtain the bounding box of the cluster
         pcl::PointXYZI min_point, max_point;
         pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
-        float max_x = max_point.x;
-        float min_x = min_point.x;
-        float max_y = max_point.y;
-        float min_y = min_point.y;
-        float max_z = max_point.z;
-        float min_z = min_point.z;
+        double max_x = max_point.x;
+        double min_x = min_point.x;
+        double max_y = max_point.y;
+        double min_y = min_point.y;
+        double max_z = max_point.z;
+        double min_z = min_point.z;
 
-        //filter the cluster by size and keep the center of the cloud
+        //filter the cluster by size and keep the center of the cluster
         if ((max_z - min_z) > 0.1 && (max_z - min_z) < 0.4 && (max_x - min_x) < 0.4 && (max_y - min_y) < 0.4)
         {
-            PointXYZColorScore cone;
-            cone.x = (max_x + min_x) / 2;
-            cone.y = (max_y + min_y) / 2;
-            cone.z = 0;
-            cone.color = 0;
-            cone.score = 1;
-            map_cloud->push_back(cone);
+            PointXYZColorScore center;
+            center.x = (max_x + min_x) / 2;
+            center.y = (max_y + min_y) / 2;
+            center.z = 0;
+            center.color = 0;
+            center.score = 1;
+            clusters_centers.push_back(center);
+            map_cloud->push_back(center);
+        }
+
+    }
+}
+
+/**
+ * @brief Recover falsely ground filtered points.
+ * @param cloud_filtered The input point cloud.
+ * @param cluster_indices The indices of the points that form each cluster.
+ * @param cluster_centers The center of each cluster.
+ * @param radius The radius used to search for eliminated points.
+ */
+void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<pcl::PointIndices>& cluster_indices, 
+    std::vector<PointXYZColorScore> clusters_centers, double radius, int& total_recovered_points)
+{
+    //Create a kdtree to search points
+    pcl::KdTreeFLANN<pcl::PointXYZI> kd_tree;
+    kd_tree.setInputCloud(cloud_filtered);
+
+    //Iterate on clusters
+    for (size_t i = 0; i < clusters_centers.size(); ++i)
+    {
+        std::vector<int> point_indices;
+        std::vector<float> point_distances;
+
+        //Convert from PointXYZColorScore to PointXYZI
+        pcl::PointXYZI center;
+        center.x = clusters_centers[i].x;
+        center.y = clusters_centers[i].y;
+        center.z = clusters_centers[i].z;
+        center.intensity = clusters_centers[i].score;
+
+        //Insert the recovered points
+        if (kd_tree.radiusSearch(center, radius, point_indices, point_distances) > 0)
+        {
+            cluster_indices[i].indices.insert(
+                cluster_indices[i].indices.end(),
+                point_indices.begin(),
+                point_indices.end()
+            );
+
+            total_recovered_points += point_indices.size();
         }
     }
 }
@@ -109,10 +161,18 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Store the clusters centers in a new point cloud
     pcl::PointCloud<PointXYZColorScore>::Ptr map_cloud(new pcl::PointCloud<PointXYZColorScore>);
-    Perception::get_clusters_centers(cluster_indices, map_cloud, cloud_filtered);
+    std::vector<PointXYZColorScore> clusters_centers;
+    Perception::get_clusters_centers(cluster_indices, map_cloud, cloud_filtered, clusters_centers);
 
     //Print the number of cones
     std::cout << "Number of cones: " << map_cloud->size() << std::endl;
+
+    //Recover ground points
+    int total_recovered_points = 0;
+    Perception::reconstruction(cloud_plane, cluster_indices, clusters_centers, kRadius, total_recovered_points);
+
+    //Print the number of recovered points
+    std::cout << "Number of recovered points: " << total_recovered_points << std::endl;
 
     //Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;
