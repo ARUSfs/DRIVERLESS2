@@ -37,40 +37,69 @@ CanInterface::CanInterface() : Node("can_interface"){
     std::thread thread_1(&CanInterface::readCan1, this);
 
     // Configure socketCan0
+    const char *can_interface0 = "can0"; 
+
     socketCan0 = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (socketCan0 < 0) {
         perror("Error while opening can0 socket");
         return;
     } else{
-        printf("can0 enabled for writing \n");
+        std::cout << "can0 enabled for writing" << std::endl;
     }
-    strcpy(ifr.ifr_name, "can0");
-    ioctl(socketCan0, SIOCGIFINDEX, &ifr);
+
+    std::strncpy(ifr.ifr_name, can_interface0, IFNAMSIZ - 1);
+    if (ioctl(socketCan0, SIOCGIFINDEX, &ifr) < 0) {
+        perror("Error getting can0 interface index");
+        return ;
+    }
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
-
     if (bind(socketCan0, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
             perror("Error in binding socketCan0");
             return;
         }
+    int flags0 = fcntl(socketCan0, F_GETFL, 0);
+    if (flags0 == -1) {
+        perror("fcntl F_GETFL");
+        return;
+    }
+    if (fcntl(socketCan0, F_SETFL, flags0 | O_NONBLOCK) == -1) {
+        perror("fcntl F_SETFL");
+        return;
+    }
+
 
     // Configure socketCan1
+    const char *can_interface1 = "can1"; 
+
     socketCan1 = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (socketCan1 < 0) {
         perror("Error while opening can1 socket");
         return;
     } else{
-        printf("can1 enabled for writing \n");
+        std::cout << "can1 enabled for writing" << std::endl;
     }
-    strcpy(ifr.ifr_name, "can1");
-    ioctl(socketCan1, SIOCGIFINDEX, &ifr);
+
+    std::strncpy(ifr.ifr_name, can_interface1, IFNAMSIZ - 1);
+    if (ioctl(socketCan1, SIOCGIFINDEX, &ifr) < 0) {
+        perror("Error getting can1 interface index");
+        return ;
+    }
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
-
     if (bind(socketCan1, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
             perror("Error in binding socketCan1");
-            exit(EXIT_FAILURE);
+            return;
         }
+    int flags1 = fcntl(socketCan1, F_GETFL, 0);
+    if (flags1 == -1) {
+        perror("fcntl F_GETFL");
+        return;
+    }
+    if (fcntl(socketCan1, F_SETFL, flags1 | O_NONBLOCK) == -1) {
+        perror("fcntl F_SETFL");
+        return;
+    }
 
     // ros::waitForShutdown();
 
