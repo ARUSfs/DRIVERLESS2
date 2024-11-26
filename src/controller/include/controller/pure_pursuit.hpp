@@ -20,7 +20,7 @@ public:
     Pure_pursuit(){
         car_position_ = {0.0, 0.0};
         prev_steer_ = 0.0;
-        prev_pursuit_point_={0.0, 0.0};
+        prev_pursuit_point_= {0.0, 0.0};
         pursuit_index_ = 0;
         path_.clear();        
     }

@@ -69,6 +69,7 @@ Controller::Controller() : Node("controller"),
     pursuit_point_publisher_ = this->create_publisher<common_msgs::msg::PointXY>(kPursuitPointTopic, 10);
 
     previous_time_ = this->get_clock()->now();
+    start_time_pursuit_=this->get_clock()->now();
 }
 
 /**
@@ -80,6 +81,13 @@ void Controller::on_timer()
 {
     if(!(pointsXY_.empty())){
         get_global_index(pointsXY_);
+        rclcpp::Time current_time_pursuit = this->get_clock()->now();
+        double elapsed_time = (current_time_pursuit - start_time_pursuit_).seconds();
+        if (elapsed_time < 5.0) {
+            if (index_global_ > 900) {
+                index_global_ = 1;
+            }
+        }
 
         double target_speed = kTargetSpeed;
         if(!(speed_profile_.empty())){
@@ -90,13 +98,13 @@ void Controller::on_timer()
         if(!(acc_profile_.empty())){
             target_acc = acc_profile_.at(index_global_);
         }
-        
+
         pure_pursuit_.set_path(pointsXY_);
         Point position;
         position.x = x_;
         position.y = y_;
         pure_pursuit_.set_position(position, yaw_);
-        auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_, target_speed / 1.5);
+        auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_,target_speed / 1.5);
         common_msgs::msg::PointXY pursuit_point_msg;
         pursuit_point_msg.x = pursuit_point.x;
         pursuit_point_msg.y = pursuit_point.y;
