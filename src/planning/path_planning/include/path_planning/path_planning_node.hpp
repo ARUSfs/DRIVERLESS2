@@ -42,7 +42,8 @@ class PathPlanning : public rclcpp::Node
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
         double kMaxTriLen;
-        double kDistCoeff;
+        double kMaxTriAngle;
+        double kLenCoeff;
         double kAngleCoeff;
         double kMaxDist;
         double kMaxAngle;
@@ -158,7 +159,7 @@ class PathPlanning : public rclcpp::Node
          * @param route vector of CDT::V2d<double> points containing the route through the midpoints.
          * @return float result of the cost function.
          */
-        double get_route_cost(std::vector<CDT::V2d<double>> route);
+        double get_route_cost(std::vector<CDT::V2d<double>> &route);
 
         /**
          * @brief Create a trajectory msg object from a given route.
