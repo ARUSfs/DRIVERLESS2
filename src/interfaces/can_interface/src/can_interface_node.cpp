@@ -100,7 +100,6 @@ CanInterface::CanInterface() : Node("can_interface"){
 //--------------------------------------------- INV SPEED -------------------------------------------------------------
 void CanInterface::parseInvSpeed(uint8_t msg[8])
 {      
-    std::cout << "parseInvSpeed is called" << std::endl;
     int16_t val = (msg[2] << 8) | msg[1];
     float angV = val / pow(2, 15) * velMax;
     float invSpeed = -angV * 2 * M_PI * wheelRadius * transmissionRatio / 60;
@@ -291,127 +290,125 @@ void CanInterface::parseMission(uint8_t msg[8])
 //################################################# READ FUNCTIONS #################################################
 
 //--------------------------------------------- CAN 0 -------------------------------------------------------------------   
+
 void CanInterface::readCan0()
 {   
-    // //Set the channel parameters
-    // stat = canAccept(hndR0, 0xFFF, canFILTER_SET_MASK_STD);
-    // CanInterface::check_can(stat);
-    // stat = canAccept(hndR0, 0x181, canFILTER_SET_CODE_STD);
-    // CanInterface::check_can(stat);
-    // stat = canAccept(hndR0, 0x18B, canFILTER_SET_CODE_STD);
-    // CanInterface::check_can(stat);
-
-    int nbytes = read(socketCan0, &frame, sizeof(struct can_frame));
-            if (nbytes < 0) {
-                perror("can0 read error");
-                return;
-            }
-    
-    //Read
-    while (true){
-        if(true){
-            switch(frame.can_id){
-                case 0x181:                   
-                    if(frame.data[0] == 0x30) parseInvSpeed(frame.data);  
-                    break;
-                case 0x182:
-                    switch(frame.data[0]){
-                        case 0x01:
-                            parseASStatus(frame.data);
-                            break;
-                        case 0x04: //Brake pressure
-                            parseBrakeHydr(frame.data);
-                            break; 
-                        case 0x05: //Pneumtic pressure
-                            parsePneumatic(frame.data);
-                            break;
-                        case 0x06: //Valves state
-                            break;
-                        default:
-                            break;
-                    }
-                case 0x18B:
-                    parseRES(frame.data);
-                    break;
-                default:
-                    break;
-            }
+    struct can_frame frame;
+    std::cout << "readCan0 is called" << std::endl;
+    while (true) {
+        int nbytes = read(socketCan0, &frame, sizeof(struct can_frame));
+        if (nbytes < 0) {
+            perror("can0 read error");
+            continue;
         }
 
-        else {
-            std::cerr << "Unhandled can0 ID: " << std::hex << frame.can_id << std::endl;
+        // Debug: Print the received CAN frame
+        std::cout << "Received CAN frame on can0: ID=0x" 
+                  << std::hex << frame.can_id 
+                  << " DLC=" << std::dec << static_cast<int>(frame.can_dlc) 
+                  << " Data=";
+
+        for (int i = 0; i < frame.can_dlc; i++) {
+            std::cout << std::hex << static_cast<int>(frame.data[i]) << " ";
+        }
+        std::cout << std::endl;
+
+        // Process the frame
+        switch (frame.can_id) {
+            case 0x181:
+                if(frame.data[0] == 0x30) parseInvSpeed(frame.data);
+                break;
+            case 0x182:
+                switch (frame.data[0]) {
+                    case 0x01:
+                        parseASStatus(frame.data);
+                        break;
+                    case 0x04: // Brake pressure
+                        parseBrakeHydr(frame.data);
+                        break;
+                    case 0x05: // Pneumatic pressure
+                        parsePneumatic(frame.data);
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case 0x18B:
+                parseRES(frame.data);
+                break;
+            default:
+                std::cerr << "Unhandled can0 ID: 0x" << std::hex << frame.can_id << std::endl;
+                break;
         }
     }
 }
+
 
 //--------------------------------------------- CAN 1 -------------------------------------------------------------------
 
 void CanInterface::readCan1()
 {   
-    // //Set the channel parameters
-    // stat = canAccept(hndR1, 0xFFF, canFILTER_SET_MASK_STD);
-    // CanInterface::check_can(stat);
-
-    // setFilter(hndR1, 0x182);
-    // setFilter(hndR1, 0x380);
-    // setFilter(hndR1, 0x394);
-    // setFilter(hndR1, 0x392);
-    // setFilter(hndR1, 0x384);
-    // setFilter(hndR1, 0x382);
-    // setFilter(hndR1, 0x185);
-    // setFilter(hndR1, 0x205);
-    // setFilter(hndR1, 0x334);
-    // setFilter(hndR1, 0x187);
-
-    int nbytes = read(socketCan1, &frame, sizeof(struct can_frame));
-            if (nbytes < 0) {
-                perror("can1 read error");
-                return;
-            }
-    
-    //Read
-    while (true){
-        if (true){  
-            switch(frame.can_id)
-            {
-                case 0x380:
-                    parseAcc(frame.data);
-                    break;
-                case 0x394:
-                    parseGPS(frame.data);
-                    break;
-                case 0x392:
-                    parseGPSVel(frame.data);
-                    break;
-                case 0x384:
-                    parseEulerAngles(frame.data);
-                    break;
-                case 0x382:
-                    parseAngularVelocity(frame.data);
-                    break;
-                case 0x187:
-                    switch(frame.data[0])
-                    {
-                        case 0x01:
-                            parseSteeringAngle(frame.data);
-                            break;
-                        case 0x04:
-                            break;
-                    }
-                    break;
-                case 0x185:
-                    switch(frame.data[0])
-                    {
-                        case 0x01:
-                            parseMission(frame.data);
-                    }
-                default:
-                    break;
-            }
+    struct can_frame frame;
+    std::cout << "readCan1 is called" << std::endl;
+    while (true) {
+        int nbytes = read(socketCan1, &frame, sizeof(struct can_frame));
+        if (nbytes < 0) {
+            perror("can1 read error");
+            continue;
+        } else if (nbytes == 0) {
+             std::cerr << "No data read from can1." << std::endl;
+            continue;
         }
 
-        else {
-            std::cerr << "Unhandled can1 ID: " << std::hex << frame.can_id << std::endl;
+        // Debug: Print the received CAN frame
+        std::cout << "Received CAN frame on can1: ID=0x" 
+                  << std::hex << frame.can_id 
+                  << " DLC=" << std::dec << static_cast<int>(frame.can_dlc) 
+                  << " Data=";
+
+        for (int i = 0; i < frame.can_dlc; i++) {
+            std::cout << std::hex << static_cast<int>(frame.data[i]) << " ";
+        }
+        std::cout << std::endl;
+
+        // Process the frame
+        switch (frame.can_id) {
+            case 0x380:
+                parseAcc(frame.data);
+                break;
+            case 0x394:
+                parseGPS(frame.data);
+                break;
+            case 0x392:
+                parseGPSVel(frame.data);
+                break;
+            case 0x384:
+                parseEulerAngles(frame.data);
+                break;
+            case 0x382:
+                parseAngularVelocity(frame.data);
+                break;
+            case 0x187:
+                switch (frame.data[0]) {
+                    case 0x01:
+                        parseSteeringAngle(frame.data);
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case 0x185:
+                switch (frame.data[0]) {
+                    case 0x01:
+                        parseMission(frame.data);
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            default:
+                std::cerr << "Unhandled can1 ID: 0x" << std::hex << frame.can_id << std::endl;
+                break;
         }
     }
 }
