@@ -19,6 +19,8 @@
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+
+#include <fcntl.h>
 // #include <common_msgs/Controls.h>
 
 using namespace std;
