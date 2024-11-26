@@ -65,7 +65,7 @@ namespace MinCurvaturepath {
      * 
      * @return MatrixXd
      */
-    MatrixXd matrixB(VectorXd xin, VectorXd yin, VectorXd delx, VectorXd dely);
+    VectorXd vectorB(VectorXd xin, VectorXd yin, VectorXd delx, VectorXd dely);
 
     /**
      * @brief Solves the quadratic optimization problem using an external solver
@@ -73,7 +73,7 @@ namespace MinCurvaturepath {
      * @return VectorXd Parameter vector (aplha) that determines the resulting trajectory points 
      * (traj_x = xin + aplha*delx, traj_y = yin + alpha*dely)
      */
-    VectorXd qp_solver(MatrixXd H, MatrixXd B);
+    VectorXd qpmad_solver(MatrixXd H, VectorXd B);
 
     /**
      * @brief Main function that calculates the minimal curvature path 
@@ -102,24 +102,25 @@ namespace MinCurvaturepath {
         VectorXd dely = yout - yin;
 
         MatrixXd H = matrixH(delx, dely);
-        MatrixXd  B = matrixB(xin, yin, delx, dely);
+        VectorXd  B = vectorB(xin, yin, delx, dely);
 
         //Solve the quadratic problem
-        VectorXd resMCP = qp_solver(H,B);
+        VectorXd resMCP = qpmad_solver(H,B);
+        int m = resMCP.size();
 
         //Coordinates for the resultant curve
-        VectorXd xresMCP = VectorXd::Zero(n);
-        VectorXd yresMCP = VectorXd::Zero(n);
+        VectorXd xresMCP = VectorXd::Zero(m);   
+        VectorXd yresMCP = VectorXd::Zero(m);
 
-        for(int i = 0; i < n; i++){
+        for(int i = 0; i < m; i++){
             xresMCP(i) = xin(i) + resMCP(i)*delx(i);
             yresMCP(i) = yin(i) + resMCP(i)*dely(i);
         }
 
-        MatrixXd res(n,2);
+        MatrixXd res(m,2);
         res << xresMCP, yresMCP;
 
-        return res;
+        return res;       
     }
 
     //Implementation of auxiliar methods
@@ -127,7 +128,7 @@ namespace MinCurvaturepath {
         //Interpolate data to get finer curve with equal distances between each segment
         //Higher number of segments causes trajectory to follow the reference line
         int n = x.size();
-        const int n_seg = 1000;
+        const int n_seg = 1000; 
 
         MatrixXd path_x_y(n,2); path_x_y << x, y;
 
@@ -265,20 +266,20 @@ namespace MinCurvaturepath {
         return H;
     }
 
-    MatrixXd matrixB(VectorXd xin, VectorXd yin, VectorXd delx, VectorXd dely){
+    VectorXd vectorB(VectorXd xin, VectorXd yin, VectorXd delx, VectorXd dely){
         int n = delx.size();
-        MatrixXd B = MatrixXd::Zero(1,n);
+        VectorXd B = VectorXd::Zero(n);
 
         for(int i = 1; i < n-1; i++){
-            B(0,i-1) = B(0,i-1) + 2*(xin(i+1)+xin(i-1)-2*xin(i))*delx(i-1) + 2*(yin(i+1)+yin(i-1)-2*yin(i))*dely(i-1);
-            B(0,i)   = B(0,i)   - 4*(xin(i+1)+xin(i-1)-2*xin(i))*delx(i)   - 4*(yin(i+1)+yin(i-1)-2*yin(i))*dely(i);
-            B(0,i+1) = B(0,i+1) + 2*(xin(i+1)+xin(i-1)-2*xin(i))*delx(i+1) + 2*(yin(i+1)+yin(i-1)-2*yin(i))*dely(i+1);
+            B(i-1) = B(i-1) + 2*(xin(i+1)+xin(i-1)-2*xin(i))*delx(i-1) + 2*(yin(i+1)+yin(i-1)-2*yin(i))*dely(i-1);
+            B(i)   = B(i)   - 4*(xin(i+1)+xin(i-1)-2*xin(i))*delx(i)   - 4*(yin(i+1)+yin(i-1)-2*yin(i))*dely(i);
+            B(i+1) = B(i+1) + 2*(xin(i+1)+xin(i-1)-2*xin(i))*delx(i+1) + 2*(yin(i+1)+yin(i-1)-2*yin(i))*dely(i+1);
         }
 
         return B;
     }
 
-    VectorXd qp_solver(MatrixXd H, MatrixXd B){
+    VectorXd qpmad_solver(MatrixXd H, VectorXd B){
         //Define constraints
         int n = H.rows();
         VectorXd lb = VectorXd::Zero(n);
@@ -301,13 +302,13 @@ namespace MinCurvaturepath {
         qpmad::Solver solver;
 
         H << 2*H;
-        qpmad::Solver::ReturnStatus status = solver.solve(res, H, B.transpose(), lb, ub, Aeq, Alb, Aub);
+        qpmad::Solver::ReturnStatus status = solver.solve(res, H, B, lb, ub, Aeq, Alb, Aub);
         if (status != qpmad::Solver::OK)
         {
-            std::cerr << "Error" << std::endl;
+            cerr << "Error" << endl;
         }
 
         return res;
-    }
+    }    
 };
 
