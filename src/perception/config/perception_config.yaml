@@ -13,4 +13,4 @@ perception:
     threshold: 0.05
 
     #Parameters of clustering
-    radius: 1.0
+    radius: 0.5

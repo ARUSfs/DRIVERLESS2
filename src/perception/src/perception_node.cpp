@@ -74,7 +74,7 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices> cluster_ind
             PointXYZColorScore center;
             center.x = (max_x + min_x) / 2;
             center.y = (max_y + min_y) / 2;
-            center.z = 0;
+            center.z = (max_z + min_z) / 2;
             center.color = 0;
             center.score = 1;
             clusters_centers.push_back(center);
@@ -86,42 +86,48 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices> cluster_ind
 
 /**
  * @brief Recover falsely ground filtered points.
- * @param cloud_filtered The input point cloud.
+ * @param cloud_plane The input point cloud.
+ * @param cloud_filtered The filtered point cloud.
  * @param cluster_indices The indices of the points that form each cluster.
  * @param cluster_centers The center of each cluster.
  * @param radius The radius used to search for eliminated points.
  */
-void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<pcl::PointIndices>& cluster_indices, 
-    std::vector<PointXYZColorScore> clusters_centers, double radius, int& total_recovered_points)
+void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, 
+    std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore> clusters_centers, 
+    double radius, int& total_recovered_points)
 {
-    //Create a kdtree to search points
-    pcl::KdTreeFLANN<pcl::PointXYZI> kd_tree;
-    kd_tree.setInputCloud(cloud_filtered);
-
     //Iterate on clusters
     for (size_t i = 0; i < clusters_centers.size(); ++i)
     {
-        std::vector<int> point_indices;
-        std::vector<float> point_distances;
-
         //Convert from PointXYZColorScore to PointXYZI
         pcl::PointXYZI center;
         center.x = clusters_centers[i].x;
         center.y = clusters_centers[i].y;
         center.z = clusters_centers[i].z;
         center.intensity = clusters_centers[i].score;
+        
+        //Iterate on planar points
+        for (size_t j = 0; j < cloud_plane->size(); ++j)
+            {
+                pcl::PointXYZI point = cloud_plane->points[j];
 
-        //Insert the recovered points
-        if (kd_tree.radiusSearch(center, radius, point_indices, point_distances) > 0)
-        {
-            cluster_indices[i].indices.insert(
-                cluster_indices[i].indices.end(),
-                point_indices.begin(),
-                point_indices.end()
-            );
+                //Check if the point lies inside the cylinder
+                double dx = point.x - center.x;
+                double dy = point.y - center.y;
+                double radial_distance = std::sqrt(dx * dx + dy * dy);
 
-            total_recovered_points += point_indices.size();
-        }
+                //Insert the recovered points
+                if (radial_distance <= radius)
+                {
+                    //Add the point to the filtered cloud
+                    cloud_filtered->points.push_back(point);
+
+                    //Add the index of the recovered point to cluster indices
+                    cluster_indices[i].indices.push_back(cloud_filtered->points.size() - 1);
+
+                    total_recovered_points++;
+                }
+            }
     }
 }
 
@@ -169,10 +175,16 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Recover ground points
     int total_recovered_points = 0;
-    Perception::reconstruction(cloud_plane, cluster_indices, clusters_centers, kRadius, total_recovered_points);
+    Perception::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius, total_recovered_points);
 
     //Print the number of recovered points
     std::cout << "Number of recovered points: " << total_recovered_points << std::endl;
+    std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
+
+    //Update the dimensions of the filtered point cloud
+    cloud_filtered->width = cloud_filtered->size();
+    cloud_filtered->height = 1;
+    cloud_filtered->is_dense = true; 
 
     //Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;
