@@ -18,8 +18,7 @@
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
-#include <visualization_msgs/msg/marker.hpp>
+
 /**
  * @brief Class containing the Path Planning node.
  * Manages subscribers and publisher for the different topics used in the algorithm.
