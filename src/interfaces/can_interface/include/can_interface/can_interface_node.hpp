@@ -21,7 +21,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
 #include <fcntl.h>
-// #include <common_msgs/Controls.h>
+#include <common_msgs/msg/cmd.hpp>
 
 using namespace std;
 
@@ -35,7 +35,7 @@ public:
 private :
 
     void pubHeartBeat();
-    // void controlsCallback(common_msgs::msg::Controls);
+    void controlsCallback(common_msgs::msg::Cmd);
     void brakeLightCallback(std_msgs::msg::Int16);
     void steeringInfoCallback(std_msgs::msg::Float32MultiArray);
     void ASStatusCallback(std_msgs::msg::Int16);
@@ -57,7 +57,7 @@ private :
     struct ifreq ifr;
     struct can_frame frame;
 
-    // rclcpp::Subscription<common_msgs::msg::Controls>::SharedPtr controlsSub;
+    rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr controlsSub;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr ASStatusSub;
     rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr steeringInfoSub;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lapCounterSub;

@@ -6,7 +6,61 @@ float transmissionRatio = 0.24444444444444444;//11/45;
 
 
 CanInterface::CanInterface() : Node("can_interface"){
-   // controlsSub = this->create_subscription<common_msgs::msg::Controls>("/controls", 10, std::bind(&CanInterface::controlsCallback, this, std::placeholders::_1));
+    // Configure socketCan0
+    const char *can_interface0 = "can0"; 
+
+    socketCan0 = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+    if (socketCan0 < 0) {
+        perror("Error while opening can0 socket");
+        return;
+    } else{
+        std::cout << "can0 enabled for writing" << std::endl;
+    }
+
+    std::strncpy(ifr.ifr_name, can_interface0, IFNAMSIZ - 1);
+    if (ioctl(socketCan0, SIOCGIFINDEX, &ifr) < 0) {
+        perror("Error getting can0 interface index");
+        return ;
+    }
+    addr.can_family = AF_CAN;
+    addr.can_ifindex = ifr.ifr_ifindex;
+    if (bind(socketCan0, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+            perror("Error in binding socketCan0");
+            return;
+    }
+
+
+    // Configure socketCan1
+    const char *can_interface1 = "can1"; 
+
+    socketCan1 = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+    if (socketCan1 < 0) {
+        perror("Error while opening can1 socket");
+        return;
+    } else{
+        std::cout << "can1 enabled for writing" << std::endl;
+    }
+
+    std::strncpy(ifr.ifr_name, can_interface1, IFNAMSIZ - 1);
+    if (ioctl(socketCan1, SIOCGIFINDEX, &ifr) < 0) {
+        perror("Error getting can1 interface index");
+        return ;
+    }
+    addr.can_family = AF_CAN;
+    addr.can_ifindex = ifr.ifr_ifindex;
+    if (bind(socketCan1, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+            perror("Error in binding socketCan1");
+            return;
+    }
+
+    this->brake_hydr_actual = 100;
+    this->brake_hydr_target = 100;
+    this->service_brake_state = 0;
+    this->cones_count_all = 0;
+    this->EBS_state = 0;
+    this->motor_moment_actual = 0;
+
+    controlsSub = this->create_subscription<common_msgs::msg::Cmd>("/controller/cmd", 10, std::bind(&CanInterface::controlsCallback, this, std::placeholders::_1));
     ASStatusSub = this->create_subscription<std_msgs::msg::Int16>("/can/AS_status", 10, std::bind(&CanInterface::ASStatusCallback, this, std::placeholders::_1));
     steeringInfoSub = this->create_subscription<std_msgs::msg::Float32MultiArray>("/steering/epos_info", 10, std::bind(&CanInterface::steeringInfoCallback, this, std::placeholders::_1));
     lapCounterSub = this->create_subscription<std_msgs::msg::Int16>("/lap_counter", 10, std::bind(&CanInterface::lapCounterCallback, this, std::placeholders::_1));
@@ -36,82 +90,10 @@ CanInterface::CanInterface() : Node("can_interface"){
     std::thread thread_0(&CanInterface::readCan0, this);
     std::thread thread_1(&CanInterface::readCan1, this);
 
-    // Configure socketCan0
-    const char *can_interface0 = "can0"; 
-
-    socketCan0 = socket(PF_CAN, SOCK_RAW, CAN_RAW);
-    if (socketCan0 < 0) {
-        perror("Error while opening can0 socket");
-        return;
-    } else{
-        std::cout << "can0 enabled for writing" << std::endl;
-    }
-
-    std::strncpy(ifr.ifr_name, can_interface0, IFNAMSIZ - 1);
-    if (ioctl(socketCan0, SIOCGIFINDEX, &ifr) < 0) {
-        perror("Error getting can0 interface index");
-        return ;
-    }
-    addr.can_family = AF_CAN;
-    addr.can_ifindex = ifr.ifr_ifindex;
-    if (bind(socketCan0, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-            perror("Error in binding socketCan0");
-            return;
-        }
-    int flags0 = fcntl(socketCan0, F_GETFL, 0);
-    if (flags0 == -1) {
-        perror("fcntl F_GETFL");
-        return;
-    }
-    if (fcntl(socketCan0, F_SETFL, flags0 | O_NONBLOCK) == -1) {
-        perror("fcntl F_SETFL");
-        return;
-    }
-
-
-    // Configure socketCan1
-    const char *can_interface1 = "can1"; 
-
-    socketCan1 = socket(PF_CAN, SOCK_RAW, CAN_RAW);
-    if (socketCan1 < 0) {
-        perror("Error while opening can1 socket");
-        return;
-    } else{
-        std::cout << "can1 enabled for writing" << std::endl;
-    }
-
-    std::strncpy(ifr.ifr_name, can_interface1, IFNAMSIZ - 1);
-    if (ioctl(socketCan1, SIOCGIFINDEX, &ifr) < 0) {
-        perror("Error getting can1 interface index");
-        return ;
-    }
-    addr.can_family = AF_CAN;
-    addr.can_ifindex = ifr.ifr_ifindex;
-    if (bind(socketCan1, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-            perror("Error in binding socketCan1");
-            return;
-        }
-    int flags1 = fcntl(socketCan1, F_GETFL, 0);
-    if (flags1 == -1) {
-        perror("fcntl F_GETFL");
-        return;
-    }
-    if (fcntl(socketCan1, F_SETFL, flags1 | O_NONBLOCK) == -1) {
-        perror("fcntl F_SETFL");
-        return;
-    }
-
     // ros::waitForShutdown();
 
     thread_0.join();
     thread_1.join();
-
-    this->brake_hydr_actual = 100;
-    this->brake_hydr_target = 100;
-    this->service_brake_state = 0;
-    this->cones_count_all = 0;
-    this->EBS_state = 0;
-    this->motor_moment_actual = 0;
 }
 
 //void CanInterface::check_can(canStatus stat)
@@ -324,7 +306,7 @@ void CanInterface::readCan0()
 {   
     struct can_frame frame;
     std::cout << "readCan0 is called" << std::endl;
-    while (true) {
+    while (rclcpp::ok()) {
         int nbytes = read(socketCan0, &frame, sizeof(struct can_frame));
         if (nbytes < 0) {
             perror("can0 read error");
@@ -379,7 +361,7 @@ void CanInterface::readCan1()
 {   
     struct can_frame frame;
     std::cout << "readCan1 is called" << std::endl;
-    while (true) {
+    while (rclcpp::ok()) {
         int nbytes = read(socketCan1, &frame, sizeof(struct can_frame));
         if (nbytes < 0) {
             perror("can1 read error");
@@ -448,21 +430,25 @@ void intToBytes(int16_t val, int8_t* bytes)
     std::memcpy(bytes, &val, sizeof(val));
 }           
 
-// void CanInterface::controlsCallback(common_msgs::Controls msg)
-// {
-//     // std::cout << "llega" << std::endl;
-//     float acc = msg.accelerator;
-//     int16_t intValue = static_cast<int16_t>(acc * (1<<15))-1;
-//     this->motor_moment_target = intValue;
+void CanInterface::controlsCallback(common_msgs::msg::Cmd msg)
+{   
+    std::cout << "controlsCallback is called" << std::endl;
+    float acc = msg.acc;
+    int16_t intValue = static_cast<int16_t>(acc * (1<<15))-1;
+    this->motor_moment_target = intValue;
 
-//     int8_t bytesCMD[2];
-//     intToBytes(intValue, bytesCMD);
-//     int8_t cabecera = 0x90;
+    int8_t bytesCMD[2];
+    intToBytes(intValue, bytesCMD);
+    int8_t cabecera = 0x90;
 
-//     int8_t data[3] = {cabecera, bytesCMD[0], bytesCMD[1]};
-
-//     canWrite(hndW0, 0x201, data, 3, canMSG_STD);
-// }
+    struct can_frame frame;
+    frame.can_id = 0x201;             
+    frame.can_dlc = 3;                
+    frame.data[0] = cabecera;
+    frame.data[1] = bytesCMD[0];
+    frame.data[2] = bytesCMD[1];
+    write(socketCan0, &frame, sizeof(struct can_frame));  
+}
 
 void CanInterface::ASStatusCallback(std_msgs::msg::Int16 msg)
 {
