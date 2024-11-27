@@ -7,8 +7,7 @@
 #include "std_msgs/msg/int16.hpp"
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/cmd.hpp"
-#include "controller/speed_control.hpp"
-#include "Point.h"
+#include "inspection/speed_control.hpp"
 
 class Inspection : public rclcpp::Node
 {

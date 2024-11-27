@@ -15,7 +15,7 @@
  *          instantiates all the controls required for the ART-25 to be autonomous.
  */
 Controller::Controller() : Node("controller"),  
-    speedcontrol_(),
+    speed_control_(),
     pure_pursuit_()
 {
     this->declare_parameter<std::string>("controller_type", "pure_pursuit");
@@ -49,7 +49,7 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("KI", KI);
     this->get_parameter("KD", KD);
 
-    speedcontrol_.pid_.set_params(KP,KI,KD);
+    speed_control_.pid_.set_params(KP,KI,KD);
 
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(static_cast<int>(1000.0 / kTimerFreq)),
@@ -104,7 +104,7 @@ void Controller::on_timer()
 
         rclcpp::Time current_time = this->get_clock()->now();
         double dt = (current_time - previous_time_).seconds();
-        double acc = speedcontrol_.get_acc_command(target_speed, target_acc, vx_, dt);
+        double acc = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
         previous_time_ = current_time;
 
         common_msgs::msg::Cmd cmd;       
