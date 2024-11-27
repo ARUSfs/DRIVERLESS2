@@ -37,7 +37,7 @@ public:
                          double dt) 
     {
         double acc;
-        double control = pid_.compute_control(vx, target_speed, dt);
+        double control = pid_.compute_control(vx, target_speed, dt)/(230 * 0.2);
         double feed_forward = target_acc;
         acc = control + feed_forward;
         return acc;

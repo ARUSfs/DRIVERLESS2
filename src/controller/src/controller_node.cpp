@@ -69,7 +69,6 @@ Controller::Controller() : Node("controller"),
     pursuit_point_publisher_ = this->create_publisher<common_msgs::msg::PointXY>(kPursuitPointTopic, 10);
 
     previous_time_ = this->get_clock()->now();
-    start_time_pursuit_=this->get_clock()->now();
 }
 
 /**
@@ -81,13 +80,6 @@ void Controller::on_timer()
 {
     if(!(pointsXY_.empty())){
         get_global_index(pointsXY_);
-        rclcpp::Time current_time_pursuit = this->get_clock()->now();
-        double elapsed_time = (current_time_pursuit - start_time_pursuit_).seconds();
-        if (elapsed_time < 5.0) {
-            if (index_global_ > 900) {
-                index_global_ = 1;
-            }
-        }
 
         double target_speed = kTargetSpeed;
         if(!(speed_profile_.empty())){

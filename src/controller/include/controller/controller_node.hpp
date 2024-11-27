@@ -75,7 +75,6 @@ private:
     //Timers
     rclcpp::TimerBase::SharedPtr timer_; 
     rclcpp::Time previous_time_ ;
-    rclcpp::Time start_time_pursuit_;
     
     // Parameters
     std::string kControllerType;
