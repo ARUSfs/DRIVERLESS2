@@ -17,23 +17,18 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<std::string>("triangulation_topic", "/triangulation"); 
     this->declare_parameter<std::string>("trajectory_topic", "/trajectory");
     this->declare_parameter<double>("max_tri_len", 7);
-    this->declare_parameter<double>("dist_coeff", 1.0);
+    this->declare_parameter<double>("max_tri_angle", 2.9);
+    this->declare_parameter<double>("len_coeff", 1.0);
     this->declare_parameter<double>("angle_coeff", 1.0);
-    this->declare_parameter<double>("max_dist", 100.0);
     this->declare_parameter<double>("max_angle", 3.1416);
-    this->declare_parameter<double>("sensor_range", 20.0);
-    this->declare_parameter<int>("max_route", 10);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
     this->get_parameter("max_tri_len", kMaxTriLen);
-    this->get_parameter("dist_coeff", kDistCoeff);
+    this->get_parameter("max_tri_angle", kMaxTriAngle);
+    this->get_parameter("len_coeff", kLenCoeff);
     this->get_parameter("angle_coeff", kAngleCoeff);
-    this->get_parameter("max_dist", kMaxDist);
     this->get_parameter("max_angle", kMaxAngle);
-    this->get_parameter("sensor_range", kSensorRange);
-    this->get_parameter("max_route", kMaxRouteLength);
-    this->get_parameter("perception_topic", kPerceptionTopic);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
@@ -87,7 +82,7 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
         }
     }
     best_midpoint_route_ = midpoint_routes_[best_route_ind];
-
+   
     // Publish the best trajectory
     trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
 }
@@ -100,18 +95,34 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
         CDT::V2d<double> point = CDT::V2d<double>::make(cone.x, cone.y);
         points.push_back(point);
     }
-    points.push_back(CDT::V2d<double>::make(0,0));
+    CDT::V2d<double> origin = CDT::V2d<double>::make(0,0);
+    points.push_back(origin);
     triangulation.insertVertices(points);
     triangulation.eraseSuperTriangle();
     CDT::TriangleVec triangles = triangulation.triangles;
     CDT::Triangulation<double>::V2dVec vertices = triangulation.vertices;
     CDT::TriIndUSet deleled_tri;
     for (int i=0; i<triangles.size(); i++) {
+        // Angle and length calculations
         CDT::VerticesArr3 vert_ind = triangles[i].vertices;
         CDT::V2d<double> a = vertices[vert_ind[0]];
         CDT::V2d<double> b = vertices[vert_ind[1]];
         CDT::V2d<double> c = vertices[vert_ind[2]];
+        CDT::V2d<double> ab, bc, ca;
+        double a_angle, b_angle, c_angle;
+        ab = CDT::V2d<double>::make(b.x-a.x, b.y-a.y);
+        bc = CDT::V2d<double>::make(c.x-b.x, c.y-b.y);
+        ca = CDT::V2d<double>::make(a.x-c.x, a.y-c.y);
+        a_angle = acos((ab.x*ca.x+ab.y*ca.y)/(norm(ab)*norm(ca)));
+        b_angle = acos((bc.x*ab.x+bc.y*ab.y)/(norm(bc)*norm(ab)));
+        c_angle = acos((ca.x*bc.x+ca.y*bc.y)/(norm(ca)*norm(bc)));
+
+        // Delete triangles with long edges or big angles (except the ones with the origin vertex)
         if (CDT::distance(a,b) > kMaxTriLen or CDT::distance(b,c) > kMaxTriLen or CDT::distance(c,a) > kMaxTriLen){
+            deleled_tri.insert(i);
+        } else if (a == origin or b == origin or c == origin){
+            continue;
+        } else if (a_angle > kMaxTriAngle or b_angle > kMaxTriAngle or c_angle > kMaxTriAngle){
             deleled_tri.insert(i);
         }
     }
@@ -267,32 +278,30 @@ void PathPlanning::get_midpoint_routes(){
     }
 }
 
-double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> route){
+double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
     double route_cost = 0;
     int route_size = route.size();
-    double route_len = 0;
+    double route_length = CDT::distance(route[0], route[1]);
     double angle_diff_sum = 0;
-    for (int i = 0; i<route_size-1; i++){
-        double dist = CDT::distance(route[i], route[i+1]);
-        // Return infinity if two consecutive points of the route are too far apart
-        if (dist > kMaxDist){
-            return INFINITY;
-        } else{
-            route_len += dist;
-        }
-    }
+    std::vector<CDT::V2d<double>> route_out;
+
     for (int i = 0; i<route_size-2;i++){
+        route_length += CDT::distance(route[i+1], route[i+2]);
         double angle_diff = abs(atan2(route[i+2].y-route[i+1].y, route[i+2].x-route[i+1].x)-
                                 atan2(route[i+1].y-route[i].y, route[i+1].x-route[i].x));
-        // Return infinity if the difference in angle between two consecutive segments is too high
+        route_out.push_back(route[i+1]);
+
+        // If the angle is too big, cut the route and return the cost
         if (angle_diff > kMaxAngle){
-            return INFINITY;
+            angle_diff_sum += angle_diff;
+            route = route_out;           // Cut the route
+            return kAngleCoeff*angle_diff_sum-kLenCoeff*route_length;
         } else{
             angle_diff_sum += angle_diff;
         }
     }
-    route_cost += kDistCoeff*abs(route_len - kSensorRange)/kSensorRange; // Distance
-    route_cost += kAngleCoeff*angle_diff_sum/route_size; // Curvature
+
+    route_cost += kAngleCoeff*angle_diff_sum - kLenCoeff*route_length; // Curvature
     return route_cost;
 }
 
