@@ -90,13 +90,13 @@ void Controller::on_timer()
         if(!(acc_profile_.empty())){
             target_acc = acc_profile_.at(index_global_);
         }
-        
+
         pure_pursuit_.set_path(pointsXY_);
         Point position;
         position.x = x_;
         position.y = y_;
         pure_pursuit_.set_position(position, yaw_);
-        auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_, target_speed / 1.5);
+        auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_,target_speed / 1.5);
         common_msgs::msg::PointXY pursuit_point_msg;
         pursuit_point_msg.x = pursuit_point.x;
         pursuit_point_msg.y = pursuit_point.y;

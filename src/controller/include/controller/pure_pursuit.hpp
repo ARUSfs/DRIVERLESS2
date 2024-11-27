@@ -55,22 +55,28 @@ public:
      */
     Point search_pursuit_point(size_t index_global, double look_ahead_distance) {
         double accumulated_distance = 0.0;
-
-        for (size_t point_index = index_global; point_index < path_.size() - 1; ++point_index) {
-            const Point &current_point = path_[point_index];
-            const Point &next_point = path_[point_index + 1];
+        int N = path_.size();
+        int point_index = index_global;
+        
+        while(look_ahead_distance >= accumulated_distance){
+            const Point &current_point = path_[point_index % N];
+            const Point &next_point = path_[(point_index + 1) % N];
 
             double dx = next_point.x - current_point.x;
             double dy = next_point.y - current_point.y;
+
             double segment_distance = std::sqrt(dx * dx + dy * dy);
 
             accumulated_distance += segment_distance;
 
             if (accumulated_distance >= look_ahead_distance) {
-                pursuit_index_ = point_index + 1;
+                pursuit_index_ = (point_index + 1) % N;
                 return path_[pursuit_index_];
             }
+            ++point_index;
         }
+
+
         return path_.back();
     }
 
