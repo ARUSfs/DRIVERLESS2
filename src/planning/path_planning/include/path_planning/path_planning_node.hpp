@@ -45,16 +45,14 @@ class PathPlanning : public rclcpp::Node
         double kMaxTriAngle;
         double kLenCoeff;
         double kAngleCoeff;
-        double kMaxDist;
         double kMaxAngle;
-        double kSensorRange;
-        int kMaxRouteLength;
         
         // Suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr text_tri_pub_;
+        
         // Triangulation attributes
         CDT::TriangleVec triangles_;
         CDT::Triangulation<double>::V2dVec vertices_;
@@ -155,7 +153,8 @@ class PathPlanning : public rclcpp::Node
 
         /**
          * @brief Calculate the cost of a given route based on the distance and angle between consecutive points and
-         * the total distance of the route.
+         * the total distance of the route. If the route has a "stop condition" (i.e. the angle between two segments is
+         * bigger than a threshold), the route is modified to stop before the stop condition.
          * @param route vector of CDT::V2d<double> points containing the route through the midpoints.
          * @return float result of the cost function.
          */
