@@ -90,10 +90,8 @@ CanInterface::CanInterface() : Node("can_interface"){
     std::thread thread_0(&CanInterface::readCan0, this);
     std::thread thread_1(&CanInterface::readCan1, this);
 
-    // ros::waitForShutdown();
-
-    thread_0.join();
-    thread_1.join();
+    thread_0.detach();
+    thread_1.detach();
 }
 
 //void CanInterface::check_can(canStatus stat)
@@ -432,7 +430,6 @@ void intToBytes(int16_t val, int8_t* bytes)
 
 void CanInterface::controlsCallback(common_msgs::msg::Cmd msg)
 {   
-    std::cout << "controlsCallback is called" << std::endl;
     float acc = msg.acc;
     int16_t intValue = static_cast<int16_t>(acc * (1<<15))-1;
     this->motor_moment_target = intValue;
@@ -723,8 +720,15 @@ void CanInterface::getPcTemp()
 
 int main(int argc, char * argv[])
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<CanInterface>());
-  rclcpp::shutdown();
-  return 0;
+    rclcpp::init(argc, argv);
+    auto node = std::make_shared<CanInterface>();
+
+    rclcpp::executors::MultiThreadedExecutor executor;
+
+    executor.add_node(node);
+
+    executor.spin();
+
+    rclcpp::shutdown();
+    return 0;
 }
