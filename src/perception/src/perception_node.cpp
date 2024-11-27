@@ -68,7 +68,7 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices> cluster_ind
         double max_z = max_point.z;
         double min_z = min_point.z;
 
-        //filter the cluster by size and keep the center of the cluster
+        //Filter the cluster by size and keep the center of the cluster
         if ((max_z - min_z) > 0.1 && (max_z - min_z) < 0.4 && (max_x - min_x) < 0.4 && (max_y - min_y) < 0.4)
         {
             PointXYZColorScore center;
@@ -108,26 +108,26 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
         
         //Iterate on planar points
         for (size_t j = 0; j < cloud_plane->size(); ++j)
+        {
+            pcl::PointXYZI point = cloud_plane->points[j];
+
+            //Check if the point lies inside the cylinder
+            double dx = point.x - center.x;
+            double dy = point.y - center.y;
+            double radial_distance = std::sqrt(dx * dx + dy * dy);
+
+            //Insert the recovered points
+            if (radial_distance <= radius)
             {
-                pcl::PointXYZI point = cloud_plane->points[j];
+                //Add the point to the filtered cloud
+                cloud_filtered->points.push_back(point);
 
-                //Check if the point lies inside the cylinder
-                double dx = point.x - center.x;
-                double dy = point.y - center.y;
-                double radial_distance = std::sqrt(dx * dx + dy * dy);
+                //Add the index of the recovered point to cluster indices
+                cluster_indices[i].indices.push_back(cloud_filtered->points.size() - 1);
 
-                //Insert the recovered points
-                if (radial_distance <= radius)
-                {
-                    //Add the point to the filtered cloud
-                    cloud_filtered->points.push_back(point);
-
-                    //Add the index of the recovered point to cluster indices
-                    cluster_indices[i].indices.push_back(cloud_filtered->points.size() - 1);
-
-                    total_recovered_points++;
-                }
+                total_recovered_points++;
             }
+        }
     }
 }
 
@@ -185,6 +185,34 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     cloud_filtered->width = cloud_filtered->size();
     cloud_filtered->height = 1;
     cloud_filtered->is_dense = true; 
+
+    //Refilter the new reconstructed clusters
+    for (auto it = cluster_indices.begin(); it != cluster_indices.end(); )
+    {
+        //Create a temporal point cloud
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::copyPointCloud(*cloud_filtered, *it, *cluster_cloud);
+
+        //Obtain the new bounding box of the cluster
+        pcl::PointXYZI min_point, max_point;
+        pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
+        double max_x = max_point.x;
+        double min_x = min_point.x;
+        double max_y = max_point.y;
+        double min_y = min_point.y;
+        double max_z = max_point.z;
+        double min_z = min_point.z;
+
+        //Refilter the cluster by size and erase the not suitable ones
+        if (!((max_z - min_z) > 0.1 && (max_z - min_z) < 0.4 && (max_x - min_x) < 0.4 && (max_y - min_y) < 0.4))
+        {
+            it = cluster_indices.erase(it);
+        }
+        else
+        {
+            it++;
+        }
+    }
 
     //Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;
