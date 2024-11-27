@@ -1,6 +1,6 @@
 /**
  * @file inspection.hpp
- * @brief Inspection mission header for ARUS Team Driverless pipeline.
+ * @brief Inspection control header for ARUS Team Driverless pipeline.
  */
 
 #include "rclcpp/rclcpp.hpp"
@@ -9,11 +9,11 @@
 #include "common_msgs/msg/cmd.hpp"
 #include "inspection/speed_control.hpp"
 
-class Inspection : public rclcpp::Node
+class InspectionControl : public rclcpp::Node
 {
 public:
 
-    Inspection();
+    InspectionControl();
     
 private:
     // Instances

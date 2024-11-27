@@ -1,7 +1,7 @@
-#include "inspection/inspection.hpp"
+#include "inspection/inspection_control_node.hpp"
 #include <cmath>
 
-Inspection::Inspection() : Node("inspection_node"){   
+InspectionControl::InspectionControl() : Node("inspection_control_node"){   
 
     start_time_ = this->get_clock()->now();
 
@@ -9,20 +9,20 @@ Inspection::Inspection() : Node("inspection_node"){
     speed_control_.pid_.set_params(43.87,1.29,0.0);
 
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
-            "/car_state/state", 10, std::bind(&Inspection::car_state_callback, this, std::placeholders::_1));
+            "/car_state/state", 10, std::bind(&InspectionControl::car_state_callback, this, std::placeholders::_1));
     as_status_sub_ = this->create_subscription<std_msgs::msg::Int16>(
-            "/can/AS_status", 10, std::bind(&Inspection::as_status_callback, this, std::placeholders::_1));
+            "/can/AS_status", 10, std::bind(&InspectionControl::as_status_callback, this, std::placeholders::_1));
     cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>("/controller/cmd", 10);
     timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(100), std::bind(&Inspection::on_timer, this));
+            std::chrono::milliseconds(100), std::bind(&InspectionControl::on_timer, this));
 }
 
-void Inspection::car_state_callback(const common_msgs::msg::State::SharedPtr msg)
+void InspectionControl::car_state_callback(const common_msgs::msg::State::SharedPtr msg)
 {
-        vx_ = msg->vx;
+    vx_ = msg->vx;
 }
 
-void Inspection::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
+void InspectionControl::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
 {
     if (msg->data == 0x02 && as_status_ != 0x02){
         as_status_ = msg->data;
@@ -30,7 +30,7 @@ void Inspection::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
     }
 }
 
-void Inspection::on_timer()
+void InspectionControl::on_timer()
 {   
     double DURATION = 27.0;
     // double AMPLITUDE = 20*M_PI/180;
@@ -53,7 +53,7 @@ void Inspection::on_timer()
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<Inspection>());
+    rclcpp::spin(std::make_shared<InspectionControl>());
     rclcpp::shutdown();
     return 0;
 }
