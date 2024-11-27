@@ -1,4 +1,4 @@
-#include "controller/inspection.hpp"
+#include "inspection/inspection.hpp"
 #include <cmath>
 
 Inspection::Inspection() : Node("inspection_node"){   

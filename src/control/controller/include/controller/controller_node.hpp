@@ -35,7 +35,7 @@ public:
     
 private:
     // Instances
-    SpeedControl speedcontrol_;
+    SpeedControl speed_control_;
     Pure_pursuit pure_pursuit_;   
 
     // Callbacks

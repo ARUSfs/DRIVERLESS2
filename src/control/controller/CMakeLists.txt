@@ -18,7 +18,6 @@ include_directories(include)
 
 # Add the executable for the controller node
 add_executable(controller_exec src/controller_node.cpp)
-add_executable(inspection_exec src/inspection.cpp)
 
 # Link the executable to the required packages
 ament_target_dependencies(controller_exec 
@@ -26,14 +25,9 @@ ament_target_dependencies(controller_exec
                             std_msgs 
                             geometry_msgs
                             common_msgs)
-ament_target_dependencies(inspection_exec 
-                            rclcpp 
-                            std_msgs 
-                            geometry_msgs
-                            common_msgs)
 
 # Install the node executable
-install(TARGETS controller_exec inspection_exec
+install(TARGETS controller_exec
   DESTINATION lib/${PROJECT_NAME})
 
 # Install configuration and launch files
