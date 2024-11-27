@@ -27,7 +27,16 @@ private:
 
     // Status AS
     int16_t as_status_ = 0x00;
-    double vx_ = 0.0;       
+    double vx_ = 0.0;    
+
+    // Parameters
+    double KP;
+    double KI;
+    double KD;
+    double kAmplitude;
+    double kFrequency;
+    double kDuration;
+       
 
     //Subscribers
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
