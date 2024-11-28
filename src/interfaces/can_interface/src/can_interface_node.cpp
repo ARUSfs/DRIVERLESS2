@@ -62,14 +62,14 @@ CanInterface::CanInterface() : Node("can_interface"){
 
     controlsSub = this->create_subscription<common_msgs::msg::Cmd>("/controller/cmd", 10, std::bind(&CanInterface::controlsCallback, this, std::placeholders::_1));
     ASStatusSub = this->create_subscription<std_msgs::msg::Int16>("/can/AS_status", 10, std::bind(&CanInterface::ASStatusCallback, this, std::placeholders::_1));
-    steeringInfoSub = this->create_subscription<std_msgs::msg::Float32MultiArray>("/steering/epos_info", 10, std::bind(&CanInterface::steeringInfoCallback, this, std::placeholders::_1));
+    steeringInfoSub = this->create_subscription<std_msgs::msg::Float32MultiArray>("/epos_interface/epos_info", 10, std::bind(&CanInterface::steeringInfoCallback, this, std::placeholders::_1));
     lapCounterSub = this->create_subscription<std_msgs::msg::Int16>("/lap_counter", 10, std::bind(&CanInterface::lapCounterCallback, this, std::placeholders::_1));
-    conesCountSub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/perception_map", 10, std::bind(&CanInterface::conesCountCallback, this, std::placeholders::_1));
-    conesCountAllSub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/mapa_icp", 10, std::bind(&CanInterface::conesCountAllCallback, this, std::placeholders::_1));
+    conesCountSub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/perception/map", 10, std::bind(&CanInterface::conesCountCallback, this, std::placeholders::_1));
+    conesCountAllSub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/slam/map", 10, std::bind(&CanInterface::conesCountAllCallback, this, std::placeholders::_1));
     targetSpeedSub = this->create_subscription<std_msgs::msg::Float32>("/target_speed", 10, std::bind(&CanInterface::targetSpeedCallback, this, std::placeholders::_1));
     brakeLightSub = this->create_subscription<std_msgs::msg::Int16>("/brake_light", 10, std::bind(&CanInterface::brakeLightCallback, this, std::placeholders::_1));
     
-    motorSpeedPub = this->create_publisher<std_msgs::msg::Float32>("/motor_speed", 10);
+    motorSpeedPub = this->create_publisher<std_msgs::msg::Float32>("/can/inv_speed", 10);
     ASStatusPub = this->create_publisher<std_msgs::msg::Int16>("/can/AS_status", 10);
     GPSPub = this->create_publisher<sensor_msgs::msg::NavSatFix>("can/gps", 10);
     GPSSpeedPub = this->create_publisher<geometry_msgs::msg::Vector3>("can/gps_speed", 10);
@@ -298,21 +298,21 @@ void CanInterface::parseMission(uint8_t msg[8])
 
 //################################################# READ FUNCTIONS #################################################
 
-//--------------------------------------------- CAN 0 -------------------------------------------------------------------   
+//--------------------------------------------- CAN 1 -------------------------------------------------------------------   
 
-void CanInterface::readCan0()
+void CanInterface::readCan1()
 {   
     struct can_frame frame;
-    std::cout << "readCan0 is called" << std::endl;
+    std::cout << "readCan1 is called" << std::endl;
     while (rclcpp::ok()) {
-        int nbytes = read(socketCan0, &frame, sizeof(struct can_frame));
+        int nbytes = read(socketCan1, &frame, sizeof(struct can_frame));
         if (nbytes < 0) {
-            perror("can0 read error");
+            perror("can1 read error");
             continue;
         }
 
         // Debug: Print the received CAN frame
-        std::cout << "Received CAN frame on can0: ID=0x" 
+        std::cout << "Received CAN frame on can1: ID=0x" 
                   << std::hex << frame.can_id 
                   << " DLC=" << std::dec << static_cast<int>(frame.can_dlc) 
                   << " Data=";
@@ -346,31 +346,31 @@ void CanInterface::readCan0()
                 parseRES(frame.data);
                 break;
             default:
-                std::cerr << "Unhandled can0 ID: 0x" << std::hex << frame.can_id << std::endl;
+                std::cerr << "Unhandled can1 ID: 0x" << std::hex << frame.can_id << std::endl;
                 break;
         }
     }
 }
 
 
-//--------------------------------------------- CAN 1 -------------------------------------------------------------------
+//--------------------------------------------- CAN 0 -------------------------------------------------------------------
 
-void CanInterface::readCan1()
+void CanInterface::readCan0()
 {   
     struct can_frame frame;
-    std::cout << "readCan1 is called" << std::endl;
+    std::cout << "readCan0 is called" << std::endl;
     while (rclcpp::ok()) {
-        int nbytes = read(socketCan1, &frame, sizeof(struct can_frame));
+        int nbytes = read(socketCan0, &frame, sizeof(struct can_frame));
         if (nbytes < 0) {
-            perror("can1 read error");
+            perror("can0 read error");
             continue;
         } else if (nbytes == 0) {
-             std::cerr << "No data read from can1." << std::endl;
+             std::cerr << "No data read from can0." << std::endl;
             continue;
         }
 
         // Debug: Print the received CAN frame
-        std::cout << "Received CAN frame on can1: ID=0x" 
+        std::cout << "Received CAN frame on can0: ID=0x" 
                   << std::hex << frame.can_id 
                   << " DLC=" << std::dec << static_cast<int>(frame.can_dlc) 
                   << " Data=";
@@ -416,7 +416,7 @@ void CanInterface::readCan1()
                 }
                 break;
             default:
-                std::cerr << "Unhandled can1 ID: 0x" << std::hex << frame.can_id << std::endl;
+                std::cerr << "Unhandled can0 ID: 0x" << std::hex << frame.can_id << std::endl;
                 break;
         }
     }
