@@ -9,7 +9,7 @@ from datetime import datetime
 def generate_launch_description():
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir = f"/home/alvaro/.ros/inspection_bag_{timestamp}"
+    output_dir = f"/home/arus/.ros/inspection_bag_{timestamp}"
 
     rosbag_record = ExecuteProcess(
         cmd=['ros2', 'bag', 'record', '-a', 
