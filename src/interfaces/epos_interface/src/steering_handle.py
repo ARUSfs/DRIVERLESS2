@@ -31,15 +31,16 @@ class SteeringHandle(Node):
         self.info_pub = self.create_publisher(Float32MultiArray, '/epos_interface/epos_info', 10)
 
     def command_callback(self, msg: Float32):
-        angle = msg.data*180/math.pi
+        angle = msg.delta*180/math.pi
         assert angle<=20 and angle>=-20, "Angle out of range"
         if not self._is_shutdown:
-            self.epos.move_to(msg.data)
+            self.epos.move_to(angle)
 
-        # epos_info = self.epos.get_epos_info()
-        # msg = Float32MultiArray()
-        # msg.data = epos_info
-        # self.info_pub.publish(msg)
+        epos_info = self.epos.get_epos_info()
+        msg = Float32MultiArray()
+        for i in epos_info:
+            msg.data.append(i)
+        self.info_pub.publish(msg)
 
     def clean_and_close(self):
         self._is_shutdown = True
