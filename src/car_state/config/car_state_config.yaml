@@ -1,3 +1,4 @@
 car_state:
   ros__parameters:
     get_arussim_ground_truth: true
+    simulation: false
