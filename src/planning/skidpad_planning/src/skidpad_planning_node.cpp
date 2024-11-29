@@ -155,7 +155,10 @@ void SkidpadPlanning::generate_planning() {
             }
         }
     }
-
+    // Intercambiar los centros si es necesario para asegurarnos de que el primero sea siempre el de la derecha
+    if (best_center.first < second_best_center.first) {
+        std::swap(best_center, second_best_center);
+    }
  
 }
 
@@ -168,21 +171,24 @@ void SkidpadPlanning::publish_trajectory(){
     double step = 0.1;  
     int num_points = 100;
     // Generar puntos para el primer círculo (derecha)
+    for(int j=0; j<2; j++){
     for (int i = 0; i < num_points; ++i) {
         double angle = 2 * M_PI * i / num_points;
         common_msgs::msg::PointXY point;
         point.x = best_center.first + radius * cos(angle);
         point.y = best_center.second + radius * sin(angle);
         trajectory_msg.points.push_back(point);
-    }
+    }}
 
     // Generar puntos para el segundo círculo (izquierda)
+    for(int j=0; j<2; j++){
     for (int i = 0; i < num_points; ++i) {
         double angle = 2 * M_PI * i / num_points;
         common_msgs::msg::PointXY point;
         point.x = second_best_center.first + radius * cos(angle);
         point.y = second_best_center.second + radius * sin(angle);
         trajectory_msg.points.push_back(point);
+    }
     }
     trajectory_pub_->publish(trajectory_msg);
 }
