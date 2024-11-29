@@ -3,12 +3,17 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import ExecuteProcess
 from launch_ros.actions import Node
+from datetime import datetime
 
 
 def generate_launch_description():
 
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    output_dir = f"/home/alvaro/.ros/inspection_bag_{timestamp}"
+
     rosbag_record = ExecuteProcess(
-        cmd=['ros2', 'bag', 'record', '-a'],
+        cmd=['ros2', 'bag', 'record', '-a', 
+             '-o', output_dir],
         output='screen'
     )
 
