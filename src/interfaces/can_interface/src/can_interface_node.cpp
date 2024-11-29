@@ -3,7 +3,7 @@
 int velMax = 5500;
 float wheelRadius = 0.2;
 float transmissionRatio = 0.24444444444444444;//11/45;
-
+bool DEBUG = false;
 
 CanInterface::CanInterface() : Node("can_interface"){
     // Configure socketCan0
@@ -151,7 +151,6 @@ void CanInterface::parsePneumatic(uint8_t msg[8])
 {
     uint16_t p1 = (msg[2]<<8) | msg[1];
     uint16_t p2 = (msg[4]<<8) | msg[3];
-    std::cout << "pneumatic pressure: " << p1 << " " << p2 << std::endl;
 }
 
 //-------------------------------------------- IMU -----------------------------------------------------------------------
@@ -303,7 +302,6 @@ void CanInterface::parseMission(uint8_t msg[8])
 void CanInterface::readCan1()
 {   
     struct can_frame frame;
-    std::cout << "readCan1 is called" << std::endl;
     while (rclcpp::ok()) {
         int nbytes = read(socketCan1, &frame, sizeof(struct can_frame));
         if (nbytes < 0) {
@@ -312,15 +310,17 @@ void CanInterface::readCan1()
         }
 
         // Debug: Print the received CAN frame
-        std::cout << "Received CAN frame on can1: ID=0x" 
-                  << std::hex << frame.can_id 
-                  << " DLC=" << std::dec << static_cast<int>(frame.can_dlc) 
-                  << " Data=";
+        if(DEBUG){
+            std::cout << "Received CAN frame on can1: ID=0x" 
+                    << std::hex << frame.can_id 
+                    << " DLC=" << std::dec << static_cast<int>(frame.can_dlc) 
+                    << " Data=";
 
-        for (int i = 0; i < frame.can_dlc; i++) {
-            std::cout << std::hex << static_cast<int>(frame.data[i]) << " ";
+            for (int i = 0; i < frame.can_dlc; i++) {
+                std::cout << std::hex << static_cast<int>(frame.data[i]) << " ";
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
 
         // Process the frame
         switch (frame.can_id) {
@@ -346,7 +346,6 @@ void CanInterface::readCan1()
                 parseRES(frame.data);
                 break;
             default:
-                std::cerr << "Unhandled can1 ID: 0x" << std::hex << frame.can_id << std::endl;
                 break;
         }
     }
@@ -358,7 +357,6 @@ void CanInterface::readCan1()
 void CanInterface::readCan0()
 {   
     struct can_frame frame;
-    std::cout << "readCan0 is called" << std::endl;
     while (rclcpp::ok()) {
         int nbytes = read(socketCan0, &frame, sizeof(struct can_frame));
         if (nbytes < 0) {
@@ -370,15 +368,17 @@ void CanInterface::readCan0()
         }
 
         // Debug: Print the received CAN frame
-        std::cout << "Received CAN frame on can0: ID=0x" 
-                  << std::hex << frame.can_id 
-                  << " DLC=" << std::dec << static_cast<int>(frame.can_dlc) 
-                  << " Data=";
+        if(DEBUG){
+            std::cout << "Received CAN frame on can0: ID=0x" 
+                    << std::hex << frame.can_id 
+                    << " DLC=" << std::dec << static_cast<int>(frame.can_dlc) 
+                    << " Data=";
 
-        for (int i = 0; i < frame.can_dlc; i++) {
-            std::cout << std::hex << static_cast<int>(frame.data[i]) << " ";
+            for (int i = 0; i < frame.can_dlc; i++) {
+                std::cout << std::hex << static_cast<int>(frame.data[i]) << " ";
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
 
         // Process the frame
         switch (frame.can_id) {
@@ -416,7 +416,6 @@ void CanInterface::readCan0()
                 }
                 break;
             default:
-                std::cerr << "Unhandled can0 ID: 0x" << std::hex << frame.can_id << std::endl;
                 break;
         }
     }
@@ -444,7 +443,7 @@ void CanInterface::controlsCallback(common_msgs::msg::Cmd msg)
     frame.data[0] = cabecera;
     frame.data[1] = bytesCMD[0];
     frame.data[2] = bytesCMD[1];
-    write(socketCan0, &frame, sizeof(struct can_frame));  
+    write(socketCan1, &frame, sizeof(struct can_frame));  
 }
 
 void CanInterface::ASStatusCallback(std_msgs::msg::Int16 msg)
@@ -457,7 +456,7 @@ void CanInterface::ASStatusCallback(std_msgs::msg::Int16 msg)
         frame.data[1] = 0x01;
         frame.data[2] = 0x03;
 
-        write(socketCan0, &frame, sizeof(struct can_frame));           
+        write(socketCan1, &frame, sizeof(struct can_frame));           
     }else if(msg.data==4){
         struct can_frame frame;
         frame.can_id = 0x202;             
@@ -466,7 +465,7 @@ void CanInterface::ASStatusCallback(std_msgs::msg::Int16 msg)
         frame.data[1] = 0x01;
         frame.data[2] = 0x04;
 
-        write(socketCan0, &frame, sizeof(struct can_frame));   
+        write(socketCan1, &frame, sizeof(struct can_frame));   
     }
 }
 
@@ -497,7 +496,7 @@ void CanInterface::steeringInfoCallback(std_msgs::msg::Float32MultiArray msg)
     frame.data[6] = pTargetPositionBytes[1];
     frame.data[7] = pTargetPositionBytes[2];
 
-    write(socketCan1, &frame, sizeof(struct can_frame));
+    write(socketCan0, &frame, sizeof(struct can_frame));
 
     int16_t pVelocity = msg.data[3]*100;
     int8_t pVelocityBytes[3];
@@ -517,7 +516,7 @@ void CanInterface::steeringInfoCallback(std_msgs::msg::Float32MultiArray msg)
     frame.data[5] = pVelocityAvgBytes[1];
     frame.data[6] = pVelocityAvgBytes[2];
 
-    write(socketCan1, &frame, sizeof(struct can_frame));
+    write(socketCan0, &frame, sizeof(struct can_frame));
 
     int16_t pTorque = msg.data[5]*100;
     int8_t pTorqueBytes[2];
@@ -529,7 +528,7 @@ void CanInterface::steeringInfoCallback(std_msgs::msg::Float32MultiArray msg)
     frame.data[1] = pTorqueBytes[0];
     frame.data[2] = pTorqueBytes[1];
 
-    write(socketCan1, &frame, sizeof(struct can_frame));    
+    write(socketCan0, &frame, sizeof(struct can_frame));    
 }
 
 void CanInterface::pubHeartBeat()
@@ -539,7 +538,7 @@ void CanInterface::pubHeartBeat()
     frame.can_dlc = 1;                
     frame.data[0] = 0x00;
 
-    write(socketCan1, &frame, sizeof(struct can_frame));
+    write(socketCan0, &frame, sizeof(struct can_frame));
 }
 
 void CanInterface::lapCounterCallback(std_msgs::msg::Int16 msg)
@@ -586,7 +585,7 @@ void CanInterface::DL500Callback()
     frame.data[6] = this->target_speed;
     frame.data[7] = this->actual_speed;
 
-    write(socketCan0, &frame, sizeof(struct can_frame));
+    write(socketCan1, &frame, sizeof(struct can_frame));
 }
 
 void CanInterface::DL501Callback()
@@ -623,7 +622,7 @@ void CanInterface::DL501Callback()
     frame.data[4] = long_acc_bytes_le[0];
     frame.data[5] = long_acc_bytes_le[1];
 
-    write(socketCan0, &frame, sizeof(struct can_frame));
+    write(socketCan1, &frame, sizeof(struct can_frame));
 }
 
 void CanInterface::DL502Callback()
@@ -647,7 +646,7 @@ void CanInterface::DL502Callback()
     frame.data[3] = ((((((this->cones_count_actual & 0x01)<<4)|this->lap_counter)<<2)|this->service_brake_state)<<1)|steering_state;
     frame.data[4] = (((this->AMI_state <<2) | this->EBS_state)<<3) | this->AS_state;
 
-    write(socketCan0, &frame, sizeof(struct can_frame));
+    write(socketCan1, &frame, sizeof(struct can_frame));
 
     this->DL502Pub->publish(x);
 }
@@ -675,7 +674,7 @@ void CanInterface::pcTempCallback()
     frame.data[1] = bytes[0];
     frame.data[2] = bytes[1];
 
-    write(socketCan1, &frame, sizeof(struct can_frame));
+    write(socketCan0, &frame, sizeof(struct can_frame));
 }
 
 void CanInterface::brakeLightCallback(std_msgs::msg::Int16 msg)
@@ -686,7 +685,7 @@ void CanInterface::brakeLightCallback(std_msgs::msg::Int16 msg)
     frame.data[0] = 0x01;
     frame.data[1] = msg.data;
 
-    write(socketCan1, &frame, sizeof(struct can_frame));
+    write(socketCan0, &frame, sizeof(struct can_frame));
 }
 
 void CanInterface::getPcTemp()
