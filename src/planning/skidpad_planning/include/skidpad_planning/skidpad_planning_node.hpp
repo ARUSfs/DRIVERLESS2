@@ -24,7 +24,8 @@ private:
     std::pair<double, double> best_center;
     std::pair<double, double> second_best_center;
     double radius;
-    
+    bool trajectory_calculated_;
+
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
 

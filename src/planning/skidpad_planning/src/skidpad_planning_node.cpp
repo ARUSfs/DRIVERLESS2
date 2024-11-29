@@ -2,7 +2,7 @@
 
 
 
-SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
+SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node"), trajectory_calculated_(false) 
 {
 
     this->declare_parameter<std::string>("perception_topic", "/arussim/perception");
@@ -20,23 +20,34 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
 
 void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
     
-    cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
+  if (!trajectory_calculated_) {
+        // Convertir la nube de puntos desde ROS a PCL
+        cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
 
-  
-    if (cones_.points.empty()) {
-        std::cout << "No points in the PointCloud after conversion to PCL." << std::endl;
-    } else {
-        std::cout << "PointCloud contains " << cones_.points.size() << " points." << std::endl;
-    }
+        if (cones_.points.empty()) {
+            std::cout << "No points in the PointCloud after conversion to PCL." << std::endl;
+        } else {
+            std::cout << "PointCloud contains " << cones_.points.size() << " points." << std::endl;
+        }
 
-    SkidpadPlanning::generate_planning();
+        // Generar planificación y publicar trayectoria
+        SkidpadPlanning::generate_planning();
+        SkidpadPlanning::publish_trajectory();
 
-    SkidpadPlanning::publish_trajectory();
+        // Marcar la trayectoria como calculada
+        trajectory_calculated_ = true;
+
+        std::cout << "Trajectory calculated and published." << std::endl;
+   } else {
+       std::cout << "Trajectory already calculated. Skipping further processing." << std::endl;
+   }
 }
 
 
 std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
     const ConeXYZColorScore& p1, const ConeXYZColorScore& p2, const ConeXYZColorScore& p3) {
+    const double radius_target1 = 7.625;
+    const double radius_target2 = 10.625;
     // Calcular los puntos medios
     double mid_x1 = (p1.x + p2.x) / 2.0;
     double mid_y1 = (p1.y + p2.y) / 2.0;
@@ -64,7 +75,7 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
     }
 
     // Calcular el radio
-    double radius = std::sqrt(std::pow(p1.x - center_x, 2) + std::pow(p1.y - center_y, 2));
+    radius = std::sqrt(std::pow(p1.x - center_x, 2) + std::pow(p1.y - center_y, 2)) + (radius_target2 - radius_target1) / 2.0;
     return{center_x, center_y, radius};
     
 }
@@ -72,14 +83,14 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
 void SkidpadPlanning::generate_planning() {
     // Valores definidos dentro de la función
     const int N_iterations = 500; // Número de iteraciones para RANSAC
-    const double threshold = 0.3; // Umbral de distancia
+    const double threshold = 0.2; // Umbral de distancia
     const double radius_target1 = 7.625;
     const double radius_target2 = 10.625;
     const double distance_between_centers = 18.25;
 
     int max_inliers1 = 0, max_inliers2 = 0;
-    std::pair<double, double> best_center = {0.0, 0.0};
-    std::pair<double, double> second_best_center = {0.0, 0.0};
+    best_center = {0.0, 0.0};
+    second_best_center = {0.0, 0.0};
 
     pcl::PointCloud<ConeXYZColorScore> remaining_cones;
 
@@ -94,8 +105,10 @@ void SkidpadPlanning::generate_planning() {
         const auto& p3 = cones_.points[k];
 
         auto [x_center, y_center, r] = find_circle_center(p1, p2, p3);
-
-        if ((std::abs(r - radius_target1) < 2.0 || std::abs(r - radius_target2) < 2.0) && x_center > 10.0) {
+   
+   
+        
+           if ((std::abs(r - radius_target1) < 2.0 || std::abs(r - radius_target2) < 2.0) && x_center > 13.0) {
             int inliers = 0;
             std::vector<bool> is_inlier(cones_.points.size(), true);
 
@@ -136,8 +149,7 @@ void SkidpadPlanning::generate_planning() {
             const auto& p3 = remaining_cones.points[k];
 
             auto [x_center, y_center, r] = find_circle_center(p1, p2, p3);
-
-            if ((std::abs(r - radius_target1) < 2.0 || std::abs(r - radius_target2) < 2.0) && x_center > 10.0 &&
+            if ((std::abs(r - radius_target1) < 2.0 || std::abs(r - radius_target2) < 2.0) && x_center > 13.0 &&
                 std::abs(distance_between_centers - std::sqrt(std::pow(best_center.first - x_center, 2) + std::pow(best_center.second - y_center, 2))) < 2.0) {
                 int inliers = 0;
 
@@ -156,10 +168,12 @@ void SkidpadPlanning::generate_planning() {
         }
     }
     // Intercambiar los centros si es necesario para asegurarnos de que el primero sea siempre el de la derecha
-    if (best_center.first < second_best_center.first) {
+    if (best_center.second < second_best_center.second) {
         std::swap(best_center, second_best_center);
     }
- 
+    std::cout << "Best center: (" << best_center.first << ", " << best_center.second << ")" << std::endl;
+    std::cout << "Second best center: (" << second_best_center.first << ", " << second_best_center.second << ")" << std::endl;
+    std::cout << "Radius: " << radius << std::endl;
 }
 
 
@@ -167,7 +181,10 @@ void SkidpadPlanning::generate_planning() {
 
 void SkidpadPlanning::publish_trajectory(){
     common_msgs::msg::Trajectory trajectory_msg;
-
+    if (best_center.first == 0.0 || best_center.second == 0.0 || second_best_center.first == 0.0 || second_best_center.second == 0.0) {
+        std::cerr << "Error: Invalid centers detected. Trajectory will not be published." << std::endl;
+        return;
+    }
     double step = 0.1;  
     int num_points = 100;
     // Generar puntos para el primer círculo (derecha)
@@ -175,20 +192,25 @@ void SkidpadPlanning::publish_trajectory(){
     for (int i = 0; i < num_points; ++i) {
         double angle = 2 * M_PI * i / num_points;
         common_msgs::msg::PointXY point;
+        
         point.x = best_center.first + radius * cos(angle);
         point.y = best_center.second + radius * sin(angle);
         trajectory_msg.points.push_back(point);
-    }}
+            
+        }
+    }
 
     // Generar puntos para el segundo círculo (izquierda)
     for(int j=0; j<2; j++){
     for (int i = 0; i < num_points; ++i) {
         double angle = 2 * M_PI * i / num_points;
         common_msgs::msg::PointXY point;
+        
         point.x = second_best_center.first + radius * cos(angle);
         point.y = second_best_center.second + radius * sin(angle);
         trajectory_msg.points.push_back(point);
-    }
+            
+        }
     }
     trajectory_pub_->publish(trajectory_msg);
 }
