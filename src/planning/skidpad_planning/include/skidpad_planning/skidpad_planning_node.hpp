@@ -11,6 +11,11 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <utility> 
+#include <chrono> 
+#include <vector>
+#include <cmath>
+#include <Eigen/Dense>
 class SkidpadPlanning : public rclcpp::Node {
 public:
     SkidpadPlanning();
@@ -25,7 +30,7 @@ private:
     std::pair<double, double> second_best_center;
     double radius;
     bool trajectory_calculated_;
-
+     std::vector<Eigen::Vector2d> plantilla_;
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
 
@@ -52,6 +57,7 @@ private:
      * @brief Method that processes the point cloud and generates the planning data.
      */ 
     void generate_planning();
+    void update_route(const sensor_msgs::msg::PointCloud2& msg);
     void publish_trajectory();
     std::tuple<double, double, double> find_circle_center(
        const ConeXYZColorScore& p1, const ConeXYZColorScore& p2, const ConeXYZColorScore& p3);

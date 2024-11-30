@@ -16,6 +16,23 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node"), trajectory_c
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&SkidpadPlanning::perception_callback, this, std::placeholders::_1));
 
+        // Inicializar la plantilla
+    double d = 1.0; // Ajusta este valor según sea necesario
+    double r = 9.125;
+    int N = 100; // Número de puntos en el círculo
+
+    for (int i = 0; i <= 20 / d; ++i) {
+        plantilla_.emplace_back(-20 + d * i, 0);
+    }
+    for (int i = 0; i < N; ++i) {
+        plantilla_.emplace_back(r * std::sin(2 * M_PI * i / N), -9.125 + r * std::cos(2 * M_PI * i / N));
+    }
+    for (int i = 0; i < N; ++i) {
+        plantilla_.emplace_back(r * std::sin(2 * M_PI * i / N), 9.125 - r * std::cos(2 * M_PI * i / N));
+    }
+    for (int i = 0; i <= 20 / d; ++i) {
+        plantilla_.emplace_back(d * i, 0);
+    }
 }
 
 void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
@@ -75,7 +92,7 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
     }
 
     // Calcular el radio
-    radius = std::sqrt(std::pow(p1.x - center_x, 2) + std::pow(p1.y - center_y, 2)) + (radius_target2 - radius_target1) / 2.0;
+    radius = std::sqrt(std::pow(p1.x - center_x, 2) + std::pow(p1.y - center_y, 2));
     return{center_x, center_y, radius};
     
 }
@@ -179,42 +196,44 @@ void SkidpadPlanning::generate_planning() {
 
 
 
-void SkidpadPlanning::publish_trajectory(){
+void SkidpadPlanning::publish_trajectory() {
     common_msgs::msg::Trajectory trajectory_msg;
-    if (best_center.first == 0.0 || best_center.second == 0.0 || second_best_center.first == 0.0 || second_best_center.second == 0.0) {
+
+    if (best_center.first == 0.0 || best_center.second == 0.0 || 
+        second_best_center.first == 0.0 || second_best_center.second == 0.0) {
         std::cerr << "Error: Invalid centers detected. Trajectory will not be published." << std::endl;
         return;
     }
-    double step = 0.1;  
-    int num_points = 100;
-    // Generar puntos para el primer círculo (derecha)
-    for(int j=0; j<2; j++){
-    for (int i = 0; i < num_points; ++i) {
-        double angle = 2 * M_PI * i / num_points;
-        common_msgs::msg::PointXY point;
-        
-        point.x = best_center.first + radius * cos(angle);
-        point.y = best_center.second + radius * sin(angle);
-        trajectory_msg.points.push_back(point);
-            
-        }
+
+    // Calcular el punto medio entre los centros de los círculos
+    double mid_x = (best_center.first + second_best_center.first) / 2.0;
+    double mid_y = (best_center.second + second_best_center.second) / 2.0;
+
+    // Calcular la orientación de la ruta (ángulo entre los centros)
+    double orientation = std::atan2(second_best_center.second - best_center.second, 
+                                    second_best_center.first - best_center.first);
+
+    // Crear la matriz de transformación para rotar 90 grados
+    Eigen::Matrix2d rotation_matrix;
+    rotation_matrix << 0, -1,
+                       1,  0;
+
+    // Transformar los puntos de la plantilla
+    for (const auto& point : plantilla_) {
+        Eigen::Vector2d rotated_point = rotation_matrix * point;
+        Eigen::Vector2d transformed_point;
+        transformed_point.x() = std::cos(orientation) * rotated_point.x() - std::sin(orientation) * rotated_point.y() + mid_x;
+        transformed_point.y() = std::sin(orientation) * rotated_point.x() + std::cos(orientation) * rotated_point.y() + mid_y;
+
+        common_msgs::msg::PointXY traj_point;
+        traj_point.x = transformed_point.x();
+        traj_point.y = transformed_point.y();
+        trajectory_msg.points.push_back(traj_point);
     }
 
-    // Generar puntos para el segundo círculo (izquierda)
-    for(int j=0; j<2; j++){
-    for (int i = 0; i < num_points; ++i) {
-        double angle = 2 * M_PI * i / num_points;
-        common_msgs::msg::PointXY point;
-        
-        point.x = second_best_center.first + radius * cos(angle);
-        point.y = second_best_center.second + radius * sin(angle);
-        trajectory_msg.points.push_back(point);
-            
-        }
-    }
+    // Publicar la trayectoria completa
     trajectory_pub_->publish(trajectory_msg);
 }
-
 
 pcl::PointCloud<ConeXYZColorScore> SkidpadPlanning::convert_ros_to_pcl(const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {
     pcl::PointCloud<ConeXYZColorScore> pcl_cloud;  

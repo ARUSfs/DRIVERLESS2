@@ -13,6 +13,9 @@ find_package(pcl_conversions REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(common_msgs REQUIRED)
 
+find_package(Eigen3 REQUIRED)
+
+
 
 include_directories(
   include
@@ -40,7 +43,7 @@ ament_target_dependencies(skidpad_planning_exec
   common_msgs
 )
 target_link_libraries(skidpad_planning_exec ${PCL_LIBRARIES})
-
+target_link_libraries(skidpad_planning_exec Eigen3::Eigen)
 
 install(TARGETS
   skidpad_planning_exec
