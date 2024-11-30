@@ -34,8 +34,8 @@ class IcpSlam : public rclcpp::Node
 		bool restart_map_ = false;
 		bool restart_map_at_origin_ = true;
 		int restart_iterations_ = 100;
-		std::string mission_ = "AUTOX";
 		float braking_offset_ = 0.0;
+		rclcpp::Time lap_time_;
 
 
 

@@ -88,7 +88,7 @@ void IcpSlam::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr map_ms
 		w = 1;
 	else
 		w = -1 + 2.0/(1.0 + std::exp(-(5*std::abs(dist-dx)+10*std::abs(tyaw-dyaw))));
-	std::cout << "ICP confidence: " << 1-w << std::endl;
+	// std::cout << "ICP confidence: " << 1-w << std::endl;
 	
 	//update position
 	prev_transformation_ = (estimation*w + transformation*(1-w));
@@ -224,6 +224,16 @@ void IcpSlam::send_position() {
 	transformSt.transform.rotation.w = q.w();
 
 	tf_broadcaster_->sendTransform(transformSt);
+
+	if (position_.coeff(0,3)*position_.coeff(0,3)+position_.coeff(1,3)*position_.coeff(1,3) < 10){
+		if(this->now().seconds()-lap_time_.seconds() > 20 && vx_>1 ){
+			if(restart_map_at_origin_){
+				has_map_ = false;
+			}
+		}
+		lap_time_ = this->now();
+	} 
+
 	
 }
 
