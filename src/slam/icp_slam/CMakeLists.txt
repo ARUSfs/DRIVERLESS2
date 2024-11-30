@@ -22,8 +22,8 @@ find_package(pcl_conversions REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 
-add_executable(icp_slam_excec src/icp_slam_node.cpp)
-ament_target_dependencies(icp_slam_excec rclcpp 
+add_executable(icp_slam_exec src/icp_slam_node.cpp)
+ament_target_dependencies(icp_slam_exec rclcpp 
                             std_msgs 
                             geometry_msgs 
                             sensor_msgs 
@@ -33,8 +33,13 @@ ament_target_dependencies(icp_slam_excec rclcpp
                             tf2_ros
                             tf2)
 
+# Install the node executable
 install(TARGETS
-  icp_slam_excec
+  icp_slam_exec
   DESTINATION lib/${PROJECT_NAME})
+
+# Install configuration and launch files
+install(DIRECTORY config launch
+DESTINATION share/${PROJECT_NAME})
 
 ament_package()

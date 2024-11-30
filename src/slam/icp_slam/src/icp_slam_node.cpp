@@ -4,7 +4,13 @@
 
 
 IcpSlam::IcpSlam() : Node("icp_slam")
-{
+{	
+
+	this->declare_parameter("restart_at_origin", true);
+	this->declare_parameter("restart_iterations", -1);
+	this->get_parameter("restart_at_origin", kRestartAtOrigin);
+	this->get_parameter("restart_iterations", kRestartIterations);
+
   	previous_map_ = pcl::PointCloud<ConeXYZColorScore>::Ptr(new pcl::PointCloud<ConeXYZColorScore>);
 	allp_clustered_ = pcl::PointCloud<ConeXYZColorScore>::Ptr(new pcl::PointCloud<ConeXYZColorScore>);
 
@@ -184,7 +190,7 @@ void IcpSlam::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr map_ms
 		*previous_map_ = *clustered_points;
 	}
 
-	if(restart_map_ && callback_iteration_>restart_iterations_){
+	if(kRestartIterations != -1 && callback_iteration_>kRestartIterations){
 		has_map_ = false;
 		callback_iteration_ = 0;
 	}
@@ -227,7 +233,7 @@ void IcpSlam::send_position() {
 
 	if (position_.coeff(0,3)*position_.coeff(0,3)+position_.coeff(1,3)*position_.coeff(1,3) < 10){
 		if(this->now().seconds()-lap_time_.seconds() > 20 && vx_>1 ){
-			if(restart_map_at_origin_){
+			if(kRestartAtOrigin){
 				has_map_ = false;
 			}
 		}

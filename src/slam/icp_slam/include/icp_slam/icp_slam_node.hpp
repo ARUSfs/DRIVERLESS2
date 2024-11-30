@@ -31,14 +31,7 @@ class IcpSlam : public rclcpp::Node
 		bool has_map_ = false;
 		int callback_iteration_ = 0;
 		rclcpp::Time prev_t_;
-		bool restart_map_ = false;
-		bool restart_map_at_origin_ = true;
-		int restart_iterations_ = 100;
-		float braking_offset_ = 0.0;
 		rclcpp::Time lap_time_;
-
-
-
 
 		double vx_;
 		double r_;
@@ -58,5 +51,9 @@ class IcpSlam : public rclcpp::Node
 		rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
 		rclcpp::Subscription<common_msgs::msg::State>::SharedPtr state_sub_;
 		rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_publisher_;
+
+		// Parameters
+		bool kRestartAtOrigin;
+		int kRestartIterations;
 };
 
