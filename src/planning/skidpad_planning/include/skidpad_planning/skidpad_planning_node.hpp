@@ -30,7 +30,7 @@ private:
     std::pair<double, double> second_best_center;
     double radius;
     bool trajectory_calculated_;
-     std::vector<Eigen::Vector2d> plantilla_;
+     std::vector<Eigen::Vector2d> template_;
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
 

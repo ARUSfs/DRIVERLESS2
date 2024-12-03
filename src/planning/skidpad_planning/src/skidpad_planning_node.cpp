@@ -16,35 +16,34 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node"), trajectory_c
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&SkidpadPlanning::perception_callback, this, std::placeholders::_1));
 
-    // Inicializar la plantilla
-    double d = 0.5; // Ajusta este valor según sea necesario
+    // Inicialize the template
+    double d = 0.5; // Distance between points in the straight
     double r = 9.125;
-    int N = 100; // Número de puntos en el círculo
+    int N = 100; // Number of points in the circle
 
     for (int i = 0; i <= 20 / d; ++i) {
-        plantilla_.emplace_back(-20 + d * i, 0);
+        template_.emplace_back(-20 + d * i, 0);
     }
     for (int i = 0; i < N; ++i) {
-        plantilla_.emplace_back(r * std::sin(2 * M_PI * i / N), -9.125 + r * std::cos(2 * M_PI * i / N));
+        template_.emplace_back(r * std::sin(2 * M_PI * i / N), -9.125 + r * std::cos(2 * M_PI * i / N));
     }
     for (int i = 0; i < N; ++i) {
-        plantilla_.emplace_back(r * std::sin(2 * M_PI * i / N), -9.125 + r * std::cos(2 * M_PI * i / N));
+        template_.emplace_back(r * std::sin(2 * M_PI * i / N), -9.125 + r * std::cos(2 * M_PI * i / N));
     }
     for (int i = 0; i < N; ++i) {
-        plantilla_.emplace_back(r * std::sin(2 * M_PI * i / N), 9.125 - r * std::cos(2 * M_PI * i / N));
+        template_.emplace_back(r * std::sin(2 * M_PI * i / N), 9.125 - r * std::cos(2 * M_PI * i / N));
     }
     for (int i = 0; i < N; ++i) {
-        plantilla_.emplace_back(r * std::sin(2 * M_PI * i / N), 9.125 - r * std::cos(2 * M_PI * i / N));
+        template_.emplace_back(r * std::sin(2 * M_PI * i / N), 9.125 - r * std::cos(2 * M_PI * i / N));
     }
     for (int i = 0; i <= 20 / d; ++i) {
-        plantilla_.emplace_back(d * i, 0);
+        template_.emplace_back(d * i, 0);
     }
 }
 
 void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
     
   if (!trajectory_calculated_) {
-        // Convertir la nube de puntos desde ROS a PCL
         cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
 
         if (cones_.points.empty()) {
@@ -53,17 +52,14 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
             std::cout << "PointCloud contains " << cones_.points.size() << " points." << std::endl;
         }
 
-        // Generar planificación y publicar trayectoria
         SkidpadPlanning::generate_planning();
         SkidpadPlanning::publish_trajectory();
 
-        // Marcar la trayectoria como calculada
         trajectory_calculated_ = true;
 
         std::cout << "Trajectory calculated and published." << std::endl;
    } else {
         SkidpadPlanning::publish_trajectory();
-        // std::cout << "Trajectory already calculated. Skipping further processing." << std::endl;
    }
 }
 
@@ -72,24 +68,24 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
     const ConeXYZColorScore& p1, const ConeXYZColorScore& p2, const ConeXYZColorScore& p3) {
     const double radius_target1 = 7.625;
     const double radius_target2 = 10.625;
-    // Calcular los puntos medios
+    // Get middle points
     double mid_x1 = (p1.x + p2.x) / 2.0;
     double mid_y1 = (p1.y + p2.y) / 2.0;
     
     double mid_x2 = (p2.x + p3.x) / 2.0;
     double mid_y2 = (p2.y + p3.y) / 2.0;
 
-    // Calcular las pendientes de las mediatrices (m)
+    // Get mediatrix lines slopes (m)
     double slope1 = (p2.y - p1.y) != 0 ? -(p2.x - p1.x) / (p2.y - p1.y) : std::numeric_limits<double>::infinity();
     double slope2 = (p3.y - p2.y) != 0 ? -(p3.x - p2.x) / (p3.y - p2.y) : std::numeric_limits<double>::infinity();
 
-    // Calcular las ecuaciones de las mediatrices (b) (y=mx+b)
+    // Compute mediatrix equations (b) (y=mx+b)
     double intercept1 = slope1 != std::numeric_limits<double>::infinity() ? mid_y1 - slope1 * mid_x1 : mid_x1;
     double intercept2 = slope2 != std::numeric_limits<double>::infinity() ? mid_y2 - slope2 * mid_x2 : mid_x2;
 
     double center_x, center_y;
 
-    // Resolver el sistema de ecuaciones
+    // Solve the equations to find the center
     if (slope1 != slope2) {
         center_x = (intercept2 - intercept1) / (slope1 - slope2);
         center_y = slope1 * center_x + intercept1;
@@ -98,16 +94,15 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
         center_y = (mid_y1 + mid_y2) / 2.0;
     }
 
-    // Calcular el radio
+    // Compute the radius
     radius = std::sqrt(std::pow(p1.x - center_x, 2) + std::pow(p1.y - center_y, 2));
     return{center_x, center_y, radius};
     
 }
 
 void SkidpadPlanning::generate_planning() {
-    // Valores definidos dentro de la función
-    const int N_iterations = 500; // Número de iteraciones para RANSAC
-    const double threshold = 0.2; // Umbral de distancia
+    const int N_iterations = 500; // RANSAC iterations
+    const double threshold = 0.2; // RANSAC threshold
     const double radius_target1 = 7.625;
     const double radius_target2 = 10.625;
     const double distance_between_centers = 18.25;
@@ -118,7 +113,7 @@ void SkidpadPlanning::generate_planning() {
 
     pcl::PointCloud<ConeXYZColorScore> remaining_cones;
 
-    // Primera iteración de RANSAC
+    // RANSAC fot first straight
     for (int iter = 0; iter < N_iterations; ++iter) {
         int i = rand() % cones_.points.size();
         int j = rand() % cones_.points.size();
@@ -150,7 +145,7 @@ void SkidpadPlanning::generate_planning() {
                 best_center = {x_center, y_center};
                 max_inliers1 = inliers;
 
-                // Actualizar los conos restantes
+                // Update remaining cones
                 remaining_cones.clear();
                 for (size_t idx = 0; idx < cones_.points.size(); ++idx) {
                     if (is_inlier[idx]) {
@@ -161,7 +156,7 @@ void SkidpadPlanning::generate_planning() {
         }
     }
 
-    // Segunda iteración de RANSAC
+    // RANSAC for second straight
     if (remaining_cones.size() >= 3) {
         for (int iter = 0; iter < N_iterations; ++iter) {
             int i = rand() % remaining_cones.points.size();
@@ -191,10 +186,7 @@ void SkidpadPlanning::generate_planning() {
             }
         }
     }
-    // Intercambiar los centros si es necesario para asegurarnos de que el primero sea siempre el de la derecha
-    if (best_center.second < second_best_center.second) {
-        std::swap(best_center, second_best_center);
-    }
+    
     std::cout << "Best center: (" << best_center.first << ", " << best_center.second << ")" << std::endl;
     std::cout << "Second best center: (" << second_best_center.first << ", " << second_best_center.second << ")" << std::endl;
     std::cout << "Radius: " << radius << std::endl;
@@ -212,21 +204,19 @@ void SkidpadPlanning::publish_trajectory() {
         return;
     }
 
-    // Calcular el punto medio entre los centros de los círculos
+    // Compute the skidpad center
     double mid_x = (best_center.first + second_best_center.first) / 2.0;
     double mid_y = (best_center.second + second_best_center.second) / 2.0;
-
-    // Calcular la orientación de la ruta (ángulo entre los centros)
     double orientation = std::atan2(second_best_center.second - best_center.second, 
                                     second_best_center.first - best_center.first);
 
-    // Crear la matriz de transformación para rotar 90 grados
+    // Rotate the template 90 degrees
     Eigen::Matrix2d rotation_matrix;
     rotation_matrix << 0, -1,
                        1,  0;
 
-    // Transformar los puntos de la plantilla
-    for (const auto& point : plantilla_) {
+    // Transform the template
+    for (const auto& point : template_) {
         Eigen::Vector2d rotated_point = rotation_matrix * point;
         Eigen::Vector2d transformed_point;
         transformed_point.x() = std::cos(orientation) * rotated_point.x() - std::sin(orientation) * rotated_point.y() + mid_x;
@@ -238,7 +228,6 @@ void SkidpadPlanning::publish_trajectory() {
         trajectory_msg.points.push_back(traj_point);
     }
 
-    // Publicar la trayectoria completa
     trajectory_pub_->publish(trajectory_msg);
 }
 
