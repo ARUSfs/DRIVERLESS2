@@ -65,7 +65,7 @@ private:
     std::vector<float> k_ ; 
     std::vector<float> speed_profile_;               
     std::vector<float> acc_profile_;
-    int index_global_;         
+    int index_global_ = 0;         
 
     //Subscribers
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
