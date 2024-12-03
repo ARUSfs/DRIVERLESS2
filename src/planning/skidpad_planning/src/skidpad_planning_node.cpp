@@ -16,8 +16,8 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node"), trajectory_c
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&SkidpadPlanning::perception_callback, this, std::placeholders::_1));
 
-        // Inicializar la plantilla
-    double d = 1.0; // Ajusta este valor según sea necesario
+    // Inicializar la plantilla
+    double d = 0.5; // Ajusta este valor según sea necesario
     double r = 9.125;
     int N = 100; // Número de puntos en el círculo
 
@@ -26,6 +26,12 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node"), trajectory_c
     }
     for (int i = 0; i < N; ++i) {
         plantilla_.emplace_back(r * std::sin(2 * M_PI * i / N), -9.125 + r * std::cos(2 * M_PI * i / N));
+    }
+    for (int i = 0; i < N; ++i) {
+        plantilla_.emplace_back(r * std::sin(2 * M_PI * i / N), -9.125 + r * std::cos(2 * M_PI * i / N));
+    }
+    for (int i = 0; i < N; ++i) {
+        plantilla_.emplace_back(r * std::sin(2 * M_PI * i / N), 9.125 - r * std::cos(2 * M_PI * i / N));
     }
     for (int i = 0; i < N; ++i) {
         plantilla_.emplace_back(r * std::sin(2 * M_PI * i / N), 9.125 - r * std::cos(2 * M_PI * i / N));
@@ -56,7 +62,8 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
 
         std::cout << "Trajectory calculated and published." << std::endl;
    } else {
-       std::cout << "Trajectory already calculated. Skipping further processing." << std::endl;
+        SkidpadPlanning::publish_trajectory();
+        // std::cout << "Trajectory already calculated. Skipping further processing." << std::endl;
    }
 }
 
