@@ -66,6 +66,10 @@ CarState::CarState(): Node("car_state")
     //Create estimation object
     state_estimation_ = Estimation();
 
+    // Create TF broadcaster
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
+
 }
 
 void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
@@ -104,6 +108,8 @@ void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::Shar
 
 void CarState::on_timer()
 {
+    this->get_tf_position();
+
     // Estimate velocity
     state_estimation_.set_measurement_data(v_front_right_, v_front_left_, v_rear_right_, v_rear_left_, ax_, ay_);
 
@@ -126,6 +132,27 @@ void CarState::on_timer()
 
     pub_state_->publish(state_msg);
 
+}
+
+void CarState::get_tf_position()
+{
+    geometry_msgs::msg::TransformStamped transform;
+    try {
+        transform = tf_buffer_->lookupTransform("arussim/world", "slam/vehicle", tf2::TimePointZero);
+        tf2::Quaternion q(
+                transform.transform.rotation.x,
+                transform.transform.rotation.y,
+                transform.transform.rotation.z,
+                transform.transform.rotation.w
+            );
+        double roll, pitch, yaw;
+        tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+        x_ = transform.transform.translation.x;
+        y_ = transform.transform.translation.y;
+        yaw_ = yaw;
+    } catch (tf2::TransformException &ex) {
+        RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
+    }
 }
 
 int main(int argc, char * argv[])

@@ -11,6 +11,12 @@
 #include "common_msgs/msg/four_wheel_drive.hpp"
 
 #include "car_state/estimation.hpp"
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+
 /**
  * @class CarState
  * @brief CarState class 
@@ -34,6 +40,7 @@ private:
 
     // Funtions
     void on_timer();
+    void get_tf_position();
 
     // Private attributes to store received data
     double x_=0;
@@ -53,6 +60,9 @@ private:
     Estimation state_estimation_;
     bool kSimulation;
 
+    // TF
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::unique_ptr<tf2_ros::TransformListener> tf_listener_;
 
     // Subscribers
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr sub_extensometer_;
