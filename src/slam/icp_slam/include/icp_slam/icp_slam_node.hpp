@@ -41,6 +41,7 @@ class IcpSlam : public rclcpp::Node
 
 		Eigen::Matrix4f position_;
 		Eigen::Matrix4f prev_transformation_;
+		Eigen::Matrix4f origin_;
 
 		std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
