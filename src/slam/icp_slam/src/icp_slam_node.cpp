@@ -16,6 +16,7 @@ IcpSlam::IcpSlam() : Node("icp_slam")
 
     position_ = Eigen::Matrix4f::Identity(4, 4);
 	prev_transformation_ = Eigen::Matrix4f::Identity(4, 4);
+	origin_ = Eigen::Matrix4f::Identity(4, 4);
 
 	tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 	
@@ -217,8 +218,8 @@ void IcpSlam::send_position() {
 	float dt = this->now().seconds()-prev_t_.seconds();
 	geometry_msgs::msg::TransformStamped transformSt;
 	transformSt.header.stamp = this->now();
-	transformSt.header.frame_id = "/arussim/world";
-	transformSt.child_frame_id = "/slam/vehicle";
+	transformSt.header.frame_id = "arussim/world";
+	transformSt.child_frame_id = "slam/vehicle";
 	tf2::Quaternion q;
 	float ang = (float)-atan2(position_.coeff(0, 1), position_.coeff(0,0)) + r_*dt;
 	transformSt.transform.translation.x = position_.coeff(0,3)+vx_*dt*cos(ang);
@@ -231,8 +232,10 @@ void IcpSlam::send_position() {
 
 	tf_broadcaster_->sendTransform(transformSt);
 
-	if (position_.coeff(0,3)*position_.coeff(0,3)+position_.coeff(1,3)*position_.coeff(1,3) < 10){
+	if (std::pow(position_.coeff(0,3)-origin_.coeff(0,3),2) 
+		+ std::pow(position_.coeff(1,3)-origin_.coeff(1,3),2) < 10){
 		if(this->now().seconds()-lap_time_.seconds() > 20 && vx_>1 ){
+			origin_ = position_;
 			if(kRestartAtOrigin){
 				has_map_ = false;
 			}
