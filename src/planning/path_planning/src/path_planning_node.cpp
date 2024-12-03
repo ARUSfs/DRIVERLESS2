@@ -30,8 +30,12 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("angle_coeff", kAngleCoeff);
     this->get_parameter("max_angle", kMaxAngle);
 
+    iteration_ = 0;
+
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
+    car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
+        "/car_state/state", 10, std::bind(&PathPlanning::car_state_callback, this, std::placeholders::_1));
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
 
@@ -42,6 +46,12 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     // Conform triangulation from the point cloud
     pcl::PointCloud<ConeXYZColorScore> pcl_cloud;
     pcl::fromROSMsg(*per_msg, pcl_cloud);
+
+    if(pcl_cloud.size() == 0){
+        RCLCPP_INFO(this->get_logger(), "Empty point cloud");
+        return;
+    }
+
     CDT::Triangulation<double> triangulation;
     triangulation = this->create_triangulation(pcl_cloud);
     common_msgs::msg::Triangulation triangulation_msg;
@@ -55,7 +65,7 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     triangles_ = triangulation.triangles;
 
     // Construct the tree from the triangulation
-    int orig_index = this->get_orig_index();
+    int orig_index = this->get_vertex_index(CDT::V2d<double>::make(x_,y_));
     std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
     std::vector<SimplexTree> trees;
     triangle_routes_ = {};
@@ -85,6 +95,16 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
    
     // Publish the best trajectory
     trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
+ 
+    // Add 1 to the iteration counter
+    iteration_++;
+}
+
+void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr state_msg)
+{
+    x_ = state_msg->x;
+    y_ = state_msg->y;
+    yaw_ = state_msg->yaw;
 }
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
@@ -95,7 +115,7 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
         CDT::V2d<double> point = CDT::V2d<double>::make(cone.x, cone.y);
         points.push_back(point);
     }
-    CDT::V2d<double> origin = CDT::V2d<double>::make(0,0);
+    CDT::V2d<double> origin = CDT::V2d<double>::make(x_,y_);
     points.push_back(origin);
     triangulation.insertVertices(points);
     triangulation.eraseSuperTriangle();
@@ -226,11 +246,10 @@ CDT::V2d<double> PathPlanning::compute_centroid(int triangle_ind){
     return centroid;
 }
 
-int PathPlanning::get_orig_index(){
-    CDT::V2d<double> o = CDT::V2d<double>::make(0,0);
+int PathPlanning::get_vertex_index(CDT::V2d<double> vertex){
     int o_ind;
     for (int i = 0; i<vertices_.size(); i++){
-        if (vertices_[i] == o){
+        if (vertices_[i] == vertex){
             o_ind = i;
             return o_ind;
         }
@@ -263,7 +282,7 @@ CDT::Edge PathPlanning::get_share_edge(CDT::Triangle triangle1, CDT::Triangle tr
 
 void PathPlanning::get_midpoint_routes(){
     for (const auto &ind_route : triangle_routes_){
-        std::vector<CDT::V2d<double>> mid_route = {CDT::V2d<double>::make(0,0)}; // Start from the origin
+        std::vector<CDT::V2d<double>> mid_route = {CDT::V2d<double>::make(x_,y_)}; // Start from the car position
         for (int i = 0; i < ind_route.size()-1; i++){
             CDT::Triangle triangle = triangles_[ind_route[i]];
             CDT::Triangle next_triangle = triangles_[ind_route[i+1]];
@@ -283,7 +302,15 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
     int route_size = route.size();
     double route_length = CDT::distance(route[0], route[1]);
     double angle_diff_sum = 0;
-    std::vector<CDT::V2d<double>> route_out;
+    std::vector<CDT::V2d<double>> route_out = {CDT::V2d<double>::make(x_, y_)};
+    if (route_size < 3){
+        return INFINITY;
+    }
+    // Check if the route is looking forward (angle difference with the yaw is less than 1.57 radians)
+    bool route_looking_forward = abs(atan2(route[1].y-y_, route[1].x-x_)-yaw_) < 1.57;
+    if (!route_looking_forward){
+        return INFINITY;
+    }
 
     for (int i = 0; i<route_size-2;i++){
         route_length += CDT::distance(route[i+1], route[i+2]);
