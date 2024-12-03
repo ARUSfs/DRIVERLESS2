@@ -12,6 +12,7 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(common_msgs REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 
@@ -27,7 +28,8 @@ ament_target_dependencies(car_state_exec
                 std_msgs 
                 sensor_msgs 
                 common_msgs
-                tf2)
+                tf2
+                tf2_ros)
 
 target_link_libraries(car_state_exec Eigen3::Eigen)
 
