@@ -26,7 +26,7 @@ private:
     std::vector<double> b_history_;
     double sum_a_ = 0.0;
     double sum_b_ = 0.0;
-    const size_t history_size_ = 5;
+    const size_t history_size_ = 1;
     
     // Subscription to PointCloud2 messages (Perception)
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
