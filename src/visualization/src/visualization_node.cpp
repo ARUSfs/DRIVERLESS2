@@ -80,7 +80,7 @@ void Visualization::triangulation_callback(const common_msgs::msg::Triangulation
     marker_array.markers.push_back(delete_marker);
     for (int i = 0; i < msg -> simplices.size(); i++){
         visualization_msgs::msg::Marker marker;
-        marker.header.frame_id = "arussim/vehicle_cog";
+        marker.header.frame_id = "arussim/world";
         marker.ns = "triangulation";
         marker.id = i;
         marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
@@ -128,19 +128,19 @@ void Visualization::optimized_trajectory_callback(const common_msgs::msg::Trajec
 
 void Visualization::delaunay_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, false, 1.0, 0.0, 0.0, kAlpha);
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, true, 1.0, 0.0, 0.0, kAlpha);
     trajectory_visualization_pub_->publish(marker);
 }
 
 void Visualization::acc_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, false, 1.0, 0.0, 0.0, kAlpha);
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, true, 1.0, 0.0, 0.0, kAlpha);
     trajectory_visualization_pub_->publish(marker);
 }
 
 void Visualization::skidpad_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, false, 1.0, 0.0, 0.0, kAlpha);
+    visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, true, 1.0, 0.0, 0.0, kAlpha);
     trajectory_visualization_pub_->publish(marker);
 }
 
