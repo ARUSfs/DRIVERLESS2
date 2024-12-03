@@ -336,7 +336,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
     common_msgs::msg::Trajectory trajectory_msg;
     int route_size = route.size();
     std::vector<double> x_coords, y_coords, t_coords;
-    if (route_size < 2){
+    if (route_size < 3){
         common_msgs::msg::PointXY point;
         point.x = route[0].x;
         point.y = route[0].y;
@@ -350,10 +350,10 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
     }
     tk::spline x_spline(t_coords, x_coords);
     tk::spline y_spline(t_coords, y_coords);
-    for (int i = 0; i<1000; i++){
+    for (double i = 0; i<1000; i++){
         common_msgs::msg::PointXY point;
-        point.x = x_spline(i*route_size/1000);
-        point.y = y_spline(i*route_size/1000);
+        point.x = x_spline(i*route_size/1000.0);
+        point.y = y_spline(i*route_size/1000.0);
         trajectory_msg.points.push_back(point);
     }
     return trajectory_msg;
