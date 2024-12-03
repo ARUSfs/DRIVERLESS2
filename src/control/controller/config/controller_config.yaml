@@ -6,7 +6,7 @@ controller:
     # Topics
     state: "/car_state/state"
     as_status: "/sensors/AS_status"
-    trajectory: "/arussim_interface/fixed_trajectory"
+    trajectory: "/path_planning/trajectory"
     cmd: "/controller/cmd"
     pursuit_point: "/controller/pursuit_point"
 
@@ -14,7 +14,7 @@ controller:
     look_ahead_distance: 6.0
 
     # PID
-    target: 9.0
+    target: 5.0
     KP: 43.87
     KI: 1.29
     KD: 0.0
