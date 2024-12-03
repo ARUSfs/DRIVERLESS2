@@ -9,7 +9,7 @@ from datetime import datetime
 def generate_launch_description():
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir = f"/home/arus/.ros/inspection_bag_{timestamp}"
+    output_dir = f"/home/arus/.ros/skidpad_bag_{timestamp}"
 
     rosbag_record = ExecuteProcess(
         cmd=['ros2', 'bag', 'record', '-a', 
@@ -21,7 +21,12 @@ def generate_launch_description():
         create_node(pkg='can_interface'),
         create_node(pkg='epos_interface', 
                     exec='steering_handle.py'),
-        create_node(pkg='inspection_control'),
+        create_node(pkg='perception'),
+        create_node(pkg='skidpad_planning'),
+        create_node(pkg='controller',
+                    params=[{'trajectory': "/skidpad_planning/trajectory",
+                             'target': 3.0}]),
+        create_node(pkg='icp_slam'),
         create_node(pkg='car_state', 
                     params=[{'simulation': False}]),
         rosbag_record

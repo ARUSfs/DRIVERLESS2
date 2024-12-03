@@ -8,8 +8,10 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     return LaunchDescription([
-        create_node(pkg='path_planning'),
-        create_node(pkg='controller'),
+        create_node(pkg='acc_planning'),
+        create_node(pkg='controller',
+                    params=[{'trajectory': "/acc_planning/trajectory",
+                             'target': 10.0}]),
         create_node(pkg='visualization'),
         create_node(pkg='arussim_interface'),
         create_node(pkg='car_state', 

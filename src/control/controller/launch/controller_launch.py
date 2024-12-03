@@ -7,7 +7,7 @@ def generate_launch_description():
     config_file_path = os.path.join(
         get_package_share_directory('controller'),  
         'config',
-        'controller_params.yaml'
+        'controller_config.yaml'
     )
 
     return LaunchDescription([
