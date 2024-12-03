@@ -334,10 +334,26 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
 
 common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT::V2d<double>> route){
     common_msgs::msg::Trajectory trajectory_msg;
-    for (const auto &midpoint : route){
+    int route_size = route.size();
+    std::vector<double> x_coords, y_coords, t_coords;
+    if (route_size < 2){
         common_msgs::msg::PointXY point;
-        point.x = midpoint.x;
-        point.y = midpoint.y;
+        point.x = route[0].x;
+        point.y = route[0].y;
+        trajectory_msg.points.push_back(point);
+        return trajectory_msg;
+    }
+    for (int i = 0; i<route_size; i++){
+        x_coords.push_back(route[i].x);
+        y_coords.push_back(route[i].y);
+        t_coords.push_back(i);
+    }
+    tk::spline x_spline(t_coords, x_coords);
+    tk::spline y_spline(t_coords, y_coords);
+    for (int i = 0; i<1000; i++){
+        common_msgs::msg::PointXY point;
+        point.x = x_spline(i*route_size/1000);
+        point.y = y_spline(i*route_size/1000);
         trajectory_msg.points.push_back(point);
     }
     return trajectory_msg;
