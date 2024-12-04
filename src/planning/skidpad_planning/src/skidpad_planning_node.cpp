@@ -207,20 +207,28 @@ void SkidpadPlanning::publish_trajectory() {
     // Compute the skidpad center
     double mid_x = (best_center.first + second_best_center.first) / 2.0;
     double mid_y = (best_center.second + second_best_center.second) / 2.0;
-    double orientation = std::atan2(second_best_center.second - best_center.second, 
+    double orientation = - M_PI/2 + std::atan2(second_best_center.second - best_center.second, 
                                     second_best_center.first - best_center.first);
+    
+    std::cout << "orientation0: " << std::atan2(second_best_center.second - best_center.second, 
+                                    second_best_center.first - best_center.first)*180/M_PI << std::endl;
+    
+    std::cout << "orientation1: " << orientation*180/M_PI << std::endl;
 
-    // Rotate the template 90 degrees
-    Eigen::Matrix2d rotation_matrix;
-    rotation_matrix << 0, -1,
-                       1,  0;
+    if(orientation < - M_PI/2) {
+        orientation +=  M_PI;
+    } else if (orientation > M_PI/2) {
+        orientation -=  M_PI;
+    }
+
+
+    std::cout << "orientation2: " << orientation*180/M_PI << std::endl;
 
     // Transform the template
     for (const auto& point : template_) {
-        Eigen::Vector2d rotated_point = rotation_matrix * point;
         Eigen::Vector2d transformed_point;
-        transformed_point.x() = std::cos(orientation) * rotated_point.x() - std::sin(orientation) * rotated_point.y() + mid_x;
-        transformed_point.y() = std::sin(orientation) * rotated_point.x() + std::cos(orientation) * rotated_point.y() + mid_y;
+        transformed_point.x() = std::cos(orientation) * point.x() - std::sin(orientation) * point.y() + mid_x;
+        transformed_point.y() = std::sin(orientation) * point.x() + std::cos(orientation) * point.y() + mid_y;
 
         common_msgs::msg::PointXY traj_point;
         traj_point.x = transformed_point.x();
