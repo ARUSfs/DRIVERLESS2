@@ -123,15 +123,19 @@ void Controller::get_global_index(const std::vector<Point>& pointsXY_) {
     double min_distance_sq = std::numeric_limits<double>::max();
     int i_global = -1;
 
-    for (size_t i = 0; i < pointsXY_.size(); ++i) {
-            double dx = pointsXY_[i].x - x_;
-            double dy = pointsXY_[i].y - y_;
-            double distance_sq = dx * dx + dy * dy;
+    int i = index_global_;
+    while (i < pointsXY_.size()) {
+        double dx = pointsXY_[i].x - x_;
+        double dy = pointsXY_[i].y - y_;
+        double distance_sq = dx * dx + dy * dy;
 
-            if (distance_sq < min_distance_sq) {
-                min_distance_sq = distance_sq;
-                i_global = i;
-            }
+        if (distance_sq < min_distance_sq) {
+            min_distance_sq = distance_sq;
+            i_global = i;
+        } else if (distance_sq > 5.0) {
+            break;
+        }
+        i++;
     }
 
     index_global_ = i_global;
