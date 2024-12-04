@@ -16,6 +16,7 @@
 #include "perception/ground_filtering.h"
 #include "perception/clustering.h"
 #include "perception/cropping.h"
+#include "scoring.h"
 #include "PointXYZColorScore.h"
 #include <pcl/common/common.h>
 
@@ -44,6 +45,8 @@ class Perception : public rclcpp::Node
         double kHFov;
         double kThreshold;
         double kRadius;
+        double kMinimumScore;
+        double kMaximumScore;
 
         //Subscriber
         std::string kLidarTopic;
@@ -69,7 +72,7 @@ class Perception : public rclcpp::Node
          * @param cloud_filtered The point cloud after the ground filtering.
          * @param cluster_centers The center of each cluster.
          */
-        void get_clusters_centers(std::vector<pcl::PointIndices> cluster_indices, pcl::PointCloud<PointXYZColorScore>::Ptr map_cloud,
+        void get_clusters_centers(std::vector<pcl::PointIndices>& cluster_indices, pcl::PointCloud<PointXYZColorScore>::Ptr map_cloud,
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& cluster_centers);
             
         /**

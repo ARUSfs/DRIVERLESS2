@@ -14,3 +14,7 @@ perception:
 
     #Parameters of clustering
     radius: 0.15
+
+    #Parameters of scoring
+    minimum_score: -1.0
+    maximum_score: 1.0
