@@ -209,20 +209,12 @@ void SkidpadPlanning::publish_trajectory() {
     double mid_y = (best_center.second + second_best_center.second) / 2.0;
     double orientation = - M_PI/2 + std::atan2(second_best_center.second - best_center.second, 
                                     second_best_center.first - best_center.first);
-    
-    std::cout << "orientation0: " << std::atan2(second_best_center.second - best_center.second, 
-                                    second_best_center.first - best_center.first)*180/M_PI << std::endl;
-    
-    std::cout << "orientation1: " << orientation*180/M_PI << std::endl;
 
     if(orientation < - M_PI/2) {
         orientation +=  M_PI;
     } else if (orientation > M_PI/2) {
         orientation -=  M_PI;
     }
-
-
-    std::cout << "orientation2: " << orientation*180/M_PI << std::endl;
 
     // Transform the template
     for (const auto& point : template_) {
