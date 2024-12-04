@@ -19,6 +19,7 @@
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
 #include "common_msgs/msg/state.hpp"
+#include <path_planning/spline.h>
 
 /**
  * @brief Class containing the Path Planning node.
