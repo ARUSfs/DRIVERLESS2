@@ -25,39 +25,39 @@ CarState::CarState(): Node("car_state")
     this->get_parameter("mission", kMission);
 
 
-    pub_state_ = this->create_publisher<common_msgs::msg::State>(
+    state_pub_ = this->create_publisher<common_msgs::msg::State>(
         "/car_state/state", 1);
     as_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
         "/car_state/AS_check", 1);
 
     if(kSimulation && get_arussim_ground_truth){
-    sub_arussim_ground_truth_ = this->create_subscription<common_msgs::msg::State>(
+    arussim_ground_truth_sub_ = this->create_subscription<common_msgs::msg::State>(
         "/arussim_interface/arussim_ground_truth", 1, std::bind(&CarState::
             arussim_ground_truth_callback, this, std::placeholders::_1));
     }
 
     if(kSimulation){
-        sub_extensometer_ = this->create_subscription<std_msgs::msg::Float32>(
+        extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
             "/arussim/extensometer", 1, std::bind(&CarState::
                 extensometer_callback, this, std::placeholders::_1));
 
-        sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>(
+        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             "/arussim/imu", 1, std::bind(&CarState::
                 imu_callback, this, std::placeholders::_1));
 
-        sub_wheel_speeds_ = this->create_subscription<common_msgs::msg::FourWheelDrive>(
+        wheel_speeds_sub_ = this->create_subscription<common_msgs::msg::FourWheelDrive>(
             "/arussim_interface/wheel_speeds", 1, std::bind(&CarState::
                 wheel_speeds_callback, this, std::placeholders::_1));
     } else {
-        sub_extensometer_ = this->create_subscription<std_msgs::msg::Float32>(
+        extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
             "/can/extensometer", 1, std::bind(&CarState::
                 extensometer_callback, this, std::placeholders::_1));
 
-        sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>(
+        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             "/can/IMU", 1, std::bind(&CarState::
                 imu_callback, this, std::placeholders::_1));
 
-        sub_inv_speed_ = this->create_subscription<std_msgs::msg::Float32>(
+        inv_speed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
             "/can/inv_speed", 1, std::bind(&CarState::
                 inv_speed_callback, this, std::placeholders::_1));
         
@@ -146,7 +146,7 @@ void CarState::on_timer()
     state_msg.ay = ay_;
     state_msg.delta = delta_;
 
-    pub_state_->publish(state_msg);
+    state_pub_->publish(state_msg);
 
 
     // Publish AS check

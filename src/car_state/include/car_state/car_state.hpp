@@ -77,15 +77,15 @@ private:
     std::unique_ptr<tf2_ros::TransformListener> tf_listener_;
 
     // Subscribers
-    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr sub_extensometer_;
-    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr sub_imu_;
-    rclcpp::Subscription<common_msgs::msg::FourWheelDrive>::SharedPtr sub_wheel_speeds_;
-    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr sub_inv_speed_;
-    rclcpp::Subscription<common_msgs::msg::State>::SharedPtr sub_arussim_ground_truth_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr extensometer_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+    rclcpp::Subscription<common_msgs::msg::FourWheelDrive>::SharedPtr wheel_speeds_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr inv_speed_sub_;
+    rclcpp::Subscription<common_msgs::msg::State>::SharedPtr arussim_ground_truth_sub_;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr as_status_sub_;
 
     // Publisher for the aggregated state
-    rclcpp::Publisher<common_msgs::msg::State>::SharedPtr pub_state_;
+    rclcpp::Publisher<common_msgs::msg::State>::SharedPtr state_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr as_check_pub_;
 
     // Timer
