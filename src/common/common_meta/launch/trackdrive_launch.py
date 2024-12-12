@@ -10,7 +10,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 def generate_launch_description():
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir = f"/home/arus/.ros/acceleration_bag_{timestamp}"
+    output_dir = f"/home/arus/.ros/trackdrive_bag_{timestamp}"
 
     rosbag_record = ExecuteProcess(
         cmd=['ros2', 'bag', 'record', '-a', 
@@ -28,16 +28,14 @@ def generate_launch_description():
         create_node(pkg='epos_interface', 
                     exec='steering_handle.py'),
         create_node(pkg='perception'),
-        create_node(pkg='acc_planning',
-                    params=[{'target_speed': 3.0}]),
+        create_node(pkg='path_planning'),
         create_node(pkg='controller',
-                    params=[{'trajectory': "/acc_planning/trajectory",
-                             'target': 3.0}]),
+                    params=[{'target': 3.0}]),
         create_node(pkg='icp_slam',
                     params=[{'perception_topic': "/perception/map"}]),
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
-                    'mission': 'acceleration'}]),
+                    'mission': 'trackdrive'}]),
         rosbag_record
     ])
 

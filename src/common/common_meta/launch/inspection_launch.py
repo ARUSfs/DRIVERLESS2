@@ -23,7 +23,8 @@ def generate_launch_description():
                     exec='steering_handle.py'),
         create_node(pkg='inspection_control'),
         create_node(pkg='car_state', 
-                    params=[{'simulation': False}]),
+                    params=[{'simulation': False, 
+                    'mission': 'inspection'}]),
         rosbag_record
     ])
 
