@@ -16,6 +16,7 @@ private:
     // Node parameters
     std::string kPerceptionTopic;
     std::string kTrajectoryTopic;
+    double kTargetSpeed;
 
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
