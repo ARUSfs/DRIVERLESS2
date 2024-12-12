@@ -5,9 +5,14 @@
 
 IcpSlam::IcpSlam() : Node("icp_slam")
 {	
-
+	this->declare_parameter("perception_topic", "/perception/map");
+	this->declare_parameter("state_topic", "/car_state/state");
+	this->declare_parameter("slam_map_topic", "/slam/map");
 	this->declare_parameter("restart_at_origin", true);
 	this->declare_parameter("restart_iterations", -1);
+	this->get_parameter("perception_topic", kPerceptionTopic);
+	this->get_parameter("state_topic", kStateTopic);
+	this->get_parameter("slam_map_topic", kSlamMapTopic);
 	this->get_parameter("restart_at_origin", kRestartAtOrigin);
 	this->get_parameter("restart_iterations", kRestartIterations);
 
@@ -20,10 +25,10 @@ IcpSlam::IcpSlam() : Node("icp_slam")
 
 	tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 	
-	state_sub_ = this->create_subscription<common_msgs::msg::State>("/car_state/state", 10, std::bind(&IcpSlam::state_callback, this, std::placeholders::_1));
-    perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/arussim/perception", 10, std::bind(&IcpSlam::map_callback, this, std::placeholders::_1));
+	state_sub_ = this->create_subscription<common_msgs::msg::State>(kStateTopic, 10, std::bind(&IcpSlam::state_callback, this, std::placeholders::_1));
+    perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(kPerceptionTopic, 10, std::bind(&IcpSlam::map_callback, this, std::placeholders::_1));
     
-    map_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/map", 10);
+    map_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(kSlamMapTopic, 10);
 
 
 }

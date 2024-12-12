@@ -56,5 +56,8 @@ class IcpSlam : public rclcpp::Node
 		// Parameters
 		bool kRestartAtOrigin;
 		int kRestartIterations;
+		std::string kPerceptionTopic;
+		std::string kStateTopic;
+		std::string kSlamMapTopic;
 };
 
