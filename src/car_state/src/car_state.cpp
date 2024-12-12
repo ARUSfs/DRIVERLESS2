@@ -21,9 +21,14 @@ CarState::CarState(): Node("car_state")
     this->declare_parameter<bool>("simulation", false);
     this->get_parameter("simulation", kSimulation);
 
+    this->declare_parameter<std::string>("mission", "autocross");
+    this->get_parameter("mission", kMission);
+
 
     pub_state_ = this->create_publisher<common_msgs::msg::State>(
         "/car_state/state", 1);
+    as_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+        "/car_state/AS_check", 1);
 
     if(kSimulation && get_arussim_ground_truth){
     sub_arussim_ground_truth_ = this->create_subscription<common_msgs::msg::State>(
@@ -55,6 +60,10 @@ CarState::CarState(): Node("car_state")
         sub_inv_speed_ = this->create_subscription<std_msgs::msg::Float32>(
             "/can/inv_speed", 1, std::bind(&CarState::
                 inv_speed_callback, this, std::placeholders::_1));
+        
+        as_status_sub_ = this->create_subscription<std_msgs::msg::Int16>(
+            "/can/AS_status", 1, std::bind(&CarState::
+                as_status_callback, this, std::placeholders::_1));
     }
 
     // Configure timer once in the constructor based on the selected controller and frequency
@@ -70,6 +79,11 @@ CarState::CarState(): Node("car_state")
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
 
+}
+
+void CarState::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
+{
+    as_status_ = msg->data;
 }
 
 void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
@@ -108,7 +122,9 @@ void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::Shar
 
 void CarState::on_timer()
 {
-    this->get_tf_position();
+    if (kMission!="inspection"){
+        this->get_tf_position();
+    }
 
     // Estimate velocity
     state_estimation_.set_measurement_data(v_front_right_, v_front_left_, v_rear_right_, v_rear_left_, ax_, ay_);
@@ -131,6 +147,16 @@ void CarState::on_timer()
     state_msg.delta = delta_;
 
     pub_state_->publish(state_msg);
+
+
+    // Publish AS check
+    auto as_check_msg = std_msgs::msg::Bool();
+    if(kSimulation){
+        as_check_msg.data = true;
+    } else {
+        as_check_msg.data = as_status_ == 2;
+    }
+    as_check_pub_->publish(as_check_msg);
 
 }
 
