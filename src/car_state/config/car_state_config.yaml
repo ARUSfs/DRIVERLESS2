@@ -2,3 +2,4 @@ car_state:
   ros__parameters:
     get_arussim_ground_truth: false
     simulation: true
+    mission: "autocross"
