@@ -7,8 +7,10 @@ AccPlanning::AccPlanning() : Node("acc_planning_node")
 
     this->declare_parameter<std::string>("perception_topic", "/arussim/perception");
     this->declare_parameter<std::string>("trajectory_topic", "/acc_planning/trajectory");
+    this->declare_parameter<double>("target_speed", 10.0);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
+    this->get_parameter("target_speed", kTargetSpeed);
 
     // Publish resulting trajectory
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
@@ -178,13 +180,23 @@ void AccPlanning::publish_trajectory(){
     common_msgs::msg::Trajectory trajectory_msg;
 
     double step = 0.1;  
-    double max_distance = 150.0; 
+    double acc_distance = 75.0;
+    double brake_distance = 150.0;  
 
-    for (double x = 0.0; x <= max_distance; x += step) {
+    for (double x = 0.0; x <= acc_distance; x += step) {
         common_msgs::msg::PointXY point;
         point.x = x;
         point.y = a_ * x + b_;  
         trajectory_msg.points.push_back(point);
+        trajectory_msg.speed_profile.push_back(kTargetSpeed);
+    }
+
+    for (double x = acc_distance; x < brake_distance; x += step) {
+        common_msgs::msg::PointXY point;
+        point.x = x;
+        point.y = a_ * x + b_;  
+        trajectory_msg.points.push_back(point);
+        trajectory_msg.speed_profile.push_back(0.0);
     }
 
     trajectory_pub_->publish(trajectory_msg);
