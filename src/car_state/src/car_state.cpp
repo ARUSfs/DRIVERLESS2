@@ -21,40 +21,49 @@ CarState::CarState(): Node("car_state")
     this->declare_parameter<bool>("simulation", false);
     this->get_parameter("simulation", kSimulation);
 
+    this->declare_parameter<std::string>("mission", "autocross");
+    this->get_parameter("mission", kMission);
 
-    pub_state_ = this->create_publisher<common_msgs::msg::State>(
+
+    state_pub_ = this->create_publisher<common_msgs::msg::State>(
         "/car_state/state", 1);
+    as_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+        "/car_state/AS_check", 1);
 
     if(kSimulation && get_arussim_ground_truth){
-    sub_arussim_ground_truth_ = this->create_subscription<common_msgs::msg::State>(
+    arussim_ground_truth_sub_ = this->create_subscription<common_msgs::msg::State>(
         "/arussim_interface/arussim_ground_truth", 1, std::bind(&CarState::
             arussim_ground_truth_callback, this, std::placeholders::_1));
     }
 
     if(kSimulation){
-        sub_extensometer_ = this->create_subscription<std_msgs::msg::Float32>(
+        extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
             "/arussim/extensometer", 1, std::bind(&CarState::
                 extensometer_callback, this, std::placeholders::_1));
 
-        sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>(
+        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             "/arussim/imu", 1, std::bind(&CarState::
                 imu_callback, this, std::placeholders::_1));
 
-        sub_wheel_speeds_ = this->create_subscription<common_msgs::msg::FourWheelDrive>(
+        wheel_speeds_sub_ = this->create_subscription<common_msgs::msg::FourWheelDrive>(
             "/arussim_interface/wheel_speeds", 1, std::bind(&CarState::
                 wheel_speeds_callback, this, std::placeholders::_1));
     } else {
-        sub_extensometer_ = this->create_subscription<std_msgs::msg::Float32>(
+        extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
             "/can/extensometer", 1, std::bind(&CarState::
                 extensometer_callback, this, std::placeholders::_1));
 
-        sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>(
+        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             "/can/IMU", 1, std::bind(&CarState::
                 imu_callback, this, std::placeholders::_1));
 
-        sub_inv_speed_ = this->create_subscription<std_msgs::msg::Float32>(
+        inv_speed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
             "/can/inv_speed", 1, std::bind(&CarState::
                 inv_speed_callback, this, std::placeholders::_1));
+        
+        as_status_sub_ = this->create_subscription<std_msgs::msg::Int16>(
+            "/can/AS_status", 1, std::bind(&CarState::
+                as_status_callback, this, std::placeholders::_1));
     }
 
     // Configure timer once in the constructor based on the selected controller and frequency
@@ -66,13 +75,28 @@ CarState::CarState(): Node("car_state")
     //Create estimation object
     state_estimation_ = Estimation();
 
+    // Create TF broadcaster
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
+
+}
+
+void CarState::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
+{
+    as_status_ = msg->data;
 }
 
 void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
-{
-    ax_ = msg-> linear_acceleration.x;
-    ay_ = msg-> linear_acceleration.y;
-    r_ = msg->angular_velocity.z;
+{   
+    if(kSimulation){
+        ax_ = msg-> linear_acceleration.x;
+        ay_ = msg-> linear_acceleration.y;
+        r_ = msg->angular_velocity.z;
+    } else {
+        ax_ = - msg-> linear_acceleration.x;
+        ay_ = msg-> linear_acceleration.y;
+        r_ = - msg->angular_velocity.z;
+    }
 }
 
 void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -104,6 +128,10 @@ void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::Shar
 
 void CarState::on_timer()
 {
+    if (kMission!="inspection"){
+        this->get_tf_position();
+    }
+
     // Estimate velocity
     state_estimation_.set_measurement_data(v_front_right_, v_front_left_, v_rear_right_, v_rear_left_, ax_, ay_);
 
@@ -124,8 +152,39 @@ void CarState::on_timer()
     state_msg.ay = ay_;
     state_msg.delta = delta_;
 
-    pub_state_->publish(state_msg);
+    state_pub_->publish(state_msg);
 
+
+    // Publish AS check
+    auto as_check_msg = std_msgs::msg::Bool();
+    if(kSimulation){
+        as_check_msg.data = true;
+    } else {
+        as_check_msg.data = as_status_ == 2;
+    }
+    as_check_pub_->publish(as_check_msg);
+
+}
+
+void CarState::get_tf_position()
+{
+    geometry_msgs::msg::TransformStamped transform;
+    try {
+        transform = tf_buffer_->lookupTransform("arussim/world", "slam/vehicle", tf2::TimePointZero);
+        tf2::Quaternion q(
+                transform.transform.rotation.x,
+                transform.transform.rotation.y,
+                transform.transform.rotation.z,
+                transform.transform.rotation.w
+            );
+        double roll, pitch, yaw;
+        tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+        x_ = transform.transform.translation.x;
+        y_ = transform.transform.translation.y;
+        yaw_ = yaw;
+    } catch (tf2::TransformException &ex) {
+        RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
+    }
 }
 
 int main(int argc, char * argv[])

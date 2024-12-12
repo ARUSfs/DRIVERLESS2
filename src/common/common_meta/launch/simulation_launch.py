@@ -1,35 +1,41 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import ExecuteProcess
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
-    planning_launch_path = os.path.join(get_package_share_directory('path_planning'), 
-                                        'launch', 'path_planning_launch.py')
-    controller_launch_path = os.path.join(get_package_share_directory('controller'),
-                                        'launch', 'controller_launch.py')
-    car_state_launch_path = os.path.join(get_package_share_directory('car_state'),
-                                        'launch', 'car_state_launch.py')
-    visualization_launch_path = os.path.join(get_package_share_directory('visualization'), 
-                                        'launch', 'visualization_launch.py')
-    arussim_interface_launch_path = os.path.join(get_package_share_directory('arussim_interface'), 
-                                        'launch', 'arussim_interface_launch.py')
-
 
     return LaunchDescription([
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(planning_launch_path)),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(controller_launch_path)),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(car_state_launch_path)),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(visualization_launch_path)),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(arussim_interface_launch_path)),
+        create_node(pkg='path_planning'),
+        create_node(pkg='controller',
+                    params=[{'min_cmd': -100.0,
+                             'max_cmd': 100.0}]),
+        create_node(pkg='visualization'),
+        create_node(pkg='arussim_interface'),
+        create_node(pkg='car_state', 
+                    params=[{'simulation': True, 
+                    'mission': 'trackdrive'}]),
+        create_node(pkg='icp_slam',
+                    params=[{'perception_topic': "/arussim/perception"}])
     ])
+
+
+def create_node(pkg, config=None, exec=None, params=[]): 
+
+    if config is None:
+        config = pkg + "_config.yaml"
+    if exec is None:
+        exec = pkg + "_exec"
+
+    package_share_directory = get_package_share_directory(pkg)
+    config_file = os.path.join(package_share_directory, "config", config)
+
+    return Node(
+        package=pkg,
+        executable=exec,
+        name=pkg,
+        output="screen",
+        parameters=[config_file]+params
+        )

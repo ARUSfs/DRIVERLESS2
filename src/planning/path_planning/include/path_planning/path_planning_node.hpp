@@ -18,6 +18,8 @@
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
+#include "common_msgs/msg/state.hpp"
+#include <path_planning/spline.h>
 
 /**
  * @brief Class containing the Path Planning node.
@@ -48,8 +50,14 @@ class PathPlanning : public rclcpp::Node
         
         // Suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
+        rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
+
+        // CarState
+        double x_;
+        double y_;
+        double yaw_;
 
         // Triangulation attributes
         CDT::TriangleVec triangles_;
@@ -59,6 +67,7 @@ class PathPlanning : public rclcpp::Node
         std::vector<std::vector<int>> triangle_routes_;
         std::vector<std::vector<CDT::V2d<double>>> midpoint_routes_;
         std::vector<CDT::V2d<double>> best_midpoint_route_;
+        int iteration_;
 
         /**
          * @brief Callback function for the perception topic.
@@ -68,6 +77,13 @@ class PathPlanning : public rclcpp::Node
          * @param per_msg The point cloud received from the perception.
          */
         void perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg);
+
+        /**
+         * @brief Callback function for the car state topic.
+         * Update the car state variables when a new message is received.
+         * @param state_msg Common_msgs message containing the car state. Only the x, y and yaw are used.
+         */
+        void car_state_callback(common_msgs::msg::State::SharedPtr state_msg);
         
         /**
          * @brief Create a triangulation object from a point cloud and erase super triangle.
@@ -127,7 +143,7 @@ class PathPlanning : public rclcpp::Node
          * @brief Get the index of the origin vertex in the triangulation.
          * @return int index of the origin vertex.
          */
-        int get_orig_index();
+        int get_vertex_index(CDT::V2d<double> vertex);
 
         /**
          * @brief Get the triangles adjacent to a vertex from its index.

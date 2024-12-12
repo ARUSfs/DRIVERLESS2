@@ -1,0 +1,12 @@
+controller:
+  ros__parameters:    
+
+    # Topic
+    perception_topic: "/perception/map"
+    state_topic: "/car_state/state"
+    slam_map_topic: "/slam/map"
+
+    # Wheter to restart the map at the origin after a loop closure
+    restart_at_origin: true
+    # Iterations after which to restart the map. -1 to disable
+    restart_iterations: -1

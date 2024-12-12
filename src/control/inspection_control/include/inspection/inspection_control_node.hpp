@@ -7,7 +7,7 @@
 #include "std_msgs/msg/int16.hpp"
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/cmd.hpp"
-#include "inspection/speed_control.hpp"
+#include "inspection/PID.hpp"
 
 class InspectionControl : public rclcpp::Node
 {
@@ -17,7 +17,7 @@ public:
     
 private:
     // Instances
-    SpeedControl speed_control_;  
+    PID pid_;  
     rclcpp::Time start_time_;
 
     // Callbacks
@@ -46,5 +46,6 @@ private:
     rclcpp::TimerBase::SharedPtr timer_; 
     
     //Publishers
-    rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_publisher_;
+    rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr finish_pub_;
 };

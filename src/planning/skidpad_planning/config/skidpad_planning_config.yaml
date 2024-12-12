@@ -1,0 +1,6 @@
+skidpad_planning:
+  ros__parameters:
+    perception_topic: "/slam/map"
+    trajectory_topic: "/skidpad_planning/trajectory"
+    target_first_lap: 5.0
+    target_second_lap: 10.0
