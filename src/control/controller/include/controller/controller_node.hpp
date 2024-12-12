@@ -12,6 +12,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/int16.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "common_msgs/msg/trajectory.hpp"
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/point_xy.hpp"
@@ -40,13 +41,13 @@ private:
 
     // Callbacks
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
-    void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
+    void as_check_callback(const std_msgs::msg::Bool::SharedPtr msg);
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void on_timer();
-    void get_global_index(const std::vector<Point>& pointsXY_);
+    void get_global_index();
 
-    // Status AS
-    int16_t as_status_;
+    // Check AS
+    bool as_check_ = false;
 
     // Variable car state
     double x_;
@@ -65,11 +66,12 @@ private:
     std::vector<float> k_ ; 
     std::vector<float> speed_profile_;               
     std::vector<float> acc_profile_;
-    int index_global_ = 0;         
+    int index_global_ = 0;      
+    bool new_trajectory_ = false;         
 
     //Subscribers
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
-    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr as_status_sub_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr as_check_sub_;
     rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trayectory_sub_;
 
     //Timers
@@ -79,8 +81,9 @@ private:
     // Parameters
     std::string kControllerType;
     std::string kStateTopic;
-    std::string kAsStatus;
-    std::string kTrajectory;
+    std::string kAsStatusTopic;
+    std::string kAsCheckTopic;
+    std::string kTrajectoryTopic;
     std::string kCmdTopic;
     std::string kPursuitPointTopic;
 
@@ -90,9 +93,12 @@ private:
     double KP;
     double KI;
     double KD;
+    double kMinCmd;
+    double kMaxCmd;
 
-    rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_publisher_;
-    rclcpp::Publisher<common_msgs::msg::PointXY>::SharedPtr pursuit_point_publisher_;
+    rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_pub_;
+    rclcpp::Publisher<common_msgs::msg::PointXY>::SharedPtr pursuit_point_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr as_status_pub_;
 };
 
 #endif

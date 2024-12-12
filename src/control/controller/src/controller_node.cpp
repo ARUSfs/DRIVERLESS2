@@ -8,6 +8,7 @@
  * @date 15-11-2024
  */
 #include "controller/controller_node.hpp"
+#include <limits>
 
 /**
  * @brief Constructor for the Controller class
@@ -25,13 +26,15 @@ Controller::Controller() : Node("controller"),
 
     // Topic
     this->declare_parameter<std::string>("state", "/car_state/state");
-    this->declare_parameter<std::string>("as_status", "/sensors/AS_status");
+    this->declare_parameter<std::string>("as_status", "/can/AS_status");
+    this->declare_parameter<std::string>("as_check", "/car_state/AS_check");
     this->declare_parameter<std::string>("trajectory", "/arussim_interface/fixed_trajectory");
     this->declare_parameter<std::string>("cmd", "/controller/cmd");
     this->declare_parameter<std::string>("pursuit_point", "/controller/pursuit_point");
     this->get_parameter("state", kStateTopic);
-    this->get_parameter("as_status", kAsStatus);
-    this->get_parameter("trajectory", kTrajectory);
+    this->get_parameter("as_status", kAsStatusTopic);
+    this->get_parameter("as_check", kAsCheckTopic);
+    this->get_parameter("trajectory", kTrajectoryTopic);
     this->get_parameter("cmd", kCmdTopic);
     this->get_parameter("pursuit_point",kPursuitPointTopic);
 
@@ -49,26 +52,33 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("KI", KI);
     this->get_parameter("KD", KD);
 
+    // Cmd limits
+    this->declare_parameter<double>("min_cmd", 0.0);
+    this->declare_parameter<double>("max_cmd", 0.1);
+    this->get_parameter("min_cmd", kMinCmd);
+    this->get_parameter("max_cmd", kMaxCmd);
+
     speed_control_.pid_.set_params(KP,KI,KD);
 
+    previous_time_ = this->get_clock()->now();
+
+    // Timer
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(static_cast<int>(1000.0 / kTimerFreq)),
         std::bind(&Controller::on_timer, this));
 
+    // Subscribers
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
         kStateTopic, 1, std::bind(&Controller::car_state_callback, this, std::placeholders::_1));
-
-    as_status_sub_ = this->create_subscription<std_msgs::msg::Int16>(
-        kAsStatus, 1, std::bind(&Controller::as_status_callback, this, std::placeholders::_1));
-
+    as_check_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+        kAsCheckTopic, 1, std::bind(&Controller::as_check_callback, this, std::placeholders::_1));
     trayectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        kTrajectory, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
+        kTrajectoryTopic, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
 
-    cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
-
-    pursuit_point_publisher_ = this->create_publisher<common_msgs::msg::PointXY>(kPursuitPointTopic, 10);
-
-    previous_time_ = this->get_clock()->now();
+    // Publishers
+    cmd_pub_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
+    pursuit_point_pub_ = this->create_publisher<common_msgs::msg::PointXY>(kPursuitPointTopic, 10);
+    as_status_pub_ = this->create_publisher<std_msgs::msg::Int16>(kAsStatusTopic, 10);
 }
 
 /**
@@ -78,8 +88,8 @@ Controller::Controller() : Node("controller"),
  */  
 void Controller::on_timer()
 {
-    if(!(pointsXY_.empty())){
-        get_global_index(pointsXY_);
+    if(!(pointsXY_.empty()) && as_check_){
+        get_global_index();
 
         double target_speed = kTargetSpeed;
         if(!(speed_profile_.empty())){
@@ -91,16 +101,24 @@ void Controller::on_timer()
             target_acc = acc_profile_.at(index_global_);
         }
 
+        // Check if the mission is finished
+        if(target_speed == 0.0 && vx_ < 0.5){ 
+            std_msgs::msg::Int16 as_status_msg;
+            as_status_msg.data = 3;
+            as_status_pub_ -> publish(as_status_msg);
+            return;
+        }
+
         pure_pursuit_.set_path(pointsXY_);
         Point position;
         position.x = x_;
         position.y = y_;
         pure_pursuit_.set_position(position, yaw_);
-        auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_,target_speed / 1.5);
+        auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_, kLAD);
         common_msgs::msg::PointXY pursuit_point_msg;
         pursuit_point_msg.x = pursuit_point.x;
         pursuit_point_msg.y = pursuit_point.y;
-        pursuit_point_publisher_ -> publish(pursuit_point_msg);
+        pursuit_point_pub_ -> publish(pursuit_point_msg);
 
         rclcpp::Time current_time = this->get_clock()->now();
         double dt = (current_time - previous_time_).seconds();
@@ -108,9 +126,9 @@ void Controller::on_timer()
         previous_time_ = current_time;
 
         common_msgs::msg::Cmd cmd;       
-        cmd.acc = acc;
+        cmd.acc = std::clamp(acc, kMinCmd, kMaxCmd);
         cmd.delta = delta;
-        cmd_publisher_ -> publish(cmd); 
+        cmd_pub_ -> publish(cmd); 
     }
 }
 
@@ -119,20 +137,32 @@ void Controller::on_timer()
  * @details Use the global position to calculate the speed 
  * and acceleration profile at each moment. 
  */ 
-void Controller::get_global_index(const std::vector<Point>& pointsXY_) {
-    double min_distance_sq = std::numeric_limits<double>::max();
+void Controller::get_global_index() {
+    double min_dist = std::numeric_limits<double>::max();
     int i_global = -1;
+    int N = pointsXY_.size();
+    int i = 0;
 
-    int i = index_global_;
-    while (i < pointsXY_.size()) {
-        double dx = pointsXY_[i].x - x_;
-        double dy = pointsXY_[i].y - y_;
-        double distance_sq = dx * dx + dy * dy;
+    
+    // If the trajectory is not updated, the search starts from the last index
+    if(!new_trajectory_){
+        i = index_global_; 
+    }
+    new_trajectory_ = false;
 
-        if (distance_sq < min_distance_sq) {
-            min_distance_sq = distance_sq;
-            i_global = i;
-        } else if (distance_sq > 5.0) {
+    // Search for the closest point from the current position
+    // N+10 and i%N is added to allow restarting loops (trackdrive)
+    while (i < N + 10) {
+        double dx = pointsXY_[i % N].x - x_;
+        double dy = pointsXY_[i % N].y - y_;
+        double dist = dx * dx + dy * dy;
+
+        if (dist < min_dist) {
+            min_dist = dist;
+            i_global = i % N;
+        } else if(!new_trajectory_ && dist > 5.0){ 
+            // If the distance is greater than 5 meters from last index, 
+            // the search is stopped to avoid errors due to loops in the trajectory (skidpad)
             break;
         }
         i++;
@@ -157,6 +187,12 @@ void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg
 
 void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
+    // Check if the trajectory is the same
+    if(msg->points.size() != pointsXY_.size()
+       || msg->points[msg->points.size()-1].x != pointsXY_[pointsXY_.size()-1].x){
+        new_trajectory_ = true;
+    }
+
     pointsXY_.clear();
     s_.clear();
     k_.clear();
@@ -176,9 +212,9 @@ void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedP
     acc_profile_ = msg -> acc_profile; 
 }
 
-void Controller::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
+void Controller::as_check_callback(const std_msgs::msg::Bool::SharedPtr msg)
 {
-    as_status_ = msg->data;
+    as_check_ = msg->data;
 }
 
 int main(int argc, char **argv)
