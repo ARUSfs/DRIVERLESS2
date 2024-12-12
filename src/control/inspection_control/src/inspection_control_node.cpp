@@ -55,7 +55,7 @@ void InspectionControl::on_timer()
 
         // 230 is the maximum toque value
         // Clamp the value between 0% and 20% of the maximum torque
-        cmd_msg.acc = std::clamp(pid_.compute_control(vx_, 1.0, 0.01)/230, 0.0, 0.2);
+        cmd_msg.acc = std::clamp(pid_.compute_control(vx_, 1.0, 0.01)/230, 0.0, 0.05);
 
         double t = this->get_clock()->now().seconds() - start_time_.seconds();
         cmd_msg.delta = (kAmplitude*M_PI/180)*sin(2.0*M_PI*kFrequency*t);
