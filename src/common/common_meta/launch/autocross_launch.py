@@ -1,9 +1,10 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess
+from launch.actions import ExecuteProcess, IncludeLaunchDescription
 from launch_ros.actions import Node
 from datetime import datetime
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -17,7 +18,12 @@ def generate_launch_description():
         output='screen'
     )
 
+    rslidar_launch = os.path.join(get_package_share_directory('rslidar_sdk'), 
+                                    'launch', 'start.py')
+
     return LaunchDescription([
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(rslidar_launch)),
         create_node(pkg='can_interface'),
         create_node(pkg='epos_interface', 
                     exec='steering_handle.py'),
@@ -25,9 +31,11 @@ def generate_launch_description():
         create_node(pkg='path_planning'),
         create_node(pkg='controller',
                     params=[{'target': 3.0}]),
-        create_node(pkg='icp_slam'),
+        create_node(pkg='icp_slam',
+                    params=[{'perception_topic': "/perception/map"}]),
         create_node(pkg='car_state', 
-                    params=[{'simulation': False}]),
+                    params=[{'simulation': False, 
+                    'mission': 'autocross'}]),
         rosbag_record
     ])
 

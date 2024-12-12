@@ -15,8 +15,10 @@ def generate_launch_description():
         create_node(pkg='visualization'),
         create_node(pkg='arussim_interface'),
         create_node(pkg='car_state', 
-                    params=[{'simulation': True}]),
-        create_node(pkg='icp_slam')
+                    params=[{'simulation': True, 
+                    'mission': 'acceleration'}]),
+        create_node(pkg='icp_slam',
+                    params=[{'perception_topic': "/arussim/perception"}])
     ])
 
 
