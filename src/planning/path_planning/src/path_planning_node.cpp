@@ -82,22 +82,24 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     this->get_midpoint_routes();
 
     // Get the cost of each route
-    int best_route_ind = 0;
-    double min_cost = INFINITY;
-    for (int i = 0; i<midpoint_routes_.size(); i++){
-        double cost = this->get_route_cost(midpoint_routes_[i]);
-        if (cost < min_cost){
-            min_cost = cost;
-            best_route_ind = i;
+    if(midpoint_routes_.size()>0){
+        int best_route_ind = 0;
+        double min_cost = INFINITY;
+        for (int i = 0; i<midpoint_routes_.size(); i++){
+            double cost = this->get_route_cost(midpoint_routes_[i]);
+            if (cost < min_cost){
+                min_cost = cost;
+                best_route_ind = i;
+            }
         }
+        best_midpoint_route_ = midpoint_routes_[best_route_ind];
+
+        // Publish the best trajectory
+        trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
+
+        // Add 1 to the iteration counter
+        iteration_++;
     }
-    best_midpoint_route_ = midpoint_routes_[best_route_ind];
-   
-    // Publish the best trajectory
-    trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
- 
-    // Add 1 to the iteration counter
-    iteration_++;
 }
 
 void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr state_msg)
