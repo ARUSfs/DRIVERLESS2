@@ -25,12 +25,15 @@ private:
     // Node parameters
     std::string kPerceptionTopic;
     std::string kTrajectoryTopic;
+    double kTargetFirstLap;
+    double kTargetSecondLap;
 
     std::pair<double, double> best_center;
     std::pair<double, double> second_best_center;
     double radius;
     bool trajectory_calculated_;
-     std::vector<Eigen::Vector2d> template_;
+    std::vector<Eigen::Vector2d> template_;
+    std::vector<double> speed_profile_;
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
 

@@ -5,10 +5,14 @@
 SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node"), trajectory_calculated_(false) 
 {
 
-    this->declare_parameter<std::string>("perception_topic", "/arussim/perception");
+    this->declare_parameter<std::string>("perception_topic", "/slam/map");
     this->declare_parameter<std::string>("trajectory_topic", "/skidpad_planning/trajectory");
+    this->declare_parameter<double>("target_first_lap", 5.0);
+    this->declare_parameter<double>("target_second_lap", 10.0);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
+    this->get_parameter("target_first_lap", kTargetFirstLap);
+    this->get_parameter("target_second_lap", kTargetSecondLap);
 
     // Publish resulting trajectory
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
@@ -23,44 +27,54 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node"), trajectory_c
 
     for (int i = 0; i <= 20 / d; ++i) {
         template_.emplace_back(-20 + d * i, 0);
+        speed_profile_.push_back(kTargetFirstLap);
     }
     for (int i = 0; i < N; ++i) {
         template_.emplace_back(r * std::sin(2 * M_PI * i / N), -9.125 + r * std::cos(2 * M_PI * i / N));
+        speed_profile_.push_back(kTargetFirstLap);
     }
     for (int i = 0; i < N; ++i) {
         template_.emplace_back(r * std::sin(2 * M_PI * i / N), -9.125 + r * std::cos(2 * M_PI * i / N));
+        speed_profile_.push_back(kTargetSecondLap);
     }
     for (int i = 0; i < N; ++i) {
         template_.emplace_back(r * std::sin(2 * M_PI * i / N), 9.125 - r * std::cos(2 * M_PI * i / N));
+        speed_profile_.push_back(kTargetFirstLap);
     }
     for (int i = 0; i < N; ++i) {
         template_.emplace_back(r * std::sin(2 * M_PI * i / N), 9.125 - r * std::cos(2 * M_PI * i / N));
+        speed_profile_.push_back(kTargetSecondLap);
     }
-    for (int i = 0; i <= 20 / d; ++i) {
+    for (int i = 0; i <= 5 / d; ++i) {
         template_.emplace_back(d * i, 0);
+        speed_profile_.push_back(kTargetFirstLap);
+    }
+    for (int i = 0; i <= 15 / d; ++i) {
+        template_.emplace_back(5 + d * i, 0);
+        speed_profile_.push_back(0.0);
     }
 }
 
 void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
     
-  if (!trajectory_calculated_) {
+    if (!trajectory_calculated_) {
         cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
 
         if (cones_.points.empty()) {
-            std::cout << "No points in the PointCloud after conversion to PCL." << std::endl;
-        } else {
-            std::cout << "PointCloud contains " << cones_.points.size() << " points." << std::endl;
-        }
+            std::cout << "No points in the PointCloud." << std::endl;
+            return;
+        } 
 
+        std::cout << "PointCloud contains " << cones_.points.size() << " points." << std::endl;
+    
         SkidpadPlanning::generate_planning();
         SkidpadPlanning::publish_trajectory();
 
-        trajectory_calculated_ = true;
-
         std::cout << "Trajectory calculated and published." << std::endl;
-   } else {
+        
+    } else {
         SkidpadPlanning::publish_trajectory();
-   }
+    }
 }
 
 
@@ -228,7 +242,12 @@ void SkidpadPlanning::publish_trajectory() {
         trajectory_msg.points.push_back(traj_point);
     }
 
+    for (const auto& v : speed_profile_) {
+        trajectory_msg.speed_profile.push_back(v);
+    }
+
     trajectory_pub_->publish(trajectory_msg);
+    trajectory_calculated_ = true;
 }
 
 pcl::PointCloud<ConeXYZColorScore> SkidpadPlanning::convert_ros_to_pcl(const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {
