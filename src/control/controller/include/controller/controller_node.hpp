@@ -44,7 +44,7 @@ private:
     void as_check_callback(const std_msgs::msg::Bool::SharedPtr msg);
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void on_timer();
-    void get_global_index(const std::vector<Point>& pointsXY_);
+    void get_global_index();
 
     // Check AS
     bool as_check_ = false;

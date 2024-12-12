@@ -83,7 +83,7 @@ Controller::Controller() : Node("controller"),
 void Controller::on_timer()
 {
     if(!(pointsXY_.empty()) && as_check_){
-        get_global_index(pointsXY_);
+        get_global_index();
 
         double target_speed = kTargetSpeed;
         if(!(speed_profile_.empty())){
@@ -131,27 +131,30 @@ void Controller::on_timer()
  * @details Use the global position to calculate the speed 
  * and acceleration profile at each moment. 
  */ 
-void Controller::get_global_index(const std::vector<Point>& pointsXY_) {
-    double min_distance_sq = std::numeric_limits<double>::max();
+void Controller::get_global_index() {
+    double min_dist = std::numeric_limits<double>::max();
     int i_global = -1;
-
+    int N = pointsXY_.size();
     int i = 0;
 
+    
     // If the trajectory is not updated, the search starts from the last index
     if(!new_trajectory_){
         i = index_global_; 
     }
     new_trajectory_ = false;
 
-    while (i < pointsXY_.size()) {
-        double dx = pointsXY_[i].x - x_;
-        double dy = pointsXY_[i].y - y_;
-        double distance_sq = dx * dx + dy * dy;
+    // Search for the closest point from the current position
+    // N+10 and i%N is added to allow restarting loops (trackdrive)
+    while (i < N + 10) {
+        double dx = pointsXY_[i % N].x - x_;
+        double dy = pointsXY_[i % N].y - y_;
+        double dist = dx * dx + dy * dy;
 
-        if (distance_sq < min_distance_sq) {
-            min_distance_sq = distance_sq;
-            i_global = i;
-        } else if(!new_trajectory_ && distance_sq > 5.0){ 
+        if (dist < min_dist) {
+            min_dist = dist;
+            i_global = i % N;
+        } else if(!new_trajectory_ && dist > 5.0){ 
             // If the distance is greater than 5 meters from last index, 
             // the search is stopped to avoid errors due to loops in the trajectory (skidpad)
             break;
