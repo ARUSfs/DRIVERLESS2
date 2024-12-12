@@ -93,9 +93,11 @@ private:
     double KP;
     double KI;
     double KD;
+    double kMinCmd;
+    double kMaxCmd;
 
-    rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_publisher_;
-    rclcpp::Publisher<common_msgs::msg::PointXY>::SharedPtr pursuit_point_publisher_;
+    rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_pub_;
+    rclcpp::Publisher<common_msgs::msg::PointXY>::SharedPtr pursuit_point_pub_;
     rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr as_status_pub_;
 };
 

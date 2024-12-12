@@ -52,6 +52,12 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("KI", KI);
     this->get_parameter("KD", KD);
 
+    // Cmd limits
+    this->declare_parameter<double>("min_cmd", 0.0);
+    this->declare_parameter<double>("max_cmd", 0.1);
+    this->get_parameter("min_cmd", kMinCmd);
+    this->get_parameter("max_cmd", kMaxCmd);
+
     speed_control_.pid_.set_params(KP,KI,KD);
 
     previous_time_ = this->get_clock()->now();
@@ -70,8 +76,8 @@ Controller::Controller() : Node("controller"),
         kTrajectoryTopic, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
 
     // Publishers
-    cmd_publisher_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
-    pursuit_point_publisher_ = this->create_publisher<common_msgs::msg::PointXY>(kPursuitPointTopic, 10);
+    cmd_pub_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
+    pursuit_point_pub_ = this->create_publisher<common_msgs::msg::PointXY>(kPursuitPointTopic, 10);
     as_status_pub_ = this->create_publisher<std_msgs::msg::Int16>(kAsStatusTopic, 10);
 }
 
@@ -112,7 +118,7 @@ void Controller::on_timer()
         common_msgs::msg::PointXY pursuit_point_msg;
         pursuit_point_msg.x = pursuit_point.x;
         pursuit_point_msg.y = pursuit_point.y;
-        pursuit_point_publisher_ -> publish(pursuit_point_msg);
+        pursuit_point_pub_ -> publish(pursuit_point_msg);
 
         rclcpp::Time current_time = this->get_clock()->now();
         double dt = (current_time - previous_time_).seconds();
@@ -120,9 +126,9 @@ void Controller::on_timer()
         previous_time_ = current_time;
 
         common_msgs::msg::Cmd cmd;       
-        cmd.acc = acc;
+        cmd.acc = std::clamp(acc, kMinCmd, kMaxCmd);
         cmd.delta = delta;
-        cmd_publisher_ -> publish(cmd); 
+        cmd_pub_ -> publish(cmd); 
     }
 }
 

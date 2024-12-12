@@ -19,3 +19,7 @@ controller:
     KP: 43.87
     KI: 0.0
     KD: 0.0
+
+    # Cmd
+    min_cmd: 0.0
+    max_cmd: 0.1
