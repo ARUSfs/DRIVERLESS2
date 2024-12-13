@@ -3,29 +3,24 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import ExecuteProcess
 from launch_ros.actions import Node
-from datetime import datetime
 
 
 def generate_launch_description():
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir = f"/home/arus/.ros/inspection_bag_{timestamp}"
-
-    rosbag_record = ExecuteProcess(
-        cmd=['ros2', 'bag', 'record', '-a', 
-             '-o', output_dir],
-        output='screen'
-    )
-
     return LaunchDescription([
-        create_node(pkg='can_interface'),
-        create_node(pkg='epos_interface', 
-                    exec='steering_handle.py'),
-        create_node(pkg='inspection_control'),
+        create_node(pkg='skidpad_planning'),
+        create_node(pkg='controller',
+                    params=[{'trajectory': "/skidpad_planning/trajectory",
+                             'target': 10.0,
+                             'min_cmd': -100.0,
+                             'max_cmd': 100.0}]),
+        create_node(pkg='visualization'),
+        create_node(pkg='arussim_interface'),
         create_node(pkg='car_state', 
-                    params=[{'simulation': False, 
-                    'mission': 'inspection'}]),
-        rosbag_record
+                    params=[{'simulation': True, 
+                    'mission': 'skidpad'}]),
+        create_node(pkg='icp_slam',
+                    params=[{'perception_topic': "/arussim/perception"}])
     ])
 
 

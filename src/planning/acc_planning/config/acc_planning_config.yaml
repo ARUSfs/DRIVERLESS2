@@ -1,4 +1,5 @@
 acc_planning:
   ros__parameters:
-    perception_topic: "/arussim/perception"
+    perception_topic: "/slam/map"
     trajectory_topic: "/acc_planning/trajectory"
+    target_speed: 10.0

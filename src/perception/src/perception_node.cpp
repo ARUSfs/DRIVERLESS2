@@ -41,7 +41,7 @@ Perception::Perception() : Node("Perception")
 
     //Create the publishers
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/filtered_cloud", 10);
-    map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map_cloud", 10);
+    map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map", 10);
 }
 
 /**

@@ -8,26 +8,36 @@
 #include <common_msgs/msg/trajectory.hpp>
 #include <iostream>
 #include <random>
-class AccPlanning : public rclcpp::Node {
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <utility> 
+#include <chrono> 
+#include <vector>
+#include <cmath>
+#include <Eigen/Dense>
+class SkidpadPlanning : public rclcpp::Node {
 public:
-    AccPlanning();
-
+    SkidpadPlanning();
+   
+    
 private:
     // Node parameters
     std::string kPerceptionTopic;
     std::string kTrajectoryTopic;
-    double kTargetSpeed;
+    double kTargetFirstLap;
+    double kTargetSecondLap;
 
+    std::pair<double, double> best_center;
+    std::pair<double, double> second_best_center;
+    double radius;
+    bool trajectory_calculated_;
+    std::vector<Eigen::Vector2d> template_;
+    std::vector<double> speed_profile_;
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
 
-    double a_;
-    double b_;
-    std::vector<double> a_history_;
-    std::vector<double> b_history_;
-    double sum_a_ = 0.0;
-    double sum_b_ = 0.0;
-    const size_t history_size_ = 1;
+    
     
     // Subscription to PointCloud2 messages (Perception)
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
@@ -50,8 +60,10 @@ private:
      * @brief Method that processes the point cloud and generates the planning data.
      */ 
     void generate_planning();
+    void update_route(const sensor_msgs::msg::PointCloud2& msg);
     void publish_trajectory();
-
+    std::tuple<double, double, double> find_circle_center(
+       const ConeXYZColorScore& p1, const ConeXYZColorScore& p2, const ConeXYZColorScore& p3);
     // Utility function to convert from ROS PointCloud2 to PCL PointCloud
     pcl::PointCloud<ConeXYZColorScore> convert_ros_to_pcl(const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud);
 };
