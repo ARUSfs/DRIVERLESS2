@@ -9,7 +9,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_node(pkg='controller',
-                    params=[{'trajectory': '/arussim_interface/fixed_trajectory'}]),
+                    params=[{'trajectory': '/arussim_interface/fixed_trajectory',
+                    'target': 10.0,
+                    'min_cmd': -100.0,
+                    'max_cmd': 100.0}]),
         create_node(pkg='visualization'),
         create_node(pkg='arussim_interface'),
         create_node(pkg='car_state', 
