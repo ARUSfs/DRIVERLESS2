@@ -43,10 +43,9 @@ class Perception : public rclcpp::Node
         double kMaxYFov;
         double kMaxZFov;
         double kHFov;
-        double kThreshold;
+        double kThresholdGroundFilter;
         double kRadius;
-        double kMinimumScore;
-        double kMaximumScore;
+        double kThresholdScoring;
 
         //Subscriber
         std::string kLidarTopic;

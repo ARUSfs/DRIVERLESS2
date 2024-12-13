@@ -18,10 +18,9 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<double>("max_y_fov", 20.0);
     this->declare_parameter<double>("max_z_fov", 0.0);
     this->declare_parameter<double>("h_fov", 180.0);
-    this->declare_parameter<double>("threshold", 0.05);
+    this->declare_parameter<double>("threshold_ground_filter", 0.05);
     this->declare_parameter<double>("radius", 1.0);
-    this->declare_parameter<double>("minimum_score", -10.0);
-    this->declare_parameter<double>("maximun_score", 10.0);
+    this->declare_parameter<double>("threshold_scoring", 0.4);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
@@ -29,10 +28,9 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("max_y_fov", kMaxYFov);
     this->get_parameter("max_z_fov", kMaxZFov);
     this->get_parameter("h_fov", kHFov);
-    this->get_parameter("threshold", kThreshold);
+    this->get_parameter("threshold_ground_filter", kThresholdGroundFilter);
     this->get_parameter("radius", kRadius);
-    this->get_parameter("minimum_score", kMinimumScore);
-    this->get_parameter("maximum_score", kMaximumScore);
+    this->get_parameter("threshold_scoring", kThresholdScoring);
 
     //Transform into radians
     kHFov *= (M_PI/180);
@@ -167,7 +165,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
     //Apply the ground filter fuction
-    GroundFiltering::ransac_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThreshold);
+    GroundFiltering::ransac_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter);
     
     //Print the time of the ground filter algorithm used
     std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
@@ -179,9 +177,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Store the clusters centers in a new point cloud
     pcl::PointCloud<PointXYZColorScore>::Ptr map_cloud(new pcl::PointCloud<PointXYZColorScore>);
     std::vector<PointXYZColorScore> clusters_centers;
-    Perception::get_clusters_centers(cluster_indices, map_cloud, cloud_filtered, clusters_centers);
-
-    //pasarlo con & 
+    Perception::get_clusters_centers(cluster_indices, map_cloud, cloud_filtered, clusters_centers); 
 
     //Print the number of possibles cones
     std::cout << "Number of posibles cones: " << map_cloud->size() << std::endl;
@@ -197,7 +193,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Score the clusters and keep the ones that will be consider cones
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_clusters(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::PointCloud<PointXYZColorScore>::Ptr filtered_map_cloud(new pcl::PointCloud<PointXYZColorScore>);
-    Scoring::scoring_deviation(cloud_filtered, cloud_clusters, filtered_map_cloud, cluster_indices, clusters_centers, kMinimumScore, kMaximumScore);
+    Scoring::scoring_surface(cloud_filtered, cloud_clusters, filtered_map_cloud, cluster_indices, clusters_centers, kThresholdScoring);
 
     //Print the number of cones and the time of the scoring
     std::cout << "Number of cones: " << filtered_map_cloud->size() << std::endl;
