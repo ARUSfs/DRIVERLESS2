@@ -65,5 +65,7 @@ private:
     std::tuple<double, double, double> find_circle_center(
        const ConeXYZColorScore& p1, const ConeXYZColorScore& p2, const ConeXYZColorScore& p3);
     // Utility function to convert from ROS PointCloud2 to PCL PointCloud
+    std::pair<double, double> cluster_generated_centers(const std::vector<std::pair<double, double>>& centers);
+    std::vector<int> dbscan(const std::vector<std::pair<double, double>>& centers, double epsilon,int minPts);
     pcl::PointCloud<ConeXYZColorScore> convert_ros_to_pcl(const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud);
 };
