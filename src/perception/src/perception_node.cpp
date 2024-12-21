@@ -18,8 +18,9 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<double>("max_y_fov", 20.0);
     this->declare_parameter<double>("max_z_fov", 0.0);
     this->declare_parameter<double>("h_fov", 180.0);
-    this->declare_parameter<double>("threshold", 0.05);
+    this->declare_parameter<double>("threshold_ground_filter", 0.05);
     this->declare_parameter<double>("radius", 1.0);
+    this->declare_parameter<double>("threshold_scoring", 0.4);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
@@ -27,8 +28,9 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("max_y_fov", kMaxYFov);
     this->get_parameter("max_z_fov", kMaxZFov);
     this->get_parameter("h_fov", kHFov);
-    this->get_parameter("threshold", kThreshold);
+    this->get_parameter("threshold_ground_filter", kThresholdGroundFilter);
     this->get_parameter("radius", kRadius);
+    this->get_parameter("threshold_scoring", kThresholdScoring);
 
     //Transform into radians
     kHFov *= (M_PI/180);
@@ -45,20 +47,19 @@ Perception::Perception() : Node("Perception")
 /**
  * @brief Extract the center of each cluster.
  * @param cluster_indices The indices of the points that form each cluster.
- * @param map_cloud The result point cloud that will be publish.
  * @param cloud_filtered The input point cloud.
  * @param cluster_centers The center of each cluster.
  */
-void Perception::get_clusters_centers(std::vector<pcl::PointIndices> cluster_indices, pcl::PointCloud<PointXYZColorScore>::Ptr map_cloud,
+void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_indices,
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
 {
-    for (const auto &cluster : cluster_indices)
+    for (auto it = cluster_indices.begin(); it != cluster_indices.end(); )
     {
         //Create a temporal point cloud
         pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-        pcl::copyPointCloud(*cloud_filtered, cluster, *cluster_cloud);
+        pcl::copyPointCloud(*cloud_filtered, *it, *cluster_cloud);
 
-        //Obtain the bounding box of the cluster
+        //Obtain the new bounding box of the cluster
         pcl::PointXYZI min_point, max_point;
         pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
         double max_x = max_point.x;
@@ -78,10 +79,16 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices> cluster_ind
             center.color = 0;
             center.score = 1;
             clusters_centers.push_back(center);
-            map_cloud->push_back(center);
-        }
 
+            it++;
+        }
+        else
+        {
+            it = cluster_indices.erase(it);
+        }
     }
+    //Resize the cluster indices vector
+    cluster_indices.resize(clusters_centers.size());
 }
 
 /**
@@ -94,7 +101,7 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices> cluster_ind
  */
 void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, 
     std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore> clusters_centers, 
-    double radius, int& total_recovered_points)
+    double radius)
 {
     //Iterate on clusters
     for (size_t i = 0; i < clusters_centers.size(); ++i)
@@ -121,11 +128,10 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
             {
                 //Add the point to the filtered cloud
                 cloud_filtered->points.push_back(point);
+                cloud_filtered->width++;
 
                 //Add the index of the recovered point to cluster indices
                 cluster_indices[i].indices.push_back(cloud_filtered->points.size() - 1);
-
-                total_recovered_points++;
             }
         }
     }
@@ -147,7 +153,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Cropping::crop_filter_condition(cloud, kMaxXFov, kMaxYFov, kMaxZFov, kHFov);
 
     //print the number of filtered points and the time of the cropping function used
-    std::cout << "Number of filtered points: " << cloud->size() << std::endl;
     std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
 
     //Define the variables for the ground filter
@@ -156,7 +161,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
     //Apply the ground filter fuction
-    GroundFiltering::ransac_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThreshold);
+    GroundFiltering::ransac_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter);
     
     //Print the time of the ground filter algorithm used
     std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
@@ -166,63 +171,35 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
 
     //Store the clusters centers in a new point cloud
-    pcl::PointCloud<PointXYZColorScore>::Ptr map_cloud(new pcl::PointCloud<PointXYZColorScore>);
     std::vector<PointXYZColorScore> clusters_centers;
-    Perception::get_clusters_centers(cluster_indices, map_cloud, cloud_filtered, clusters_centers);
+    Perception::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers); 
 
-    //Print the number of cones
-    std::cout << "Number of cones: " << map_cloud->size() << std::endl;
+    //Print the number of possibles cones
+    std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
 
     //Recover ground points
-    int total_recovered_points = 0;
-    Perception::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius, total_recovered_points);
-
+    Perception::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius);
+    
     //Print the number of recovered points
-    std::cout << "Number of recovered points: " << total_recovered_points << std::endl;
     std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
 
-    //Update the dimensions of the filtered point cloud
-    cloud_filtered->width = cloud_filtered->size();
-    cloud_filtered->height = 1;
-    cloud_filtered->is_dense = true; 
+    //Score the clusters and keep the ones that will be consider cones
+    pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
+    Scoring::scoring_surface(cloud_filtered, final_map, cluster_indices, clusters_centers, kThresholdScoring);
 
-    //Refilter the new reconstructed clusters
-    for (auto it = cluster_indices.begin(); it != cluster_indices.end(); )
-    {
-        //Create a temporal point cloud
-        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-        pcl::copyPointCloud(*cloud_filtered, *it, *cluster_cloud);
-
-        //Obtain the new bounding box of the cluster
-        pcl::PointXYZI min_point, max_point;
-        pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
-        double max_x = max_point.x;
-        double min_x = min_point.x;
-        double max_y = max_point.y;
-        double min_y = min_point.y;
-        double max_z = max_point.z;
-        double min_z = min_point.z;
-
-        //Refilter the cluster by size and erase the not suitable ones
-        if (!((max_z - min_z) > 0.1 && (max_z - min_z) < 0.4 && (max_x - min_x) < 0.4 && (max_y - min_y) < 0.4))
-        {
-            it = cluster_indices.erase(it);
-        }
-        else
-        {
-            it++;
-        }
-    }
+    //Print the number of cones and the time of the scoring
+    std::cout << "Number of cones: " << final_map->size() << std::endl;
+    std::cout << "Scoring time: " << this->now().seconds() - start_time << std::endl;
 
     //Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*cloud_filtered,filtered_msg);
+    pcl::toROSMsg(*cloud_filtered, filtered_msg);
     filtered_msg.header.frame_id="/rslidar";
     filtered_pub_->publish(filtered_msg);
 
     //Publish the map cloud
     sensor_msgs::msg::PointCloud2 map_msg;
-    pcl::toROSMsg(*map_cloud,map_msg);
+    pcl::toROSMsg(*final_map, map_msg);
     map_msg.header.frame_id="/rslidar";
     map_pub_->publish(map_msg);
 }
