@@ -77,7 +77,7 @@ CarState::CarState(): Node("car_state")
     tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
 
     // Initialize kalman filters
-    KalmanFilter vx_filter = CarState::initialize_vx_filter();
+    CarState::initialize_vx_filter();
 }
 
 void CarState::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
@@ -109,8 +109,6 @@ void CarState::wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::Sha
     v_front_left_ = msg-> front_left;
     v_rear_right_ = msg-> rear_right;
     v_rear_left_ = msg-> rear_left;
-
-    vx_ = (v_front_right_ + v_front_left_ + v_rear_right_ + v_rear_left_)/4;
 }
 
 void CarState::inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -130,6 +128,14 @@ void CarState::on_timer()
     if (kMission!="inspection"){
         this->get_tf_position();
     }
+       
+    // Estimate vx
+    VectorXd u(1), z(1);
+    u << ax_;
+    z << (v_front_right_ + v_front_left_ + v_rear_right_ + v_rear_left_)/4;
+    vx_filter_.estimate_state(u, z);
+    vx_ = vx_filter_.get_estimated_state()(0);
+
 
     // Publish state message
     auto state_msg = common_msgs::msg::State();
@@ -178,20 +184,17 @@ void CarState::get_tf_position()
         RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
     }
 }
-KalmanFilter CarState::initialize_vx_filter(){
-    // Create filter object
-    KalmanFilter vx_filter;
-
+void CarState::initialize_vx_filter(){
     // Set problem size
     int n = 1;
-    vx_filter.set_problem_size(n);
+    vx_filter_.set_problem_size(n);
     
     // Set initial state and covariance
     VectorXd x_initial(n);
     x_initial << vx_;
     MatrixXd P_initial(n, n); 
     P_initial << 0.01;
-    vx_filter.set_initial_state_and_covariance(x_initial, P_initial);
+    vx_filter_.set_initial_state_and_covariance(x_initial, P_initial);
 
     // Set process matrices
     int m = 1;
@@ -199,15 +202,13 @@ KalmanFilter CarState::initialize_vx_filter(){
     M << 0;
     B << 1;
     Q << 0.1;
-    vx_filter.set_process_matrices(M, B, Q);
+    vx_filter_.set_process_matrices(M, B, Q);
 
     // Set measurement matrices
     MatrixXd H(n, n), R(n, n);
     H << 1;
     R << 0.5;
-    vx_filter.set_measurement_matrices(H, M);
-
-    return vx_filter;
+    vx_filter_.set_measurement_matrices(H, M);
 }
 
 int main(int argc, char * argv[])

@@ -45,7 +45,10 @@ private:
     // Functions
     void on_timer();
     void get_tf_position();
-    KalmanFilter initialize_vx_filter();
+    void initialize_vx_filter();
+
+    // Estimation filters
+    KalmanFilter vx_filter_;
 
     // Private attributes to store received data
     double x_=0;
