@@ -28,6 +28,8 @@ private:
     double kTargetFirstLap;
     double kTargetSecondLap;
 
+    rclcpp::Time start_time_;
+
     std::pair<double, double> best_center;
     std::pair<double, double> second_best_center;
     double radius;
@@ -59,8 +61,6 @@ private:
     /**
      * @brief Method that processes the point cloud and generates the planning data.
      */ 
-    void generate_planning();
-    void update_route(const sensor_msgs::msg::PointCloud2& msg);
     void publish_trajectory();
     std::tuple<double, double, double> find_circle_center(
        const ConeXYZColorScore& p1, const ConeXYZColorScore& p2, const ConeXYZColorScore& p3);

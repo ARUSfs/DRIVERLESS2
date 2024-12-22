@@ -14,6 +14,8 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node"), trajectory_c
     this->get_parameter("target_first_lap", kTargetFirstLap);
     this->get_parameter("target_second_lap", kTargetSecondLap);
 
+    start_time_ = this->now();
+
     // Publish resulting trajectory
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
     // Subscribe to the perception point cloud topic
@@ -55,27 +57,6 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node"), trajectory_c
     }
 }
 
-void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
-    
-  if (!trajectory_calculated_) {
-        cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
-
-        if (cones_.points.empty()) {
-            std::cout << "No points in the PointCloud." << std::endl;
-            return;
-        } 
-
-            std::cout << "PointCloud contains " << cones_.points.size() << " points." << std::endl;
-
-        SkidpadPlanning::generate_planning();
-        SkidpadPlanning::publish_trajectory();
-
-        std::cout << "Trajectory calculated and published." << std::endl;
-        
-   } else {
-        SkidpadPlanning::publish_trajectory();
-   }
-}
 
 
 std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
@@ -114,27 +95,35 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
     
 }
 
-void SkidpadPlanning::generate_planning() {
-    using Clock = std::chrono::steady_clock;
-    auto start_time = Clock::now();
-    const auto time_limit = std::chrono::seconds(3);
-    const int N_iterations = 100; // RANSAC iterations
-    const double threshold = 0.2; // RANSAC threshold
-    const double radius_target1 = 7.625;
-    const double radius_target2 = 10.625;
-    const double distance_between_centers = 18.25;
+void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
 
-    std::vector<std::pair<double, double>> first_center_candidates;
-    std::vector<std::pair<double, double>> second_center_candidates;
+    cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
 
-    int max_inliers1 = 0, max_inliers2 = 0;
-    best_center = {0.0, 0.0};
-    second_best_center = {0.0, 0.0};
+    double kPlanningTime = 5.0;
 
-    pcl::PointCloud<ConeXYZColorScore> remaining_cones;
+    if(this->now().seconds() - start_time_.seconds() < kPlanningTime ){
 
-    // RANSAC fot first straight
-    while (Clock::now() - start_time < time_limit) {
+        if (cones_.points.empty()) {
+            std::cout << "No points in the PointCloud." << std::endl;
+            return;
+        }
+
+        const int N_iterations = 100; // RANSAC iterations
+        const double threshold = 0.2; // RANSAC threshold
+        const double radius_target1 = 7.625;
+        const double radius_target2 = 10.625;
+        const double distance_between_centers = 18.25;
+
+        std::vector<std::pair<double, double>> first_center_candidates;
+        std::vector<std::pair<double, double>> second_center_candidates;
+
+        int max_inliers1 = 0, max_inliers2 = 0;
+        best_center = {0.0, 0.0};
+        second_best_center = {0.0, 0.0};
+
+        pcl::PointCloud<ConeXYZColorScore> remaining_cones;
+
+        // RANSAC fot first straight
         for (int iter = 0; iter < N_iterations; ++iter) {
             int i = rand() % cones_.points.size();
             int j = rand() % cones_.points.size();
@@ -146,11 +135,10 @@ void SkidpadPlanning::generate_planning() {
 
             auto [x_center, y_center, r] = find_circle_center(p1, p2, p3);
     
-   
+
         
-            if ((std::abs(r - radius_target1) < 2.0 || std::abs(r - radius_target2) < 2.0) && x_center > 13.0) {
+            if ((std::abs(r - radius_target1) < 2.0 || std::abs(r - radius_target2) < 2.0) && x_center > 10.0) {
                 int inliers = 0;
-                std::vector<bool> is_inlier(cones_.points.size(), true);
 
                 for (size_t idx = 0; idx < cones_.points.size(); ++idx) {
                     const auto& cone = cones_.points[idx];
@@ -158,31 +146,32 @@ void SkidpadPlanning::generate_planning() {
 
                     if (std::abs(d - radius_target1) < threshold || std::abs(d - radius_target2) < threshold) {
                         ++inliers;
-                        is_inlier[idx] = false;
                     }
                 }
 
                 if (inliers > max_inliers1) {
                     best_center = {x_center, y_center};
                     max_inliers1 = inliers;
-
-                    // Update remaining cones
-                    remaining_cones.clear();
-                    for (size_t idx = 0; idx < cones_.points.size(); ++idx) {
-                        if (is_inlier[idx]) {
-                            remaining_cones.push_back(cones_.points[idx]);
-                        }
-                    }
                 }
             }
         }
-        first_center_candidates.emplace_back(best_center.first, best_center.second);
 
-    }
-    auto start_time2 = Clock::now();
-    // RANSAC for second straight
-    if (remaining_cones.size() >= 3) {
-        while (Clock::now() - start_time2 < time_limit) {
+        // Update remaining cones
+        for (size_t idx = 0; idx < cones_.points.size(); ++idx) {
+            double dx = cones_.points[idx].x - best_center.first;
+            double dy = cones_.points[idx].y - best_center.second;
+            double d = std::sqrt(dx * dx + dy * dy);
+            if (std::abs(d - radius_target1) > threshold && std::abs(d - radius_target2) > threshold) {
+                remaining_cones.push_back(cones_.points[idx]);
+            }
+        }
+
+        first_center_candidates.emplace_back(best_center.first, best_center.second);
+        std::cout << "First center: (" << best_center.first << ", " << best_center.second << ")" << std::endl;
+
+        
+        // RANSAC for second straight
+        if (remaining_cones.size() >= 3) {
             for (int iter = 0; iter < N_iterations; ++iter) {
                 int i = rand() % remaining_cones.points.size();
                 int j = rand() % remaining_cones.points.size();
@@ -205,19 +194,22 @@ void SkidpadPlanning::generate_planning() {
                     }
 
                     if (inliers > max_inliers2) {
-                         second_best_center = {x_center, y_center};
+                        second_best_center = {x_center, y_center};
                         max_inliers2 = inliers;
                     }
-                 }
+                }
+                second_center_candidates.emplace_back(best_center.first, best_center.second);
             }
-            second_center_candidates.emplace_back(best_center.first, best_center.second);
         }
+        std::cout << "Second center: (" << second_best_center.first << ", " << second_best_center.second << ")" << std::endl;
+    } else {
+        publish_trajectory();
+        // best_center = cluster_generated_centers(first_center_candidates);
+        // second_best_center = cluster_generated_centers(second_center_candidates);
+        // std::cout << "Best center: (" << best_center.first << ", " << best_center.second << ")" << std::endl;
+        // std::cout << "Second best center: (" << second_best_center.first << ", " << second_best_center.second << ")" << std::endl;
+        // std::cout << "Radius: " << radius << std::endl;
     }
-    best_center = cluster_generated_centers(first_center_candidates);
-    second_best_center = cluster_generated_centers(second_center_candidates);
-    std::cout << "Best center: (" << best_center.first << ", " << best_center.second << ")" << std::endl;
-    std::cout << "Second best center: (" << second_best_center.first << ", " << second_best_center.second << ")" << std::endl;
-    std::cout << "Radius: " << radius << std::endl;
 }
 
 std::vector<int> SkidpadPlanning::dbscan(const std::vector<std::pair<double, double>>& points, double epsilon, int minPts) {
