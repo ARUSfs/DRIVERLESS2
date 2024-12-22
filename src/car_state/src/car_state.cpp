@@ -191,7 +191,7 @@ KalmanFilter CarState::initialize_vx_filter(){
     x_initial << vx_;
     MatrixXd P_initial(n, n); 
     P_initial << 0.01;
-    vx_filter.set_initial_state_and_covariance(x_initial, P_initial, this->get_clock()->now());
+    vx_filter.set_initial_state_and_covariance(x_initial, P_initial);
 
     // Set process matrices
     int m = 1;
