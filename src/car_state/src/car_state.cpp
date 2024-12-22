@@ -72,9 +72,6 @@ CarState::CarState(): Node("car_state")
         std::bind(&CarState::on_timer, this));
 
 
-    //Create estimation object
-    state_estimation_ = Estimation();
-
     // Create TF broadcaster
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
@@ -131,13 +128,6 @@ void CarState::on_timer()
     if (kMission!="inspection"){
         this->get_tf_position();
     }
-
-    // Estimate velocity
-    state_estimation_.set_measurement_data(v_front_right_, v_front_left_, v_rear_right_, v_rear_left_, ax_, ay_);
-
-    Vector2d v_est = state_estimation_.kalman_velocity_estimation();
-    // vx_ = v_est(0);
-    // vy_ = v_est(1);
 
     // Publish state message
     auto state_msg = common_msgs::msg::State();
