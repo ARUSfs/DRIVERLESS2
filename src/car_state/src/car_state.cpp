@@ -76,6 +76,8 @@ CarState::CarState(): Node("car_state")
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
 
+    // Initialize kalman filters
+    KalmanFilter vx_filter = CarState::initialize_vx_filter();
 }
 
 void CarState::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
@@ -175,6 +177,37 @@ void CarState::get_tf_position()
     } catch (tf2::TransformException &ex) {
         RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
     }
+}
+KalmanFilter CarState::initialize_vx_filter(){
+    // Create filter object
+    KalmanFilter vx_filter;
+
+    // Set problem size
+    int n = 1;
+    vx_filter.set_problem_size(n);
+    
+    // Set initial state and covariance
+    VectorXd x_initial(n);
+    x_initial << vx_;
+    MatrixXd P_initial(n, n); 
+    P_initial << 0.01;
+    vx_filter.set_initial_state_and_covariance(x_initial, P_initial, this->get_clock()->now());
+
+    // Set process matrices
+    int m = 1;
+    MatrixXd M(n, n), B(n, m), Q(n, n);
+    M << 0;
+    B << 1;
+    Q << 0.1;
+    vx_filter.set_process_matrices(M, B, Q);
+
+    // Set measurement matrices
+    MatrixXd H(n, n), R(n, n);
+    H << 1;
+    R << 0.5;
+    vx_filter.set_measurement_matrices(H, M);
+
+    return vx_filter;
 }
 
 int main(int argc, char * argv[])

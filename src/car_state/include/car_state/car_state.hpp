@@ -42,9 +42,10 @@ private:
     void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
 
-    // Funtions
+    // Functions
     void on_timer();
     void get_tf_position();
+    KalmanFilter initialize_vx_filter();
 
     // Private attributes to store received data
     double x_=0;
