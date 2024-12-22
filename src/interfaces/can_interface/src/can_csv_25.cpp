@@ -1,4 +1,4 @@
-#include "can_interface/can_interface_node.hpp"
+#include "can_interface/can_csv_25.hpp"
 
 int velMax = 5500;
 float wheelRadius = 0.2;
@@ -494,7 +494,7 @@ void CanInterface::readCan(int socketCan)
 
 
 void parseMsg(const struct can_frame& frame, const CANParseConfig& config) {
-    float rawValue = 0; // Use 32-bit int to handle up to 4 bytes
+    float rawValue = 0;
 
     // Calculate the number of bytes
     uint8_t numBytes = config.endByte - config.startByte + 1;

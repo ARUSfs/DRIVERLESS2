@@ -114,6 +114,7 @@ private :
     void getPcTemp();
 
     uint8_t actual_speed;
+    
     uint8_t target_speed;
     int8_t actual_steering_angle;
     int8_t target_steering_angle;

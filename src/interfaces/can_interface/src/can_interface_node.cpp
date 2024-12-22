@@ -1,4 +1,4 @@
-#include "can_interface/can_csv_25.hpp"
+#include "can_interface/can_interface_node.hpp"
 
 int velMax = 5500;
 float wheelRadius = 0.2;
