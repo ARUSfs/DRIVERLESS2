@@ -101,8 +101,6 @@ private :
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr DL501Pub;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr DL502Pub;
 
-    std::unordered_map<std::string, rclcpp::PublisherBase::SharedPtr> publisherMap;
-
     rclcpp::TimerBase::SharedPtr pcTempTimer;
     rclcpp::TimerBase::SharedPtr heartBeatTimer;
     rclcpp::TimerBase::SharedPtr DL500Timer;
@@ -114,7 +112,7 @@ private :
     void getPcTemp();
 
     uint8_t actual_speed;
-    
+
     uint8_t target_speed;
     int8_t actual_steering_angle;
     int8_t target_steering_angle;
@@ -130,8 +128,6 @@ private :
     std_msgs::msg::Float32 steeringAngleData;
     std_msgs::msg::Float32 RESData;
     std_msgs::msg::Float32 InvSpeedData;
-
-    std::unordered_map<std::string, float*> variableMap;
     
     uint8_t AS_state;
     uint8_t EBS_state;
