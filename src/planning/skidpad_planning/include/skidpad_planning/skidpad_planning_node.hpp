@@ -30,6 +30,9 @@ private:
     std::string kTrajectoryTopic;
     double kTargetFirstLap;
     double kTargetSecondLap;
+    double kStraightDistance;
+    double r;
+    double N;
 
     rclcpp::Time start_time_;
 
@@ -38,7 +41,7 @@ private:
 
     std::vector<Point> centers;
 
-    double radius;
+    double radius = 9.125;
     bool trajectory_calculated_ = false;
     std::vector<Eigen::Vector2d> template_;
     std::vector<double> speed_profile_;
@@ -68,6 +71,8 @@ private:
      * @brief Method that processes the point cloud and generates the planning data.
      */ 
     void publish_trajectory();
+    void initialize_skidpad(double straight_distance, double circle_radius, int circle_points, 
+                                         double first_lap_speed, double second_lap_speed);
     std::tuple<double, double, double> find_circle_center(
        const ConeXYZColorScore& p1, const ConeXYZColorScore& p2, const ConeXYZColorScore& p3);
     // Utility function to convert from ROS PointCloud2 to PCL PointCloud
