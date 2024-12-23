@@ -8,16 +8,16 @@
  * @date 22-12-2024
  */
 
-#include "epos_handle_node.cpp"
+#include "epos_interface_c/VSC_funtions.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "common_msgs/msg/cmd.hpp"
 
-class Steering_handle : public rclcpp::Node
+class EPOS_interface : public rclcpp::Node
 {
 public:
-    Epos_interface epos_;
+    VSC epos_;
 
-    Steering_handle() : Node("steering_handle"), 
+    EPOS_interface() : Node("EPOS_interface"), 
         epos_() 
     {
         this->declare_parameter<int>("MAX_ACCELERATION", 6000);
@@ -35,14 +35,14 @@ public:
 
         sub_cmd_ = this->create_subscription<common_msgs::msg::Cmd>(
             "/controller/cmd", 1, 
-            std::bind(&Steering_handle::command_callback, this, std::placeholders::_1));
+            std::bind(&EPOS_interface::command_callback, this, std::placeholders::_1));
 
         pub_info_epos_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/epos_interface/epos_info", 10);
 
-        RCLCPP_INFO(this->get_logger(), "Steering_handle node initialized.");
+        RCLCPP_INFO(this->get_logger(), "EPOS_interface node initialized.");
     }
 
-    ~Steering_handle()
+    ~EPOS_interface()
     {
         clean_and_close();
     }
@@ -83,8 +83,8 @@ private:
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
-    auto steering_handle_node = std::make_shared<Steering_handle>();
-    rclcpp::spin(steering_handle_node);
+    auto EPOS_interface_node = std::make_shared<EPOS_interface>();
+    rclcpp::spin(EPOS_interface_node);
     rclcpp::shutdown();
     return 0;
 }

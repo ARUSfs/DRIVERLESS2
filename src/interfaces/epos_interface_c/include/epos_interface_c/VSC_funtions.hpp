@@ -1,9 +1,9 @@
 /**
- * @file epos_handle_node.cpp
+ * @file VSC_funtions.hpp
  * 
  * @author Francis Rojas (frarojram@gmail.com)
  * 
- * @brief EPOS interface, epos Handle for ARUS Team Driverless pipeline
+ * @brief VSC interface, epos Handle for ARUS Team Driverless pipeline
  * 
  * @date 22-12-2024
  */
@@ -15,13 +15,13 @@
 #include <bitset>
 #include <stdint.h>
 
-class Epos_interface
+class VSC
 {
 public:
-    static constexpr const char* EPOS_LIB_PATH = "libEposCmd.so";
-    static constexpr int NodeID = 4;
+    const char* EPOS_LIB_PATH = "libEposCmd.so";
+    int NodeID = 4;
 
-    Epos_interface(){
+    VSC(){
         max_acc_ = 0;
         max_dec_ = 0;
         prof_vel_ = 0;
@@ -31,27 +31,21 @@ public:
         _is_connected_ = false;
 
         epos_lib_ = dlopen(EPOS_LIB_PATH, RTLD_LAZY);
-
-        VCS_OpenDevice = reinterpret_cast<decltype(VCS_OpenDevice)>(
-            dlsym(epos_lib_, "VCS_OpenDevice"));
-
-        VCS_ActivateProfilePositionMode = reinterpret_cast<decltype(VCS_ActivateProfilePositionMode)>(
-            dlsym(epos_lib_, "VCS_ActivateProfilePositionMode"));
-
-        VCS_SetPositionProfile = reinterpret_cast<decltype(VCS_SetPositionProfile)>(
-            dlsym(epos_lib_, "VCS_SetPositionProfile"));
-
-        VCS_CloseDevice = reinterpret_cast<decltype(VCS_CloseDevice)>(
-            dlsym(epos_lib_, "VCS_CloseDevice"));
-
-        VCS_SetEnableState = reinterpret_cast<decltype(VCS_SetEnableState)>(
-            dlsym(epos_lib_, "VCS_SetEnableState"));
-
-        VCS_SetDisableState = reinterpret_cast<decltype(VCS_SetDisableState)>(
-            dlsym(epos_lib_, "VCS_SetDisableState"));
-
-        VCS_MoveToPosition = reinterpret_cast<decltype(VCS_MoveToPosition)>(
-            dlsym(epos_lib_, "VCS_MoveToPosition"));
+        
+        loadFunctionVSC(VCS_OpenDevice,"VCS_OpenDevice");
+        loadFunctionVSC(VCS_ActivateProfilePositionMode,"VCS_ActivateProfilePositionMode");
+        loadFunctionVSC(VCS_SetPositionProfile,"VCS_SetPositionProfile");
+        loadFunctionVSC(VCS_CloseDevice,"VCS_CloseDevice");
+        loadFunctionVSC(VCS_SetEnableState,"VCS_SetEnableState");
+        loadFunctionVSC(VCS_SetDisableState,"VCS_SetDisableState");
+        loadFunctionVSC(VCS_MoveToPosition,"VCS_MoveToPosition");
+        loadFunctionVSC(VCS_GetMovementState,"VCS_GetMovementState");
+        loadFunctionVSC(VCS_GetPositionIs,"VCS_GetPositionIs");
+        loadFunctionVSC(VCS_GetTargetPosition,"VCS_GetTargetPosition");
+        loadFunctionVSC(VCS_GetVelocityIs,"VCS_GetVelocityIs");
+        loadFunctionVSC(VCS_GetVelocityIsAveraged,"VCS_GetVelocityIsAveraged");
+        loadFunctionVSC(VCS_GetObject,"VCS_GetObject");
+        loadFunctionVSC(VCS_SetObject,"VCS_SetObject");
         
     }
 
@@ -259,13 +253,14 @@ public:
         }
     }
 
-
+/*
     void zero_position_protocol(){
 
     }
     void set_zero_position(){
 
     }
+*/
     
 private:
     //connect_to_device()
@@ -287,7 +282,6 @@ private:
     using VCS_GetVelocityIs_t = int(*)(void*, int, int32_t*, uint32_t*);
     using VCS_GetVelocityIsAveraged_t = int(*)(void*, int, int32_t*, uint32_t*);
     using VCS_GetObject_t = int(*)(void*, int, uint16_t, uint8_t, void*, uint16_t, uint32_t*, uint32_t*);
-
     // set_position_offset()
     using VCS_SetObject_t = int(*)(void*, int, uint16_t, uint8_t, void*, uint16_t, uint32_t*, uint32_t*);
 
@@ -316,4 +310,12 @@ private:
 
     void* keyhandle_ = nullptr;
     void* epos_lib_ = nullptr;
+
+    template<typename Func>
+    void loadFunctionVSC(Func& func, const char* name) {
+        func = reinterpret_cast<Func>(dlsym(epos_lib_, name));
+        if (!func) {
+            throw std::runtime_error(std::string("Failed to load function: ") + name);
+        }
+    }
 };
