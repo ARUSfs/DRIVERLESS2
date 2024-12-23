@@ -3,7 +3,7 @@
  * 
  * @author Francis Rojas (frarojram@gmail.com)
  * 
- * @brief VSC interface, epos Handle for ARUS Team Driverless pipeline
+ * @brief VSC interface, vsc funtions implementation for ARUS Team Driverless pipeline
  * 
  * @date 22-12-2024
  */
