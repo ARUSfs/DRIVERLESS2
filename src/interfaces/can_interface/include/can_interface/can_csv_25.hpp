@@ -55,9 +55,6 @@ private:
     void readCan(int);
     void parseMsg(const struct can_frame& frame, const CANParseConfig& config);
 
-    void readCan1();
-    void readCan0();
-
     int socketCan0;
     int socketCan1;
     struct sockaddr_can addr;
