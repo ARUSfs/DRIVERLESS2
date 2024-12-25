@@ -1,3 +1,12 @@
+/**
+ * @file can_csv_25.hpp
+ * @author Álvaro Galisteo Bermúdez (galisbermo03@gmail.com)
+ * @brief Header file for the CAN interface node. 
+ * Contains the class definition and the declaration of the methods 
+ * used in the parse.
+ * @version 0.1
+ * @date 25-12-2024
+ */
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <linux/can/error.h>
@@ -31,6 +40,10 @@
 
 using namespace std;
 
+/**
+ * @brief Data structure for processing can.csv data in the parse function
+ * 
+ */
 struct CANParseConfig {
     uint8_t startByte;       // Start byte position
     uint8_t endByte;         // End byte position
@@ -39,28 +52,61 @@ struct CANParseConfig {
     std::string key;         // Key associate with the publisher
 };
 
+/**
+ * @brief Class containing the CAN interface node.
+ * Manages subscribers and data from the csv files used in the node.
+ * It also contains the functions to read the csv and parse the messages from CAN.
+ */
 class CanInterface : public rclcpp::Node
 {
-
 public:
+ /**
+     * @brief Construct the CAN interface node.
+     * 
+     * This initialises the CAN interface node, reads the csv files, creates the 
+     * publishers from the csv, reads and parses the messages coming from the CAN buses.
+     */
     CanInterface();
 
 private:
-    std::map<std::string, std::vector<std::string>> csvdata_main;
-    std::map<std::string, std::vector<std::string>> csvdata_aux;
-    std::unordered_map<std::string, rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr> publishers;
-
-    std::map<std::string, std::vector<std::string>> readCSV(const std::string &filepath);
-
-    void readCan(int);
-    void parseMsg(const struct can_frame& frame, const CANParseConfig& config);
-
-    int socketCan0;
-    int socketCan1;
+    // Parameters to configure socketCAN.
     struct sockaddr_can addr;
     struct ifreq ifr;
     struct can_frame frame;
+    int socketCan0;
+    int socketCan1;
 
+    // Threads for the two CAN buses.
     std::thread thread_0;
     std::thread thread_1;    
+
+    // Key-vector pairs from the csv files
+    std::map<std::string, std::vector<std::string>> csvdata_main;
+    std::map<std::string, std::vector<std::string>> csvdata_aux;
+
+    // Key-vector pairs of the publishers
+    std::unordered_map<std::string, rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr> publishers;
+
+    /**
+     * @brief Create the key-value pairs from a csv file.
+     * 
+     * @param filepath 
+     * @return std::map<std::string, std::vector<std::string>> 
+     */
+    std::map<std::string, std::vector<std::string>> readCSV(const std::string &filepath);
+
+    /**
+     * @brief Read the CAN messages from the specified SocketCan associated with a CAN bus.
+     * 
+     * @param socketCan 
+     */
+    void readCan(int socketCan);
+
+    /**
+     * @brief Parse the given CAN message according to the given configuration.
+     * 
+     * @param frame 
+     * @param config 
+     */
+    void parseMsg(const struct can_frame& frame, const CANParseConfig& config);
 };

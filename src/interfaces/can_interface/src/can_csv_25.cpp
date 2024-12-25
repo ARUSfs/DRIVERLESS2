@@ -1,3 +1,13 @@
+/**
+ * @file can_csv_25.cpp
+ * @author Álvaro Galisteo Bermúdez (galisbermo03@gmail.com)
+ * @brief Main file for the CAN interface node. Contains the main function to read 
+ * the CAN lines and parse the messages according to the csv data. A new implementation
+ * and concept to archive modularity and be easily modified when there is a change or a new ID.
+ * @version 0.1
+ * @date 25-12-2024
+ * 
+ */
 #include "can_interface/can_csv_25.hpp"
 
 bool DEBUG = false;
@@ -11,7 +21,7 @@ CanInterface::CanInterface() : Node("can_interface"){
     std::string path_can_aux = package_share_directory + "/can_aux.csv";
     csvdata_aux = readCSV(path_can_aux);
 
-    // Create publishers dynamically
+    // Create publishers from the csv file and store them in a key-vector pair
     for (const auto& [key, vector] : csvdata_main) {
         std::string topic = vector[4];
         publishers[key] = this->create_publisher<std_msgs::msg::Float32>(topic, 10);
@@ -37,7 +47,7 @@ CanInterface::CanInterface() : Node("can_interface"){
         }
     }
 
-    // Configure socketCan0
+    // Configure socketCan0 for the CAN bus 0.
     const char *can_interface0 = "can0"; 
 
     socketCan0 = socket(PF_CAN, SOCK_RAW, CAN_RAW);
@@ -61,7 +71,7 @@ CanInterface::CanInterface() : Node("can_interface"){
     }
 
 
-    // Configure socketCan1
+    // Configure socketCan1 for the CAN bus 1.
     const char *can_interface1 = "can1"; 
 
     socketCan1 = socket(PF_CAN, SOCK_RAW, CAN_RAW);
@@ -90,10 +100,6 @@ CanInterface::CanInterface() : Node("can_interface"){
     thread_0.detach();
     thread_1.detach();
 }
-
-//################################################# READ FUNCTIONS #################################################
-
-//--------------------------------------------- CSV -------------------------------------------------------------------   
 
 std::map<std::string, std::vector<std::string>> CanInterface::readCSV(const std::string &filepath)
 {
@@ -195,7 +201,6 @@ void CanInterface::readCan(int socketCan)
             // Call parseMsg with the populated CANParseConfig
             parseMsg(frame, config);
         
-            // Debug: Print matched data
             if (DEBUG) {
             std::cout << "Matched CAN frame ID: " << frame_id 
                       << " with dynamic key: " << dynamic_key 
@@ -204,7 +209,7 @@ void CanInterface::readCan(int socketCan)
                 std::cout << val << " ";
             }
             std::cout << std::endl;
-        }
+            }
         }
     }
 }
@@ -234,12 +239,12 @@ void CanInterface::parseMsg(const struct can_frame& frame, const CANParseConfig&
                        frame.data[config.startByte];
     } 
     else {
-        // Unsupported number of bytes
         printf("Unsupported byte range: %d bytes\n", numBytes);
     }
 
     float scaledValue = rawValue * config.scale + config.offset;
 
+    // Find the associated publisher, create the message and publish the scaled value.
     auto pub_iter = publishers.find(config.key);
     if (pub_iter != publishers.end()) {
         std_msgs::msg::Float32 msg;
@@ -250,9 +255,9 @@ void CanInterface::parseMsg(const struct can_frame& frame, const CANParseConfig&
         if (DEBUG) {
             std::cout << "Published value: " << scaledValue << " on topic associated with key: " 
                       << config.key << std::endl;
-    }   else {
+        }
+    } else {
             std::cerr << "No matching publisher in publishers for key: " << config.key << std::endl;
-    }
     }
 }
 
