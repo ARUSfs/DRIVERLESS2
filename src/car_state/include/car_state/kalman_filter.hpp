@@ -11,11 +11,12 @@ class KalmanFilter
 
         };
 
-        void set_problem_size(int n){
+        void set_problem_size(int n, int m){
             n_ = n;
+            m_ = m;
         }
 
-        void set_initial_state_and_covariance(VectorXd x, MatrixXd P){
+        void set_initial_data(VectorXd x, MatrixXd P, VectorXd u){
             if(x.size() != n_) {
                 std::cerr << "Initial state vector length is wrong!\nn = " << n_ << std::endl;
             } 
@@ -31,6 +32,13 @@ class KalmanFilter
                 P_ = P;
             }
 
+            if(u.size() != m_){
+                std::cerr << "Initial control vector lenght is wrong!\nm = " << m_ << std::endl;
+            }
+            else {
+                u_ = u;
+            }
+
             t_ = std::chrono::steady_clock::now();
         }
 
@@ -42,8 +50,8 @@ class KalmanFilter
                 M_ = M;
             }
 
-            if(B.rows() != n_) {
-                std::cerr << "Control matrix dimensions are wrong!\nn = " << n_ << std::endl;
+            if(B.rows() != n_ || B.cols() != m_) {
+                std::cerr << "Control matrix dimensions are wrong!\nn = " << n_ << ", m = " << m_ << std::endl;
             }
             else {
                 B_ = B;
@@ -82,7 +90,7 @@ class KalmanFilter
             A = MatrixXd::Identity(n_, n_) + dt*M_; 
 
             // State prediction
-            VectorXd x_pred = A * x_ + dt*B_ * u;
+            VectorXd x_pred = A * x_ + dt*B_ * u_;
             
             // Covariance prediction
             MatrixXd P_pred = A * P_ * A.transpose() + Q_;
@@ -104,6 +112,7 @@ class KalmanFilter
             t_ = std::chrono::steady_clock::now();
             x_ = x_est;
             P_ = P_est;
+            u_ = u;
         }
 
         VectorXd get_estimated_state(){
@@ -119,7 +128,8 @@ class KalmanFilter
     private:
         // Kalman Filter atributes
         // Problem size
-        int n_; 
+        int n_;             // Number of state variables
+        int m_;             // Control vector length
 
         // Time at previous estimation
         std::chrono::steady_clock::time_point t_ ;  
@@ -130,7 +140,8 @@ class KalmanFilter
 
         // Process matrices
         MatrixXd M_;        // Model matrix (n x n) 
-        MatrixXd B_;        // Control matrix (n x m, where m is the length of the control vector u)
+        MatrixXd B_;        // Control matrix (n x m)
+        VectorXd u_;        // Control vector (m x 1)
         // M and B express the evolution of the state over time, given by first order differential equations
         // x(k+1) = x(k) + dt*(M * x(k) + B * u)
         MatrixXd Q_;        // Process covariance matrix (n x n)

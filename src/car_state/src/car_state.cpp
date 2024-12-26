@@ -184,20 +184,23 @@ void CarState::get_tf_position()
         RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
     }
 }
+
 void CarState::initialize_vx_filter(){
     // Set problem size
     int n = 1;
-    vx_filter_.set_problem_size(n);
+    int m = 1;
+    vx_filter_.set_problem_size(n, m);
     
     // Set initial state and covariance
     VectorXd x_initial(n);
     x_initial << vx_;
     MatrixXd P_initial(n, n); 
     P_initial << 0.01;
-    vx_filter_.set_initial_state_and_covariance(x_initial, P_initial);
+    VectorXd u_initial(m);
+    u_initial << ax_;
+    vx_filter_.set_initial_data(x_initial, P_initial, u_initial);
 
     // Set process matrices
-    int m = 1;
     MatrixXd M(n, n), B(n, m), Q(n, n);
     M << 0;
     B << 1;
