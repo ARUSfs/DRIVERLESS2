@@ -9,16 +9,15 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
     this->declare_parameter<std::string>("trajectory_topic", "/skidpad_planning/trajectory");
     this->declare_parameter<double>("target_first_lap", 5.0);
     this->declare_parameter<double>("target_second_lap", 10.0);
-    this->declare_parameter<double>("straight_distance", 0.5);
+    this->declare_parameter<double>("route_spacing", 0.5);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
     this->get_parameter("target_first_lap", kTargetFirstLap);
     this->get_parameter("target_second_lap", kTargetSecondLap);
-    this->get_parameter("straight_distance", kStraightDistance);
-    double r = 9.125;
-    double N = 2*M_PI*r/kStraightDistance;
+    this->get_parameter("route_spacing", kRouteSpacing);
+
     start_time_ = this->now();
-    initialize_skidpad(kStraightDistance, r, N, kTargetFirstLap, kTargetSecondLap);
+    initialize_skidpad(kRouteSpacing, 9.125, kTargetFirstLap, kTargetSecondLap);
 
     // Publish resulting trajectory
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
@@ -30,14 +29,16 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
 }
 
 
-void SkidpadPlanning::initialize_skidpad(double straight_distance, double circle_radius, int circle_points, 
+void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius, 
                                          double first_lap_speed, double second_lap_speed) {
     template_.clear();
     speed_profile_.clear();
 
+    int circle_points = 2*M_PI*circle_radius/spacing;
+
     // Initialize straight section
-    for (int i = 0; i <= 20 / straight_distance; ++i) {
-        template_.emplace_back(-20 + straight_distance * i, 0);
+    for (int i = 0; i <= 20 / spacing; ++i) {
+        template_.emplace_back(-20 + spacing * i, 0);
         speed_profile_.push_back(first_lap_speed);
     }
 
@@ -70,12 +71,12 @@ void SkidpadPlanning::initialize_skidpad(double straight_distance, double circle
     }
 
     // Initialize final straight section
-    for (int i = 0; i <= 5 / straight_distance; ++i) {
-        template_.emplace_back(straight_distance * i, 0);
+    for (int i = 0; i <= 5 / spacing; ++i) {
+        template_.emplace_back(spacing * i, 0);
         speed_profile_.push_back(first_lap_speed);
     }
-    for (int i = 0; i <= 15 / straight_distance; ++i) {
-        template_.emplace_back(5 + straight_distance * i, 0);
+    for (int i = 0; i <= 15 / spacing; ++i) {
+        template_.emplace_back(5 + spacing * i, 0);
         speed_profile_.push_back(0.0);
     }
 }
@@ -138,7 +139,7 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
 
         int max_inliers = 0;
         // Point struct from dbscan.h
-        Point best_center;
+        Point best_center = Point();
 
         pcl::PointCloud<ConeXYZColorScore> remaining_cones;
 
@@ -189,10 +190,12 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
         // first_center_candidates.emplace_back(best_center.first, best_center.second);
         best_center.z = 0.0;
         best_center.clusterID = UNCLASSIFIED;
-        centers.push_back(best_center);
+        if (best_center.x != 0.0){
+            centers.push_back(best_center);
+        }
         std::cout << "First center: (" << best_center.x << ", " << best_center.y << ")" << std::endl;
 
-        Point best_center2;
+        Point best_center2 = Point();
         max_inliers = 0;
         // RANSAC for second center
         if (remaining_cones.size() >= 3) {
@@ -227,7 +230,9 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
             // second_center_candidates.emplace_back(best_center.first, best_center.second);
             best_center2.z = 0.0;
             best_center2.clusterID = UNCLASSIFIED;
-            centers.push_back(best_center2);
+            if (best_center2.x != 0.0){
+                centers.push_back(best_center2);
+            }
             std::cout << "Second center: (" << best_center2.x << ", " << best_center2.y << ")" << std::endl;
         }
 
@@ -268,18 +273,27 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
                 std::swap(left_center, right_center);
             }
 
-            trajectory_calculated_ = true;
-
             std::cout << "Left center: (" << left_center.first << ", " << left_center.second << ")" << std::endl;
             std::cout << "Right center: (" << right_center.first << ", " << right_center.second << ")" << std::endl;
         
+            // Check if the final centers are valid. 
+            // Centers should be 18.25 meters apart and not too close to the origin
+            if(std::abs(std::sqrt(pow(left_center.first - right_center.first, 2) + 
+                    pow(left_center.second - right_center.second, 2)) - 18.25) > 5.0 ||
+                    left_center.first < 5.0 || right_center.first < 5.0){
+                std::cerr << "Error: Invalid centers detected. Restarting planning." << std::endl;
+                start_time_ = this->now();
+                return;
+            }
+
+            trajectory_calculated_ = true;
+
+            
             publish_trajectory();
             
         } else {
             publish_trajectory();
         }
-
-        
     }  
 }
 
