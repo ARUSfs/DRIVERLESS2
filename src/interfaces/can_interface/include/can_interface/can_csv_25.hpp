@@ -110,5 +110,11 @@ private:
      */
     void parseMsg(const struct can_frame& frame, const CANParseConfig& config);
 
+    /**
+     * @brief Filter the message if the subID matches the criteria in the csv
+     * 
+     * @param frame 
+     * @param aux_vector_subID 
+     */
     bool filterSubID(const struct can_frame& frame, const std::string& aux_vector_subID);
 };
