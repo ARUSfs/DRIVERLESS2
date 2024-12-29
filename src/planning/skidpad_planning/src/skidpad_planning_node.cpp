@@ -127,7 +127,7 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
     if(this->now().seconds() - start_time_.seconds() < kPlanningTime ){
 
         if (cones_.points.empty()) {
-            std::cout << "No points in the PointCloud." << std::endl;
+            RCLCPP_ERROR(this->get_logger(), "No points in the PointCloud.");
             return;
         }
 
@@ -273,15 +273,15 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
                 std::swap(left_center, right_center);
             }
 
-            std::cout << "Left center: (" << left_center.first << ", " << left_center.second << ")" << std::endl;
-            std::cout << "Right center: (" << right_center.first << ", " << right_center.second << ")" << std::endl;
+            RCLCPP_INFO(this->get_logger(), "Left center: (%f, %f)", left_center.first, left_center.second);
+            RCLCPP_INFO(this->get_logger(), "Right center: (%f, %f)", right_center.first, right_center.second);
         
             // Check if the final centers are valid. 
             // Centers should be 18.25 meters apart and not too close to the origin
             if(std::abs(std::sqrt(pow(left_center.first - right_center.first, 2) + 
                     pow(left_center.second - right_center.second, 2)) - 18.25) > 5.0 ||
                     left_center.first < 5.0 || right_center.first < 5.0){
-                std::cerr << "Error: Invalid centers detected. Restarting planning." << std::endl;
+                RCLCPP_ERROR(this->get_logger(), "Error: Invalid centers detected. Restarting planning.");
                 start_time_ = this->now();
                 return;
             }
@@ -303,7 +303,7 @@ void SkidpadPlanning::publish_trajectory() {
 
     if (left_center.first == 0.0 || left_center.second == 0.0 || 
         right_center.first == 0.0 || right_center.second == 0.0) {
-        std::cerr << "Error: Invalid centers detected. Trajectory will not be published." << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "Error: Invalid centers detected. Trajectory will not be published.");
         return;
     }
 
@@ -329,6 +329,10 @@ void SkidpadPlanning::publish_trajectory() {
         traj_point.x = transformed_point.x();
         traj_point.y = transformed_point.y();
         trajectory_msg.points.push_back(traj_point);
+    }
+
+    for (const auto& v : speed_profile_) {
+        trajectory_msg.speed_profile.push_back(v);
     }
 
     trajectory_pub_->publish(trajectory_msg);
