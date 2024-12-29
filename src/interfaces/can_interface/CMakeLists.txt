@@ -17,8 +17,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(common_msgs REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 
-add_executable(can_interface_exec src/can_interface_node.cpp)
-#add_executable(can_interface_exec src/can_csv_25.cpp)
+#add_executable(can_interface_exec src/can_interface_node.cpp)
+add_executable(can_interface_exec src/can_csv_25.cpp)
 ament_target_dependencies(can_interface_exec rclcpp 
                             std_msgs 
                             geometry_msgs 

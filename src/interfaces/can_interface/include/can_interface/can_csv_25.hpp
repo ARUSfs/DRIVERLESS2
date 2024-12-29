@@ -109,4 +109,6 @@ private:
      * @param config 
      */
     void parseMsg(const struct can_frame& frame, const CANParseConfig& config);
+
+    bool filterSubID(const struct can_frame& frame, const std::string& aux_vector_subID);
 };

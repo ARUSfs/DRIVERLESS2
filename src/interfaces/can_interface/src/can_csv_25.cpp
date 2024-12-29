@@ -10,7 +10,7 @@
  */
 #include "can_interface/can_csv_25.hpp"
 
-bool DEBUG = false;
+bool DEBUG = true;
 
 CanInterface::CanInterface() : Node("can_interface"){
     std::string package_share_directory = ament_index_cpp::get_package_share_directory("can_interface");
@@ -151,9 +151,9 @@ void CanInterface::readCan(int socketCan)
         }
 
         // Convert frame ID to string (hex format)
-        std::ostringstream subid;
-        subid << "0x" << std::hex << frame.can_id;
-        std::string frame_id = subid.str();
+        std::ostringstream id;
+        id << "0x" << std::hex << frame.can_id;
+        std::string frame_id = id.str();
         
         // Check if frame_id exists in csvdata_aux
         auto aux_iter = csvdata_aux.find(frame_id);
@@ -165,51 +165,45 @@ void CanInterface::readCan(int socketCan)
         // Process auxiliary vector
         const auto &aux_vector = aux_iter->second;
 
-        // Convert frame subID to string (hex format)
-        std::ostringstream stream;
-        stream << "0x" << std::hex << frame.data[0];
-        std::string frame_subId = stream.str();
+        // Check if there is a subID to filter
+        if (filterSubID(frame, aux_vector[0])) {
+            // Build multiple dynamic keys
+            int num_keys = std::stoi(aux_vector[1]);
+            for (int i = 1; i <= num_keys; ++i) {
+                std::string dynamic_key = frame_id;
+                dynamic_key += std::to_string(i);
 
-        // Check if it match the subID
-        if (!(frame_subId == aux_vector[0] || aux_vector[0] == "no")) {
-            std::cerr << "No matching subID for the ID: " << frame_id << std::endl;
+                // Check for matching entry in csvdata_main
+                auto main_iter = csvdata_main.find(dynamic_key);
+                if (main_iter == csvdata_main.end()) {
+                    std::cerr << "No matching key in csvdata_main for key: " << dynamic_key << std::endl;
+                    continue;
+                }
+
+                // Convert configuration from main_iter->second to CANParseConfig
+                const auto &main_vector = main_iter->second;
+                CANParseConfig config;
+                config.startByte = std::stoi(main_vector[0]);
+                config.endByte = std::stoi(main_vector[1]);
+                config.scale = std::stof(main_vector[2]);
+                config.offset = std::stof(main_vector[3]);
+                config.key = dynamic_key;
+                    
+                // Call parseMsg with the populated CANParseConfig
+                parseMsg(frame, config);
+            
+                if (DEBUG) {
+                std::cout << "Matched CAN frame ID: " << frame_id 
+                        << " with dynamic key: " << dynamic_key 
+                        << " Data: ";
+                for (const auto &val : main_iter->second) {
+                    std::cout << val << " ";
+                }
+                std::cout << std::endl;
+                }
+            }
+        } else {
             continue;
-        }
-
-        // Build multiple dynamic keys
-        int num_keys = std::stoi(aux_vector[1]);
-        for (int i = 1; i < num_keys; ++i) {
-            std::string dynamic_key = frame_id;
-            dynamic_key += std::to_string(i);
-
-            // Check for matching entry in csvdata_main
-            auto main_iter = csvdata_main.find(dynamic_key);
-            if (main_iter == csvdata_main.end()) {
-                std::cerr << "No matching key in csvdata_main for key: " << dynamic_key << std::endl;
-                continue;
-            }
-
-            // Convert configuration from main_iter->second to CANParseConfig
-            const auto &main_vector = main_iter->second;
-            CANParseConfig config;
-            config.startByte = std::stoi(main_vector[0]);
-            config.endByte = std::stoi(main_vector[1]);
-            config.scale = std::stof(main_vector[2]);
-            config.offset = std::stof(main_vector[3]);
-            config.key = dynamic_key;
-                
-            // Call parseMsg with the populated CANParseConfig
-            parseMsg(frame, config);
-        
-            if (DEBUG) {
-            std::cout << "Matched CAN frame ID: " << frame_id 
-                      << " with dynamic key: " << dynamic_key 
-                      << " Data: ";
-            for (const auto &val : main_iter->second) {
-                std::cout << val << " ";
-            }
-            std::cout << std::endl;
-            }
         }
     }
 }
@@ -258,6 +252,20 @@ void CanInterface::parseMsg(const struct can_frame& frame, const CANParseConfig&
         }
     } else {
             std::cerr << "No matching publisher in publishers for key: " << config.key << std::endl;
+    }
+}
+
+bool CanInterface::filterSubID(const struct can_frame& frame, const std::string& aux_vector_subID) {
+    if (aux_vector_subID != "no") {
+        // Convert the subID in aux_vector to hex
+        int subID = std::stoi(aux_vector_subID, nullptr, 16);
+        if (frame.data[0] != subID) {
+            return false;
+        } else {
+            return true;
+        }
+    } else {
+        return true;
     }
 }
 
