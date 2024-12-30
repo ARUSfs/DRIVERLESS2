@@ -37,6 +37,8 @@
 #include <common_msgs/msg/cmd.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <stdexcept>
+#include <cstring>  
+#include <cerrno>    
 
 using namespace std;
 

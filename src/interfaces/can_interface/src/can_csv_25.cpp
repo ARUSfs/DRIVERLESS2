@@ -10,7 +10,7 @@
  */
 #include "can_interface/can_csv_25.hpp"
 
-bool DEBUG = false;
+bool DEBUG = true;
 
 CanInterface::CanInterface() : Node("can_interface"){
     std::string package_share_directory = ament_index_cpp::get_package_share_directory("can_interface");
@@ -52,22 +52,34 @@ CanInterface::CanInterface() : Node("can_interface"){
 
     socketCan0 = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (socketCan0 < 0) {
-        perror("Error while opening can0 socket");
+        RCLCPP_ERROR(
+            this->get_logger(),
+            "Error while opening can0 socket: %s",
+            strerror(errno)
+        );
         return;
     } else{
-        std::cout << "can0 enabled for writing" << std::endl;
+        RCLCPP_INFO(this->get_logger(), "can0 enabled for writing");
     }
 
     std::strncpy(ifr.ifr_name, can_interface0, IFNAMSIZ - 1);
     if (ioctl(socketCan0, SIOCGIFINDEX, &ifr) < 0) {
-        perror("Error getting can0 interface index");
-        return ;
+        RCLCPP_ERROR(
+            this->get_logger(),
+            "Error getting can0 interface index: %s",
+            strerror(errno)
+        );
+        return;
     }
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
     if (bind(socketCan0, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-            perror("Error in binding socketCan0");
-            return;
+        RCLCPP_ERROR(
+            this->get_logger(),
+            "Error in binding socketCan0: %s",
+            strerror(errno)
+        );
+        return;
     }
 
 
@@ -76,21 +88,33 @@ CanInterface::CanInterface() : Node("can_interface"){
 
     socketCan1 = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (socketCan1 < 0) {
-        perror("Error while opening can1 socket");
+        RCLCPP_ERROR(
+            this->get_logger(),
+            "Error while opening can1 socket: %s",
+            strerror(errno)
+        );
         return;
     } else{
-        std::cout << "can1 enabled for writing" << std::endl;
+        RCLCPP_INFO(this->get_logger(), "can1 enabled for writing");
     }
 
     std::strncpy(ifr.ifr_name, can_interface1, IFNAMSIZ - 1);
     if (ioctl(socketCan1, SIOCGIFINDEX, &ifr) < 0) {
-        perror("Error getting can1 interface index");
+        RCLCPP_ERROR(
+            this->get_logger(),
+            "Error getting can1 interface index: %s",
+            strerror(errno)
+        );
         return ;
     }
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
     if (bind(socketCan1, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        perror("Error in binding socketCan1");
+        RCLCPP_ERROR(
+            this->get_logger(),
+            "Error in binding socketCan1: %s",
+            strerror(errno)
+        );
         return;
     }
 
@@ -107,7 +131,11 @@ std::map<std::string, std::vector<std::string>> CanInterface::readCSV(const std:
 
     std::ifstream file(filepath);
     if (!file.is_open()) {
-        std::cerr << "Error opening the csv: " << filepath << std::endl;
+        RCLCPP_INFO(
+        this->get_logger(), 
+        "Error opening the CSV file: %s", 
+        filepath.c_str()
+        );
         return localCsvData; // return an empty map if file opening fails
     }
 
@@ -146,7 +174,12 @@ void CanInterface::readCan(int socketCan)
     while (rclcpp::ok()) {
         int nbytes = read(socketCan, &frame, sizeof(struct can_frame));
         if (nbytes < 0) {
-            perror("CAN read error");
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "CAN read error (socket: %d): %s",
+                socketCan,
+                strerror(errno)
+            );
             continue;
         }
 
@@ -158,8 +191,12 @@ void CanInterface::readCan(int socketCan)
         // Check if frame_id exists in csvdata_aux
         auto aux_iter = csvdata_aux.find(frame_id);
         if (aux_iter == csvdata_aux.end()) {
-            std::cerr << "No matching key in csvdata_aux for key: " << frame_id << std::endl;
-            break;
+            RCLCPP_INFO(
+                this->get_logger(),
+                "No matching key in csvdata_aux for key: %s",
+                frame_id.c_str()
+            );
+            continue;
         }
 
         // Process auxiliary vector
@@ -176,7 +213,11 @@ void CanInterface::readCan(int socketCan)
                 // Check for matching entry in csvdata_main
                 auto main_iter = csvdata_main.find(dynamic_key);
                 if (main_iter == csvdata_main.end()) {
-                    std::cerr << "No matching key in csvdata_main for key: " << dynamic_key << std::endl;
+                    RCLCPP_INFO(
+                        this->get_logger(),
+                        "No matching key in csvdata_main for key: %s",
+                        dynamic_key.c_str()
+                    );
                     continue;
                 }
 
@@ -233,7 +274,11 @@ void CanInterface::parseMsg(const struct can_frame& frame, const CANParseConfig&
                        frame.data[config.startByte];
     } 
     else {
-        printf("Unsupported byte range: %d bytes\n", numBytes);
+        RCLCPP_ERROR(
+                this->get_logger(),
+                "Unsupported byte range: %d bytes",
+                numBytes
+        );
     }
 
     float scaledValue = rawValue * config.scale + config.offset;
