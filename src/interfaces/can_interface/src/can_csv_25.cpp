@@ -10,7 +10,7 @@
  */
 #include "can_interface/can_csv_25.hpp"
 
-bool DEBUG = true;
+bool DEBUG = false;
 
 CanInterface::CanInterface() : Node("can_interface"){
     std::string package_share_directory = ament_index_cpp::get_package_share_directory("can_interface");
@@ -208,7 +208,9 @@ void CanInterface::readCan(int socketCan)
             int num_keys = std::stoi(aux_vector[1]);
             for (int i = 1; i <= num_keys; ++i) {
                 std::string dynamic_key = frame_id;
-                dynamic_key += std::to_string(i);
+                if (num_keys != 1) {
+                    dynamic_key += std::to_string(i);
+                }
 
                 // Check for matching entry in csvdata_main
                 auto main_iter = csvdata_main.find(dynamic_key);

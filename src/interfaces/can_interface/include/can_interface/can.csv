@@ -13,11 +13,11 @@ ID,bitIn,bitFin,Scale,Offset,Publisher
 0x3821,0,1,0.001,0,/can_interface/IMU/angular_velocity/x
 0x3822,2,3,0.001,0,/can_interface/IMU/angular_velocity/y
 0x3823,4,5,0.001,0,/can_interface/IMU/angular_velocity/z
-0x1871,1,2,1,0,/can_interface/steering_angle/data
-0x1851,1,1,1,0,/can_interface/AMI_state
-0x1811,1,2,-0.000859313311,0,/can_interface/inv_speed/data
-0x1821,2,2,1,0,/can_interface/AS/status
+0x187,1,2,1,0,/can_interface/steering_angle/data
+0x185,1,1,1,0,/can_interface/AMI_state
+0x181,1,2,-0.000859313311,0,/can_interface/inv_speed/data
+0x182,2,2,1,0,/can_interface/AS/status
 0x1831,1,2,-0.10224948875,113.599182004,/can_interface/AS/brake_hydr
 0x1841,1,2,1,0,/can_interface/AS/Pneumatic/p1
 0x1842,3,4,1,0,/can_interface/AS/Pneumatic/p2
-0x18b1,6,6,1,0,/can_interface/RESRange/data
+0x18b,6,6,1,0,/can_interface/RESRange/data
