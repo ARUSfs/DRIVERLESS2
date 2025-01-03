@@ -189,7 +189,8 @@ void CarState::initialize_vx_filter(){
     // Set problem size
     int n = 1;
     int m = 1;
-    vx_filter_.set_problem_size(n, m);
+    int p = 1;
+    vx_filter_.set_problem_size(n, m, p);
     
     // Set initial state and covariance
     VectorXd x_initial(n);
@@ -208,7 +209,7 @@ void CarState::initialize_vx_filter(){
     vx_filter_.set_process_matrices(M, B, Q);
 
     // Set measurement matrices
-    MatrixXd H(n, n), R(n, n);
+    MatrixXd H(p, n), R(p, p);
     H << 1;
     R << 0.5;
     vx_filter_.set_measurement_matrices(H, M);
