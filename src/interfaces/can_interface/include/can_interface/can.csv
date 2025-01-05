@@ -5,7 +5,8 @@ ID,bitIn,bitFin,Scale,Offset,Publisher
 0x171,0,0,1,0,/can_interface/AMI
 0x181,1,2,-0.000859313311,0,/can_interface/inv_speed
 0x161,1,1,1,0,/can_interface/AS_status
-0x1831,1,2,-0.10224948875,113.599182004,/can_interface/AS/brake_hydr
+0x1831,1,2,-0.10224948875,113.599182004,/can_interface/brake_hydr
 0x1841,1,2,1,0,/can_interface/AS/Pneumatic/p1
 0x1842,3,4,1,0,/can_interface/AS/Pneumatic/p2
 0x18b,6,6,1,0,/can_interface/RES_range
+0x134,0,1,1,0,/can_interface/extensometer
