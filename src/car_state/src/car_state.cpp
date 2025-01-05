@@ -130,12 +130,13 @@ void CarState::on_timer()
     }
        
     // Estimate vx
-    VectorXd u(1), z(1);
-    u << ax_;
-    z << (v_front_right_ + v_front_left_ + v_rear_right_ + v_rear_left_)/4;
-    vx_filter_.estimate_state(u, z);
-    vx_ = vx_filter_.get_estimated_state()(0);
-
+    if(kSimulation){
+        VectorXd u(1), z(1);
+        u << ax_;
+        z << (v_front_right_ + v_front_left_ + v_rear_right_ + v_rear_left_)/4;
+        vx_filter_.estimate_state(u, z);
+        vx_ = vx_filter_.get_estimated_state()(0);
+    }
 
     // Publish state message
     auto state_msg = common_msgs::msg::State();
