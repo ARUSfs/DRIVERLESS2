@@ -72,13 +72,12 @@ CarState::CarState(): Node("car_state")
         std::bind(&CarState::on_timer, this));
 
 
-    //Create estimation object
-    state_estimation_ = Estimation();
-
     // Create TF broadcaster
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
 
+    // Initialize kalman filters
+    CarState::initialize_vx_filter();
 }
 
 void CarState::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
@@ -110,8 +109,6 @@ void CarState::wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::Sha
     v_front_left_ = msg-> front_left;
     v_rear_right_ = msg-> rear_right;
     v_rear_left_ = msg-> rear_left;
-
-    vx_ = (v_front_right_ + v_front_left_ + v_rear_right_ + v_rear_left_)/4;
 }
 
 void CarState::inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -131,13 +128,15 @@ void CarState::on_timer()
     if (kMission!="inspection"){
         this->get_tf_position();
     }
-
-    // Estimate velocity
-    state_estimation_.set_measurement_data(v_front_right_, v_front_left_, v_rear_right_, v_rear_left_, ax_, ay_);
-
-    Vector2d v_est = state_estimation_.kalman_velocity_estimation();
-    // vx_ = v_est(0);
-    // vy_ = v_est(1);
+       
+    // Estimate vx
+    if(kSimulation){
+        VectorXd u(1), z(1);
+        u << ax_;
+        z << (v_front_right_ + v_front_left_ + v_rear_right_ + v_rear_left_)/4;
+        vx_filter_.estimate_state(u, z);
+        vx_ = vx_filter_.get_estimated_state()(0);
+    }
 
     // Publish state message
     auto state_msg = common_msgs::msg::State();
@@ -185,6 +184,36 @@ void CarState::get_tf_position()
     } catch (tf2::TransformException &ex) {
         RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
     }
+}
+
+void CarState::initialize_vx_filter(){
+    // Set problem size
+    int n = 1;
+    int m = 1;
+    int p = 1;
+    vx_filter_.set_problem_size(n, m, p);
+    
+    // Set initial state and covariance
+    VectorXd x_initial(n);
+    x_initial << vx_;
+    MatrixXd P_initial(n, n); 
+    P_initial << 0.01;
+    VectorXd u_initial(m);
+    u_initial << ax_;
+    vx_filter_.set_initial_data(x_initial, P_initial, u_initial);
+
+    // Set process matrices
+    MatrixXd M(n, n), B(n, m), Q(n, n);
+    M << 0;
+    B << 1;
+    Q << 0.1;
+    vx_filter_.set_process_matrices(M, B, Q);
+
+    // Set measurement matrices
+    MatrixXd H(p, n), R(p, p);
+    H << 1;
+    R << 0.5;
+    vx_filter_.set_measurement_matrices(H, M);
 }
 
 int main(int argc, char * argv[])

@@ -12,12 +12,13 @@
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/four_wheel_drive.hpp"
 
-#include "car_state/estimation.hpp"
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
+
+#include "car_state/kalman_filter.hpp"
 
 /**
  * @class CarState
@@ -41,9 +42,13 @@ private:
     void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
 
-    // Funtions
+    // Functions
     void on_timer();
     void get_tf_position();
+    void initialize_vx_filter();
+
+    // Estimation filters
+    KalmanFilter vx_filter_;
 
     // Private attributes to store received data
     double x_=0;
@@ -60,7 +65,6 @@ private:
     double ay_ = 0;
     double delta_ = 0;
 
-    Estimation state_estimation_;
     bool kSimulation;
     std::string kMission;
 
