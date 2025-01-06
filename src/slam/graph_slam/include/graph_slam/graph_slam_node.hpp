@@ -16,6 +16,9 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl/io/pcd_io.h>
 #include <iostream>
+#include <fstream>
+#include <cstdlib> 
+#include <filesystem>
 #include "ConeXYZColorScore.h"
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
@@ -34,6 +37,8 @@ class GraphSlam : public rclcpp::Node
     GraphSlam();
 
   private:
+
+    bool kWriteCSV;
 
     Eigen::Matrix3d Q = Eigen::Matrix3d::Identity();
     Eigen::Matrix2d R = Eigen::Matrix2d::Identity();
@@ -79,5 +84,6 @@ class GraphSlam : public rclcpp::Node
     void send_tf();
     void publish_map();
     void update_data_association_map();
+    void write_csv_log();
 
 };

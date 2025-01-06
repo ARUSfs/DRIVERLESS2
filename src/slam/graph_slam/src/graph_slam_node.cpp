@@ -3,6 +3,10 @@
 
 GraphSlam::GraphSlam() : Node("graph_slam")
 { 
+
+    this->declare_parameter("write_csv", false);
+    this->get_parameter("write_csv", kWriteCSV);
+
     // TODO: test other solvers
     using SlamBlockSolver  = g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>>;
     using SlamLinearSolver = g2o::LinearSolverCSparse<SlamBlockSolver::PoseMatrixType>;
@@ -168,6 +172,9 @@ void GraphSlam::optimizer_callback(){
     optimizer_.initializeOptimization();
     optimizer_.optimize(200);
     update_data_association_map();
+    if(kWriteCSV){
+        write_csv_log();
+    }
 }
 
 // Update the world position of the landmarks in the data association map after optimization
@@ -236,6 +243,58 @@ void GraphSlam::send_tf() {
 
 	tf_broadcaster_->sendTransform(transformSt);
 }
+
+
+void GraphSlam::write_csv_log(){
+    
+    const char* homeDir = getenv("HOME"); 
+    if (!homeDir) {
+        return;
+    }
+
+    std::filesystem::path filePath = std::filesystem::path(homeDir) / "ARUS_logs/slam/graph_slam_log.csv";
+
+    std::ofstream graph_csv(filePath);
+
+    if (!graph_csv.is_open()) {
+        std::cerr << "Couldn't open file for writing." << std::endl;
+        return;
+    }
+
+    for (auto vertex : optimizer_.vertices()) {
+        g2o::VertexSE2* pose_vertex = dynamic_cast<g2o::VertexSE2*>(vertex.second);
+        if (pose_vertex != nullptr) {
+            graph_csv << "pose_vertex," << pose_vertex->id() << "," 
+                                << pose_vertex->estimate().translation().x() << "," 
+                                << pose_vertex->estimate().translation().y() << "," 
+                                << pose_vertex->estimate().rotation().angle() << "\n";
+        }
+        g2o::VertexPointXY* landmark_vertex = dynamic_cast<g2o::VertexPointXY*>(vertex.second);
+        if (landmark_vertex != nullptr) {
+            graph_csv << "landmark_vertex," << landmark_vertex->id() << "," 
+                                << landmark_vertex->estimate().x() << "," 
+                                << landmark_vertex->estimate().y() << "\n";
+        }
+    }
+
+    for(auto edge : optimizer_.edges()){
+        g2o::EdgeSE2PointXY* landmark_edge = dynamic_cast<g2o::EdgeSE2PointXY*>(edge);
+        if (landmark_edge != nullptr) {
+            auto* pose_vertex = dynamic_cast<g2o::VertexSE2*>(landmark_edge->vertices()[0]);
+            if (pose_vertex) {
+                graph_csv << "landmark_edge," << pose_vertex->estimate().translation().x() << "," 
+                                << pose_vertex->estimate().translation().y() << ",";
+            }
+            auto* landmark_vertex = dynamic_cast<g2o::VertexPointXY*>(landmark_edge->vertices()[1]);
+            if (landmark_vertex) {
+                graph_csv << landmark_vertex->estimate().x() << "," 
+                             << landmark_vertex->estimate().y() << "\n";
+            }
+        }
+    }
+}
+
+
 
 int main(int argc, char * argv[])
 {
