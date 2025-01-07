@@ -16,10 +16,10 @@ CanInterface::CanInterface() : Node("can_interface"){
     std::string package_share_directory = ament_index_cpp::get_package_share_directory("can_interface");
 
     std::string path_can = package_share_directory + "/can.csv";
-    csvdata_main = readCSV(path_can);
+    csvdata_main = read_csv(path_can);
 
     std::string path_can_aux = package_share_directory + "/can_aux.csv";
-    csvdata_aux = readCSV(path_can_aux);
+    csvdata_aux = read_csv(path_can_aux);
 
     // Create publishers from the csv file and store them in a key-vector pair
     for (const auto& [key, vector] : csvdata_main) {
@@ -118,14 +118,14 @@ CanInterface::CanInterface() : Node("can_interface"){
         return;
     }
 
-    std::thread thread_0(&CanInterface::readCan, this, socketCan0);
-    std::thread thread_1(&CanInterface::readCan, this, socketCan1);
+    std::thread thread_0(&CanInterface::read_CAN, this, socketCan0);
+    std::thread thread_1(&CanInterface::read_CAN, this, socketCan1);
 
     thread_0.detach();
     thread_1.detach();
 }
 
-std::map<std::string, std::vector<std::string>> CanInterface::readCSV(const std::string &filepath)
+std::map<std::string, std::vector<std::string>> CanInterface::read_csv(const std::string &filepath)
 {
     std::map<std::string, std::vector<std::string>> localCsvData;
 
@@ -168,7 +168,7 @@ std::map<std::string, std::vector<std::string>> CanInterface::readCSV(const std:
     return localCsvData;
 }
 
-void CanInterface::readCan(int socketCan) 
+void CanInterface::read_CAN(int socketCan) 
 {
     struct can_frame frame;
     while (rclcpp::ok()) {
@@ -203,7 +203,7 @@ void CanInterface::readCan(int socketCan)
         const auto &aux_vector = aux_iter->second;
 
         // Check if there is a subID to filter
-        if (filterSubID(frame, aux_vector[0])) {
+        if (filter_subID(frame, aux_vector[0])) {
             // Build multiple dynamic keys
             int num_keys = std::stoi(aux_vector[1]);
             for (int i = 1; i <= num_keys; ++i) {
@@ -232,8 +232,8 @@ void CanInterface::readCan(int socketCan)
                 config.offset = std::stof(main_vector[3]);
                 config.key = dynamic_key;
                     
-                // Call parseMsg with the populated CANParseConfig
-                parseMsg(frame, config);
+                // Call parse_msg with the populated CANParseConfig
+                parse_msg(frame, config);
             
                 if (DEBUG) {
                 std::cout << "Matched CAN frame ID: " << frame_id 
@@ -252,7 +252,7 @@ void CanInterface::readCan(int socketCan)
 }
 
 
-void CanInterface::parseMsg(const struct can_frame& frame, const CANParseConfig& config) {
+void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig& config) {
     float rawValue = 0;
 
     // Calculate the number of bytes
@@ -302,7 +302,7 @@ void CanInterface::parseMsg(const struct can_frame& frame, const CANParseConfig&
     }
 }
 
-bool CanInterface::filterSubID(const struct can_frame& frame, const std::string& aux_vector_subID) {
+bool CanInterface::filter_subID(const struct can_frame& frame, const std::string& aux_vector_subID) {
     if (aux_vector_subID != "no") {
         // Convert the subID in aux_vector to hex
         int subID = std::stoi(aux_vector_subID, nullptr, 16);
