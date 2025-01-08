@@ -8,3 +8,6 @@ path_planning:
     len_coeff: 0.25
     angle_coeff: 0.75
     max_angle: 1.0
+    v_max: 10.0
+    ay_max: 5.0
+    ax_max: 5.0
