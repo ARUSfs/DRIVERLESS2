@@ -369,11 +369,11 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
     tk::spline y_spline(t_coords, y_coords, tk::spline::cspline);
     
     // Add the points to the trajectory message
-    for (double i = 0; i<route_size*100-1; i++){
-        double x = x_spline(i/100.0);
-        double y = y_spline(i/100.0);
-        double dx = x_spline((i+1)/100.0)-x;
-        double dy = y_spline((i+1)/100.0)-y;
+    for (double i = 0; i<route_size*10-1; i++){
+        double x = x_spline(i/10.0);
+        double y = y_spline(i/10.0);
+        double dx = x_spline((i+1)/10.0)-x;
+        double dy = y_spline((i+1)/10.0)-y;
         double dist = hypot(dx, dy);
         common_msgs::msg::PointXY point;
         point.x = x;
