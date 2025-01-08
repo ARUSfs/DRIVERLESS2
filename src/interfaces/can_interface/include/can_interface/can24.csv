@@ -1,0 +1,13 @@
+ID,bitIn,bitFin,Scale,Offset,Publisher
+0x3801,0,1,0.01,0,/can_interface/IMU/ax
+0x3802,2,3,0.01,0,/can_interface/IMU/ay
+0x384,4,5,0.001,0,/can_interface/IMU/yaw_rate
+0x185,1,1,1,0,/can_interface/AMI
+0x182,2,2,1,0,/can_interface/AS_status
+0x18b,6,6,1,0,/can_interface/RES_range
+0x187,1,2,1,0,/can_interface/extensometer
+0x181,1,2,-0.000859313311,0,/can_interface/inv_speed
+0x450,1,4,1,0,/can_interface/fl_wheel_speed
+0x451,1,4,1,0,/can_interface/fr_wheel_speed
+0x452,1,4,1,0,/can_interface/rl_wheel_speed
+0x453,1,4,1,0,/can_interface/rr_wheel_speed
