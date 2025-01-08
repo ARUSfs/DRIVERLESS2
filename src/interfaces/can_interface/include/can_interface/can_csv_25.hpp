@@ -94,14 +94,14 @@ private:
      * @param filepath 
      * @return std::map<std::string, std::vector<std::string>> 
      */
-    std::map<std::string, std::vector<std::string>> readCSV(const std::string &filepath);
+    std::map<std::string, std::vector<std::string>> read_csv(const std::string &filepath);
 
     /**
      * @brief Read the CAN messages from the specified SocketCan associated with a CAN bus.
      * 
      * @param socketCan 
      */
-    void readCan(int socketCan);
+    void read_CAN(int socketCan);
 
     /**
      * @brief Parse the given CAN message according to the given configuration.
@@ -109,7 +109,7 @@ private:
      * @param frame 
      * @param config 
      */
-    void parseMsg(const struct can_frame& frame, const CANParseConfig& config);
+    void parse_msg(const struct can_frame& frame, const CANParseConfig& config);
 
     /**
      * @brief Filter the message if the subID matches the criteria in the csv
@@ -117,5 +117,5 @@ private:
      * @param frame 
      * @param aux_vector_subID 
      */
-    bool filterSubID(const struct can_frame& frame, const std::string& aux_vector_subID);
+    bool filter_subID(const struct can_frame& frame, const std::string& aux_vector_subID);
 };
