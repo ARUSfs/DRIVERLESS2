@@ -10,15 +10,15 @@
  */
 #include "can_interface/can_csv_25.hpp"
 
-bool DEBUG = false;
+bool DEBUG = true;
 
 CanInterface::CanInterface() : Node("can_interface"){
     std::string package_share_directory = ament_index_cpp::get_package_share_directory("can_interface");
 
-    std::string path_can = package_share_directory + "/can.csv";
+    std::string path_can = package_share_directory + "/can24.csv";
     csvdata_main = read_csv(path_can);
 
-    std::string path_can_aux = package_share_directory + "/can_aux.csv";
+    std::string path_can_aux = package_share_directory + "/can_aux24.csv";
     csvdata_aux = read_csv(path_can_aux);
 
     // Create publishers from the csv file and store them in a key-vector pair
