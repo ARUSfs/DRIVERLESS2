@@ -16,6 +16,7 @@ find_package(rosidl_default_generators REQUIRED) # for custom messages
 # generate custom messages
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/State.msg"
+  "msg/CarInfo.msg"
   "msg/PointXY.msg"
   "msg/Trajectory.msg"
   "msg/Simplex.msg"
