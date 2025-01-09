@@ -119,13 +119,15 @@ CanInterface::CanInterface() : Node("can_interface"){
     }
 
     controlsSub = this->create_subscription<common_msgs::msg::Cmd>("/controller/cmd", 10, std::bind(&CanInterface::controlsCallback, this, std::placeholders::_1));
-    ASStatusSub = this->create_subscription<std_msgs::msg::Int16>("/can/AS_status", 10, std::bind(&CanInterface::ASStatusCallback, this, std::placeholders::_1));
-    brakeLightSub = this->create_subscription<std_msgs::msg::Int16>("/brake_light", 10, std::bind(&CanInterface::brakeLightCallback, this, std::placeholders::_1));
-    
-    PCTempPub = this->create_publisher<std_msgs::msg::Float32>("/pc_temp", 10);
+    // car_info_sub_ = ...
+    // run_check_sub_ = ...
 
-    pcTempTimer = this->create_wall_timer(0.1s, std::bind(&CanInterface::pcTempCallback, this));
     heartBeatTimer = this->create_wall_timer(0.1s, std::bind(&CanInterface::pubHeartBeat, this));
+    // dl_timer_500 = ...
+    // void dl_timer_callback ... 
+        // send_dl500
+        // send_dl501
+        // send_dl502
 
     std::thread thread_0(&CanInterface::read_CAN, this, socketCan0);
     std::thread thread_1(&CanInterface::read_CAN, this, socketCan1);
@@ -350,28 +352,7 @@ void CanInterface::controlsCallback(common_msgs::msg::Cmd msg)
     write(socketCan1, &frame, sizeof(struct can_frame));  
 }
 
-void CanInterface::ASStatusCallback(std_msgs::msg::Int16 msg)   // Viene de car_info
-{
-    if(msg.data == 3){
-        struct can_frame frame;
-        frame.can_id = 0x202;             
-        frame.can_dlc = 3;                
-        frame.data[0] = 0x01;
-        frame.data[1] = 0x01;
-        frame.data[2] = 0x03;
-
-        write(socketCan1, &frame, sizeof(struct can_frame));           
-    }else if(msg.data==4){
-        struct can_frame frame;
-        frame.can_id = 0x202;             
-        frame.can_dlc = 3;                
-        frame.data[0] = 0x01;
-        frame.data[1] = 0x01;
-        frame.data[2] = 0x04;
-
-        write(socketCan1, &frame, sizeof(struct can_frame));   
-    }
-}
+//void carinfocallback
 
 void CanInterface::pubHeartBeat() // mirar id de actualizar 25
 {
@@ -449,66 +430,6 @@ void CanInterface::DL502Callback()
     write(socketCan1, &frame, sizeof(struct can_frame));
 }
 
-void CanInterface::pcTempCallback() 
-{
-    this->getPcTemp();
-    std_msgs::msg::Float32 x;
-    x.data = this->pc_temp;
-    this->PCTempPub->publish(x);
-
-    int8_t bytes[2];
-    int16_t temp = this->pc_temp*100;
-    intToBytes(temp, bytes);
-
-    struct can_frame frame;
-    frame.can_id = 0x183;             
-    frame.can_dlc = 3;                
-    frame.data[0] = 0x01;
-    frame.data[1] = bytes[0];
-    frame.data[2] = bytes[1];
-
-    write(socketCan0, &frame, sizeof(struct can_frame));
-}
-
-void CanInterface::brakeLightCallback(std_msgs::msg::Int16 msg)   //Añador en controlCallback
-{
-    struct can_frame frame;
-    frame.can_id = 0x208;             
-    frame.can_dlc = 2;                
-    frame.data[0] = 0x01;
-    frame.data[1] = msg.data;
-
-    write(socketCan0, &frame, sizeof(struct can_frame));
-}
-
-void CanInterface::getPcTemp()
-{
-    float temp = 0.0;
-    FILE* fp = popen("sensors", "r");
-    if (fp == NULL) {
-        RCLCPP_ERROR(this->get_logger(), "This is an error message!");
-    }
-
-    char path[1035];
-    while (fgets(path, sizeof(path), fp) != NULL) {
-        std::string line(path);
-        if (line.find("Core 0:") != std::string::npos) { // Ajusta esto según tu salida de 'sensors'
-            std::istringstream iss(line);
-            std::string token;
-            while (iss >> token) {
-                if (token[0] == '+') {
-                    token = token.substr(1);
-                    token.pop_back();
-                    temp = std::stof(token);
-                    break;
-                }
-            }
-            break;
-        }
-    }
-    pclose(fp);
-    this->pc_temp = temp;
-}
 
 int main(int argc, char * argv[])
 {

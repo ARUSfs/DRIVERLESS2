@@ -27,6 +27,8 @@ CarState::CarState(): Node("car_state")
 
     state_pub_ = this->create_publisher<common_msgs::msg::State>(
         "/car_state/state", 1);
+    car_info_pub_ = this->create_publisher<common_msgs::msg::CarInfo>(
+        "/car_state/car_info", 1);
     as_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
         "/car_state/AS_check", 1);
 
@@ -152,6 +154,35 @@ void CarState::on_timer()
     state_msg.delta = delta_;
 
     state_pub_->publish(state_msg);
+
+
+    // Publish car info message
+    auto car_info_msg = common_msgs::msg::CarInfo();
+    
+    car_info_msg.as_status = as_status_;
+    car_info_msg.ami = ami_;
+    car_info_msg.ebs_status = ebs_status_;
+    car_info_msg.ebs_redundancy_status = ebs_redundancy_status_;
+    car_info_msg.x = x_;      
+    car_info_msg.y = y_;    
+    car_info_msg.yaw = yaw_;  
+    car_info_msg.vx = vx_;    
+    car_info_msg.vy = vy_;
+    car_info_msg.target_speed = target_speed_;
+    car_info_msg.r = r_;      
+    car_info_msg.ax = ax_;
+    car_info_msg.ay = ay_;
+    car_info_msg.delta = delta_;
+    car_info_msg.target_delta = target_delta_;
+    car_info_msg.steering_state = steering_state_;
+    car_info_msg.torque_actual = torque_actual_;
+    car_info_msg.torque_target = torque_target_;
+    car_info_msg.brake_hydr_pressure = brake_hydr_pressure_;
+    car_info_msg.lap_count = lap_count_;
+    car_info_msg.cones_count_actual = cones_count_actual_;
+    car_info_msg.cones_count_all = cones_count_all_;
+
+    car_info_pub_->publish(car_info_msg);
 
 
     // Publish AS check

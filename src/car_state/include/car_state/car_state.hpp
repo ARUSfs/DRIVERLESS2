@@ -10,6 +10,7 @@
 #include "std_msgs/msg/bool.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "common_msgs/msg/state.hpp"
+#include "common_msgs/msg/car_info.hpp"
 #include "common_msgs/msg/four_wheel_drive.hpp"
 
 #include <tf2_ros/buffer.h>
@@ -65,16 +66,23 @@ private:
     double ay_ = 0;
     double delta_ = 0;
 
+    int as_status_ = 0;
+    int ami_ = 0;
+    int ebs_status_ = 0;
+    int ebs_redundancy_status_ = 0;
+    double target_speed_ = 0;
+    double target_delta_ = 0;
+    int steering_state_ = 0;
+    double torque_actual_ = 0;
+    double torque_target_ = 0;
+    double brake_hydr_pressure_ = 0;
+    int lap_count_ = 0;
+    int cones_count_actual_ = 0;
+    int cones_count_all_ = 0;
+
+
     bool kSimulation;
     std::string kMission;
-
-    // AS status
-    // 0: AS off
-    // 1: AS ready
-    // 2: AS driving
-    // 3: AS finished
-    // 4: AS emergency
-    int as_status_ = 0;
 
     // TF
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -90,6 +98,7 @@ private:
 
     // Publisher for the aggregated state
     rclcpp::Publisher<common_msgs::msg::State>::SharedPtr state_pub_;
+    rclcpp::Publisher<common_msgs::msg::CarInfo>::SharedPtr car_info_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr as_check_pub_;
 
     // Timer
