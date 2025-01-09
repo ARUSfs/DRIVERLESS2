@@ -9,7 +9,7 @@ AccPlanning::AccPlanning() : Node("acc_planning_node")
     this->declare_parameter<std::string>("trajectory_topic", "/acc_planning/trajectory");
     this->declare_parameter<double>("target_speed", 10.0);
     this->declare_parameter<double>("target_acc", 5.0);
-    this->declare_parameter<double>("target_dec", -5.0);
+    this->declare_parameter<double>("target_dec", 5.0);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
     this->get_parameter("target_speed", kTargetSpeed);
@@ -46,6 +46,66 @@ void AccPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     AccPlanning::publish_trajectory();
+}
+
+void AccPlanning::calculate_profiles() {
+    double step = 0.1;  
+    double acc_distance = 75.0;
+    double brake_distance = 150.0;
+    double v_initial = 0.1;  
+    double v_max = kTargetSpeed;  
+    double acc_max = kMaxXAcc;  
+    double decc_max = kMaxDec;  
+
+    double acum = 0.0;  
+
+    s_.clear();
+    speed_profile_.clear();
+    acc_profile_.clear();
+
+    for (double x = 0.0; x <= brake_distance; x += step) {
+        if (!s_.empty()) {
+            double dx = step;  
+            double dy = 0.0;  
+            acum += hypot(dx, dy);
+        }
+        s_.push_back(acum);
+        speed_profile_.push_back(0.0);
+    }
+
+    speed_profile_[0] = v_initial;
+
+    for (size_t i = 1; i < s_.size(); ++i) {
+        double ds = s_[i] - s_[i - 1];
+        if(s_[i] < acc_distance){
+            speed_profile_[i] = sqrt(pow(speed_profile_[i - 1], 2) + 2 * acc_max * ds);
+            if (speed_profile_[i] > v_max) {
+                speed_profile_[i] = v_max;
+            }
+     }
+    }
+
+    for (size_t i = s_.size() - 2; i > 0; --i) {
+        double ds = s_[i + 1] - s_[i];
+        double v_brake = sqrt(pow(speed_profile_[i + 1], 2) - 2 * decc_max * ds);
+        if (v_brake < 0) {
+            v_brake = 0.0;
+        }
+        if (v_brake < speed_profile_[i]) {
+            speed_profile_[i] = v_brake;
+        }
+    }
+
+    for (size_t i = 0; i < speed_profile_.size() - 1; ++i) {
+        double ds = s_[i + 1] - s_[i];
+        if (ds != 0) {
+            acc_profile_.push_back((pow(speed_profile_[i + 1], 2) - pow(speed_profile_[i], 2)) / (2 * ds));
+        } else {
+            acc_profile_.push_back(0.0);
+        }
+    }
+
+    profiles_calculated_ = true;
 }
 
 
@@ -181,70 +241,22 @@ void AccPlanning::generate_planning() {
 
 
 void AccPlanning::publish_trajectory() {
+    if (!profiles_calculated_) {
+        calculate_profiles();
+    }
+
     common_msgs::msg::Trajectory trajectory_msg;
+    double step = 0.1;
 
-    double step = 0.1;  
-    double acc_distance = 75.0;
-    double brake_distance = 150.0;
-    double v_initial = 0.1;  
-    double v_max = kTargetSpeed;  
-    double v_brake = 0.0;
-    double acc_max =  kMaxXAcc;  
-    double decc_max = kMaxDec;  
-
-    std::vector<double> s;               
-    std::vector<double> speed_profile;   
-    std::vector<double> acc_profile;     
-
-    double acum = 0.0;  
-
-    for (double x = 0.0; x <= brake_distance; x += step) {
+    for (size_t i = 0; i < s_.size(); ++i) {
         common_msgs::msg::PointXY point;
-        point.x = x;
-        point.y = a_ * x + b_;  
+        point.x = i * step;
+        point.y = a_ * point.x + b_;  // Updates the slope of the trajectory
         trajectory_msg.points.push_back(point);
 
-        if (!s.empty()) {
-            double dx = x - trajectory_msg.points[trajectory_msg.points.size() - 2].x;
-            double dy = point.y - trajectory_msg.points[trajectory_msg.points.size() - 2].y;
-            acum += hypot(dx, dy);
-        }
-        s.push_back(acum);
-        speed_profile.push_back(0.0);  
-    }
-
-    speed_profile[0] = v_initial;
-    for (size_t i = 1; i < s.size(); ++i) {
-        double ds = s[i] - s[i - 1];
-        if(s[i] <= acc_distance){
-        speed_profile[i] = sqrt(pow(speed_profile[i - 1], 2) + 2 * acc_max * ds);
-        if (speed_profile[i] > v_max) {
-            speed_profile[i] = v_max;  
-        }
-    }
-    }
-
-    for (size_t i = s.size() - 2; i > 0; --i) {
-        double ds = s[i + 1] - s[i];
-        double v_brake = sqrt(pow(speed_profile[i + 1], 2) + 2 * decc_max * ds);
-        if (v_brake < speed_profile[i]) {
-            speed_profile[i] = v_brake;  
-        }
-    }
-
-    for (size_t i = 0; i < speed_profile.size() - 1; ++i) {
-        double ds = s[i + 1] - s[i];
-        if (ds != 0) {
-            acc_profile.push_back((pow(speed_profile[i + 1], 2) - pow(speed_profile[i], 2)) / (2 * ds));
-        } else {
-            acc_profile.push_back(0.0);
-        }
-    }
-
-    for (size_t i = 0; i < speed_profile.size(); ++i) {
-        trajectory_msg.speed_profile.push_back(speed_profile[i]);
-        if (i < acc_profile.size()) {
-            trajectory_msg.acc_profile.push_back(acc_profile[i]);
+        trajectory_msg.speed_profile.push_back(speed_profile_[i]);
+        if (i < acc_profile_.size()) {
+            trajectory_msg.acc_profile.push_back(acc_profile_[i]);
         }
     }
 

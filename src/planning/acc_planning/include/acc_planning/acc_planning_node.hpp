@@ -21,6 +21,10 @@ private:
     double kMaxDec;
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
+    std::vector<double> s_;               // Cumulative distances
+    std::vector<double> speed_profile_;   // Velocity profile
+    std::vector<double> acc_profile_;    // Acceleration profile
+    bool profiles_calculated_ = false; 
 
     double a_;
     double b_;
@@ -51,6 +55,7 @@ private:
      * @brief Method that processes the point cloud and generates the planning data.
      */ 
     void generate_planning();
+    void calculate_profiles();
     void publish_trajectory();
 
     // Utility function to convert from ROS PointCloud2 to PCL PointCloud
