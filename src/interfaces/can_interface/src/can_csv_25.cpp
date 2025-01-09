@@ -10,7 +10,7 @@
  */
 #include "can_interface/can_csv_25.hpp"
 
-bool DEBUG = true;
+bool DEBUG = false;
 
 CanInterface::CanInterface() : Node("can_interface"){
     std::string package_share_directory = ament_index_cpp::get_package_share_directory("can_interface");
@@ -253,7 +253,7 @@ void CanInterface::read_CAN(int socketCan)
 
 
 void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig& config) {
-    float rawValue = 0;
+    int16_t rawValue = 0;
 
     // Calculate the number of bytes
     uint8_t numBytes = config.endByte - config.startByte + 1;
