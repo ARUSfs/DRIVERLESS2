@@ -316,6 +316,191 @@ bool CanInterface::filter_subID(const struct can_frame& frame, const std::string
     }
 }
 
+//################################################# CALLBACKS ###########################################################
+void intToBytes(int16_t val, int8_t* bytes)
+{
+    std::memcpy(bytes, &val, sizeof(val));
+}           
+
+void CanInterface::controlsCallback(common_msgs::msg::Cmd msg)
+{   
+    float acc = msg.acc;
+    int16_t intValue = static_cast<int16_t>(acc * (1<<15))-1;
+    this->motor_moment_target = intValue;
+
+    int8_t bytesCMD[2];
+    intToBytes(intValue, bytesCMD);
+    int8_t cabecera = 0x90;
+
+    struct can_frame frame;
+    frame.can_id = 0x201;             
+    frame.can_dlc = 3;                
+    frame.data[0] = cabecera;
+    frame.data[1] = bytesCMD[0];
+    frame.data[2] = bytesCMD[1];
+    write(socketCan1, &frame, sizeof(struct can_frame));  
+}
+
+void CanInterface::ASStatusCallback(std_msgs::msg::Int16 msg)   // Viene de car_info
+{
+    if(msg.data == 3){
+        struct can_frame frame;
+        frame.can_id = 0x202;             
+        frame.can_dlc = 3;                
+        frame.data[0] = 0x01;
+        frame.data[1] = 0x01;
+        frame.data[2] = 0x03;
+
+        write(socketCan1, &frame, sizeof(struct can_frame));           
+    }else if(msg.data==4){
+        struct can_frame frame;
+        frame.can_id = 0x202;             
+        frame.can_dlc = 3;                
+        frame.data[0] = 0x01;
+        frame.data[1] = 0x01;
+        frame.data[2] = 0x04;
+
+        write(socketCan1, &frame, sizeof(struct can_frame));   
+    }
+}
+
+void CanInterface::pubHeartBeat() // mirar id de actualizar 25
+{
+    struct can_frame frame;
+    frame.can_id = 0x183;             
+    frame.can_dlc = 1;                
+    frame.data[0] = 0x00;
+
+    write(socketCan0, &frame, sizeof(struct can_frame));
+}
+
+void CanInterface::DL500Callback()
+{
+    struct can_frame frame;
+    frame.can_id = 0x500;             
+    frame.can_dlc = 8;                
+    frame.data[0] = motor_moment_target;
+    frame.data[1] = this->motor_moment_actual;
+    frame.data[2] = this->brake_hydr_target;
+    frame.data[3] = this->brake_hydr_actual;
+    frame.data[4] = this->target_steering_angle;
+    frame.data[5] = this->actual_steering_angle;
+    frame.data[6] = this->target_speed;
+    frame.data[7] = this->actual_speed;
+
+    write(socketCan1, &frame, sizeof(struct can_frame));
+}
+
+void CanInterface::DL501Callback()
+{
+    std_msgs::msg::Float32MultiArray x;
+
+    int16_t long_acc = IMUData.linear_acceleration.x*512;
+    int8_t long_acc_bytes[2];
+    intToBytes(long_acc, long_acc_bytes);
+    int8_t long_acc_bytes_le[2] = {long_acc_bytes[1], long_acc_bytes[0]};
+    x.data.push_back(IMUData.linear_acceleration.x);
+
+    int16_t lat_acc = IMUData.linear_acceleration.y*512;
+    int8_t lat_acc_bytes[2];
+    intToBytes(lat_acc, lat_acc_bytes);
+    int8_t lat_acc_bytes_le[2] = {lat_acc_bytes[1], lat_acc_bytes[0]};
+    x.data.push_back(IMUData.linear_acceleration.y);
+
+    int16_t yaw_rate = IMUData.angular_velocity.z*(180/M_PI)*128;
+    int8_t yaw_rate_bytes[2];
+    intToBytes(yaw_rate, yaw_rate_bytes);
+    int8_t yaw_rate_bytes_le[2] = {yaw_rate_bytes[1], yaw_rate_bytes[0]};
+    x.data.push_back(IMUData.angular_velocity.z);
+
+    struct can_frame frame;
+    frame.can_id = 0x501;             
+    frame.can_dlc = 6;                
+    frame.data[0] = yaw_rate_bytes_le[0];
+    frame.data[1] = yaw_rate_bytes_le[1];
+    frame.data[2] = lat_acc_bytes_le[0];
+    frame.data[3] = lat_acc_bytes_le[1];
+    frame.data[4] = long_acc_bytes_le[0];
+    frame.data[5] = long_acc_bytes_le[1];
+
+    write(socketCan1, &frame, sizeof(struct can_frame));
+}
+
+void CanInterface::DL502Callback()
+{   
+    struct can_frame frame;
+    frame.can_id = 0x502;             
+    frame.can_dlc = 5;                
+    frame.data[0] = (this->cones_count_all & 0xFE00)>>9;
+    frame.data[1] = (this->cones_count_all & 0x01FE)>>1;
+    frame.data[2] = (this->cones_count_all & 0x0001)|((this->cones_count_actual & 0xFE)>>1);
+    frame.data[3] = ((((((this->cones_count_actual & 0x01)<<4)|this->lap_counter)<<2)|this->service_brake_state)<<1)|steering_state;
+    frame.data[4] = (((this->AMI_state <<2) | this->EBS_state)<<3) | this->AS_state;
+
+    write(socketCan1, &frame, sizeof(struct can_frame));
+}
+
+void CanInterface::pcTempCallback() 
+{
+    this->getPcTemp();
+    std_msgs::msg::Float32 x;
+    x.data = this->pc_temp;
+    this->PCTempPub->publish(x);
+
+    int8_t bytes[2];
+    int16_t temp = this->pc_temp*100;
+    intToBytes(temp, bytes);
+
+    struct can_frame frame;
+    frame.can_id = 0x183;             
+    frame.can_dlc = 3;                
+    frame.data[0] = 0x01;
+    frame.data[1] = bytes[0];
+    frame.data[2] = bytes[1];
+
+    write(socketCan0, &frame, sizeof(struct can_frame));
+}
+
+void CanInterface::brakeLightCallback(std_msgs::msg::Int16 msg)   //Añador en controlCallback
+{
+    struct can_frame frame;
+    frame.can_id = 0x208;             
+    frame.can_dlc = 2;                
+    frame.data[0] = 0x01;
+    frame.data[1] = msg.data;
+
+    write(socketCan0, &frame, sizeof(struct can_frame));
+}
+
+void CanInterface::getPcTemp()
+{
+    float temp = 0.0;
+    FILE* fp = popen("sensors", "r");
+    if (fp == NULL) {
+        RCLCPP_ERROR(this->get_logger(), "This is an error message!");
+    }
+
+    char path[1035];
+    while (fgets(path, sizeof(path), fp) != NULL) {
+        std::string line(path);
+        if (line.find("Core 0:") != std::string::npos) { // Ajusta esto según tu salida de 'sensors'
+            std::istringstream iss(line);
+            std::string token;
+            while (iss >> token) {
+                if (token[0] == '+') {
+                    token = token.substr(1);
+                    token.pop_back();
+                    temp = std::stof(token);
+                    break;
+                }
+            }
+            break;
+        }
+    }
+    pclose(fp);
+    this->pc_temp = temp;
+}
+
 int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);

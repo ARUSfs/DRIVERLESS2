@@ -118,4 +118,68 @@ private:
      * @param aux_vector_subID 
      */
     bool filter_subID(const struct can_frame& frame, const std::string& aux_vector_subID);
+
+    // CALLBACKS
+
+    void pubHeartBeat();
+    void controlsCallback(common_msgs::msg::Cmd);
+    void brakeLightCallback(std_msgs::msg::Int16);
+    void steeringInfoCallback(std_msgs::msg::Float32MultiArray);
+    void ASStatusCallback(std_msgs::msg::Int16);
+    void targetSpeedCallback(std_msgs::msg::Float32);
+    void DL500Callback();
+    void DL501Callback();
+    void DL502Callback();
+    void pcTempCallback();
+
+    // SUBS
+
+    rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr controlsSub;
+    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr ASStatusSub;
+    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr steeringInfoSub;
+    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lapCounterSub;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr conesCountSub;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr conesCountAllSub;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr targetSpeedSub;
+    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr brakeLightSub;
+
+    // TIMERS
+
+    rclcpp::TimerBase::SharedPtr pcTempTimer;
+    rclcpp::TimerBase::SharedPtr heartBeatTimer;
+    rclcpp::TimerBase::SharedPtr DL500Timer;
+    rclcpp::TimerBase::SharedPtr DL501Timer;
+    rclcpp::TimerBase::SharedPtr DL502Timer;
+
+    float pc_temp;
+    void getPcTemp();
+
+    // VAR
+
+    uint8_t actual_speed;
+    uint8_t target_speed;
+    int8_t actual_steering_angle;
+    int8_t target_steering_angle;
+    uint8_t brake_hydr_actual;
+    uint8_t brake_hydr_target;
+    uint8_t pneumatic_press;
+    int8_t motor_moment_actual;
+    int8_t motor_moment_target;
+    
+    uint8_t AS_state;
+    uint8_t EBS_state;
+    uint8_t AMI_state;
+    bool steering_state;
+    uint8_t service_brake_state;
+    uint8_t lap_counter;
+    uint8_t cones_count_actual;
+    uint16_t cones_count_all;
+
+    // PUB
+
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr PCTempPub;
+
+    // MSG
+
+    sensor_msgs::msg::Imu IMUData;
 };
