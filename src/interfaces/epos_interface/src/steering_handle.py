@@ -2,7 +2,7 @@
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Bool
 from common_msgs.msg import Cmd
 # from common_msgs.msg import Controls, CarState
 from eposhandle import EPOSHandle
@@ -27,13 +27,18 @@ class SteeringHandle(Node):
 
         self._is_shutdown = False
 
-        self.create_subscription(Cmd, '/controller/cmd', self.command_callback, 1)
+        self.steer_check = False
+
+        
         self.info_pub = self.create_publisher(Float32MultiArray, '/epos_interface/epos_info', 10)
+
+        self.create_subscription(Cmd, '/controller/cmd', self.command_callback, 1)
+        self.create_subscription(Bool, '/car_state/steer_check', self.steer_check_callback, 1)
 
     def command_callback(self, msg: Float32):
         angle = msg.delta*180/math.pi
         assert angle<=20 and angle>=-20, "Angle out of range"
-        if not self._is_shutdown:
+        if self.steer_check and not self._is_shutdown:
             self.epos.move_to(angle)
 
         epos_info = self.epos.get_epos_info()
@@ -41,6 +46,9 @@ class SteeringHandle(Node):
         for i in epos_info:
             msg.data.append(i)
         self.info_pub.publish(msg)
+
+    def steer_check_callback(self, msg: Bool):
+        self.steer_check = msg.data
 
     def clean_and_close(self):
         self._is_shutdown = True
