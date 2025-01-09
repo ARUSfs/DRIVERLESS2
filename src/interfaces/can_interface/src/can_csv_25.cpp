@@ -118,7 +118,7 @@ CanInterface::CanInterface() : Node("can_interface"){
         return;
     }
 
-    controlsSub = this->create_subscription<common_msgs::msg::Cmd>("/controller/cmd", 10, std::bind(&CanInterface::controlsCallback, this, std::placeholders::_1));
+    control_sub_ = this->create_subscription<common_msgs::msg::Cmd>("/controller/cmd", 10, std::bind(&CanInterface::controlsCallback, this, std::placeholders::_1));
     // car_info_sub_ = ...
     // run_check_sub_ = ...
 
