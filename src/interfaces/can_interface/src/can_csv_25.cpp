@@ -118,6 +118,15 @@ CanInterface::CanInterface() : Node("can_interface"){
         return;
     }
 
+    controlsSub = this->create_subscription<common_msgs::msg::Cmd>("/controller/cmd", 10, std::bind(&CanInterface::controlsCallback, this, std::placeholders::_1));
+    ASStatusSub = this->create_subscription<std_msgs::msg::Int16>("/can/AS_status", 10, std::bind(&CanInterface::ASStatusCallback, this, std::placeholders::_1));
+    brakeLightSub = this->create_subscription<std_msgs::msg::Int16>("/brake_light", 10, std::bind(&CanInterface::brakeLightCallback, this, std::placeholders::_1));
+    
+    PCTempPub = this->create_publisher<std_msgs::msg::Float32>("/pc_temp", 10);
+
+    pcTempTimer = this->create_wall_timer(0.1s, std::bind(&CanInterface::pcTempCallback, this));
+    heartBeatTimer = this->create_wall_timer(0.1s, std::bind(&CanInterface::pubHeartBeat, this));
+
     std::thread thread_0(&CanInterface::read_CAN, this, socketCan0);
     std::thread thread_1(&CanInterface::read_CAN, this, socketCan1);
 
