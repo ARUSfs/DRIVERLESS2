@@ -3,3 +3,5 @@ acc_planning:
     perception_topic: "/slam/map"
     trajectory_topic: "/acc_planning/trajectory"
     target_speed: 10.0
+    target_acc: 5.0
+    target_dec: -5.0

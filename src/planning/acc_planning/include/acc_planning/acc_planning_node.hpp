@@ -17,7 +17,8 @@ private:
     std::string kPerceptionTopic;
     std::string kTrajectoryTopic;
     double kTargetSpeed;
-
+    double kMaxXAcc;
+    double kMaxDec;
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
 
