@@ -353,6 +353,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
     trajectory_msg.s = {0.0};
 
     std::vector<double> x_coords, y_coords, t_coords, xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile;
+    std::vector<Vector2> spline_points;
     if (route_size < 3){
         common_msgs::msg::PointXY point;
         point.x = route[0].x;
@@ -361,19 +362,19 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
         return trajectory_msg;
     }
     for (int i = 0; i<route_size; i++){
-        x_coords.push_back(route[i].x);
-        y_coords.push_back(route[i].y);
-        t_coords.push_back(i);
+        Vector2 p({route[i].x, route[i].y});
+        spline_points.push_back(p);
     }
-    tk::spline x_spline(t_coords, x_coords, tk::spline::cspline);
-    tk::spline y_spline(t_coords, y_coords, tk::spline::cspline);
+
+    GenericBSpline<Vector2> smooth(spline_points, 2);
+    int smooth_size = smooth.getMaxT();
     
     // Add the points to the trajectory message
-    for (double i = 0; i<route_size*10-1; i++){
-        double x = x_spline(i/10.0);
-        double y = y_spline(i/10.0);
-        double dx = x_spline((i+1)/10.0)-x;
-        double dy = y_spline((i+1)/10.0)-y;
+    for (double i = 0; i<smooth_size*10-1; i++){
+        double x = smooth.getPosition(i/10)[0];
+        double y = smooth.getPosition(i/10)[1];
+        double dx = smooth.getPosition((i+1)/10)[0]-x;
+        double dy = smooth.getPosition((i+1)/10)[1]-y;
         double dist = hypot(dx, dy);
         common_msgs::msg::PointXY point;
         point.x = x;
@@ -442,10 +443,6 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
         trajectory_msg.speed_profile.push_back(speed_profile[i]);
         trajectory_msg.acc_profile.push_back(acc_profile[i]);
     }
-    // trajectory_msg.s = s;
-    // trajectory_msg.k = k;
-    // trajectory_msg.speed_profile = speed_profile;
-    // trajectory_msg.acc_profile = acc_profile;
     
     return trajectory_msg;
 }

@@ -19,7 +19,8 @@
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
 #include "common_msgs/msg/state.hpp"
-#include <path_planning/spline.h>
+#include "path_planning/spline_library/splines/generic_b_spline.h"
+#include "path_planning/spline_library/vector.h"
 
 /**
  * @brief Class containing the Path Planning node.
