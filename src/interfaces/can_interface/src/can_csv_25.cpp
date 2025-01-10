@@ -202,11 +202,13 @@ void CanInterface::read_CAN(int socketCan)
         // Check if frame_id exists in csvdata_aux
         auto aux_iter = csvdata_aux.find(frame_id);
         if (aux_iter == csvdata_aux.end()) {
+            if (DEBUG) {
             RCLCPP_INFO(
                 this->get_logger(),
                 "No matching key in csvdata_aux for key: %s",
                 frame_id.c_str()
             );
+            }
             continue;
         }
 
@@ -337,7 +339,7 @@ void CanInterface::controlsCallback(common_msgs::msg::Cmd msg)
 {   
     float acc = msg.acc;
     int16_t intValue = static_cast<int16_t>(acc * (1<<15))-1;
-    this->motor_moment_target = intValue;
+    this->motor_moment_target_ = intValue;
 
     int8_t bytesCMD[2];
     intToBytes(intValue, bytesCMD);
@@ -352,80 +354,83 @@ void CanInterface::controlsCallback(common_msgs::msg::Cmd msg)
     write(socketCan1, &frame, sizeof(struct can_frame));  
 }
 
-//void carinfocallback
+void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
+{
+    speed_actual_ = msg.vx;
+    speed_target_ = msg.target_speed;
+    steering_angle_actual_ = msg.delta;
+    steering_angle_target_ = msg.target_delta;
+    brake_hydr_actual_ = msg.brake_hydr_pressure;
+    brake_hydr_target_ = msg.brake_hydr_pressure;
+    motor_moment_actual_ = msg.torque_actual;
+    motor_moment_target_ = msg.torque_target;
 
-void CanInterface::pubHeartBeat() // mirar id de actualizar 25
+    ax_ = msg.ax;
+    ay_ = msg.ay;
+    yaw_rate_ = msg.r;
+
+    as_status_ = msg.as_status;
+    asb_ebs_state_ = 0;
+    ami_state_ = msg.ami;
+    steering_state_ = msg.steering_state;
+    asb_redundancy_state_ = 0;
+    lap_counter_ = msg.lap_count;
+    cones_count_actual_ = msg.cones_count_actual;
+    cones_count_all_ = msg.cones_count_all;
+}
+
+void CanInterface::pubHeartBeat()
 {
     struct can_frame frame;
-    frame.can_id = 0x183;             
+    frame.can_id = 0x140;             
     frame.can_dlc = 1;                
     frame.data[0] = 0x00;
 
     write(socketCan0, &frame, sizeof(struct can_frame));
 }
 
-void CanInterface::DL500Callback()
+void CanInterface::send_dl500()
 {
     struct can_frame frame;
     frame.can_id = 0x500;             
     frame.can_dlc = 8;                
-    frame.data[0] = motor_moment_target;
-    frame.data[1] = this->motor_moment_actual;
-    frame.data[2] = this->brake_hydr_target;
-    frame.data[3] = this->brake_hydr_actual;
-    frame.data[4] = this->target_steering_angle;
-    frame.data[5] = this->actual_steering_angle;
-    frame.data[6] = this->target_speed;
-    frame.data[7] = this->actual_speed;
+    frame.data[0] = speed_actual_;
+    frame.data[1] = speed_target_;
+    frame.data[2] = steering_angle_actual_ *0.5;
+    frame.data[3] = steering_angle_target_ *0.5;
+    frame.data[4] = brake_hydr_actual_;
+    frame.data[5] = brake_hydr_target_;
+    frame.data[6] = motor_moment_actual_;
+    frame.data[7] = motor_moment_target_;
 
     write(socketCan1, &frame, sizeof(struct can_frame));
 }
 
-void CanInterface::DL501Callback()
+void CanInterface::send_dl501()
 {
-    std_msgs::msg::Float32MultiArray x;
-
-    int16_t long_acc = IMUData.linear_acceleration.x*512;
-    int8_t long_acc_bytes[2];
-    intToBytes(long_acc, long_acc_bytes);
-    int8_t long_acc_bytes_le[2] = {long_acc_bytes[1], long_acc_bytes[0]};
-    x.data.push_back(IMUData.linear_acceleration.x);
-
-    int16_t lat_acc = IMUData.linear_acceleration.y*512;
-    int8_t lat_acc_bytes[2];
-    intToBytes(lat_acc, lat_acc_bytes);
-    int8_t lat_acc_bytes_le[2] = {lat_acc_bytes[1], lat_acc_bytes[0]};
-    x.data.push_back(IMUData.linear_acceleration.y);
-
-    int16_t yaw_rate = IMUData.angular_velocity.z*(180/M_PI)*128;
-    int8_t yaw_rate_bytes[2];
-    intToBytes(yaw_rate, yaw_rate_bytes);
-    int8_t yaw_rate_bytes_le[2] = {yaw_rate_bytes[1], yaw_rate_bytes[0]};
-    x.data.push_back(IMUData.angular_velocity.z);
-
     struct can_frame frame;
     frame.can_id = 0x501;             
     frame.can_dlc = 6;                
-    frame.data[0] = yaw_rate_bytes_le[0];
-    frame.data[1] = yaw_rate_bytes_le[1];
-    frame.data[2] = lat_acc_bytes_le[0];
-    frame.data[3] = lat_acc_bytes_le[1];
-    frame.data[4] = long_acc_bytes_le[0];
-    frame.data[5] = long_acc_bytes_le[1];
+    frame.data[0] = ax_;
+    frame.data[1] = ax_;
+    frame.data[2] = ay_;
+    frame.data[3] = ay_;
+    frame.data[4] = yaw_rate_;
+    frame.data[5] = yaw_rate_;
 
     write(socketCan1, &frame, sizeof(struct can_frame));
 }
 
-void CanInterface::DL502Callback()
+void CanInterface::send_dl502()
 {   
     struct can_frame frame;
     frame.can_id = 0x502;             
     frame.can_dlc = 5;                
-    frame.data[0] = (this->cones_count_all & 0xFE00)>>9;
-    frame.data[1] = (this->cones_count_all & 0x01FE)>>1;
-    frame.data[2] = (this->cones_count_all & 0x0001)|((this->cones_count_actual & 0xFE)>>1);
-    frame.data[3] = ((((((this->cones_count_actual & 0x01)<<4)|this->lap_counter)<<2)|this->service_brake_state)<<1)|steering_state;
-    frame.data[4] = (((this->AMI_state <<2) | this->EBS_state)<<3) | this->AS_state;
+    frame.data[0] = 0;
+    frame.data[1] = 0;
+    frame.data[2] = 0;
+    frame.data[3] = 0;
+    frame.data[4] = 0;
 
     write(socketCan1, &frame, sizeof(struct can_frame));
 }

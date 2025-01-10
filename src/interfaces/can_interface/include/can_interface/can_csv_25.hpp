@@ -26,6 +26,7 @@
 #include <std_msgs/msg/float32_multi_array.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
+#include "common_msgs/msg/car_info.hpp"
 #include <geometry_msgs/msg/vector3.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <fstream>
@@ -127,14 +128,15 @@ private:
     void steeringInfoCallback(std_msgs::msg::Float32MultiArray);
     void ASStatusCallback(std_msgs::msg::Int16);
     void targetSpeedCallback(std_msgs::msg::Float32);
-    void DL500Callback();
-    void DL501Callback();
-    void DL502Callback();
+    void send_dl500();
+    void send_dl501();
+    void send_dl502();
     void pcTempCallback();
-
+    void car_info_callback(common_msgs::msg::CarInfo);
+    
     // SUBS
 
-    rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr controlsSub;
+    rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr control_sub_;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr ASStatusSub;
     rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr steeringInfoSub;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lapCounterSub;
@@ -156,30 +158,25 @@ private:
 
     // VAR
 
-    uint8_t actual_speed;
-    uint8_t target_speed;
-    int8_t actual_steering_angle;
-    int8_t target_steering_angle;
-    uint8_t brake_hydr_actual;
-    uint8_t brake_hydr_target;
-    uint8_t pneumatic_press;
-    int8_t motor_moment_actual;
-    int8_t motor_moment_target;
-    
-    uint8_t AS_state;
-    uint8_t EBS_state;
-    uint8_t AMI_state;
-    bool steering_state;
-    uint8_t service_brake_state;
-    uint8_t lap_counter;
-    uint8_t cones_count_actual;
-    uint16_t cones_count_all;
+    float speed_actual_ = 0;
+    float speed_target_ = 0;
+    float steering_angle_actual_ = 0;
+    float steering_angle_target_ = 0;
+    float brake_hydr_actual_ = 0;
+    float brake_hydr_target_ = 0;
+    float motor_moment_actual_ = 0;
+    float motor_moment_target_ = 0;
 
-    // PUB
+    float ax_ = 0;
+    float ay_ = 0;
+    float yaw_rate_ = 0;
 
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr PCTempPub;
-
-    // MSG
-
-    sensor_msgs::msg::Imu IMUData;
+    int as_status_ = 0;
+    int asb_ebs_state_ = 0;
+    int ami_state_ = 0;
+    int steering_state_ = 0;
+    int asb_redundancy_state_ = 0;
+    int lap_counter_ = 0;
+    int cones_count_actual_ = 0;
+    int cones_count_all_ = 0;
 };
