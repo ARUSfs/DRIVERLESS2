@@ -32,6 +32,32 @@ CarState::CarState(): Node("car_state")
     as_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
         "/car_state/AS_check", 1);
 
+
+    ami_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        "/can_interface/AMI", 10, std::bind(&CarState::
+            ami_callback, this, std::placeholders::_1));
+
+    target_speed_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
+        "/controller/cmd", 10, std::bind(&CarState::
+            target_speed_callback, this, std::placeholders::_1));
+
+    target_delta_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
+        "/controller/cmd", 10, std::bind(&CarState::
+            target_delta_callback, this, std::placeholders::_1));
+
+    lap_count_sub_ = this->create_subscription<std_msgs::msg::Int16>(
+        "/lap_counter", 10, std::bind(&CarState::
+            lap_count_callback, this, std::placeholders::_1));
+
+    cones_count_actual_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+        "/perception/map", 10, std::bind(&CarState::
+            cones_count_actual_callback, this, std::placeholders::_1));
+
+    cones_count_all_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+        "/slam/map", 10, std::bind(&CarState::
+            cones_count_all_callback, this, std::placeholders::_1));
+
+
     if(kSimulation && get_arussim_ground_truth){
     arussim_ground_truth_sub_ = this->create_subscription<common_msgs::msg::State>(
         "/arussim_interface/arussim_ground_truth", 1, std::bind(&CarState::
@@ -52,19 +78,27 @@ CarState::CarState(): Node("car_state")
                 wheel_speeds_callback, this, std::placeholders::_1));
     } else {
         extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can/extensometer", 1, std::bind(&CarState::
+            "/can_interface/extensometer", 1, std::bind(&CarState::
                 extensometer_callback, this, std::placeholders::_1));
 
-        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-            "/can/IMU", 1, std::bind(&CarState::
-                imu_callback, this, std::placeholders::_1));
+        ax_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/IMU/ax", 1, std::bind(&CarState::
+                ax_callback, this, std::placeholders::_1));
+        
+        ay_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/IMU/ay", 1, std::bind(&CarState::
+                ay_callback, this, std::placeholders::_1));
+
+        r_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/IMU/yaw_rate", 1, std::bind(&CarState::
+                r_callback, this, std::placeholders::_1));
 
         inv_speed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can/inv_speed", 1, std::bind(&CarState::
+            "/can_interface/inv_speed", 1, std::bind(&CarState::
                 inv_speed_callback, this, std::placeholders::_1));
         
-        as_status_sub_ = this->create_subscription<std_msgs::msg::Int16>(
-            "/can/AS_status", 1, std::bind(&CarState::
+        as_status_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/AS_status", 1, std::bind(&CarState::
                 as_status_callback, this, std::placeholders::_1));
     }
 
@@ -82,22 +116,38 @@ CarState::CarState(): Node("car_state")
     CarState::initialize_vx_filter();
 }
 
-void CarState::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
+void CarState::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    as_status_ = msg->data;
+    as_status_ = msg->data +1;
+
+    if(as_status_ == 3)
+    {
+        brake_hydr_pressure_ = 0;
+    }else{
+        brake_hydr_pressure_ = 100;
+    }
 }
 
 void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
 {   
-    if(kSimulation){
-        ax_ = msg-> linear_acceleration.x;
-        ay_ = msg-> linear_acceleration.y;
-        r_ = msg->angular_velocity.z;
-    } else {
-        ax_ = - msg-> linear_acceleration.x;
-        ay_ = msg-> linear_acceleration.y;
-        r_ = - msg->angular_velocity.z;
-    }
+    ax_ = msg-> linear_acceleration.x;
+    ay_ = msg-> linear_acceleration.y;
+    r_ = msg->angular_velocity.z;
+}
+
+void CarState::ax_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    ax_ = - msg->data;
+}
+
+void CarState::ay_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    ay_ = msg->data;
+}
+
+void CarState::r_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    r_ = - msg->data;
 }
 
 void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -123,6 +173,52 @@ void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::Shar
     x_ = msg->x;
     y_ = msg->y;
     yaw_ = msg->yaw;
+}
+
+void CarState::ami_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    ami_ = msg->data;
+
+    if(ami_ == 3)
+    {
+        ami_ = 6;
+    } if (ami_ == 4)
+    {
+        ami_ = 3;
+    } if (ami_ == 5)
+    {
+        ami_ = 4;
+    } if (ami_ == 6)
+    {
+        ami_ = 5;
+    }
+}
+
+void CarState::target_speed_callback(const common_msgs::msg::Cmd msg)
+{
+    target_speed_ = msg.acc;
+    torque_actual_ = msg.acc;
+    torque_target_ = msg.acc;
+}
+
+void CarState::target_delta_callback(const common_msgs::msg::Cmd msg)
+{
+    target_delta_ = msg.delta;
+}
+
+void CarState::lap_count_callback(const std_msgs::msg::Int16 msg)
+{
+    lap_count_ = msg.data;
+}
+
+void CarState::cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg)
+{
+    cones_count_actual_ = msg.width;
+}
+
+void CarState::cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg)
+{   
+    cones_count_all_ = msg.width;
 }
 
 void CarState::on_timer()

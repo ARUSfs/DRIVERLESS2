@@ -6,12 +6,15 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/int16.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/car_info.hpp"
 #include "common_msgs/msg/four_wheel_drive.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "common_msgs/msg/cmd.hpp"
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -41,7 +44,17 @@ private:
     void wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::SharedPtr msg);
     void inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
-    void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
+    void as_status_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void ax_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void ay_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void r_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void target_speed_callback(const common_msgs::msg::Cmd msg);
+    void target_delta_callback(const common_msgs::msg::Cmd msg);
+    void lap_count_callback(const std_msgs::msg::Int16 msg);
+    void cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg);
+    void cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg);
+    void ami_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    
 
     // Functions
     void on_timer();
@@ -94,7 +107,16 @@ private:
     rclcpp::Subscription<common_msgs::msg::FourWheelDrive>::SharedPtr wheel_speeds_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr inv_speed_sub_;
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr arussim_ground_truth_sub_;
-    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr as_status_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr as_status_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ami_sub_;
+    rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr target_speed_sub_;
+    rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr target_delta_sub_;
+    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cones_count_actual_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cones_count_all_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ax_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ay_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr r_sub_;
 
     // Publisher for the aggregated state
     rclcpp::Publisher<common_msgs::msg::State>::SharedPtr state_pub_;
