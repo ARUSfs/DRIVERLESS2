@@ -352,7 +352,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
     double acum = 0.0;
     trajectory_msg.s = {0.0};
 
-    std::vector<double> x_coords, y_coords, t_coords, xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile;
+    std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile;
     std::vector<Vector2> spline_points;
     if (route_size < 3){
         common_msgs::msg::PointXY point;
