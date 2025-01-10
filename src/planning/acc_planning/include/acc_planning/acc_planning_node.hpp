@@ -19,12 +19,12 @@ private:
     double kTargetSpeed;
     double kMaxXAcc;
     double kMaxDec;
+    double kTrackLength;
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
     std::vector<double> s_;               // Cumulative distances
     std::vector<double> speed_profile_;   // Velocity profile
     std::vector<double> acc_profile_;    // Acceleration profile
-    bool profiles_calculated_ = false; 
 
     double a_;
     double b_;
