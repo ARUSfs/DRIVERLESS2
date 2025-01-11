@@ -5,4 +5,5 @@ skidpad_planning:
     target_first_lap: 5.0
     target_second_lap: 10.0
     route_spacing: 0.5
-    
+    top_accx: 5.0
+    top_accy: 5.0

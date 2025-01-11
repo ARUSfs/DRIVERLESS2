@@ -31,7 +31,8 @@ private:
     double kTargetFirstLap;
     double kTargetSecondLap;
     double kRouteSpacing;
-
+    double kMaxXAcc;
+    double kMaxYAcc;
     rclcpp::Time start_time_;
 
     std::pair<double, double> left_center;
@@ -43,6 +44,8 @@ private:
     bool trajectory_calculated_ = false;
     std::vector<Eigen::Vector2d> template_;
     std::vector<double> speed_profile_;
+    std::vector<double> acc_profile_;
+
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
 
