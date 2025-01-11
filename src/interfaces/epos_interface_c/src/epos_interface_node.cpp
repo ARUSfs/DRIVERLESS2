@@ -31,6 +31,14 @@ EPOS_interface::EPOS_interface() : Node("EPOS_interface"),
         "/controller/cmd", 1, 
         std::bind(&EPOS_interface::command_callback, this, std::placeholders::_1));
 
+    sub_range_check_ = this->create_subscription<std_msgs::msg::Bool>(
+        "/car_state/run_check", 1, 
+        std::bind(&EPOS_interface::range_check_callback, this, std::placeholders::_1));
+
+    sub_extensometer_ = this->create_subscription<std_msgs::msg::Float32>(
+        "/can/extensometer", 1, 
+        std::bind(&EPOS_interface::extensometer_callback, this, std::placeholders::_1));
+
     pub_info_epos_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/epos_interface/epos_info", 10);
 
     RCLCPP_INFO(this->get_logger(), "EPOS_interface node initialized.");
@@ -58,6 +66,15 @@ void EPOS_interface::command_callback(const common_msgs::msg::Cmd::SharedPtr msg
     pub_info_epos_->publish(info_msg);
     
 }
+
+void EPOS_interface::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg){
+    current_angle_ = msg -> data;
+}
+
+void EPOS_interface::range_check_callback(const std_msgs::msg::Bool::SharedPtr msg){
+    range_check_ = msg -> data;
+}
+
 void EPOS_interface::clean_and_close(){
     _is_shutdown_ = true;
     epos_.disable();

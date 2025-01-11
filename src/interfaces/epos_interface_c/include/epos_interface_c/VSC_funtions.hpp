@@ -60,8 +60,8 @@ public:
         
         if (!_is_connected_) {
 
-            keyhandle_ = VCS_OpenDevice("EPOS4", "MAXON SERIAL V2", "USB", "USB0", &pErrorCode);
-            // Alternative connection: VCS_OpenDevice("EPOS4", "CANopen", "CAN_kvaser_usb 0", "CAN1", &pErrorCode)
+            //keyhandle_ = VCS_OpenDevice("EPOS4", "MAXON SERIAL V2", "USB", "USB0", &pErrorCode);
+            keyhandle_ = VCS_OpenDevice("EPOS4", "CANopen", "CAN_kvaser_usb 0", "CAN1", &pErrorCode);
 
             if (keyhandle_ == nullptr) {
                 std::cerr << "Error: Failed to connect to EPOS4 device." << std::endl;
@@ -238,9 +238,9 @@ public:
         }
     }
 
-    void set_position_offset(double initial_position) {
+    void set_position_offset(double current_angle) {
         uint32_t pErrorCode = 0;
-        float pPositionOffset = static_cast<float>(2 * initial_position * (2048 * 5 * 66 / 360));
+        float pPositionOffset = static_cast<float>(2 * current_angle * (2048 * 5 * 66 / 360));
         uint32_t pBytesWritten = 0;
 
         if (_is_enable_) {
