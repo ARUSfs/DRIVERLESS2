@@ -25,6 +25,8 @@ EPOS_interface::EPOS_interface() : Node("EPOS_interface"),
     epos_.connect_to_device();
     epos_.enable();
 
+    epos_.set_position_offset(10);
+
     _is_shutdown_ = false;
 
     sub_cmd_ = this->create_subscription<common_msgs::msg::Cmd>(
