@@ -31,30 +31,34 @@ CarState::CarState(): Node("car_state")
         "/car_state/car_info", 1);
     as_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
         "/car_state/AS_check", 1);
+    run_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+        "/car_state/run_check", 1);
+    steering_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+        "/car_state/steering_check", 1);
 
 
     ami_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-        "/can_interface/AMI", 10, std::bind(&CarState::
+        "/can_interface/AMI", 1, std::bind(&CarState::
             ami_callback, this, std::placeholders::_1));
 
     target_speed_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
-        "/controller/cmd", 10, std::bind(&CarState::
+        "/controller/cmd", 1, std::bind(&CarState::
             target_speed_callback, this, std::placeholders::_1));
 
     target_delta_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
-        "/controller/cmd", 10, std::bind(&CarState::
+        "/controller/cmd", 1, std::bind(&CarState::
             target_delta_callback, this, std::placeholders::_1));
 
     lap_count_sub_ = this->create_subscription<std_msgs::msg::Int16>(
-        "/lap_counter", 10, std::bind(&CarState::
+        "/lap_counter", 1, std::bind(&CarState::
             lap_count_callback, this, std::placeholders::_1));
 
     cones_count_actual_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "/perception/map", 10, std::bind(&CarState::
+        "/perception/map", 1, std::bind(&CarState::
             cones_count_actual_callback, this, std::placeholders::_1));
 
     cones_count_all_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "/slam/map", 10, std::bind(&CarState::
+        "/slam/map", 1, std::bind(&CarState::
             cones_count_all_callback, this, std::placeholders::_1));
 
 
@@ -290,6 +294,21 @@ void CarState::on_timer()
     }
     as_check_pub_->publish(as_check_msg);
 
+
+    // Publish run check
+    auto run_check_msg = std_msgs::msg::Bool();
+    if(kSimulation){
+        run_check_msg.data = true;
+    } else {
+        run_check_msg.data = as_status_ == 2;
+    }
+    run_check_pub_->publish(run_check_msg);
+
+
+    // Publish steering check
+    auto steering_check_msg = std_msgs::msg::Bool();
+    run_check_msg.data = run_check_msg.data && (vx_ >= 1);
+    steering_check_pub_->publish(steering_check_msg);
 }
 
 void CarState::get_tf_position()
