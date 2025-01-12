@@ -29,8 +29,6 @@ CarState::CarState(): Node("car_state")
         "/car_state/state", 1);
     car_info_pub_ = this->create_publisher<common_msgs::msg::CarInfo>(
         "/car_state/car_info", 1);
-    as_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
-        "/car_state/AS_check", 1);
     run_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
         "/car_state/run_check", 1);
     steering_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
@@ -283,17 +281,7 @@ void CarState::on_timer()
     car_info_msg.cones_count_all = cones_count_all_;
 
     car_info_pub_->publish(car_info_msg);
-
-
-    // Publish AS check
-    auto as_check_msg = std_msgs::msg::Bool();
-    if(kSimulation){
-        as_check_msg.data = true;
-    } else {
-        as_check_msg.data = as_status_ == 2;
-    }
-    as_check_pub_->publish(as_check_msg);
-
+    
 
     // Publish run check
     auto run_check_msg = std_msgs::msg::Bool();

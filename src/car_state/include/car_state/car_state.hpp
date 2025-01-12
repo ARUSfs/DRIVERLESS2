@@ -121,7 +121,6 @@ private:
     // Publisher for the aggregated state
     rclcpp::Publisher<common_msgs::msg::State>::SharedPtr state_pub_;
     rclcpp::Publisher<common_msgs::msg::CarInfo>::SharedPtr car_info_pub_;
-    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr as_check_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr run_check_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steering_check_pub_;
 
