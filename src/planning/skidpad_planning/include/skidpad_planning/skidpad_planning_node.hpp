@@ -16,6 +16,9 @@
 #include <vector>
 #include <cmath>
 #include <Eigen/Dense>
+
+#include <dbscan/dbscan.cpp>
+
 class SkidpadPlanning : public rclcpp::Node {
 public:
     SkidpadPlanning();
@@ -27,11 +30,17 @@ private:
     std::string kTrajectoryTopic;
     double kTargetFirstLap;
     double kTargetSecondLap;
+    double kRouteSpacing;
 
-    std::pair<double, double> best_center;
-    std::pair<double, double> second_best_center;
-    double radius;
-    bool trajectory_calculated_;
+    rclcpp::Time start_time_;
+
+    std::pair<double, double> left_center;
+    std::pair<double, double> right_center;
+
+    std::vector<Point> centers;
+
+    double radius = 9.125;
+    bool trajectory_calculated_ = false;
     std::vector<Eigen::Vector2d> template_;
     std::vector<double> speed_profile_;
     pcl::PointCloud<ConeXYZColorScore> cones_;
@@ -59,9 +68,9 @@ private:
     /**
      * @brief Method that processes the point cloud and generates the planning data.
      */ 
-    void generate_planning();
-    void update_route(const sensor_msgs::msg::PointCloud2& msg);
     void publish_trajectory();
+    void initialize_skidpad(double straight_distance, double circle_radius, 
+                                         double first_lap_speed, double second_lap_speed);
     std::tuple<double, double, double> find_circle_center(
        const ConeXYZColorScore& p1, const ConeXYZColorScore& p2, const ConeXYZColorScore& p3);
     // Utility function to convert from ROS PointCloud2 to PCL PointCloud

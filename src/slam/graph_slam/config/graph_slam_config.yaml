@@ -1,0 +1,3 @@
+graph_slam:
+  ros__parameters:
+    write_csv: false

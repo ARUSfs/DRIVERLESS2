@@ -10,7 +10,10 @@ perception:
     h_fov: 180.0
 
     #Parameters of ground filter
-    threshold: 0.05
+    threshold_ground_filter: 0.05
 
     #Parameters of clustering
     radius: 0.15
+
+    #Parameters of scoring
+    threshold_scoring: 0.75

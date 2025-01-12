@@ -9,15 +9,16 @@ include_directories(
   include
 )
 
-# find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(common_msgs REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 add_executable(can_interface_exec src/can_interface_node.cpp)
+#add_executable(can_interface_exec src/can_csv_25.cpp)
 ament_target_dependencies(can_interface_exec rclcpp 
                             std_msgs 
                             geometry_msgs 
@@ -29,6 +30,11 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME})
+
+install(FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/can_interface/can.csv
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/can_interface/can_aux.csv
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()

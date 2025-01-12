@@ -11,6 +11,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 
+#pragma once
+
 struct PointXYZColorScore {
     //definition of the type
     PCL_ADD_POINT4D;  

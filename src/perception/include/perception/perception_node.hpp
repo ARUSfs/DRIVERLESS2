@@ -16,6 +16,7 @@
 #include "perception/ground_filtering.h"
 #include "perception/clustering.h"
 #include "perception/cropping.h"
+#include "scoring.h"
 #include "PointXYZColorScore.h"
 #include <pcl/common/common.h>
 
@@ -42,8 +43,9 @@ class Perception : public rclcpp::Node
         double kMaxYFov;
         double kMaxZFov;
         double kHFov;
-        double kThreshold;
+        double kThresholdGroundFilter;
         double kRadius;
+        double kThresholdScoring;
 
         //Subscriber
         std::string kLidarTopic;
@@ -65,11 +67,10 @@ class Perception : public rclcpp::Node
          * @brief Auxiliar function for the call back function.
          * Extract the center of each cluster and keep it in a new point cloud.
          * @param cluster_indices Indices from cluster.
-         * @param map_cloud Final cloud that will be publish.
          * @param cloud_filtered The point cloud after the ground filtering.
          * @param cluster_centers The center of each cluster.
          */
-        void get_clusters_centers(std::vector<pcl::PointIndices> cluster_indices, pcl::PointCloud<PointXYZColorScore>::Ptr map_cloud,
+        void get_clusters_centers(std::vector<pcl::PointIndices>& cluster_indices,
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& cluster_centers);
             
         /**
@@ -80,9 +81,8 @@ class Perception : public rclcpp::Node
          * @param cluster_indices The indices of the points that form each cluster.
          * @param cluster_centers The center of each cluster.
          * @param radius The radius used to search for eliminated points.
-         * @param total_recovered_points The number of recovered points.
          */
         void reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, 
             std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore> cluster_centers, 
-            double radius, int& total_recovered_points);
+            double radius);
 };

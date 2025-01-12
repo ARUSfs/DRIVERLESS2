@@ -20,7 +20,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("max_tri_angle", 2.9);
     this->declare_parameter<double>("len_coeff", 1.0);
     this->declare_parameter<double>("angle_coeff", 1.0);
-    this->declare_parameter<double>("max_angle", 3.1416);
+    this->declare_parameter<double>("max_angle", M_PI);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
@@ -29,8 +29,6 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("len_coeff", kLenCoeff);
     this->get_parameter("angle_coeff", kAngleCoeff);
     this->get_parameter("max_angle", kMaxAngle);
-
-    iteration_ = 0;
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
@@ -97,8 +95,6 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
         // Publish the best trajectory
         trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
 
-        // Add 1 to the iteration counter
-        iteration_++;
     }
 }
 
@@ -300,28 +296,35 @@ void PathPlanning::get_midpoint_routes(){
 }
 
 double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
+    // Initialize the cost to 0
     double route_cost = 0;
     int route_size = route.size();
-    double route_length = CDT::distance(route[0], route[1]);
-    double angle_diff_sum = 0;
-    std::vector<CDT::V2d<double>> route_out = {CDT::V2d<double>::make(x_, y_)};
     if (route_size < 3){
         return INFINITY;
     }
-    // Check if the route is looking forward (angle difference with the yaw is less than 1.57 radians)
-    bool route_looking_forward = abs(atan2(route[1].y-y_, route[1].x-x_)-yaw_) < 1.57;
+    // Check if the route is looking forward (angle difference with the yaw is less than pi/2 radians)
+    bool route_looking_forward = abs(atan2(route[1].y-y_, route[1].x-x_)-yaw_) < M_PI/2;
     if (!route_looking_forward){
         return INFINITY;
     }
 
+    // Initialize the properties of the route
+    double route_length = CDT::distance(route[0], route[1]);
+    double angle_diff_sum = 0;
+
+    // Store the route while iterating
+    std::vector<CDT::V2d<double>> route_out = {CDT::V2d<double>::make(x_, y_)};
+    
+    // Iterate over the route and calculate the cost
     for (int i = 0; i<route_size-2;i++){
         route_length += CDT::distance(route[i+1], route[i+2]);
         double angle_diff = abs(atan2(route[i+2].y-route[i+1].y, route[i+2].x-route[i+1].x)-
                                 atan2(route[i+1].y-route[i].y, route[i+1].x-route[i].x));
+        double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
         route_out.push_back(route[i+1]);
 
         // If the angle is too big, cut the route and return the cost
-        if (angle_diff > kMaxAngle){
+        if (corrected_angle_diff > kMaxAngle){
             angle_diff_sum += angle_diff;
             route = route_out;           // Cut the route
             return kAngleCoeff*angle_diff_sum-kLenCoeff*route_length;

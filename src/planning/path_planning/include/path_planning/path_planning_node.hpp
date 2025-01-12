@@ -67,7 +67,6 @@ class PathPlanning : public rclcpp::Node
         std::vector<std::vector<int>> triangle_routes_;
         std::vector<std::vector<CDT::V2d<double>>> midpoint_routes_;
         std::vector<CDT::V2d<double>> best_midpoint_route_;
-        int iteration_;
 
         /**
          * @brief Callback function for the perception topic.
