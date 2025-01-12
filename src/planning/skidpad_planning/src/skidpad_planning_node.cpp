@@ -50,28 +50,28 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
     }
 
     // Initialize first circle section
-    for (int i = 0; i < circle_points; ++i) {
+    for (int i = 0; i < circle_points; ++i) { //circle_points-n; n= d/spacing
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                -circle_radius + circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(first_lap_speed, ay*radius));
     }
 
     // Initialize second circle section
-    for (int i = 0; i < circle_points; ++i) {
+    for (int i = 0; i < circle_points; ++i) { //-n, circlepoints+n
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                -circle_radius + circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(second_lap_speed, ay*radius));
     }
 
     // Initialize third circle section
-    for (int i = 0; i < circle_points; ++i) {
+    for (int i = 0; i < circle_points; ++i) { //n, circlepoints-n
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                circle_radius - circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(first_lap_speed, ay*radius));
     }
 
     // Initialize fourth circle section
-    for (int i = 0; i < circle_points; ++i) {
+    for (int i = 0; i < circle_points; ++i) { //-n, circlepoints 
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                circle_radius - circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(second_lap_speed, ay*radius));
@@ -378,6 +378,10 @@ void SkidpadPlanning::publish_trajectory() {
     for (const auto& v : speed_profile_) {
         trajectory_msg.speed_profile.push_back(v);
     }
+    for (const auto& a : acc_profile_) {
+        trajectory_msg.acc_profile.push_back(a);
+    }
+
 
     trajectory_pub_->publish(trajectory_msg);
 }
