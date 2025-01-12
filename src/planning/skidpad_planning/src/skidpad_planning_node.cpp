@@ -7,6 +7,7 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
 
     this->declare_parameter<std::string>("perception_topic", "/slam/map");
     this->declare_parameter<std::string>("trajectory_topic", "/skidpad_planning/trajectory");
+    this->declare_parameter<double>("planning_time", 5.0);
     this->declare_parameter<double>("target_first_lap", 5.0);
     this->declare_parameter<double>("target_second_lap", 10.0);
     this->declare_parameter<double>("route_spacing", 0.5);
@@ -19,6 +20,7 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
 
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
+    this->get_parameter("planning_time", kPlanningTime);
     this->get_parameter("target_first_lap", kTargetFirstLap);
     this->get_parameter("target_second_lap", kTargetSecondLap);
     this->get_parameter("route_spacing", kRouteSpacing);
@@ -164,8 +166,6 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
 void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
 
     cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
-
-    double kPlanningTime = 5.0;
 
     if(this->now().seconds() - start_time_.seconds() < kPlanningTime ){
 

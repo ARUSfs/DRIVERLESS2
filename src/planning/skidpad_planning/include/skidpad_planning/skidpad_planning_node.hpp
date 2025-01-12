@@ -28,6 +28,7 @@ private:
     // Node parameters
     std::string kPerceptionTopic;
     std::string kTrajectoryTopic;
+    double kPlanningTime;
     double kTargetFirstLap;
     double kTargetSecondLap;
     double kRouteSpacing;
