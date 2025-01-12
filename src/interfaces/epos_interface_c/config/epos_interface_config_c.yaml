@@ -1,5 +1,0 @@
-epos_interface_c:
-  ros__parameters:
-    MAX_ACCELERATION: 6000
-    MAX_DECELERATION: 6000
-    PROFILE_VELOCITY: 6000
