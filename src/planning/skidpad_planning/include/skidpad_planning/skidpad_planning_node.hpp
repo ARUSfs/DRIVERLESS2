@@ -31,9 +31,14 @@ private:
     double kTargetFirstLap;
     double kTargetSecondLap;
     double kRouteSpacing;
-    double kMaxXAcc;
+    double kMaxXAccForwards;
+    double kMaxXAccBackwards;
     double kMaxYAcc;
+    double kStepWidth1;
+    double kStepWidth2;
     rclcpp::Time start_time_;
+    double n1;
+    double n2;
 
     std::pair<double, double> left_center;
     std::pair<double, double> right_center;
