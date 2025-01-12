@@ -24,6 +24,7 @@
 #include <std_msgs/msg/int16.hpp>
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/float32_multi_array.hpp>
+#include "std_msgs/msg/bool.hpp"
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include "common_msgs/msg/car_info.hpp"
@@ -128,12 +129,13 @@ private:
     void steeringInfoCallback(std_msgs::msg::Float32MultiArray);
     void ASStatusCallback(std_msgs::msg::Int16);
     void targetSpeedCallback(std_msgs::msg::Float32);
+    void dl_timer_callback();
     void send_dl500();
     void send_dl501();
     void send_dl502();
-    void pcTempCallback();
     void car_info_callback(common_msgs::msg::CarInfo);
-    
+    void run_check_callback(std_msgs::msg::Bool);
+
     // SUBS
 
     rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr control_sub_;
@@ -143,15 +145,13 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr conesCountSub;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr conesCountAllSub;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr targetSpeedSub;
-    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr brakeLightSub;
+    rclcpp::Subscription<common_msgs::msg::CarInfo>::SharedPtr car_info_sub_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr run_check_sub_;
 
     // TIMERS
 
-    rclcpp::TimerBase::SharedPtr pcTempTimer;
     rclcpp::TimerBase::SharedPtr heartBeatTimer;
-    rclcpp::TimerBase::SharedPtr DL500Timer;
-    rclcpp::TimerBase::SharedPtr DL501Timer;
-    rclcpp::TimerBase::SharedPtr DL502Timer;
+    rclcpp::TimerBase::SharedPtr dl_timer_;
 
     float pc_temp;
     void getPcTemp();
@@ -179,4 +179,6 @@ private:
     int lap_counter_ = 0;
     int cones_count_actual_ = 0;
     int cones_count_all_ = 0;
+
+    bool run_check_ = false;
 };

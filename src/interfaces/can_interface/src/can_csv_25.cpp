@@ -118,16 +118,22 @@ CanInterface::CanInterface() : Node("can_interface"){
         return;
     }
 
-    control_sub_ = this->create_subscription<common_msgs::msg::Cmd>("/controller/cmd", 10, std::bind(&CanInterface::controlsCallback, this, std::placeholders::_1));
-    // car_info_sub_ = ...
-    // run_check_sub_ = ...
+    control_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
+        "/controller/cmd", 1, std::bind(&CanInterface::
+            controlsCallback, this, std::placeholders::_1));
+
+    car_info_sub_ = this->create_subscription<common_msgs::msg::CarInfo>(
+        "/car_state/car_info", 1, std::bind(&CanInterface::
+            car_info_callback, this, std::placeholders::_1));
+    
+    run_check_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+        "/car_state/run_check", 1, std::bind(&CanInterface::
+            run_check_callback, this, std::placeholders::_1));
+
 
     heartBeatTimer = this->create_wall_timer(0.1s, std::bind(&CanInterface::pubHeartBeat, this));
-    // dl_timer_500 = ...
-    // void dl_timer_callback ... 
-        // send_dl500
-        // send_dl501
-        // send_dl502
+    dl_timer_ = this->create_wall_timer(0.1s, std::bind(&CanInterface::dl_timer_callback, this));
+
 
     std::thread thread_0(&CanInterface::read_CAN, this, socketCan0);
     std::thread thread_1(&CanInterface::read_CAN, this, socketCan1);
@@ -364,7 +370,7 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
     brake_hydr_target_ = msg.brake_hydr_pressure;
     motor_moment_actual_ = msg.torque_actual;
     motor_moment_target_ = msg.torque_target;
-
+ 
     ax_ = msg.ax;
     ay_ = msg.ay;
     yaw_rate_ = msg.r;
@@ -379,6 +385,11 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
     cones_count_all_ = msg.cones_count_all;
 }
 
+void CanInterface::run_check_callback(const std_msgs::msg::Bool msg)
+{
+    run_check_ = msg.data;
+}
+
 void CanInterface::pubHeartBeat()
 {
     struct can_frame frame;
@@ -387,6 +398,13 @@ void CanInterface::pubHeartBeat()
     frame.data[0] = 0x00;
 
     write(socketCan0, &frame, sizeof(struct can_frame));
+}
+
+void CanInterface::dl_timer_callback()
+{
+    send_dl500();
+    send_dl501();
+    send_dl502();
 }
 
 void CanInterface::send_dl500()
