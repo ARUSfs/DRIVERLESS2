@@ -48,7 +48,7 @@ CarState::CarState(): Node("car_state")
             target_delta_callback, this, std::placeholders::_1));
 
     lap_count_sub_ = this->create_subscription<std_msgs::msg::Int16>(
-        "/lap_counter", 1, std::bind(&CarState::
+        "/slam/lap_count", 1, std::bind(&CarState::
             lap_count_callback, this, std::placeholders::_1));
 
     cones_count_actual_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -281,7 +281,7 @@ void CarState::on_timer()
     car_info_msg.cones_count_all = cones_count_all_;
 
     car_info_pub_->publish(car_info_msg);
-    
+
 
     // Publish run check
     auto run_check_msg = std_msgs::msg::Bool();
