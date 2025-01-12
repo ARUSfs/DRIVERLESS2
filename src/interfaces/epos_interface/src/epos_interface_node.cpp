@@ -25,22 +25,23 @@ EPOS_interface::EPOS_interface() : Node("EPOS_interface"),
     epos_.connect_to_device();
     epos_.enable();
 
-    _is_shutdown_ = false;
+    is_shutdown_ = false;
 
-    sub_cmd_ = this->create_subscription<common_msgs::msg::Cmd>(
+
+    epos_info_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/epos_interface/epos_info", 10);
+
+    cmd_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
         "/controller/cmd", 1, 
-        std::bind(&EPOS_interface::command_callback, this, std::placeholders::_1));
+        std::bind(&EPOS_interface::cmd_callback, this, std::placeholders::_1));
 
-    sub_range_check_ = this->create_subscription<std_msgs::msg::Bool>(
-        "/car_state/run_check", 1, 
-        std::bind(&EPOS_interface::range_check_callback, this, std::placeholders::_1));
+    steer_check_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+        "/car_state/steer_check", 1, 
+        std::bind(&EPOS_interface::steer_check_callback, this, std::placeholders::_1));
 
-    sub_extensometer_ = this->create_subscription<std_msgs::msg::Float32>(
-        "/can/extensometer", 1, 
+    extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        "/can_interface/extensometer", 1, 
         std::bind(&EPOS_interface::extensometer_callback, this, std::placeholders::_1));
-
-    pub_info_epos_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/epos_interface/epos_info", 10);
-
+    
     RCLCPP_INFO(this->get_logger(), "EPOS_interface node initialized.");
 }
 
@@ -49,12 +50,12 @@ EPOS_interface::~EPOS_interface()
     clean_and_close();
 }
 
-void EPOS_interface::command_callback(const common_msgs::msg::Cmd::SharedPtr msg)
+void EPOS_interface::cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg)
 {
     double angle = msg -> delta * 180 / M_PI;
     assert(angle <= 20.0 && angle >= -20.0 && "Angle out of range");
 
-    if (!_is_shutdown_) {
+    if (!is_shutdown_ && steer_check_) {
         epos_.move_to(angle);
     }
     
@@ -63,20 +64,22 @@ void EPOS_interface::command_callback(const common_msgs::msg::Cmd::SharedPtr msg
     for (const auto &value : epos_info) {
         info_msg.data.push_back(value);
     }
-    pub_info_epos_->publish(info_msg);
+    epos_info_pub_->publish(info_msg);
     
 }
 
 void EPOS_interface::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg){
-    current_angle_ = msg -> data;
+    if(is_shutdown_){
+        init_pos_ = msg -> data;
+    }
 }
 
-void EPOS_interface::range_check_callback(const std_msgs::msg::Bool::SharedPtr msg){
-    range_check_ = msg -> data;
+void EPOS_interface::steer_check_callback(const std_msgs::msg::Bool::SharedPtr msg){
+    steer_check_ = msg -> data;
 }
 
 void EPOS_interface::clean_and_close(){
-    _is_shutdown_ = true;
+    is_shutdown_ = true;
     epos_.disable();
     epos_.disconnect_device();
 }
