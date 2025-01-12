@@ -421,15 +421,31 @@ void CanInterface::send_dl500()
 {
     struct can_frame frame;
     frame.can_id = 0x500;             
-    frame.can_dlc = 8;                
-    frame.data[0] = speed_actual_;
-    frame.data[1] = speed_target_;
-    frame.data[2] = steering_angle_actual_ *0.5;
-    frame.data[3] = steering_angle_target_ *0.5;
-    frame.data[4] = brake_hydr_actual_;
-    frame.data[5] = brake_hydr_target_;
-    frame.data[6] = motor_moment_actual_;
-    frame.data[7] = motor_moment_target_;
+    frame.can_dlc = 8;
+    
+    float clamped_speed_actual_ = std::clamp(static_cast<float>(speed_actual_ *3.6), 0.0f, 255.0f);           
+    frame.data[0] = static_cast<uint8_t>(clamped_speed_actual_);
+
+    float clamped_speed_target_ = std::clamp(static_cast<float>(speed_target_ *3.6), 0.0f, 255.0f);
+    frame.data[1] = static_cast<uint8_t>(clamped_speed_target_);
+
+    float clamped_steering_angle_actual_ = std::clamp(static_cast<float>((steering_angle_actual_ *57.2958)*0.5), -128.0f, 127.0f);
+    frame.data[2] = static_cast<int8_t>(clamped_steering_angle_actual_);
+
+    float clamped_steering_angle_target_ = std::clamp(static_cast<float>((steering_angle_target_ *57.2958)*0.5), -128.0f, 127.0f);
+    frame.data[3] = static_cast<int8_t>(clamped_steering_angle_target_);
+
+    float clamped_brake_hydr_actual_ = std::clamp(brake_hydr_actual_, 0.0f, 255.0f);
+    frame.data[4] = static_cast<uint8_t>(clamped_brake_hydr_actual_);
+
+    float clamped_brake_hydr_target_ = std::clamp(brake_hydr_target_, 0.0f, 255.0f);
+    frame.data[5] = static_cast<uint8_t>(clamped_brake_hydr_target_);
+
+    float clamped_motor_moment_actual_ = std::clamp(motor_moment_actual_, -128.0f, 127.0f);
+    frame.data[6] = static_cast<int8_t>(clamped_motor_moment_actual_);
+
+    float clamped_motor_moment_target_ = std::clamp(motor_moment_target_, -128.0f, 127.0f);
+    frame.data[7] = static_cast<int8_t>(clamped_motor_moment_target_);
 
     write(socketCan1, &frame, sizeof(struct can_frame));
 }
@@ -438,13 +454,22 @@ void CanInterface::send_dl501()
 {
     struct can_frame frame;
     frame.can_id = 0x501;             
-    frame.can_dlc = 6;                
-    frame.data[0] = ax_;
-    frame.data[1] = ax_;
-    frame.data[2] = ay_;
-    frame.data[3] = ay_;
-    frame.data[4] = yaw_rate_;
-    frame.data[5] = yaw_rate_;
+    frame.can_dlc = 6;      
+    
+    int16_t clamped_ax_ = static_cast<int16_t>(std::clamp(static_cast<float>(ax_ *1/512 ), -32768.0f, 32767.0f));
+    // Convert to little-endian (break into 2 bytes)
+    frame.data[0] = clamped_ax_ & 0xFF;       
+    frame.data[1] = (clamped_ax_ >> 8) & 0xFF; 
+
+    int16_t clamped_ay_ = static_cast<int16_t>(std::clamp(static_cast<float>(ay_ *1/512 ), -32768.0f, 32767.0f));
+    // Convert to little-endian (break into 2 bytes)
+    frame.data[2] = clamped_ay_ & 0xFF;       
+    frame.data[3] = (clamped_ay_ >> 8) & 0xFF; 
+
+    int16_t clamped_yaw_rate_ = static_cast<int16_t>(std::clamp(static_cast<float>(yaw_rate_ *1/512 ), -32768.0f, 32767.0f));
+    // Convert to little-endian (break into 2 bytes)
+    frame.data[4] = clamped_yaw_rate_ & 0xFF;    
+    frame.data[5] = (clamped_yaw_rate_ >> 8) & 0xFF; 
 
     write(socketCan1, &frame, sizeof(struct can_frame));
 }
@@ -453,12 +478,26 @@ void CanInterface::send_dl502()
 {   
     struct can_frame frame;
     frame.can_id = 0x502;             
-    frame.can_dlc = 5;                
-    frame.data[0] = 0;
-    frame.data[1] = 0;
-    frame.data[2] = 0;
-    frame.data[3] = 0;
-    frame.data[4] = 0;
+    frame.can_dlc = 5;        
+
+    uint64_t packed_message = 0;
+
+    // Pack each field into the correct bit positions
+    packed_message |= (as_status_ & 0x07) << 0;             // Bits 0-2: AS_status (3 bits)
+    packed_message |= (asb_ebs_state_ & 0x07) << 3;         // Bits 3-4: ASB_EBS_state (3 bits)
+    packed_message |= (ami_state_ & 0x07) << 5;             // Bits 5-7: AMI_state (3 bits)
+    packed_message |= (steering_state_ & 0x01) << 8;        // Bit 8: Steering state (1 bit)
+    packed_message |= (asb_redundancy_state_ & 0x07) << 9;  // Bits 9-10: ASB_Redundancy_state (3 bits)
+    packed_message |= (lap_counter_ & 0x0F) << 11;          // Bits 11-14: Lap counter (4 bits)
+    packed_message |= (cones_count_actual_ & 0xFF) << 15;   // Bits 15-22: Cones_count_actual (8 bits)
+    packed_message |= (cones_count_all_ & 0xFFFF) << 23;    // Bits 23-39: Cones_count_all (16 bits)
+
+    // Extract the packed message into the frame data bytes (Little-Endian)
+    frame.data[0] = packed_message & 0xFF;         
+    frame.data[1] = (packed_message >> 8) & 0xFF;  
+    frame.data[2] = (packed_message >> 16) & 0xFF; 
+    frame.data[3] = (packed_message >> 24) & 0xFF; 
+    frame.data[4] = (packed_message >> 32) & 0xFF;         
 
     write(socketCan1, &frame, sizeof(struct can_frame));
 }
