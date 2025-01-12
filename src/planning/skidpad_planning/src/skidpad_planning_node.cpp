@@ -122,17 +122,6 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         
     }
 
-    
-    std::cout << "[";
-    for (auto s : speed_profile_) {
-        std::cout << s << ",";
-    }
-    std::cout << "]" << std::endl;
-    std::cout << "[";
-    for (auto s : acc_profile_) {
-        std::cout << s << ",";
-    }
-    std::cout << "]" << std::endl;
 }
 
 
