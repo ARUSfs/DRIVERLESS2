@@ -353,21 +353,23 @@ void intToBytes(int16_t val, int8_t* bytes)
 
 void CanInterface::control_callback(common_msgs::msg::Cmd msg)
 {   
-    float acc = msg.acc;
-    int16_t intValue = static_cast<int16_t>(acc * (1<<15))-1;
-    this->motor_moment_target_ = intValue;
+    if(run_check_){
+        float acc = msg.acc;
+        int16_t intValue = static_cast<int16_t>(acc * (1<<15))-1;
+        this->motor_moment_target_ = intValue;
 
-    int8_t bytesCMD[2];
-    intToBytes(intValue, bytesCMD);
-    int8_t cabecera = 0x90;
+        int8_t bytesCMD[2];
+        intToBytes(intValue, bytesCMD);
+        int8_t cabecera = 0x90;
 
-    struct can_frame frame;
-    frame.can_id = 0x201;             
-    frame.can_dlc = 3;                
-    frame.data[0] = cabecera;
-    frame.data[1] = bytesCMD[0];
-    frame.data[2] = bytesCMD[1];
-    write(socketCan1, &frame, sizeof(struct can_frame));  
+        struct can_frame frame;
+        frame.can_id = 0x201;             
+        frame.can_dlc = 3;                
+        frame.data[0] = cabecera;
+        frame.data[1] = bytesCMD[0];
+        frame.data[2] = bytesCMD[1];
+        write(socketCan1, &frame, sizeof(struct can_frame));  
+    }
 }
 
 void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
@@ -393,6 +395,26 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
     lap_counter_ = msg.lap_count;
     cones_count_actual_ = msg.cones_count_actual;
     cones_count_all_ = msg.cones_count_all;
+
+    if(as_status_ == 4){ // Finished
+        struct can_frame frame;
+        frame.can_id = 0x202;             
+        frame.can_dlc = 3;                
+        frame.data[0] = 0x01;
+        frame.data[1] = 0x01;
+        frame.data[2] = 0x03;
+
+        write(socketCan1, &frame, sizeof(struct can_frame));           
+    }else if(as_status_ == 4){ // Emergency
+        struct can_frame frame;
+        frame.can_id = 0x202;             
+        frame.can_dlc = 3;                
+        frame.data[0] = 0x01;
+        frame.data[1] = 0x01;
+        frame.data[2] = 0x04;
+
+        write(socketCan1, &frame, sizeof(struct can_frame));   
+    }
 }
 
 void CanInterface::run_check_callback(const std_msgs::msg::Bool msg)

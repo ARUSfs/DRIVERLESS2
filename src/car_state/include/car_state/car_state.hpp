@@ -48,7 +48,7 @@ private:
     void ax_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void ay_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void r_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void target_speed_callback(const common_msgs::msg::Cmd msg);
+    void target_speed_callback(const std_msgs::msg::Float32 msg);
     void target_delta_callback(const common_msgs::msg::Cmd msg);
     void lap_count_callback(const std_msgs::msg::Int16 msg);
     void cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg);
@@ -109,7 +109,7 @@ private:
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr arussim_ground_truth_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr as_status_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ami_sub_;
-    rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr target_speed_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr target_speed_sub_;
     rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr target_delta_sub_;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cones_count_actual_sub_;
@@ -122,7 +122,7 @@ private:
     rclcpp::Publisher<common_msgs::msg::State>::SharedPtr state_pub_;
     rclcpp::Publisher<common_msgs::msg::CarInfo>::SharedPtr car_info_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr run_check_pub_;
-    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steering_check_pub_;
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steer_check_pub_;
 
     // Timer
     rclcpp::TimerBase::SharedPtr timer_;

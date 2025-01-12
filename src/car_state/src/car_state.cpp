@@ -31,16 +31,16 @@ CarState::CarState(): Node("car_state")
         "/car_state/car_info", 1);
     run_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
         "/car_state/run_check", 1);
-    steering_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
-        "/car_state/steering_check", 1);
+    steer_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+        "/car_state/steer_check", 1);
 
 
     ami_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         "/can_interface/AMI", 1, std::bind(&CarState::
             ami_callback, this, std::placeholders::_1));
 
-    target_speed_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
-        "/controller/cmd", 1, std::bind(&CarState::
+    target_speed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        "/controller/target_speed", 1, std::bind(&CarState::
             target_speed_callback, this, std::placeholders::_1));
 
     target_delta_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
@@ -130,6 +130,7 @@ void CarState::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
     }
 }
 
+// TODO publish imu separated in arussim
 void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
 {   
     ax_ = msg-> linear_acceleration.x;
@@ -139,7 +140,7 @@ void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
 
 void CarState::ax_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    ax_ = - msg->data;
+    ax_ = - msg->data; // TODO calibrate IMU
 }
 
 void CarState::ay_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -149,7 +150,7 @@ void CarState::ay_callback(const std_msgs::msg::Float32::SharedPtr msg)
 
 void CarState::r_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    r_ = - msg->data;
+    r_ = - msg->data; // TODO calibrate IMU
 }
 
 void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -180,27 +181,11 @@ void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::Shar
 void CarState::ami_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
     ami_ = msg->data;
-
-    if(ami_ == 3)
-    {
-        ami_ = 6;
-    } if (ami_ == 4)
-    {
-        ami_ = 3;
-    } if (ami_ == 5)
-    {
-        ami_ = 4;
-    } if (ami_ == 6)
-    {
-        ami_ = 5;
-    }
 }
 
-void CarState::target_speed_callback(const common_msgs::msg::Cmd msg)
+void CarState::target_speed_callback(const std_msgs::msg::Float32 msg)
 {
-    target_speed_ = msg.acc;
-    torque_actual_ = msg.acc;
-    torque_target_ = msg.acc;
+    target_speed_ = msg.data;
 }
 
 void CarState::target_delta_callback(const common_msgs::msg::Cmd msg)
@@ -254,6 +239,10 @@ void CarState::on_timer()
     state_pub_->publish(state_msg);
 
 
+    if(as_status_==3 && target_speed_==0.0 && vx_<0.5){ 
+        as_status_ = 4;
+    }
+
     // Publish car info message
     auto car_info_msg = common_msgs::msg::CarInfo();
     
@@ -288,15 +277,15 @@ void CarState::on_timer()
     if(kSimulation){
         run_check_msg.data = true;
     } else {
-        run_check_msg.data = as_status_ == 2;
+        run_check_msg.data = as_status_ == 3;
     }
     run_check_pub_->publish(run_check_msg);
 
 
     // Publish steering check
     auto steering_check_msg = std_msgs::msg::Bool();
-    run_check_msg.data = run_check_msg.data && (vx_ >= 1);
-    steering_check_pub_->publish(steering_check_msg);
+    run_check_msg.data = run_check_msg.data && (vx_ >= 0.5);
+    steer_check_pub_->publish(steering_check_msg);
 }
 
 void CarState::get_tf_position()
