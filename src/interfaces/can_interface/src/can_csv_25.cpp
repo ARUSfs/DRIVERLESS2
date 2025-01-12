@@ -278,21 +278,32 @@ void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig
     uint8_t numBytes = config.endByte - config.startByte + 1;
 
     if (numBytes == 1) { 
-        rawValue = frame.data[config.startByte];
+        rawValue = static_cast<int8_t>(frame.data[config.startByte]);
     } 
     else if (numBytes == 2) { 
-        rawValue = (frame.data[config.endByte] << 8) | frame.data[config.startByte];
+        rawValue = static_cast<int16_t>(
+            (frame.data[config.endByte] << 8) | frame.data[config.startByte]
+        );
     } 
     else if (numBytes == 3) { 
-        rawValue = (frame.data[config.startByte + 2] << 16) | 
-                       (frame.data[config.startByte + 1] << 8) | 
-                       frame.data[config.startByte];
+        rawValue = static_cast<int32_t>(
+            (frame.data[config.startByte + 2] << 16) |
+            (frame.data[config.startByte + 1] << 8) |
+             frame.data[config.startByte]
+        );
+
+        // Sign-extend 24-bit value to 32-bit
+        if (rawValue & 0x00800000) { // Check if the sign bit (23rd bit) is set
+            rawValue |= 0xFF000000;  // Extend the sign to the upper bits
+        }
     } 
     else if (numBytes == 4) { 
-        rawValue = (frame.data[config.startByte + 3] << 24) |
-                       (frame.data[config.startByte + 2] << 16) |
-                       (frame.data[config.startByte + 1] << 8) |
-                       frame.data[config.startByte];
+        rawValue = static_cast<int32_t>(
+            (frame.data[config.startByte + 3] << 24) |
+            (frame.data[config.startByte + 2] << 16) |
+            (frame.data[config.startByte + 1] << 8) |
+             frame.data[config.startByte]
+        );
     } 
     else {
         RCLCPP_ERROR(
