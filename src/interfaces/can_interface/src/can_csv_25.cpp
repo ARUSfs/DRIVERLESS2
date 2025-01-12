@@ -120,7 +120,7 @@ CanInterface::CanInterface() : Node("can_interface"){
 
     control_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
         "/controller/cmd", 1, std::bind(&CanInterface::
-            controlsCallback, this, std::placeholders::_1));
+            control_callback, this, std::placeholders::_1));
 
     car_info_sub_ = this->create_subscription<common_msgs::msg::CarInfo>(
         "/car_state/car_info", 1, std::bind(&CanInterface::
@@ -131,7 +131,7 @@ CanInterface::CanInterface() : Node("can_interface"){
             run_check_callback, this, std::placeholders::_1));
 
 
-    heartBeatTimer = this->create_wall_timer(0.1s, std::bind(&CanInterface::pubHeartBeat, this));
+    heart_beat_timer_ = this->create_wall_timer(0.1s, std::bind(&CanInterface::heart_beat_callback, this));
     dl_timer_ = this->create_wall_timer(0.1s, std::bind(&CanInterface::dl_timer_callback, this));
 
 
@@ -335,13 +335,12 @@ bool CanInterface::filter_subID(const struct can_frame& frame, const std::string
     }
 }
 
-//################################################# CALLBACKS ###########################################################
 void intToBytes(int16_t val, int8_t* bytes)
 {
     std::memcpy(bytes, &val, sizeof(val));
 }           
 
-void CanInterface::controlsCallback(common_msgs::msg::Cmd msg)
+void CanInterface::control_callback(common_msgs::msg::Cmd msg)
 {   
     float acc = msg.acc;
     int16_t intValue = static_cast<int16_t>(acc * (1<<15))-1;
@@ -390,7 +389,7 @@ void CanInterface::run_check_callback(const std_msgs::msg::Bool msg)
     run_check_ = msg.data;
 }
 
-void CanInterface::pubHeartBeat()
+void CanInterface::heart_beat_callback()
 {
     struct can_frame frame;
     frame.can_id = 0x140;             

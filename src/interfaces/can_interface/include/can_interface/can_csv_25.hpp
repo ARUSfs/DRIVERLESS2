@@ -121,14 +121,9 @@ private:
      */
     bool filter_subID(const struct can_frame& frame, const std::string& aux_vector_subID);
 
-    // CALLBACKS
 
-    void pubHeartBeat();
-    void controlsCallback(common_msgs::msg::Cmd);
-    void brakeLightCallback(std_msgs::msg::Int16);
-    void steeringInfoCallback(std_msgs::msg::Float32MultiArray);
-    void ASStatusCallback(std_msgs::msg::Int16);
-    void targetSpeedCallback(std_msgs::msg::Float32);
+    void heart_beat_callback();
+    void control_callback(common_msgs::msg::Cmd);
     void dl_timer_callback();
     void send_dl500();
     void send_dl501();
@@ -136,27 +131,14 @@ private:
     void car_info_callback(common_msgs::msg::CarInfo);
     void run_check_callback(std_msgs::msg::Bool);
 
-    // SUBS
-
     rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr control_sub_;
-    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr ASStatusSub;
-    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr steeringInfoSub;
-    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lapCounterSub;
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr conesCountSub;
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr conesCountAllSub;
-    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr targetSpeedSub;
     rclcpp::Subscription<common_msgs::msg::CarInfo>::SharedPtr car_info_sub_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr run_check_sub_;
 
-    // TIMERS
-
-    rclcpp::TimerBase::SharedPtr heartBeatTimer;
+    rclcpp::TimerBase::SharedPtr heart_beat_timer_;
     rclcpp::TimerBase::SharedPtr dl_timer_;
 
-    float pc_temp;
-    void getPcTemp();
-
-    // VAR
+    // Variables for Data Logger
 
     float speed_actual_ = 0;
     float speed_target_ = 0;
