@@ -6,11 +6,15 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/int16.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "common_msgs/msg/state.hpp"
+#include "common_msgs/msg/car_info.hpp"
 #include "common_msgs/msg/four_wheel_drive.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "common_msgs/msg/cmd.hpp"
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -37,10 +41,24 @@ private:
     // Callback for the subscription
     void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg);
     void extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::SharedPtr msg);
     void inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
-    void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
+    void as_status_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void ax_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void ay_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void r_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void target_speed_callback(const std_msgs::msg::Float32 msg);
+    void target_delta_callback(const common_msgs::msg::Cmd msg);
+    void lap_count_callback(const std_msgs::msg::Int16 msg);
+    void cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg);
+    void cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg);
+    void ami_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    
 
     // Functions
     void on_timer();
@@ -65,16 +83,23 @@ private:
     double ay_ = 0;
     double delta_ = 0;
 
+    int as_status_ = 0;
+    int ami_ = 0;
+    int ebs_status_ = 0;
+    int ebs_redundancy_status_ = 0;
+    double target_speed_ = 0;
+    double target_delta_ = 0;
+    int steering_state_ = 0;
+    double torque_actual_ = 0;
+    double torque_target_ = 0;
+    double brake_hydr_pressure_ = 0;
+    int lap_count_ = 0;
+    int cones_count_actual_ = 0;
+    int cones_count_all_ = 0;
+
+
     bool kSimulation;
     std::string kMission;
-
-    // AS status
-    // 0: AS off
-    // 1: AS ready
-    // 2: AS driving
-    // 3: AS finished
-    // 4: AS emergency
-    int as_status_ = 0;
 
     // TF
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -83,14 +108,29 @@ private:
     // Subscribers
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr extensometer_sub_;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr fl_wheelspeed_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr fr_wheelspeed_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr rl_wheelspeed_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr rr_wheelspeed_sub_;
     rclcpp::Subscription<common_msgs::msg::FourWheelDrive>::SharedPtr wheel_speeds_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr inv_speed_sub_;
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr arussim_ground_truth_sub_;
-    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr as_status_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr as_status_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ami_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr target_speed_sub_;
+    rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr target_delta_sub_;
+    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cones_count_actual_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cones_count_all_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ax_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ay_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr r_sub_;
 
     // Publisher for the aggregated state
     rclcpp::Publisher<common_msgs::msg::State>::SharedPtr state_pub_;
-    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr as_check_pub_;
+    rclcpp::Publisher<common_msgs::msg::CarInfo>::SharedPtr car_info_pub_;
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr run_check_pub_;
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steer_check_pub_;
 
     // Timer
     rclcpp::TimerBase::SharedPtr timer_;

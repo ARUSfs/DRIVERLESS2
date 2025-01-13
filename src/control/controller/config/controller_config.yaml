@@ -10,6 +10,7 @@ controller:
     trajectory: "/path_planning/trajectory"
     cmd: "/controller/cmd"
     pursuit_point: "/controller/pursuit_point"
+    target_speed: "/controller/target_speed"
 
     # PP
     look_ahead_distance: 6.0

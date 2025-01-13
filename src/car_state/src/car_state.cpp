@@ -27,8 +27,38 @@ CarState::CarState(): Node("car_state")
 
     state_pub_ = this->create_publisher<common_msgs::msg::State>(
         "/car_state/state", 1);
-    as_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
-        "/car_state/AS_check", 1);
+    car_info_pub_ = this->create_publisher<common_msgs::msg::CarInfo>(
+        "/car_state/car_info", 1);
+    run_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+        "/car_state/run_check", 1);
+    steer_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+        "/car_state/steer_check", 1);
+
+
+    ami_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        "/can_interface/AMI", 1, std::bind(&CarState::
+            ami_callback, this, std::placeholders::_1));
+
+    target_speed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        "/controller/target_speed", 1, std::bind(&CarState::
+            target_speed_callback, this, std::placeholders::_1));
+
+    target_delta_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
+        "/controller/cmd", 1, std::bind(&CarState::
+            target_delta_callback, this, std::placeholders::_1));
+
+    lap_count_sub_ = this->create_subscription<std_msgs::msg::Int16>(
+        "/slam/lap_count", 1, std::bind(&CarState::
+            lap_count_callback, this, std::placeholders::_1));
+
+    cones_count_actual_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+        "/perception/map", 1, std::bind(&CarState::
+            cones_count_actual_callback, this, std::placeholders::_1));
+
+    cones_count_all_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+        "/slam/map", 1, std::bind(&CarState::
+            cones_count_all_callback, this, std::placeholders::_1));
+
 
     if(kSimulation && get_arussim_ground_truth){
     arussim_ground_truth_sub_ = this->create_subscription<common_msgs::msg::State>(
@@ -50,20 +80,42 @@ CarState::CarState(): Node("car_state")
                 wheel_speeds_callback, this, std::placeholders::_1));
     } else {
         extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can/extensometer", 1, std::bind(&CarState::
+            "/can_interface/extensometer", 1, std::bind(&CarState::
                 extensometer_callback, this, std::placeholders::_1));
 
-        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-            "/can/IMU", 1, std::bind(&CarState::
-                imu_callback, this, std::placeholders::_1));
+        ax_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/IMU/ax", 1, std::bind(&CarState::
+                ax_callback, this, std::placeholders::_1));
+        
+        ay_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/IMU/ay", 1, std::bind(&CarState::
+                ay_callback, this, std::placeholders::_1));
+
+        r_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/IMU/yaw_rate", 1, std::bind(&CarState::
+                r_callback, this, std::placeholders::_1));
 
         inv_speed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can/inv_speed", 1, std::bind(&CarState::
+            "/can_interface/inv_speed", 1, std::bind(&CarState::
                 inv_speed_callback, this, std::placeholders::_1));
         
-        as_status_sub_ = this->create_subscription<std_msgs::msg::Int16>(
-            "/can/AS_status", 1, std::bind(&CarState::
+        as_status_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/AS_status", 1, std::bind(&CarState::
                 as_status_callback, this, std::placeholders::_1));
+
+        fl_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/fl_wheel_speed", 1, std::bind(&CarState::
+                fl_wheelspeed_callback, this, std::placeholders::_1));
+        fr_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/fr_wheel_speed", 1, std::bind(&CarState::
+                fr_wheelspeed_callback, this, std::placeholders::_1));
+        rl_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/rl_wheel_speed", 1, std::bind(&CarState::
+                rl_wheelspeed_callback, this, std::placeholders::_1));
+        rr_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/rr_wheel_speed", 1, std::bind(&CarState::
+                rr_wheelspeed_callback, this, std::placeholders::_1));
+        
     }
 
     // Configure timer once in the constructor based on the selected controller and frequency
@@ -80,22 +132,39 @@ CarState::CarState(): Node("car_state")
     CarState::initialize_vx_filter();
 }
 
-void CarState::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
+void CarState::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    as_status_ = msg->data;
+    as_status_ = msg->data +1;
+
+    if(as_status_ == 3)
+    {
+        brake_hydr_pressure_ = 0;
+    }else{
+        brake_hydr_pressure_ = 100;
+    }
 }
 
+// TODO publish imu separated in arussim
 void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
 {   
-    if(kSimulation){
-        ax_ = msg-> linear_acceleration.x;
-        ay_ = msg-> linear_acceleration.y;
-        r_ = msg->angular_velocity.z;
-    } else {
-        ax_ = - msg-> linear_acceleration.x;
-        ay_ = msg-> linear_acceleration.y;
-        r_ = - msg->angular_velocity.z;
-    }
+    ax_ = msg-> linear_acceleration.x;
+    ay_ = msg-> linear_acceleration.y;
+    r_ = msg->angular_velocity.z;
+}
+
+void CarState::ax_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    ax_ = - msg->data; // TODO calibrate IMU
+}
+
+void CarState::ay_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    ay_ = msg->data;
+}
+
+void CarState::r_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    r_ = - msg->data; // TODO calibrate IMU
 }
 
 void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -103,6 +172,28 @@ void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg
     delta_ = msg->data;
 }
 
+void CarState::fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    v_front_left_ = 1/msg->data;
+}
+
+void CarState::fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    v_front_right_ = 1/msg->data;
+    std::cout << "v_front_right_: " << v_front_right_ << std::endl;
+}
+
+void CarState::rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    v_rear_left_ = 1/msg->data;
+}
+
+void CarState::rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    v_rear_right_ = 1/msg->data;
+}
+
+// TODO publish wheel speeds separated in arussim
 void CarState::wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::SharedPtr msg)
 {
     v_front_right_ = msg-> front_right;
@@ -121,6 +212,36 @@ void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::Shar
     x_ = msg->x;
     y_ = msg->y;
     yaw_ = msg->yaw;
+}
+
+void CarState::ami_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    ami_ = msg->data;
+}
+
+void CarState::target_speed_callback(const std_msgs::msg::Float32 msg)
+{
+    target_speed_ = msg.data;
+}
+
+void CarState::target_delta_callback(const common_msgs::msg::Cmd msg)
+{
+    target_delta_ = msg.delta;
+}
+
+void CarState::lap_count_callback(const std_msgs::msg::Int16 msg)
+{
+    lap_count_ = msg.data;
+}
+
+void CarState::cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg)
+{
+    cones_count_actual_ = msg.width;
+}
+
+void CarState::cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg)
+{   
+    cones_count_all_ = msg.width;
 }
 
 void CarState::on_timer()
@@ -154,15 +275,53 @@ void CarState::on_timer()
     state_pub_->publish(state_msg);
 
 
-    // Publish AS check
-    auto as_check_msg = std_msgs::msg::Bool();
-    if(kSimulation){
-        as_check_msg.data = true;
-    } else {
-        as_check_msg.data = as_status_ == 2;
+    if(as_status_==3 && target_speed_==0.0 && vx_<0.5){ 
+        as_status_ = 4;
     }
-    as_check_pub_->publish(as_check_msg);
 
+    // Publish car info message
+    auto car_info_msg = common_msgs::msg::CarInfo();
+    
+    car_info_msg.as_status = as_status_;
+    car_info_msg.ami = ami_;
+    car_info_msg.ebs_status = ebs_status_;
+    car_info_msg.ebs_redundancy_status = ebs_redundancy_status_;
+    car_info_msg.x = x_;      
+    car_info_msg.y = y_;    
+    car_info_msg.yaw = yaw_;  
+    car_info_msg.vx = vx_;    
+    car_info_msg.vy = vy_;
+    car_info_msg.target_speed = target_speed_;
+    car_info_msg.r = r_;      
+    car_info_msg.ax = ax_;
+    car_info_msg.ay = ay_;
+    car_info_msg.delta = delta_;
+    car_info_msg.target_delta = target_delta_;
+    car_info_msg.steering_state = steering_state_;
+    car_info_msg.torque_actual = torque_actual_;
+    car_info_msg.torque_target = torque_target_;
+    car_info_msg.brake_hydr_pressure = brake_hydr_pressure_;
+    car_info_msg.lap_count = lap_count_;
+    car_info_msg.cones_count_actual = cones_count_actual_;
+    car_info_msg.cones_count_all = cones_count_all_;
+
+    car_info_pub_->publish(car_info_msg);
+
+
+    // Publish run check
+    auto run_check_msg = std_msgs::msg::Bool();
+    if(kSimulation){
+        run_check_msg.data = true;
+    } else {
+        run_check_msg.data = as_status_ == 3;
+    }
+    run_check_pub_->publish(run_check_msg);
+
+
+    // Publish steering check
+    auto steering_check_msg = std_msgs::msg::Bool();
+    steering_check_msg.data = run_check_msg.data && (vx_ >= 0.5);
+    steer_check_pub_->publish(steering_check_msg);
 }
 
 void CarState::get_tf_position()
@@ -182,7 +341,7 @@ void CarState::get_tf_position()
         y_ = transform.transform.translation.y;
         yaw_ = yaw;
     } catch (tf2::TransformException &ex) {
-        RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
+        // RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
     }
 }
 

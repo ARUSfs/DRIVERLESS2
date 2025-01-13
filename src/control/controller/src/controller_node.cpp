@@ -26,17 +26,15 @@ Controller::Controller() : Node("controller"),
 
     // Topic
     this->declare_parameter<std::string>("state", "/car_state/state");
-    this->declare_parameter<std::string>("as_status", "/can/AS_status");
-    this->declare_parameter<std::string>("as_check", "/car_state/AS_check");
-    this->declare_parameter<std::string>("trajectory", "/arussim_interface/fixed_trajectory");
+    this->declare_parameter<std::string>("trajectory", "/path_planning/trajectory");
     this->declare_parameter<std::string>("cmd", "/controller/cmd");
     this->declare_parameter<std::string>("pursuit_point", "/controller/pursuit_point");
+    this->declare_parameter<std::string>("target_speed", "/controller/target_speed");
     this->get_parameter("state", kStateTopic);
-    this->get_parameter("as_status", kAsStatusTopic);
-    this->get_parameter("as_check", kAsCheckTopic);
     this->get_parameter("trajectory", kTrajectoryTopic);
     this->get_parameter("cmd", kCmdTopic);
     this->get_parameter("pursuit_point",kPursuitPointTopic);
+    this->get_parameter("target_speed", kTargetSpeedTopic);
 
     // Pure-Pursuit
     this->declare_parameter<double>("look_ahead_distance", 6.0);
@@ -70,15 +68,15 @@ Controller::Controller() : Node("controller"),
     // Subscribers
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
         kStateTopic, 1, std::bind(&Controller::car_state_callback, this, std::placeholders::_1));
-    as_check_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-        kAsCheckTopic, 1, std::bind(&Controller::as_check_callback, this, std::placeholders::_1));
+    run_check_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+        "/car_state/run_check", 1, std::bind(&Controller::run_check_callback, this, std::placeholders::_1));
     trayectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kTrajectoryTopic, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
 
     // Publishers
     cmd_pub_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
     pursuit_point_pub_ = this->create_publisher<common_msgs::msg::PointXY>(kPursuitPointTopic, 10);
-    as_status_pub_ = this->create_publisher<std_msgs::msg::Int16>(kAsStatusTopic, 10);
+    target_speed_pub_ = this->create_publisher<std_msgs::msg::Float32>(kTargetSpeedTopic, 10);
 }
 
 /**
@@ -88,25 +86,20 @@ Controller::Controller() : Node("controller"),
  */  
 void Controller::on_timer()
 {
-    if(!(pointsXY_.empty()) && as_check_){
+    if(!(pointsXY_.empty()) && run_check_){
         get_global_index();
 
         double target_speed = kTargetSpeed;
         if(!(speed_profile_.empty())){
             target_speed = speed_profile_.at(index_global_);
         }
+        std_msgs::msg::Float32 target_speed_msg;
+        target_speed_msg.data = target_speed;
+        target_speed_pub_->publish(target_speed_msg);
 
         double target_acc = 0.0;
         if(!(acc_profile_.empty())){
             target_acc = acc_profile_.at(index_global_);
-        }
-
-        // Check if the mission is finished
-        if(target_speed == 0.0 && vx_ < 0.5){ 
-            std_msgs::msg::Int16 as_status_msg;
-            as_status_msg.data = 3;
-            as_status_pub_ -> publish(as_status_msg);
-            return;
         }
 
         pure_pursuit_.set_path(pointsXY_);
@@ -212,10 +205,11 @@ void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedP
     acc_profile_ = msg -> acc_profile; 
 }
 
-void Controller::as_check_callback(const std_msgs::msg::Bool::SharedPtr msg)
+void Controller::run_check_callback(const std_msgs::msg::Bool::SharedPtr msg)
 {
-    as_check_ = msg->data;
+    run_check_ = msg -> data;
 }
+
 
 int main(int argc, char **argv)
 {
