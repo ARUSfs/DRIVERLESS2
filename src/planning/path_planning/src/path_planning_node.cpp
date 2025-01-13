@@ -24,6 +24,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("v_max", 10.0);
     this->declare_parameter<double>("ay_max", 5.0);
     this->declare_parameter<double>("ax_max", 5.0);
+    this->declare_parameter<double>("smooth", 0.3);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
@@ -35,6 +36,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("v_max", kMaxVel);
     this->get_parameter("ay_max", kMaxYAcc);
     this->get_parameter("ax_max", kMaxXAcc);
+    this->get_parameter("smooth", kSmooth);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
@@ -353,7 +355,8 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
     trajectory_msg.s = {0.0};
 
     std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile;
-    std::vector<Vector2> spline_points;
+    std::vector<double> t_coords, x_coords, y_coords;
+
     if (route_size < 3){
         common_msgs::msg::PointXY point;
         point.x = route[0].x;
@@ -361,20 +364,31 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
         trajectory_msg.points.push_back(point);
         return trajectory_msg;
     }
-    for (int i = 0; i<route_size; i++){
-        Vector2 p({route[i].x, route[i].y});
-        spline_points.push_back(p);
-    }
 
-    GenericBSpline<Vector2> smooth(spline_points, 2);
-    int smooth_size = smooth.getMaxT();
+    x_coords.push_back(route[0].x);
+    y_coords.push_back(route[0].y);
+    t_coords.push_back(0);
+    for (int i = 1; i<route_size-1; i++){
+        x_coords.push_back(route[i-1].x*kSmooth+route[i].x*(1-kSmooth));
+        x_coords.push_back(route[i].x*(1-kSmooth)+route[i+1].x*kSmooth);
+        y_coords.push_back(route[i-1].y*kSmooth+route[i].y*(1-kSmooth));
+        y_coords.push_back(route[i].y*(1-kSmooth)+route[i+1].y*kSmooth);
+        t_coords.push_back(i-kSmooth);
+        t_coords.push_back(i+kSmooth);
+    }
+    x_coords.push_back(route[route_size-1].x);
+    y_coords.push_back(route[route_size-1].y);
+    t_coords.push_back(route_size-1);
+
+    tk::spline x_spline(t_coords, x_coords);
+    tk::spline y_spline(t_coords, y_coords);
     
     // Add the points to the trajectory message
-    for (double i = 0; i<smooth_size*10-1; i++){
-        double x = smooth.getPosition(i/10)[0];
-        double y = smooth.getPosition(i/10)[1];
-        double dx = smooth.getPosition((i+1)/10)[0]-x;
-        double dy = smooth.getPosition((i+1)/10)[1]-y;
+    for (double i = 0; i<route_size*10-1; i++){
+        double x = x_spline(i/10);
+        double y = y_spline(i/10);
+        double dx = x_spline((i+1)/10)-x;
+        double dy = y_spline((i+1)/10)-y;
         double dist = hypot(dx, dy);
         common_msgs::msg::PointXY point;
         point.x = x;
