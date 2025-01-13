@@ -41,6 +41,10 @@ private:
     // Callback for the subscription
     void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg);
     void extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::SharedPtr msg);
     void inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
@@ -104,6 +108,10 @@ private:
     // Subscribers
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr extensometer_sub_;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr fl_wheelspeed_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr fr_wheelspeed_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr rl_wheelspeed_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr rr_wheelspeed_sub_;
     rclcpp::Subscription<common_msgs::msg::FourWheelDrive>::SharedPtr wheel_speeds_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr inv_speed_sub_;
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr arussim_ground_truth_sub_;

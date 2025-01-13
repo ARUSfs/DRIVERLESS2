@@ -68,6 +68,8 @@ Controller::Controller() : Node("controller"),
     // Subscribers
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
         kStateTopic, 1, std::bind(&Controller::car_state_callback, this, std::placeholders::_1));
+    run_check_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+        "/car_state/run_check", 1, std::bind(&Controller::run_check_callback, this, std::placeholders::_1));
     trayectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kTrajectoryTopic, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
 
@@ -84,7 +86,7 @@ Controller::Controller() : Node("controller"),
  */  
 void Controller::on_timer()
 {
-    if(!(pointsXY_.empty())){
+    if(!(pointsXY_.empty()) && run_check_){
         get_global_index();
 
         double target_speed = kTargetSpeed;
@@ -201,6 +203,11 @@ void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedP
     k_ = msg -> k;
     speed_profile_ = msg -> speed_profile;
     acc_profile_ = msg -> acc_profile; 
+}
+
+void Controller::run_check_callback(const std_msgs::msg::Bool::SharedPtr msg)
+{
+    run_check_ = msg -> data;
 }
 
 

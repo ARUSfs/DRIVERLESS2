@@ -272,7 +272,7 @@ void CanInterface::read_CAN(int socketCan)
 
 
 void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig& config) {
-    int16_t rawValue = 0;
+    int32_t rawValue = 0;
 
     // Calculate the number of bytes
     uint8_t numBytes = config.endByte - config.startByte + 1;
@@ -298,7 +298,7 @@ void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig
         }
     } 
     else if (numBytes == 4) { 
-        rawValue = static_cast<int32_t>(
+        rawValue = static_cast<uint32_t>( // Unsigned for wheelspeed, TODO generalize
             (frame.data[config.startByte + 3] << 24) |
             (frame.data[config.startByte + 2] << 16) |
             (frame.data[config.startByte + 1] << 8) |
@@ -313,7 +313,7 @@ void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig
         );
     }
 
-    float scaledValue = rawValue * config.scale + config.offset;
+    float scaledValue = static_cast<float>(rawValue) * config.scale + config.offset;
 
     // Find the associated publisher, create the message and publish the scaled value.
     auto pub_iter = publishers.find(config.key);

@@ -102,6 +102,20 @@ CarState::CarState(): Node("car_state")
         as_status_sub_ = this->create_subscription<std_msgs::msg::Float32>(
             "/can_interface/AS_status", 1, std::bind(&CarState::
                 as_status_callback, this, std::placeholders::_1));
+
+        fl_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/fl_wheel_speed", 1, std::bind(&CarState::
+                fl_wheelspeed_callback, this, std::placeholders::_1));
+        fr_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/fr_wheel_speed", 1, std::bind(&CarState::
+                fr_wheelspeed_callback, this, std::placeholders::_1));
+        rl_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/rl_wheel_speed", 1, std::bind(&CarState::
+                rl_wheelspeed_callback, this, std::placeholders::_1));
+        rr_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/rr_wheel_speed", 1, std::bind(&CarState::
+                rr_wheelspeed_callback, this, std::placeholders::_1));
+        
     }
 
     // Configure timer once in the constructor based on the selected controller and frequency
@@ -158,6 +172,28 @@ void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg
     delta_ = msg->data;
 }
 
+void CarState::fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    v_front_left_ = 1/msg->data;
+}
+
+void CarState::fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    v_front_right_ = 1/msg->data;
+    std::cout << "v_front_right_: " << v_front_right_ << std::endl;
+}
+
+void CarState::rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    v_rear_left_ = 1/msg->data;
+}
+
+void CarState::rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    v_rear_right_ = 1/msg->data;
+}
+
+// TODO publish wheel speeds separated in arussim
 void CarState::wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::SharedPtr msg)
 {
     v_front_right_ = msg-> front_right;
@@ -284,7 +320,7 @@ void CarState::on_timer()
 
     // Publish steering check
     auto steering_check_msg = std_msgs::msg::Bool();
-    run_check_msg.data = run_check_msg.data && (vx_ >= 0.5);
+    steering_check_msg.data = run_check_msg.data && (vx_ >= 0.5);
     steer_check_pub_->publish(steering_check_msg);
 }
 
@@ -305,7 +341,7 @@ void CarState::get_tf_position()
         y_ = transform.transform.translation.y;
         yaw_ = yaw;
     } catch (tf2::TransformException &ex) {
-        RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
+        // RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
     }
 }
 
