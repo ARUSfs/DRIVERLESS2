@@ -10,7 +10,7 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package=package_name,
-            executable='steering_handle.py',
+            executable='epos_interface_exec',
             name='epos_interface',
             output='screen',
             parameters=[config_file]

@@ -4,13 +4,20 @@
 
 AccPlanning::AccPlanning() : Node("acc_planning_node")
 {
-
     this->declare_parameter<std::string>("perception_topic", "/arussim/perception");
     this->declare_parameter<std::string>("trajectory_topic", "/acc_planning/trajectory");
     this->declare_parameter<double>("target_speed", 10.0);
+    this->declare_parameter<double>("max_acc", 5.0);
+    this->declare_parameter<double>("max_dec", 5.0);
+    this->declare_parameter<double>("track_length", 75.0);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
     this->get_parameter("target_speed", kTargetSpeed);
+    this->get_parameter("max_acc", kMaxXAcc);
+    this->get_parameter("max_dec", kMaxDec);
+    this->get_parameter("track_length", kTrackLength);
+
+    calculate_profiles();
 
     // Publish resulting trajectory
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
@@ -28,20 +35,47 @@ void AccPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr p
     if (cones_.points.empty()) {
         std::cout << "No points in the PointCloud after conversion to PCL." << std::endl;
         return;
-    } else {
-        std::cout << "PointCloud contains " << cones_.points.size() << " points." << std::endl;
     }
 
     AccPlanning::generate_planning();
 
 
     if (a_ == 0.0 && b_ == 0.0) {
-        std::cout << "No valid line found during planning." << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "No valid line found during planning.");
     } else {
-        std::cout << "Best line found with coefficients: a = " << a_ << ", b = " << b_ << std::endl;
+        RCLCPP_INFO(this->get_logger(), "Best line found with coefficients: a = %f, b = %f", a_, b_);
     }
 
     AccPlanning::publish_trajectory();
+}
+
+void AccPlanning::calculate_profiles() {
+    double step = 0.1;  
+
+    s_.clear();
+    speed_profile_.clear();
+    acc_profile_.clear();
+
+    for (int i=0; i<2*kTrackLength/step; i++){ 
+        s_.push_back(i*step);
+        speed_profile_.push_back(0.0);
+    }
+
+    speed_profile_[0] = 1;
+
+    for (size_t i = 1; i < s_.size(); ++i) {
+        double ds = step;
+        if(s_[i] < kTrackLength){
+            speed_profile_[i] = std::min(kTargetSpeed, sqrt(pow(speed_profile_[i - 1], 2) + 2 * kMaxXAcc * ds));
+        } else {
+            speed_profile_[i] = std::max(0.0, sqrt(pow(speed_profile_[i - 1], 2) - 2 * kMaxDec * ds));
+        }
+    }
+
+    for (size_t i = 0; i < speed_profile_.size(); ++i) {
+        double ds = step;
+        acc_profile_.push_back((pow(speed_profile_[i + 1], 2) - pow(speed_profile_[i], 2)) / (2 * ds));
+    }
 }
 
 
@@ -176,31 +210,23 @@ void AccPlanning::generate_planning() {
 
 
 
-void AccPlanning::publish_trajectory(){
+void AccPlanning::publish_trajectory() {
     common_msgs::msg::Trajectory trajectory_msg;
+    double step = 0.1;
 
-    double step = 0.1;  
-    double acc_distance = 75.0;
-    double brake_distance = 150.0;  
-
-    for (double x = 0.0; x <= acc_distance; x += step) {
+    for (size_t i = 0; i < s_.size(); ++i) {
         common_msgs::msg::PointXY point;
-        point.x = x;
-        point.y = a_ * x + b_;  
+        point.x = i * step;
+        point.y = a_ * point.x + b_;  // Updates the slope of the trajectory
         trajectory_msg.points.push_back(point);
-        trajectory_msg.speed_profile.push_back(kTargetSpeed);
-    }
 
-    for (double x = acc_distance; x < brake_distance; x += step) {
-        common_msgs::msg::PointXY point;
-        point.x = x;
-        point.y = a_ * x + b_;  
-        trajectory_msg.points.push_back(point);
-        trajectory_msg.speed_profile.push_back(0.0);
+        trajectory_msg.speed_profile.push_back(speed_profile_[i]);
+        trajectory_msg.acc_profile.push_back(acc_profile_[i]);
     }
 
     trajectory_pub_->publish(trajectory_msg);
 }
+
 
 
 pcl::PointCloud<ConeXYZColorScore> AccPlanning::convert_ros_to_pcl(const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {

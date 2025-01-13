@@ -7,14 +7,28 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
 
     this->declare_parameter<std::string>("perception_topic", "/slam/map");
     this->declare_parameter<std::string>("trajectory_topic", "/skidpad_planning/trajectory");
+    this->declare_parameter<double>("planning_time", 5.0);
     this->declare_parameter<double>("target_first_lap", 5.0);
     this->declare_parameter<double>("target_second_lap", 10.0);
     this->declare_parameter<double>("route_spacing", 0.5);
+    this->declare_parameter<double>("top_accx_forwards", 5.0);
+    this->declare_parameter<double>("top_accx_backwards", 5.0);
+    this->declare_parameter<double>("top_accy", 5.0);
+    this->declare_parameter<double>("step_width_1", 2);
+    this->declare_parameter<double>("step_width_2", 2);
+
+
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
+    this->get_parameter("planning_time", kPlanningTime);
     this->get_parameter("target_first_lap", kTargetFirstLap);
     this->get_parameter("target_second_lap", kTargetSecondLap);
     this->get_parameter("route_spacing", kRouteSpacing);
+    this->get_parameter("top_accx_forwards", kMaxXAccForwards);
+    this->get_parameter("top_accx_backwards", kMaxXAccBackwards);
+    this->get_parameter("top_accy", kMaxYAcc);
+    this->get_parameter("step_width_1", kStepWidth1);
+    this->get_parameter("step_width_2", kStepWidth2);
 
     start_time_ = this->now();
     initialize_skidpad(kRouteSpacing, 9.125, kTargetFirstLap, kTargetSecondLap);
@@ -35,7 +49,12 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
     speed_profile_.clear();
 
     int circle_points = 2*M_PI*circle_radius/spacing;
-
+    double ax1 = kMaxXAccForwards;
+    double ax2 = kMaxXAccBackwards;
+    double ay = kMaxYAcc;
+    double n1 = kStepWidth1/spacing;
+    double n2 = kStepWidth2/spacing;
+    
     // Initialize straight section
     for (int i = 0; i <= 20 / spacing; ++i) {
         template_.emplace_back(-20 + spacing * i, 0);
@@ -43,31 +62,31 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
     }
 
     // Initialize first circle section
-    for (int i = 0; i < circle_points; ++i) {
+    for (int i = 0; i < circle_points - n1; ++i) { 
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                -circle_radius + circle_radius * std::cos(2 * M_PI * i / circle_points));
-        speed_profile_.push_back(first_lap_speed);
+        speed_profile_.push_back(min(first_lap_speed, ay * circle_radius));
     }
 
     // Initialize second circle section
-    for (int i = 0; i < circle_points; ++i) {
+    for (int i = -n1; i < circle_points + n2; ++i) { 
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                -circle_radius + circle_radius * std::cos(2 * M_PI * i / circle_points));
-        speed_profile_.push_back(second_lap_speed);
+        speed_profile_.push_back(min(second_lap_speed, ay * circle_radius));
     }
 
     // Initialize third circle section
-    for (int i = 0; i < circle_points; ++i) {
+    for (int i = n2; i < circle_points - n1; ++i) { 
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                circle_radius - circle_radius * std::cos(2 * M_PI * i / circle_points));
-        speed_profile_.push_back(first_lap_speed);
+        speed_profile_.push_back(min(first_lap_speed, ay * circle_radius));
     }
 
     // Initialize fourth circle section
-    for (int i = 0; i < circle_points; ++i) {
+    for (int i = -n1; i < circle_points; ++i) { 
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                circle_radius - circle_radius * std::cos(2 * M_PI * i / circle_points));
-        speed_profile_.push_back(second_lap_speed);
+        speed_profile_.push_back(min(second_lap_speed, ay * circle_radius));
     }
 
     // Initialize final straight section
@@ -79,6 +98,32 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         template_.emplace_back(5 + spacing * i, 0);
         speed_profile_.push_back(0.0);
     }
+    // Initialize speed profile
+    speed_profile_[0]=0.1;
+    // Compute speed profile
+    for (int i = 0; i <= 20 / spacing; ++i) {
+        if(speed_profile_[i-1]<first_lap_speed){
+            speed_profile_[i] = min(first_lap_speed, sqrt(pow(speed_profile_[i-1],2)+2*ax1*spacing));
+        }
+    }
+    for(int i = 0; i< speed_profile_.size(); i++){
+        if(speed_profile_[i-1]>speed_profile_[i]){
+            speed_profile_[i] = max(speed_profile_[i], sqrt(pow(speed_profile_[i-1],2)-2*ax1*spacing));
+        }
+    }
+
+    for(int i = speed_profile_.size()-1; i>0; i--){
+        if(speed_profile_[i] < speed_profile_[i+1]){
+            speed_profile_[i] = max(speed_profile_[i], sqrt(pow(speed_profile_[i+1],2)-2*ax2*spacing));
+        }
+    }
+
+    // Compute acceleration profile
+    for (int i = 0; i<speed_profile_.size()-1; i++){
+            acc_profile_.push_back((pow(speed_profile_[i+1], 2)-pow(speed_profile_[i], 2))/(2*spacing));
+        
+    }
+
 }
 
 
@@ -121,8 +166,6 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
 void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
 
     cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
-
-    double kPlanningTime = 5.0;
 
     if(this->now().seconds() - start_time_.seconds() < kPlanningTime ){
 
@@ -334,6 +377,10 @@ void SkidpadPlanning::publish_trajectory() {
     for (const auto& v : speed_profile_) {
         trajectory_msg.speed_profile.push_back(v);
     }
+    for (const auto& a : acc_profile_) {
+        trajectory_msg.acc_profile.push_back(a);
+    }
+
 
     trajectory_pub_->publish(trajectory_msg);
 }

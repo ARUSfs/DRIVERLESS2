@@ -1,5 +1,3 @@
 graph_slam:
   ros__parameters:
-    visualize_landmarks: true
-    visualize_poses: false
-    visualize_landmark_edges: false
+    write_csv: false
