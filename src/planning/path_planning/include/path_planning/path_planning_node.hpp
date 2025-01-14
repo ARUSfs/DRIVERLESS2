@@ -19,7 +19,9 @@
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
 #include "common_msgs/msg/state.hpp"
-#include <path_planning/spline.h>
+#include <Eigen/Dense>
+#include <unsupported/Eigen/Splines>
+
 
 /**
  * @brief Class containing the Path Planning node.
@@ -47,6 +49,10 @@ class PathPlanning : public rclcpp::Node
         double kLenCoeff;
         double kAngleCoeff;
         double kMaxAngle;
+        double kMaxVel;
+        double kMaxYAcc;
+        double kMaxXAcc;
+        double kSmooth;
         
         // Suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
@@ -58,6 +64,9 @@ class PathPlanning : public rclcpp::Node
         double x_;
         double y_;
         double yaw_;
+        double vx_;
+        double vy_;
+        double v_;
 
         // Triangulation attributes
         CDT::TriangleVec triangles_;
@@ -172,6 +181,8 @@ class PathPlanning : public rclcpp::Node
          * @return float result of the cost function.
          */
         double get_route_cost(std::vector<CDT::V2d<double>> &route);
+
+        
 
         /**
          * @brief Create a trajectory msg object from a given route.

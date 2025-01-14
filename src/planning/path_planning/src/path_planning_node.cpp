@@ -21,6 +21,10 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("len_coeff", 1.0);
     this->declare_parameter<double>("angle_coeff", 1.0);
     this->declare_parameter<double>("max_angle", M_PI);
+    this->declare_parameter<double>("v_max", 10.0);
+    this->declare_parameter<double>("ay_max", 5.0);
+    this->declare_parameter<double>("ax_max", 5.0);
+    this->declare_parameter<double>("smooth", 0.3);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
@@ -29,6 +33,10 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("len_coeff", kLenCoeff);
     this->get_parameter("angle_coeff", kAngleCoeff);
     this->get_parameter("max_angle", kMaxAngle);
+    this->get_parameter("v_max", kMaxVel);
+    this->get_parameter("ay_max", kMaxYAcc);
+    this->get_parameter("ax_max", kMaxXAcc);
+    this->get_parameter("smooth", kSmooth);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
@@ -103,6 +111,9 @@ void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr s
     x_ = state_msg->x;
     y_ = state_msg->y;
     yaw_ = state_msg->yaw;
+    vx_ = state_msg->vx;
+    vy_ = state_msg->vy;
+    v_ = hypot(vx_, vy_);
 }
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
@@ -338,9 +349,15 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
 }
 
 common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT::V2d<double>> route){
-    common_msgs::msg::Trajectory trajectory_msg;
     int route_size = route.size();
-    std::vector<double> x_coords, y_coords, t_coords;
+    int degree = 2 ;
+    common_msgs::msg::Trajectory trajectory_msg;
+    double acum = 0.0;
+    trajectory_msg.s = {0.0};
+
+    std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile;
+    std::vector<double> t_coords, x_coords, y_coords;
+
     if (route_size < 3){
         common_msgs::msg::PointXY point;
         point.x = route[0].x;
@@ -348,19 +365,93 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
         trajectory_msg.points.push_back(point);
         return trajectory_msg;
     }
+
+    Eigen::MatrixXd control_points(2, route_size);
     for (int i = 0; i<route_size; i++){
-        x_coords.push_back(route[i].x);
-        y_coords.push_back(route[i].y);
-        t_coords.push_back(i);
+        control_points(0, i) = route[i].x;
+        control_points(1, i) = route[i].y;
     }
-    tk::spline x_spline(t_coords, x_coords);
-    tk::spline y_spline(t_coords, y_coords);
-    for (double i = 0; i<1000; i++){
+
+    Eigen::Spline<double, 2> bSpline = Eigen::SplineFitting<Eigen::Spline<double, 2>>::Interpolate(
+        control_points, degree);
+    
+    // Add the points to the trajectory message
+    for (double i = 0; i<route_size*10-1; i++){
+        Eigen::Vector2d point_1 = bSpline(i/(10*route_size));
+        Eigen::Vector2d point_2 = bSpline((i+1)/(10*route_size));
+        double x = point_1(0);
+        double y = point_1(1);
+        double dx = point_2(0)-x;
+        double dy = point_2(1)-y;
+        double dist = hypot(dx, dy);
         common_msgs::msg::PointXY point;
-        point.x = x_spline(i*route_size/1000.0);
-        point.y = y_spline(i*route_size/1000.0);
+        point.x = x;
+        point.y = y;
         trajectory_msg.points.push_back(point);
+        xp.push_back(dx);
+        yp.push_back(dy);
+        acum += dist;
+        s.push_back(acum);
+        speed_profile.push_back(0.0);
     }
+    xp.push_back(xp.back());
+    yp.push_back(yp.back());
+
+    for (int i = 0; i<xp.size()-1; i++){
+        xpp.push_back(xp[i+1]-xp[i]);
+        ypp.push_back(yp[i+1]-yp[i]);
+    }
+    xpp.push_back(xpp.back());
+    ypp.push_back(ypp.back());
+
+    for (int i = 0; i<xpp.size(); i++){
+        double den = pow(pow(xp[i],2)+pow(yp[i],2), 1.5);
+        double val;
+        if (den == 0){
+            val = 0;
+        } else{
+            val = (xp[i]*ypp[i]-yp[i]*xpp[i])/den;
+        }
+        k.push_back(val);
+    }
+
+    for (const auto &val : k){
+        double v = std::min(kMaxVel, sqrt(kMaxYAcc/std::max(abs(val), 0.0001)));
+        v_grip.push_back(v);
+    }
+
+    speed_profile[0] = v_;
+
+    for (int i = 1; i<speed_profile.size(); i++){
+        double ds = s[i]-s[i-1];
+        speed_profile[i] = sqrt(pow(speed_profile[i-1], 2) + 2*kMaxXAcc*ds);
+        if (speed_profile[i] > v_grip[i]){
+            speed_profile[i] = v_grip[i];
+        }
+    }
+
+    for (int i = speed_profile.size()-2; i>=0; i--){
+        double ds = s[i+1]-s[i];
+        double v_brake = sqrt(pow(speed_profile[i+1], 2) + 2*kMaxXAcc*ds);
+        if (v_brake < speed_profile[i]){
+            speed_profile[i] = v_brake;
+        }
+    }
+
+    for (int i = 0; i<speed_profile.size()-1; i++){
+        double ds = s[i+1]-s[i];
+        if (ds != 0){
+            acc_profile.push_back((pow(speed_profile[i+1], 2)-pow(speed_profile[i], 2))/(2*ds));
+        }
+    }
+
+    for (int i = 0; i<s.size(); i++){
+        trajectory_msg.k.push_back(k[i]);
+        trajectory_msg.s.push_back(s[i]);
+        trajectory_msg.speed_profile.push_back(speed_profile[i]);
+        trajectory_msg.acc_profile.push_back(acc_profile[i]);
+    }
+    
     return trajectory_msg;
 }
 
