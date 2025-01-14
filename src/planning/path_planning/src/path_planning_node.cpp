@@ -350,6 +350,7 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
 
 common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT::V2d<double>> route){
     int route_size = route.size();
+    int degree = 2 ;
     common_msgs::msg::Trajectory trajectory_msg;
     double acum = 0.0;
     trajectory_msg.s = {0.0};
@@ -365,30 +366,23 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
         return trajectory_msg;
     }
 
-    x_coords.push_back(route[0].x);
-    y_coords.push_back(route[0].y);
-    t_coords.push_back(0);
-    for (int i = 1; i<route_size-1; i++){
-        x_coords.push_back(route[i-1].x*kSmooth+route[i].x*(1-kSmooth));
-        x_coords.push_back(route[i].x*(1-kSmooth)+route[i+1].x*kSmooth);
-        y_coords.push_back(route[i-1].y*kSmooth+route[i].y*(1-kSmooth));
-        y_coords.push_back(route[i].y*(1-kSmooth)+route[i+1].y*kSmooth);
-        t_coords.push_back(i-kSmooth);
-        t_coords.push_back(i+kSmooth);
+    Eigen::MatrixXd control_points(2, route_size);
+    for (int i = 0; i<route_size; i++){
+        control_points(0, i) = route[i].x;
+        control_points(1, i) = route[i].y;
     }
-    x_coords.push_back(route[route_size-1].x);
-    y_coords.push_back(route[route_size-1].y);
-    t_coords.push_back(route_size-1);
 
-    tk::spline x_spline(t_coords, x_coords);
-    tk::spline y_spline(t_coords, y_coords);
+    Eigen::Spline<double, 2> bSpline = Eigen::SplineFitting<Eigen::Spline<double, 2>>::Interpolate(
+        control_points, degree);
     
     // Add the points to the trajectory message
     for (double i = 0; i<route_size*10-1; i++){
-        double x = x_spline(i/10);
-        double y = y_spline(i/10);
-        double dx = x_spline((i+1)/10)-x;
-        double dy = y_spline((i+1)/10)-y;
+        Eigen::Vector2d point_1 = bSpline(i/(10*route_size));
+        Eigen::Vector2d point_2 = bSpline((i+1)/(10*route_size));
+        double x = point_1(0);
+        double y = point_1(1);
+        double dx = point_2(0)-x;
+        double dy = point_2(1)-y;
         double dist = hypot(dx, dy);
         common_msgs::msg::PointXY point;
         point.x = x;
