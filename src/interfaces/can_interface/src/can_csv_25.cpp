@@ -451,10 +451,10 @@ void CanInterface::send_dl500()
     float clamped_speed_target_ = std::clamp(static_cast<float>(speed_target_ *3.6), 0.0f, 255.0f);
     frame.data[1] = static_cast<uint8_t>(clamped_speed_target_);
 
-    float clamped_steering_angle_actual_ = std::clamp(static_cast<float>((steering_angle_actual_ *57.2958)*0.5), -128.0f, 127.0f);
+    float clamped_steering_angle_actual_ = std::clamp(static_cast<float>((steering_angle_actual_ *57.2958)*2), -128.0f, 127.0f);
     frame.data[2] = static_cast<int8_t>(clamped_steering_angle_actual_);
 
-    float clamped_steering_angle_target_ = std::clamp(static_cast<float>((steering_angle_target_ *57.2958)*0.5), -128.0f, 127.0f);
+    float clamped_steering_angle_target_ = std::clamp(static_cast<float>((steering_angle_target_ *57.2958)*2), -128.0f, 127.0f);
     frame.data[3] = static_cast<int8_t>(clamped_steering_angle_target_);
 
     float clamped_brake_hydr_actual_ = std::clamp(brake_hydr_actual_, 0.0f, 255.0f);
@@ -478,17 +478,17 @@ void CanInterface::send_dl501()
     frame.can_id = 0x501;             
     frame.can_dlc = 6;      
     
-    int16_t clamped_ax_ = static_cast<int16_t>(std::clamp(static_cast<float>(ax_ *1/512 ), -32768.0f, 32767.0f));
+    int16_t clamped_ax_ = static_cast<int16_t>(std::clamp(static_cast<float>(ax_ *512 ), -32768.0f, 32767.0f));
     // Convert to little-endian (break into 2 bytes)
     frame.data[0] = clamped_ax_ & 0xFF;       
     frame.data[1] = (clamped_ax_ >> 8) & 0xFF; 
 
-    int16_t clamped_ay_ = static_cast<int16_t>(std::clamp(static_cast<float>(ay_ *1/512 ), -32768.0f, 32767.0f));
+    int16_t clamped_ay_ = static_cast<int16_t>(std::clamp(static_cast<float>(ay_ *512 ), -32768.0f, 32767.0f));
     // Convert to little-endian (break into 2 bytes)
     frame.data[2] = clamped_ay_ & 0xFF;       
     frame.data[3] = (clamped_ay_ >> 8) & 0xFF; 
 
-    int16_t clamped_yaw_rate_ = static_cast<int16_t>(std::clamp(static_cast<float>(yaw_rate_ *1/512 ), -32768.0f, 32767.0f));
+    int16_t clamped_yaw_rate_ = static_cast<int16_t>(std::clamp(static_cast<float>(yaw_rate_ *512 ), -32768.0f, 32767.0f));
     // Convert to little-endian (break into 2 bytes)
     frame.data[4] = clamped_yaw_rate_ & 0xFF;    
     frame.data[5] = (clamped_yaw_rate_ >> 8) & 0xFF; 
