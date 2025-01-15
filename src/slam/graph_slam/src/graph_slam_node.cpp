@@ -10,7 +10,7 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     // TODO: test other solvers
     using SlamBlockSolver  = g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>>;
     using SlamLinearSolver = g2o::LinearSolverCSparse<SlamBlockSolver::PoseMatrixType>;
-    optimizer_.setVerbose(true);
+    optimizer_.setVerbose(false);
     auto linearSolver = std::make_unique<SlamLinearSolver>();
     linearSolver->setBlockOrdering(true);
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::make_unique<SlamBlockSolver>(std::move(linearSolver)));
@@ -118,8 +118,6 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
         //Extract the cone position
         ConeXYZColorScore cone = cloud.points[i];
 
-        // Eigen::Vector2d global_cone_pos = local_to_global(Eigen::Vector2d(cone.x, cone.y));
-
         observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_));
     }
     
@@ -204,27 +202,53 @@ void GraphSlam::addVerticesAndEdges(){
 void GraphSlam::publish_map(){
     pcl::PointCloud<ConeXYZColorScore> map;
     for (Landmark* landmark : DA.map_){
+
+        if(landmark->color_==UNCOLORED){
+            Eigen::Vector2d local_pos = global_to_local(landmark->world_position_);
+            if(local_pos.norm() < 6 && local_pos[0] < 0){
+
+                if(local_pos.y() > 0.5){
+                    landmark->color_ = BLUE;
+                } else if (local_pos.y() < -0.5){
+                    landmark->color_ = YELLOW;
+                }
+            }
+        }
+
         ConeXYZColorScore cone;
         cone.x = landmark->world_position_(0);
         cone.y = landmark->world_position_(1);
         cone.z = 0;
-        cone.color = 0;
+        cone.color = landmark->color_;
         cone.score = 1.0;
         map.push_back(cone);
     }
+    
     sensor_msgs::msg::PointCloud2 map_msg;
     pcl::toROSMsg(map, map_msg);
     map_msg.header.frame_id = "arussim/world";
     map_pub_->publish(map_msg);
 }
 
-Eigen::Vector2d GraphSlam::local_to_global(const Eigen::Vector2d& position) {
+// Get the global position given the local position relative to the actual vehicle pose
+Eigen::Vector2d GraphSlam::local_to_global(const Eigen::Vector2d& local_pos) {
     const double phi = vehicle_pose_(2);
     const double sinphi = std::sin(phi);
     const double cosphi = std::cos(phi);
     const Eigen::Matrix2d R = (Eigen::Matrix2d() << cosphi, -sinphi, sinphi, cosphi).finished();
 
-    return R * position + vehicle_pose_.head(2);
+    return R * local_pos + vehicle_pose_.head(2);
+}
+
+
+// Get the local position relative to the actual vehicle pose given the global position
+Eigen::Vector2d GraphSlam::global_to_local(const Eigen::Vector2d& global_pos) {
+    const double phi = -vehicle_pose_(2);
+    const double sinphi = std::sin(phi);
+    const double cosphi = std::cos(phi);
+    const Eigen::Matrix2d R = (Eigen::Matrix2d() << cosphi, -sinphi, sinphi, cosphi).finished();
+
+    return R * (global_pos - vehicle_pose_.head(2));
 }
 
 void GraphSlam::send_tf() {
