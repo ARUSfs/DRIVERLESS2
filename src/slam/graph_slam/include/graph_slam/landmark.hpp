@@ -4,6 +4,12 @@
 #include <vector>
 #include <Eigen/Dense>
 
+#define UNCOLORED -1
+#define BLUE 0
+#define YELLOW 1
+#define ORANGE 2
+#define ORANGE_BIG 3
+
 
 class Landmark {
     public:
@@ -14,18 +20,21 @@ class Landmark {
         Eigen::Vector2d local_position_;
         Eigen::Vector2d world_position_;
         Eigen::Matrix2d covariance_;
+        int color_;
 
         Landmark() {
             id_ = UNINITIALIZED_ID;
             local_position_ = Eigen::Vector2d::Zero();
             world_position_ = Eigen::Vector2d::Zero();
             covariance_ = Eigen::Matrix2d::Identity();
+            color_ = UNCOLORED;
         }
 
         Landmark(const Eigen::Vector2d& world_position) {
             id_ = UNMATCHED_ID;
             world_position_ = world_position;
             covariance_ = Eigen::Matrix2d::Identity();
+            color_ = UNCOLORED;
         }
 
         Landmark(const Eigen::Vector2d& local_position, const Eigen::Vector3d vehicle_pose) {
@@ -33,6 +42,7 @@ class Landmark {
             local_position_ = local_position;
             get_world_pos(vehicle_pose);
             covariance_ = Eigen::Matrix2d::Identity();
+            color_ = UNCOLORED;
         }
 
     private:

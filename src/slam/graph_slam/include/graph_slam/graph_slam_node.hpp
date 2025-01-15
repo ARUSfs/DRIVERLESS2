@@ -51,7 +51,8 @@ class GraphSlam : public rclcpp::Node
     rclcpp::CallbackGroup::SharedPtr collector_callback_group_;
     rclcpp::CallbackGroup::SharedPtr optimizer_callback_group_;
     
-    Eigen::Vector2d local_to_global(const Eigen::Vector2d& position);
+    Eigen::Vector2d local_to_global(const Eigen::Vector2d& local_pos);
+    Eigen::Vector2d global_to_local(const Eigen::Vector2d& global_pos);
 
     Eigen::Vector3d vehicle_pose_ = Eigen::Vector3d::Zero();
     // TODO add configuration for noise
