@@ -24,7 +24,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("v_max", 10.0);
     this->declare_parameter<double>("ay_max", 5.0);
     this->declare_parameter<double>("ax_max", 5.0);
-    this->declare_parameter<double>("smooth", 0.3);
+    this->declare_parameter<bool>("color", false);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
@@ -36,7 +36,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("v_max", kMaxVel);
     this->get_parameter("ay_max", kMaxYAcc);
     this->get_parameter("ax_max", kMaxXAcc);
-    this->get_parameter("smooth", kSmooth);
+    this->get_parameter("color", kColor);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
@@ -134,9 +134,9 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
     for (int i=0; i<triangles.size(); i++) {
         // Angle and length calculations
         CDT::VerticesArr3 vert_ind = triangles[i].vertices;
-        CDT::V2d<double> a = vertices[vert_ind[0]];
-        CDT::V2d<double> b = vertices[vert_ind[1]];
-        CDT::V2d<double> c = vertices[vert_ind[2]];
+        ConeXYZColorScore a = input_cloud.points[vert_ind[0]];
+        ConeXYZColorScore b = input_cloud.points[vert_ind[1]];
+        ConeXYZColorScore c = input_cloud.points[vert_ind[2]];
         CDT::V2d<double> ab, bc, ca;
         double a_angle, b_angle, c_angle;
         ab = CDT::V2d<double>::make(b.x-a.x, b.y-a.y);
@@ -147,9 +147,14 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
         c_angle = acos((ca.x*bc.x+ca.y*bc.y)/(norm(ca)*norm(bc)));
 
         // Delete triangles with long edges or big angles (except the ones with the origin vertex)
-        if (CDT::distance(a,b) > kMaxTriLen or CDT::distance(b,c) > kMaxTriLen or CDT::distance(c,a) > kMaxTriLen){
+        // and triangles with the same color
+        if (kColor and (a.color == b.color and b.color == c.color)){
             deleled_tri.insert(i);
-        } else if (a == origin or b == origin or c == origin){
+        } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
+            deleled_tri.insert(i);
+        } else if ((a.x == origin.x and a.y == origin.y) or     // Check if the origin vertex is in the triangle
+                    (b.x == origin.x and b.y == origin.y) or
+                    (c.x == origin.x and c.y == origin.y)){
             continue;
         } else if (a_angle > kMaxTriAngle or b_angle > kMaxTriAngle or c_angle > kMaxTriAngle){
             deleled_tri.insert(i);
