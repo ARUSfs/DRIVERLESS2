@@ -12,7 +12,8 @@
 #include <Triangulation.h>
 #include <CDTUtils.h>
 #include "ConeXYZColorScore.h"
-#include "path_planning/simplex_tree.hpp"
+#include "simplex_tree.hpp"
+#include "utils.hpp"
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/simplex.hpp>
