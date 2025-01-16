@@ -7,21 +7,29 @@
  * @version 0.1
  * @date 23-10-2024
  */
-#include <rclcpp/rclcpp.hpp>
-#include "CDT.h"
+// General libraries
+#include <cmath>
+#include <Eigen/Dense>
+#include <unsupported/Eigen/Splines>
+
+// Triangulation libraries
+#include <CDT.h>
 #include <Triangulation.h>
 #include <CDTUtils.h>
-#include "ConeXYZColorScore.h"
-#include "simplex_tree.hpp"
-#include "utils.hpp"
+
+// ROS2 libraries and msg tipes
+#include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
-#include "common_msgs/msg/state.hpp"
-#include <Eigen/Dense>
-#include <unsupported/Eigen/Splines>
+#include <common_msgs/msg/state.hpp>
+#include "ConeXYZColorScore.h"
+
+// Custom libraries
+#include "simplex_tree.hpp"
+#include "utils.hpp"
 
 
 /**
@@ -62,12 +70,16 @@ class PathPlanning : public rclcpp::Node
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
 
         // CarState
-        double x_;
-        double y_;
+        double x_=0;
+        double y_=0;
         double yaw_;
         double vx_;
         double vy_;
         double v_;
+        ConeXYZColorScore origin_ = ConeXYZColorScore();
+
+        // Point cloud
+        pcl::PointCloud<ConeXYZColorScore> pcl_cloud_;
 
         // Triangulation attributes
         CDT::TriangleVec triangles_;

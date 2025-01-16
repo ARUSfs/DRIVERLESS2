@@ -15,9 +15,9 @@ path_planning:
     max_angle: 1.0
 
     # Profile creation parameters
-    v_max: 10.0
-    ay_max: 5.0
-    ax_max: 5.0
+    v_max: 5.0
+    ay_max: 3.0
+    ax_max: 3.0
 
     # Trajectory generation parameters
     smooth: 0.3     # in (0, 0.5) interval
