@@ -488,7 +488,7 @@ void CanInterface::send_dl501()
     frame.data[2] = clamped_ay_ & 0xFF;       
     frame.data[3] = (clamped_ay_ >> 8) & 0xFF; 
 
-    int16_t clamped_yaw_rate_ = static_cast<int16_t>(std::clamp(static_cast<float>(yaw_rate_ *512 ), -32768.0f, 32767.0f));
+    int16_t clamped_yaw_rate_ = static_cast<int16_t>(std::clamp(static_cast<float>(yaw_rate_ *128 ), -32768.0f, 32767.0f));
     // Convert to little-endian (break into 2 bytes)
     frame.data[4] = clamped_yaw_rate_ & 0xFF;    
     frame.data[5] = (clamped_yaw_rate_ >> 8) & 0xFF; 
