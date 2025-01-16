@@ -331,7 +331,9 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
         return INFINITY;
     }
     // Check if the route is looking forward (angle difference with the yaw is less than pi/2 radians)
-    bool route_looking_forward = abs(atan2(route[1].y-y_, route[1].x-x_)-yaw_) < M_PI/2;
+    double angle_forward = abs(atan2(route[1].y-y_, route[1].x-x_)-yaw_);
+    double corrected_angle_forward = std::min(angle_forward, 2*M_PI-angle_forward);
+    bool route_looking_forward = corrected_angle_forward < M_PI/2;
     if (!route_looking_forward){
         return INFINITY;
     }
