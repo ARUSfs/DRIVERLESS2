@@ -23,7 +23,7 @@ CanInterface::CanInterface() : Node("can_interface"){
 
     // Create publishers from the csv file and store them in a key-vector pair
     for (const auto& [key, vector] : csvdata_main) {
-        std::string topic = vector[4];
+        std::string topic = vector[6];
         publishers[key] = this->create_publisher<std_msgs::msg::Float32>(topic, 10);
     }
 
@@ -247,8 +247,10 @@ void CanInterface::read_CAN(int socketCan)
                 CANParseConfig config;
                 config.startByte = std::stoi(main_vector[0]);
                 config.endByte = std::stoi(main_vector[1]);
-                config.scale = std::stof(main_vector[2]);
-                config.offset = std::stof(main_vector[3]);
+                config.isSigned = main_vector[2];
+                config.power = std::stoi(main_vector[3]);
+                config.scale = std::stof(main_vector[4]);
+                config.offset = std::stof(main_vector[5]);
                 config.key = dynamic_key;
                     
                 // Call parse_msg with the populated CANParseConfig
@@ -278,32 +280,54 @@ void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig
     uint8_t numBytes = config.endByte - config.startByte + 1;
 
     if (numBytes == 1) { 
-        rawValue = static_cast<int8_t>(frame.data[config.startByte]);
+        if (config.isSigned == "yes") {
+            rawValue = static_cast<int8_t>(frame.data[config.startByte]);
+        } else {
+            rawValue = static_cast<uint8_t>(frame.data[config.startByte]);
+        }
     } 
     else if (numBytes == 2) { 
-        rawValue = static_cast<int16_t>(
-            (frame.data[config.endByte] << 8) | frame.data[config.startByte]
-        );
+        if (config.isSigned == "yes") {
+            rawValue = static_cast<int16_t>(
+            (frame.data[config.endByte] << 8) | frame.data[config.startByte]);
+        } else {
+            rawValue = static_cast<uint16_t>(
+            (frame.data[config.endByte] << 8) | frame.data[config.startByte]);
+        }
+        
     } 
     else if (numBytes == 3) { 
-        rawValue = static_cast<int32_t>(
+        if (config.isSigned == "yes") {
+            rawValue = static_cast<int32_t>(
             (frame.data[config.startByte + 2] << 16) |
             (frame.data[config.startByte + 1] << 8) |
-             frame.data[config.startByte]
-        );
+             frame.data[config.startByte]);
 
-        // Sign-extend 24-bit value to 32-bit
-        if (rawValue & 0x00800000) { // Check if the sign bit (23rd bit) is set
+            // Sign-extend 24-bit value to 32-bit
+            if (rawValue & 0x00800000) { // Check if the sign bit (23rd bit) is set
             rawValue |= 0xFF000000;  // Extend the sign to the upper bits
+            }
+        } else {
+            rawValue = static_cast<uint32_t>(
+            (frame.data[config.startByte + 2] << 16) |
+            (frame.data[config.startByte + 1] << 8) |
+             frame.data[config.startByte]);
         }
     } 
     else if (numBytes == 4) { 
-        rawValue = static_cast<uint32_t>( // Unsigned for wheelspeed, TODO generalize
+        if (config.isSigned == "yes") {
+            rawValue = static_cast<int32_t>( 
             (frame.data[config.startByte + 3] << 24) |
             (frame.data[config.startByte + 2] << 16) |
             (frame.data[config.startByte + 1] << 8) |
-             frame.data[config.startByte]
-        );
+             frame.data[config.startByte]);
+        } else {
+            rawValue = static_cast<uint32_t>(
+            (frame.data[config.startByte + 3] << 24) |
+            (frame.data[config.startByte + 2] << 16) |
+            (frame.data[config.startByte + 1] << 8) |
+             frame.data[config.startByte]);
+        }   
     } 
     else {
         RCLCPP_ERROR(
@@ -313,7 +337,7 @@ void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig
         );
     }
 
-    float scaledValue = static_cast<float>(rawValue) * config.scale + config.offset;
+    float scaledValue = std::pow(static_cast<float>(rawValue), config.power) * config.scale + config.offset;
 
     // Find the associated publisher, create the message and publish the scaled value.
     auto pub_iter = publishers.find(config.key);

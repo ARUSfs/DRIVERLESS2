@@ -50,6 +50,8 @@ using namespace std;
 struct CANParseConfig {
     uint8_t startByte;       // Start byte position
     uint8_t endByte;         // End byte position
+    std::string isSigned;    // If the value is signed or not
+    int8_t power;            // Power of the raw value
     float scale;             // Scaling factor
     float offset;            // Offset value
     std::string key;         // Key associate with the publisher
