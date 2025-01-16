@@ -174,23 +174,23 @@ void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg
 
 void CarState::fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    v_front_left_ = 1/msg->data;
+    v_front_left_ = msg->data;
 }
 
 void CarState::fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    v_front_right_ = 1/msg->data;
+    v_front_right_ = msg->data;
     std::cout << "v_front_right_: " << v_front_right_ << std::endl;
 }
 
 void CarState::rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    v_rear_left_ = 1/msg->data;
+    v_rear_left_ = msg->data;
 }
 
 void CarState::rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    v_rear_right_ = 1/msg->data;
+    v_rear_right_ = msg->data;
 }
 
 // TODO publish wheel speeds separated in arussim
