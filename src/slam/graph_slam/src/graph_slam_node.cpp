@@ -4,7 +4,13 @@
 GraphSlam::GraphSlam() : Node("graph_slam")
 { 
 
+    this->declare_parameter("finish_line_offset", 0.0);
+    this->declare_parameter("track_width", 3.0);
+    this->declare_parameter("min_lap_distance", 30.0);
     this->declare_parameter("write_csv", false);
+    this->get_parameter("finish_line_offset", kFinishLineOffset);
+    this->get_parameter("track_width", kTrackWidth);
+    this->get_parameter("min_lap_distance", kMinLapDistance);
     this->get_parameter("write_csv", kWriteCSV);
 
     // TODO: test other solvers
@@ -46,6 +52,7 @@ GraphSlam::GraphSlam() : Node("graph_slam")
 
     marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/graph_slam/marker", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/map", 10);
+    lap_count_pub_ = this->create_publisher<std_msgs::msg::Int16>("/slam/lap_count", 10);
 
     state_sub_ = this->create_subscription<common_msgs::msg::State>("/car_state/state", 10, 
                     std::bind(&GraphSlam::state_callback, this, std::placeholders::_1), collector_options);
@@ -64,6 +71,7 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
     B.block(0, 0, 2, 2) << std::cos(phi), -std::sin(phi), std::sin(phi), std::cos(phi);
     u << msg->vx, msg->vy, msg->r;
     vehicle_pose_ += B * u * dt; // TODO check phi in range [-pi, pi]
+    driven_distance_ += (B * u * dt).norm();
     
     if (vehicle_pose_(2) > M_PI) {
         vehicle_pose_(2) -= 2*M_PI;
@@ -72,7 +80,10 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
     }
 
     prev_t_ = this->now();
+    // Publish the vehicle pose as a tf
     send_tf();
+    // Check if the vehicle has crossed the finish line
+    check_finish_line();
 
     // Add a new pose vertex
     g2o::VertexSE2* pose_vertex = new g2o::VertexSE2();
@@ -228,6 +239,22 @@ void GraphSlam::publish_map(){
     pcl::toROSMsg(map, map_msg);
     map_msg.header.frame_id = "arussim/world";
     map_pub_->publish(map_msg);
+}
+
+void GraphSlam::check_finish_line(){
+    bool lap_finished = vehicle_pose_(0) > kFinishLineOffset-1
+                        && vehicle_pose_(0) < kFinishLineOffset+1
+                        && vehicle_pose_(1) > -kTrackWidth/2
+                        && vehicle_pose_(1) < kTrackWidth/2
+                        && driven_distance_ > kMinLapDistance;
+    if (lap_finished){
+        driven_distance_ = 0.0;
+        lap_count_++;
+
+        std_msgs::msg::Int16 lap_count_msg;
+        lap_count_msg.data = lap_count_;
+        lap_count_pub_->publish(lap_count_msg);
+    }
 }
 
 // Get the global position given the local position relative to the actual vehicle pose
