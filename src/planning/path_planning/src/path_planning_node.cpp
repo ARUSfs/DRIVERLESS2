@@ -192,80 +192,8 @@ common_msgs::msg::Triangulation PathPlanning::create_triangulation_msg(CDT::Tria
     return triangulation_msg;
 }
 
-//! Unused function
-std::vector<CDT::V2d<double>> PathPlanning::get_midpoints(CDT::Triangulation<double> triangulation){
-    std::vector<CDT::V2d<double>> midpoints;
-    CDT::TriangleVec triangles = triangulation.triangles;
-    CDT::Triangulation<double>::V2dVec vertices = triangulation.vertices;
-
-    for (std::vector<CDT::Triangle>::size_type i = 0; i < triangles.size(); i++){
-        CDT::Triangle triangle = triangles[i];
-        CDT::VerticesArr3 vertices_index = triangle.vertices;
-        CDT::VertInd a_ind = vertices_index[0];
-        CDT::VertInd b_ind = vertices_index[1];
-        CDT::VertInd c_ind = vertices_index[2];
-        CDT::V2d<double> a = vertices[a_ind];
-        CDT::V2d<double> b = vertices[b_ind];
-        CDT::V2d<double> c = vertices[c_ind];
-        CDT::V2d<double> ab = CDT::V2d<double>::make((a.x+b.x)/2, (a.y+b.y)/2);
-        CDT::V2d<double> bc = CDT::V2d<double>::make((b.x+c.x)/2, (b.y+c.y)/2);
-        CDT::V2d<double> ca = CDT::V2d<double>::make((c.x+a.x)/2, (c.y+a.y)/2);
-        midpoints.push_back(ab);
-        midpoints.push_back(bc);
-        midpoints.push_back(ca);
-    }
-    CDT::RemoveDuplicates(midpoints);
-
-    return midpoints;
-}
-
 double PathPlanning::norm(CDT::V2d<double> v){
     return hypot(v.x, v.y);
-}
-
-//! Unused function
-CDT::V2d<double> PathPlanning::get_closest_midpoint(std::vector<CDT::V2d<double>> midpoint_arr){
-    CDT::V2d<double> closest = midpoint_arr[0];
-    double min_norm = this->norm(closest);
-
-    for (std::vector<CDT::V2d<double>>::iterator it = midpoint_arr.begin(); it != midpoint_arr.end(); it++){
-        double current_norm = this->norm(*it);
-        if (current_norm < min_norm){
-            min_norm = current_norm;
-            closest = *it;
-        }
-    }
-    return closest;
-}
-
-//! Unused function
-int PathPlanning::get_closest_triangle(){
-    int closest = 0;
-    double min_norm = 100;
-    for (int i = 0; i < triangles_.size(); i++){
-        CDT::V2d<double> centroid = this->compute_centroid(i);
-        double current_norm = this->norm(centroid);
-        if (current_norm < min_norm){
-            min_norm = current_norm;
-            closest = i;
-        }
-    }
-    return closest;
-}
-
-//! Unused function
-CDT::V2d<double> PathPlanning::compute_centroid(int triangle_ind){
-    CDT::V2d<double> a, b, c;
-    CDT::Triangle triangle = triangles_[triangle_ind];
-    CDT::VerticesArr3 vertices_index = triangle.vertices;
-    CDT::VertInd a_ind = vertices_index[0];
-    CDT::VertInd b_ind = vertices_index[1];
-    CDT::VertInd c_ind = vertices_index[2];
-    a = vertices_[a_ind];
-    b = vertices_[b_ind];
-    c = vertices_[c_ind];
-    CDT::V2d<double> centroid = CDT::V2d<double>::make((a.x+b.x+c.x)/3, (a.y+b.y+c.y)/3);
-    return centroid;
 }
 
 int PathPlanning::get_vertex_index(CDT::V2d<double> vertex){

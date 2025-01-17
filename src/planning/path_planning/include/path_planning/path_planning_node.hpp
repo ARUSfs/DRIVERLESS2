@@ -123,42 +123,12 @@ class PathPlanning : public rclcpp::Node
         common_msgs::msg::Triangulation create_triangulation_msg(CDT::Triangulation<double> triangulation);
 
         /**
-         * @brief Get the mid points of the edges of the triangulation. 
-         * It returns a vector of V2d points containing the mid points without duplicates.
-         * @param triangulation CDT object containing the triangulation.
-         * @return std::vector<CDT::V2d<double>> 
-         */
-        std::vector<CDT::V2d<double>> get_midpoints(CDT::Triangulation<double> triangulation);
-
-        /**
          * @brief Calculate the euclidean norm of a vector. 
          * i.e.: if v=(x,y), norm(v) = (x^2 + y^2)^(1/2).
          * @param v Vector to calculate the norm.
          * @return double 
          */
         double norm(CDT::V2d<double> v);
-
-        /**
-         * @brief Get the closest midpoint to the origin as a CDT 2D vector.
-         * 
-         * @param midpoint_arr Array of midpoints to calculate the closest one.
-         * @return CDT::V2d<double> 
-         */
-        CDT::V2d<double> get_closest_midpoint(std::vector<CDT::V2d<double>> midpoint_arr);
-
-        /**
-         * @brief Get the closest triangle object using the centroid as reference.
-         * @return int Index of the closest triangle found.
-         */
-        int get_closest_triangle();
-
-        /**
-         * @brief Calulate the centroid of a triangle given its index in the triangulation.
-         * Centroid is defined as the average of the vertices of the triangle.
-         * @param triangle_ind int index of the triangle in the triangulation.
-         * @return CDT::V2d<double> point containing the centroid of the triangle.
-         */
-        CDT::V2d<double> compute_centroid(int triangle_ind);
 
         /**
          * @brief Get the index of the origin vertex in the triangulation.
@@ -194,8 +164,6 @@ class PathPlanning : public rclcpp::Node
          * @return float result of the cost function.
          */
         double get_route_cost(std::vector<CDT::V2d<double>> &route);
-
-        
 
         /**
          * @brief Create a trajectory msg object from a given route.
