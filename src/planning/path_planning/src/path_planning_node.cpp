@@ -318,13 +318,13 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
         control_points(1, i) = route[i].y;
     }
 
-    Eigen::Spline<double, 2> bSpline = Eigen::SplineFitting<Eigen::Spline<double, 2>>::Interpolate(
+    Eigen::Spline<double, 2> b_spline = Eigen::SplineFitting<Eigen::Spline<double, 2>>::Interpolate(
         control_points, degree);
     
     // Add the points to the trajectory message
     for (double i = 0; i<route_size*10-1; i++){
-        Eigen::Vector2d point_1 = bSpline(i/(10*route_size));
-        Eigen::Vector2d point_2 = bSpline((i+1)/(10*route_size));
+        Eigen::Vector2d point_1 = b_spline(i/(10*route_size));
+        Eigen::Vector2d point_2 = b_spline((i+1)/(10*route_size));
         double x = point_1(0);
         double y = point_1(1);
         double dx = point_2(0)-x;
