@@ -239,8 +239,8 @@ void PathPlanning::get_midpoint_routes(){
             CDT::Edge share_edge = this->get_share_edge(triangle, next_triangle);
             CDT::VertInd v1 = share_edge.v1();
             CDT::VertInd v2 = share_edge.v2();
-            if ((pcl_cloud_[v1].color != UNCOLORED) and 
-                (pcl_cloud_[v1].color == pcl_cloud_[v2].color)){
+            if (kColor and (pcl_cloud_[v1].color != UNCOLORED) and 
+                           (pcl_cloud_[v1].color == pcl_cloud_[v2].color)){
                 break;
             }
             CDT::V2d<double> midpoint = CDT::V2d<double>::make((vertices_[v1].x+vertices_[v2].x)/2, 
