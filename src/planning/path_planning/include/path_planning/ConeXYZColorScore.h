@@ -1,7 +1,14 @@
+#pragma once
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 
+
+#define UNCOLORED -1
+#define BLUE 0
+#define YELLOW 1
+#define ORANGE 2
+#define ORANGE_BIG 3
 
 struct ConeXYZColorScore {
     PCL_ADD_POINT4D;  
