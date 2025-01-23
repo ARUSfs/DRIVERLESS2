@@ -86,6 +86,7 @@ class GraphSlam : public rclcpp::Node
     rclcpp::TimerBase::SharedPtr optimizer_timer_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr final_map_pub_;
     rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr lap_count_pub_;
 
     void state_callback(const common_msgs::msg::State::SharedPtr msg);

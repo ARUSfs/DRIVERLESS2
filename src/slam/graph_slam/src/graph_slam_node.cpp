@@ -56,6 +56,7 @@ GraphSlam::GraphSlam() : Node("graph_slam")
 
     marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/graph_slam/marker", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/map", 10);
+    final_map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/final_map", 10);
     lap_count_pub_ = this->create_publisher<std_msgs::msg::Int16>("/slam/lap_count", 10);
 
     state_sub_ = this->create_subscription<common_msgs::msg::State>("/car_state/state", 10, 
@@ -273,6 +274,9 @@ void GraphSlam::publish_map(){
     pcl::toROSMsg(map, map_msg);
     map_msg.header.frame_id = "arussim/world";
     map_pub_->publish(map_msg);
+    if(map_fixed_){
+        final_map_pub_->publish(map_msg);
+    }
 }
 
 void GraphSlam::check_finish_line(){
