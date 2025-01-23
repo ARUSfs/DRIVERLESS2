@@ -43,6 +43,8 @@ class GraphSlam : public rclcpp::Node
     double kTrackWidth;
     double kMinLapDistance;
     bool kWriteCSV;
+    int kMaxPoseEdges;
+    int kMaxLandmarkEdges;
 
     Eigen::Matrix3d Q = Eigen::Matrix3d::Identity();
     Eigen::Matrix2d R = Eigen::Matrix2d::Identity();
@@ -76,6 +78,8 @@ class GraphSlam : public rclcpp::Node
     double driven_distance_ = 0.0;
     int lap_count_ = 0;
     bool map_fixed_ = false;
+    int pose_edges_deactivated_ = 0;
+    int landmark_edges_deactivated_ = 0;
 
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr state_sub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;

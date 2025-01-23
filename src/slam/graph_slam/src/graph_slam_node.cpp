@@ -8,10 +8,14 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->declare_parameter("track_width", 3.0);
     this->declare_parameter("min_lap_distance", 30.0);
     this->declare_parameter("write_csv", false);
+    this->declare_parameter("max_pose_edges", 10000);
+    this->declare_parameter("max_landmark_edges", 10000);
     this->get_parameter("finish_line_offset", kFinishLineOffset);
     this->get_parameter("track_width", kTrackWidth);
     this->get_parameter("min_lap_distance", kMinLapDistance);
     this->get_parameter("write_csv", kWriteCSV);
+    this->get_parameter("max_pose_edges", kMaxPoseEdges);
+    this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
 
     // TODO: test other solvers
     using SlamBlockSolver  = g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>>;
@@ -174,15 +178,13 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     }
 
     // std::cout << "Number of vertices: " << optimizer_.vertices().size() << std::endl;
-    // std::cout << "Number of edges: " << optimizer_.edges().size() << std::endl;
+    // std::cout << "Number of edges: " << optimizer_.edges().size() << std::endl; 
 
     publish_map();
 }
 
 void GraphSlam::optimizer_callback(){
-    if(!map_fixed_){
-        fill_graph();
-    }
+    fill_graph();
     optimizer_.initializeOptimization();
     optimizer_.optimize(200);
     update_data_association_map();
@@ -213,6 +215,23 @@ void GraphSlam::fill_graph(){
         optimizer_.addEdge(edge);
     }
     edges_to_add_.clear();
+
+    if(pose_edges_.size()-pose_edges_deactivated_ > kMaxPoseEdges){
+        for (int i=pose_edges_deactivated_; i<pose_edges_.size()-kMaxPoseEdges; i++){
+            pose_edges_[i]->setLevel(2); // Deactivate edge
+        }
+        pose_edges_deactivated_ = pose_edges_.size()-kMaxPoseEdges;
+        // Fix first activated pose, to reduce degrees of freedom
+        g2o::VertexSE2* v0 = static_cast<g2o::VertexSE2*>(pose_edges_[pose_edges_deactivated_]->vertex(0));
+        v0->setFixed(true);
+    }
+
+    if(landmark_edges_.size()-landmark_edges_deactivated_ > kMaxLandmarkEdges){
+        for (int i=landmark_edges_deactivated_; i<landmark_edges_.size()-kMaxLandmarkEdges; i++){
+            landmark_edges_[i]->setLevel(2); // Deactivate edge
+        }
+        landmark_edges_deactivated_ = landmark_edges_.size()-kMaxLandmarkEdges;
+    }
 }
 
 void GraphSlam::fix_map(){ 
