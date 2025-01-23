@@ -26,9 +26,9 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     g2o::VertexSE2* init_vertex = new g2o::VertexSE2();
     init_vertex->setId(1); // Use odd ids for pose vertices
     init_vertex->setEstimate(g2o::SE2(0,0,0));
+    init_vertex->setFixed(true);
     pose_vertices_.push_back(init_vertex);
     optimizer_.addVertex(init_vertex);
-    // TODO: fix first vertex
     
     prev_t_ = this->now();
 	tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
@@ -133,27 +133,30 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     }
     
     DA.match_observations(observed_landmarks, unmatched_landmarks);
-    for (auto landmark : unmatched_landmarks) {
-        landmark.id_ = 2*DA.map_.size(); // Use even ids for landmark vertices
-        Landmark* new_landmark = new Landmark(landmark); // Copy the landmark to avoid memory issues
-        DA.map_.push_back(new_landmark);
+    if(!map_fixed_){
+        for (auto landmark : unmatched_landmarks) {
+            landmark.id_ = 2*DA.map_.size(); // Use even ids for landmark vertices
+            Landmark* new_landmark = new Landmark(landmark); // Copy the landmark to avoid memory issues
+            DA.map_.push_back(new_landmark);
 
-        // Add a new landmark vertex 
-        g2o::VertexPointXY* landmark_vertex = new g2o::VertexPointXY();
-        landmark_vertex->setId(landmark.id_);
-        landmark_vertex->setEstimate(landmark.world_position_);
-        landmark_vertices_.push_back(landmark_vertex);
-        vertices_to_add_.push_back(landmark_vertex);
+            // Add a new landmark vertex 
+            g2o::VertexPointXY* landmark_vertex = new g2o::VertexPointXY();
+            landmark_vertex->setId(landmark.id_);
+            landmark_vertex->setEstimate(landmark.world_position_);
+            landmark_vertices_.push_back(landmark_vertex);
+            vertices_to_add_.push_back(landmark_vertex);
 
-        // Add an edge between the last pose vertex and the new landmark vertex 
-        g2o::EdgeSE2PointXY* edge = new g2o::EdgeSE2PointXY();
-        edge->vertices()[0] = last_pose_vertex;
-        edge->vertices()[1] = landmark_vertex;
-        edge->setMeasurement(landmark.local_position_);
-        edge->setInformation(R.inverse());
-        landmark_edges_.push_back(edge);
-        edges_to_add_.push_back(edge);
+            // Add an edge between the last pose vertex and the new landmark vertex 
+            g2o::EdgeSE2PointXY* edge = new g2o::EdgeSE2PointXY();
+            edge->vertices()[0] = last_pose_vertex;
+            edge->vertices()[1] = landmark_vertex;
+            edge->setMeasurement(landmark.local_position_);
+            edge->setInformation(R.inverse());
+            landmark_edges_.push_back(edge);
+            edges_to_add_.push_back(edge);
+        }
     }
+    
 
     for (auto landmark : observed_landmarks) {
         if (landmark.id_ == Landmark::UNMATCHED_ID) {
@@ -177,7 +180,9 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
 }
 
 void GraphSlam::optimizer_callback(){
-    addVerticesAndEdges();
+    if(!map_fixed_){
+        fill_graph();
+    }
     optimizer_.initializeOptimization();
     optimizer_.optimize(200);
     update_data_association_map();
@@ -199,7 +204,7 @@ void GraphSlam::update_data_association_map(){
     }
 }
 
-void GraphSlam::addVerticesAndEdges(){
+void GraphSlam::fill_graph(){
     for (auto vertex: vertices_to_add_){
         optimizer_.addVertex(vertex);
     }
@@ -208,6 +213,16 @@ void GraphSlam::addVerticesAndEdges(){
         optimizer_.addEdge(edge);
     }
     edges_to_add_.clear();
+}
+
+void GraphSlam::fix_map(){ 
+    for (auto vertex : optimizer_.vertices()) {
+        g2o::VertexPointXY* landmark_vertex = dynamic_cast<g2o::VertexPointXY*>(vertex.second);
+        if (landmark_vertex != nullptr) {
+            landmark_vertex->setFixed(true);
+        }
+    }
+    map_fixed_ = true;
 }
 
 void GraphSlam::publish_map(){
@@ -254,6 +269,10 @@ void GraphSlam::check_finish_line(){
         std_msgs::msg::Int16 lap_count_msg;
         lap_count_msg.data = lap_count_;
         lap_count_pub_->publish(lap_count_msg);
+    }
+
+    if (lap_count_ == 1){
+        fix_map();
     }
 }
 

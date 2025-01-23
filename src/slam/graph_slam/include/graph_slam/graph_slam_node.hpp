@@ -75,6 +75,7 @@ class GraphSlam : public rclcpp::Node
 
     double driven_distance_ = 0.0;
     int lap_count_ = 0;
+    bool map_fixed_ = false;
 
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr state_sub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
@@ -86,7 +87,8 @@ class GraphSlam : public rclcpp::Node
     void state_callback(const common_msgs::msg::State::SharedPtr msg);
     void perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     void optimizer_callback();
-    void addVerticesAndEdges();
+    void fill_graph();
+    void fix_map();
     void send_tf();
     void publish_map();
     void check_finish_line();
