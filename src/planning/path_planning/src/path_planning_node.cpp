@@ -91,22 +91,29 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     this->get_midpoint_routes();
 
     // Get the cost of each route
-    if(midpoint_routes_.size()>0){
-        int best_route_ind = 0;
-        double min_cost = INFINITY;
-        for (int i = 0; i<midpoint_routes_.size(); i++){
-            double cost = this->get_route_cost(midpoint_routes_[i]);
-            if (cost < min_cost){
-                min_cost = cost;
-                best_route_ind = i;
-            }
-        }
-        best_midpoint_route_ = midpoint_routes_[best_route_ind];
-
-        // Publish the best trajectory
-        trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
-
+    if(midpoint_routes_.size()==0){ // Return if there are no routes
+        return;
     }
+
+    int best_route_ind = 0;
+    double min_cost = INFINITY;
+    for (int i = 0; i<midpoint_routes_.size(); i++){
+        double cost = this->get_route_cost(midpoint_routes_[i]);
+        if (cost < min_cost){
+            min_cost = cost;
+            best_route_ind = i;
+        }
+    }
+    best_midpoint_route_ = midpoint_routes_[best_route_ind];
+
+    previous_midpoint_routes_.push_back(best_midpoint_route_);
+
+    std::vector<CDT::V2d<double>> final_route = this->get_final_route();
+
+    // Publish the best trajectory
+    trajectory_pub_ -> publish(this->create_trajectory_msg(final_route));
+
+    
 }
 
 void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr state_msg)
@@ -294,6 +301,31 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
     route_cost += kAngleCoeff*angle_diff_sum - kLenCoeff*route_length; // Curvature
     return route_cost;
 }
+
+std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
+    //! Still to adjust: threshold (0.75), number of last routes (6) and route count (4)
+    std::vector<CDT::V2d<double>> final_route = previous_midpoint_routes_.back();
+    int threshold = 0.75*final_route.size(); // Threshold per route to be considered valid
+    if (previous_midpoint_routes_.size() < 6){
+        return final_route;
+    }
+    std::vector<std::vector<CDT::V2d<double>>> last_routes(previous_midpoint_routes_.end()-6, previous_midpoint_routes_.end());
+    
+    int route_count = 0;
+    for (int i = 0; i<last_routes.size()-1; i++){
+        int point_count = compare_lists(last_routes[i], final_route);
+        if (point_count > threshold){
+            route_count++;
+        }
+        if (route_count > 4){
+            return final_route;
+        }
+    }
+    return previous_midpoint_routes_[previous_midpoint_routes_.size()-2];
+
+}
+
+
 
 common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT::V2d<double>> route){
     int route_size = route.size();
