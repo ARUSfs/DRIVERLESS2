@@ -13,7 +13,8 @@
 
 #pragma once
 
-struct PointXYZColorScore {
+struct PointXYZColorScore 
+{
     //definition of the type
     PCL_ADD_POINT4D;  
     int color;

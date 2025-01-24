@@ -42,6 +42,7 @@ Perception::Perception() : Node("Perception")
     //Create the publishers
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/filtered_cloud", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map", 10);
+    map_pub_2 = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map2", 10);
 }
 
 /**
@@ -153,7 +154,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Cropping::crop_filter_condition(cloud, kMaxXFov, kMaxYFov, kMaxZFov, kHFov);
 
     //print the number of filtered points and the time of the cropping function used
-    std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
+    //std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
 
     //Define the variables for the ground filter
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
@@ -161,7 +162,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
     //Apply the ground filter fuction
-    GroundFiltering::ransac_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter);
+    GroundFiltering::novel_ground_filter(cloud, cloud_filtered, cloud_plane, kThresholdGroundFilter);
     
     //Print the time of the ground filter algorithm used
     std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
@@ -175,21 +176,40 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Perception::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers); 
 
     //Print the number of possibles cones
-    std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
+    //std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
 
     //Recover ground points
     Perception::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius);
     
     //Print the number of recovered points
-    std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
+    //std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
 
     //Score the clusters and keep the ones that will be consider cones
     pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
     Scoring::scoring_surface(cloud_filtered, final_map, cluster_indices, clusters_centers, kThresholdScoring);
 
     //Print the number of cones and the time of the scoring
-    std::cout << "Number of cones: " << final_map->size() << std::endl;
-    std::cout << "Scoring time: " << this->now().seconds() - start_time << std::endl;
+    //std::cout << "Number of cones: " << final_map->size() << std::endl;
+    //std::cout << "Scoring time: " << this->now().seconds() - start_time << std::endl;
+
+    //Estimate the color of each cone
+    //ColorEstimation::coloring(cluster_indices, clusters_centers, cloud_filtered);
+
+    //Print the time of the coloring
+    //std::cout << "coloring time: " << this->now().seconds() - start_time << std::endl;
+
+    pcl::PointCloud<PointXYZColorScore>::Ptr final_map2(new pcl::PointCloud<PointXYZColorScore>);
+    for (size_t i = 0; i < clusters_centers.size(); ++i)
+    {
+        PointXYZColorScore& center = clusters_centers[i];
+
+        if (center.color == 4)
+        {
+            final_map2->points.push_back(center);
+        }
+    }
+
+    std::cout << "////////////////////////////////////////////////////////// " << std::endl;
 
     //Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;
@@ -202,6 +222,11 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::toROSMsg(*final_map, map_msg);
     map_msg.header.frame_id="/rslidar";
     map_pub_->publish(map_msg);
+
+    sensor_msgs::msg::PointCloud2 map_msg2;
+    pcl::toROSMsg(*final_map2, map_msg2);
+    map_msg2.header.frame_id="/rslidar";
+    map_pub_2->publish(map_msg2);
 }
 
 int main(int argc, char * argv[])

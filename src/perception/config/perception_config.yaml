@@ -16,4 +16,4 @@ perception:
     radius: 0.15
 
     #Parameters of scoring
-    threshold_scoring: 0.75
+    threshold_scoring: 0.85

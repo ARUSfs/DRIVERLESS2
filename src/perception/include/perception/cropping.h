@@ -13,10 +13,14 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-namespace Cropping{
+namespace Cropping
+{
     /**
     * @brief Create crop filter function for the point cloud.
-    * @param lidar_msg The point cloud that will be cropped.
+    * @param cloud The point cloud that will be cropped.
+    * @param Mx The lenght in the x axis.
+    * @param My The lenght in the y axis.
+    * @param Mz The lenght in the z axis.
     */
     void crop_filter_cropbox(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, double& Mx, double& My, double& Mz)
     {
@@ -32,7 +36,11 @@ namespace Cropping{
 
     /**
     * @brief Create crop filter function for the point cloud.
-    * @param lidar_msg The point cloud that will be cropped.
+    * @param cloud The point cloud that will be cropped.
+    * @param Mx The lenght in the x axis.
+    * @param My The lenght in the y axis.
+    * @param Mz The lenght in the z axis.
+    * @param H The angular condition.
     */
     void crop_filter_condition(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, double& Mx, double& My, double& Mz, double& H)
     {
