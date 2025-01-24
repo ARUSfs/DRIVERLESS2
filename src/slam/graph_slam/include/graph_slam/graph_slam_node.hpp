@@ -12,8 +12,9 @@
 #include <g2o/solvers/csparse/linear_solver_csparse.h>
 
 #include "common_msgs/msg/state.hpp"
-
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <std_msgs/msg/int16.hpp>
+
 #include <pcl/io/pcd_io.h>
 #include <iostream>
 #include <fstream>
@@ -38,7 +39,12 @@ class GraphSlam : public rclcpp::Node
 
   private:
 
+    double kFinishLineOffset;
+    double kTrackWidth;
+    double kMinLapDistance;
     bool kWriteCSV;
+    int kMaxPoseEdges;
+    int kMaxLandmarkEdges;
 
     Eigen::Matrix3d Q = Eigen::Matrix3d::Identity();
     Eigen::Matrix2d R = Eigen::Matrix2d::Identity();
@@ -50,9 +56,6 @@ class GraphSlam : public rclcpp::Node
 
     rclcpp::CallbackGroup::SharedPtr collector_callback_group_;
     rclcpp::CallbackGroup::SharedPtr optimizer_callback_group_;
-    
-    Eigen::Vector2d local_to_global(const Eigen::Vector2d& local_pos);
-    Eigen::Vector2d global_to_local(const Eigen::Vector2d& global_pos);
 
     Eigen::Vector3d vehicle_pose_ = Eigen::Vector3d::Zero();
     // TODO add configuration for noise
@@ -72,19 +75,31 @@ class GraphSlam : public rclcpp::Node
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 		rclcpp::Time prev_t_;
 
+    double driven_distance_ = 0.0;
+    int lap_count_ = 0;
+    bool map_fixed_ = false;
+    int pose_edges_deactivated_ = 0;
+    int landmark_edges_deactivated_ = 0;
+
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr state_sub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
     rclcpp::TimerBase::SharedPtr optimizer_timer_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr final_map_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr lap_count_pub_;
 
     void state_callback(const common_msgs::msg::State::SharedPtr msg);
     void perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     void optimizer_callback();
-    void addVerticesAndEdges();
+    void fill_graph();
+    void fix_map();
     void send_tf();
     void publish_map();
+    void check_finish_line();
     void update_data_association_map();
     void write_csv_log();
+    Eigen::Vector2d local_to_global(const Eigen::Vector2d& local_pos);
+    Eigen::Vector2d global_to_local(const Eigen::Vector2d& global_pos);
 
 };

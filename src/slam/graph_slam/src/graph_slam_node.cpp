@@ -4,8 +4,18 @@
 GraphSlam::GraphSlam() : Node("graph_slam")
 { 
 
+    this->declare_parameter("finish_line_offset", 0.0);
+    this->declare_parameter("track_width", 3.0);
+    this->declare_parameter("min_lap_distance", 30.0);
     this->declare_parameter("write_csv", false);
+    this->declare_parameter("max_pose_edges", 10000);
+    this->declare_parameter("max_landmark_edges", 10000);
+    this->get_parameter("finish_line_offset", kFinishLineOffset);
+    this->get_parameter("track_width", kTrackWidth);
+    this->get_parameter("min_lap_distance", kMinLapDistance);
     this->get_parameter("write_csv", kWriteCSV);
+    this->get_parameter("max_pose_edges", kMaxPoseEdges);
+    this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
 
     // TODO: test other solvers
     using SlamBlockSolver  = g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>>;
@@ -20,9 +30,9 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     g2o::VertexSE2* init_vertex = new g2o::VertexSE2();
     init_vertex->setId(1); // Use odd ids for pose vertices
     init_vertex->setEstimate(g2o::SE2(0,0,0));
+    init_vertex->setFixed(true);
     pose_vertices_.push_back(init_vertex);
     optimizer_.addVertex(init_vertex);
-    // TODO: fix first vertex
     
     prev_t_ = this->now();
 	tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
@@ -46,6 +56,8 @@ GraphSlam::GraphSlam() : Node("graph_slam")
 
     marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/graph_slam/marker", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/map", 10);
+    final_map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/final_map", 10);
+    lap_count_pub_ = this->create_publisher<std_msgs::msg::Int16>("/slam/lap_count", 10);
 
     state_sub_ = this->create_subscription<common_msgs::msg::State>("/car_state/state", 10, 
                     std::bind(&GraphSlam::state_callback, this, std::placeholders::_1), collector_options);
@@ -64,6 +76,7 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
     B.block(0, 0, 2, 2) << std::cos(phi), -std::sin(phi), std::sin(phi), std::cos(phi);
     u << msg->vx, msg->vy, msg->r;
     vehicle_pose_ += B * u * dt; // TODO check phi in range [-pi, pi]
+    driven_distance_ += (B * u * dt).norm();
     
     if (vehicle_pose_(2) > M_PI) {
         vehicle_pose_(2) -= 2*M_PI;
@@ -72,7 +85,10 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
     }
 
     prev_t_ = this->now();
+    // Publish the vehicle pose as a tf
     send_tf();
+    // Check if the vehicle has crossed the finish line
+    check_finish_line();
 
     // Add a new pose vertex
     g2o::VertexSE2* pose_vertex = new g2o::VertexSE2();
@@ -122,27 +138,30 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     }
     
     DA.match_observations(observed_landmarks, unmatched_landmarks);
-    for (auto landmark : unmatched_landmarks) {
-        landmark.id_ = 2*DA.map_.size(); // Use even ids for landmark vertices
-        Landmark* new_landmark = new Landmark(landmark); // Copy the landmark to avoid memory issues
-        DA.map_.push_back(new_landmark);
+    if(!map_fixed_){
+        for (auto landmark : unmatched_landmarks) {
+            landmark.id_ = 2*DA.map_.size(); // Use even ids for landmark vertices
+            Landmark* new_landmark = new Landmark(landmark); // Copy the landmark to avoid memory issues
+            DA.map_.push_back(new_landmark);
 
-        // Add a new landmark vertex 
-        g2o::VertexPointXY* landmark_vertex = new g2o::VertexPointXY();
-        landmark_vertex->setId(landmark.id_);
-        landmark_vertex->setEstimate(landmark.world_position_);
-        landmark_vertices_.push_back(landmark_vertex);
-        vertices_to_add_.push_back(landmark_vertex);
+            // Add a new landmark vertex 
+            g2o::VertexPointXY* landmark_vertex = new g2o::VertexPointXY();
+            landmark_vertex->setId(landmark.id_);
+            landmark_vertex->setEstimate(landmark.world_position_);
+            landmark_vertices_.push_back(landmark_vertex);
+            vertices_to_add_.push_back(landmark_vertex);
 
-        // Add an edge between the last pose vertex and the new landmark vertex 
-        g2o::EdgeSE2PointXY* edge = new g2o::EdgeSE2PointXY();
-        edge->vertices()[0] = last_pose_vertex;
-        edge->vertices()[1] = landmark_vertex;
-        edge->setMeasurement(landmark.local_position_);
-        edge->setInformation(R.inverse());
-        landmark_edges_.push_back(edge);
-        edges_to_add_.push_back(edge);
+            // Add an edge between the last pose vertex and the new landmark vertex 
+            g2o::EdgeSE2PointXY* edge = new g2o::EdgeSE2PointXY();
+            edge->vertices()[0] = last_pose_vertex;
+            edge->vertices()[1] = landmark_vertex;
+            edge->setMeasurement(landmark.local_position_);
+            edge->setInformation(R.inverse());
+            landmark_edges_.push_back(edge);
+            edges_to_add_.push_back(edge);
+        }
     }
+    
 
     for (auto landmark : observed_landmarks) {
         if (landmark.id_ == Landmark::UNMATCHED_ID) {
@@ -160,13 +179,13 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     }
 
     // std::cout << "Number of vertices: " << optimizer_.vertices().size() << std::endl;
-    // std::cout << "Number of edges: " << optimizer_.edges().size() << std::endl;
+    // std::cout << "Number of edges: " << optimizer_.edges().size() << std::endl; 
 
     publish_map();
 }
 
 void GraphSlam::optimizer_callback(){
-    addVerticesAndEdges();
+    fill_graph();
     optimizer_.initializeOptimization();
     optimizer_.optimize(200);
     update_data_association_map();
@@ -188,7 +207,7 @@ void GraphSlam::update_data_association_map(){
     }
 }
 
-void GraphSlam::addVerticesAndEdges(){
+void GraphSlam::fill_graph(){
     for (auto vertex: vertices_to_add_){
         optimizer_.addVertex(vertex);
     }
@@ -197,6 +216,33 @@ void GraphSlam::addVerticesAndEdges(){
         optimizer_.addEdge(edge);
     }
     edges_to_add_.clear();
+
+    if(pose_edges_.size()-pose_edges_deactivated_ > kMaxPoseEdges){
+        for (int i=pose_edges_deactivated_; i<pose_edges_.size()-kMaxPoseEdges; i++){
+            pose_edges_[i]->setLevel(2); // Deactivate edge
+        }
+        pose_edges_deactivated_ = pose_edges_.size()-kMaxPoseEdges;
+        // Fix first activated pose, to reduce degrees of freedom
+        g2o::VertexSE2* v0 = static_cast<g2o::VertexSE2*>(pose_edges_[pose_edges_deactivated_]->vertex(0));
+        v0->setFixed(true);
+    }
+
+    if(landmark_edges_.size()-landmark_edges_deactivated_ > kMaxLandmarkEdges){
+        for (int i=landmark_edges_deactivated_; i<landmark_edges_.size()-kMaxLandmarkEdges; i++){
+            landmark_edges_[i]->setLevel(2); // Deactivate edge
+        }
+        landmark_edges_deactivated_ = landmark_edges_.size()-kMaxLandmarkEdges;
+    }
+}
+
+void GraphSlam::fix_map(){ 
+    for (auto vertex : optimizer_.vertices()) {
+        g2o::VertexPointXY* landmark_vertex = dynamic_cast<g2o::VertexPointXY*>(vertex.second);
+        if (landmark_vertex != nullptr) {
+            landmark_vertex->setFixed(true);
+        }
+    }
+    map_fixed_ = true;
 }
 
 void GraphSlam::publish_map(){
@@ -228,6 +274,29 @@ void GraphSlam::publish_map(){
     pcl::toROSMsg(map, map_msg);
     map_msg.header.frame_id = "arussim/world";
     map_pub_->publish(map_msg);
+    if(map_fixed_){
+        final_map_pub_->publish(map_msg);
+    }
+}
+
+void GraphSlam::check_finish_line(){
+    bool lap_finished = vehicle_pose_(0) > kFinishLineOffset-1
+                        && vehicle_pose_(0) < kFinishLineOffset+1
+                        && vehicle_pose_(1) > -kTrackWidth/2
+                        && vehicle_pose_(1) < kTrackWidth/2
+                        && driven_distance_ > kMinLapDistance;
+    if (lap_finished){
+        driven_distance_ = 0.0;
+        lap_count_++;
+
+        std_msgs::msg::Int16 lap_count_msg;
+        lap_count_msg.data = lap_count_;
+        lap_count_pub_->publish(lap_count_msg);
+    }
+
+    if (lap_count_ == 1){
+        fix_map();
+    }
 }
 
 // Get the global position given the local position relative to the actual vehicle pose
