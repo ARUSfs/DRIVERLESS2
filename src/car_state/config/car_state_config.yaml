@@ -3,3 +3,13 @@ car_state:
     get_arussim_ground_truth: false
     simulation: false
     mission: "autocross"
+
+    dt_threshold_imu: 0.05
+    dt_threshold_extensometer: 0.05
+    dt_threshold_fl: 0.05
+    dt_threshold_fr: 0.05
+    dt_threshold_rl: 0.05
+    dt_threshold_rr: 0.05
+    dt_threshold_inv: 0.05
+    dt_threshold_cones_count_actual: 0.25
+    dt_threshold_cones_count_all: 0.25

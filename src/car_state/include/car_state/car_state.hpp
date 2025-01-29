@@ -96,7 +96,17 @@ private:
     int lap_count_ = 0;
     int cones_count_actual_ = 0;
     int cones_count_all_ = 0;
+    double plausibility_ = 0;
 
+    double dt_threshold_imu_;
+    double dt_threshold_extensometer_;
+    double dt_threshold_fl_;
+    double dt_threshold_fr_;
+    double dt_threshold_rl_;
+    double dt_threshold_rr_;
+    double dt_threshold_inv_;
+    double dt_threshold_cones_count_actual_;
+    double dt_threshold_cones_count_all_;
 
     bool kSimulation;
     std::string kMission;
@@ -134,4 +144,15 @@ private:
 
     // Timer
     rclcpp::TimerBase::SharedPtr timer_;
+
+    // Time-tracking members
+    rclcpp::Time last_imu_msg_time_;
+    rclcpp::Time last_extensometer_msg_time_;
+    rclcpp::Time last_fl_ws_msg_time_;
+    rclcpp::Time last_fr_ws_msg_time_;
+    rclcpp::Time last_rl_ws_msg_time_;
+    rclcpp::Time last_rr_ws_msg_time_;
+    rclcpp::Time last_inv_speed_msg_time_;
+    rclcpp::Time last_cones_count_actual_msg_time_;
+    rclcpp::Time last_cones_count_all_msg_time_;
 };

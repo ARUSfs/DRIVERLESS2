@@ -24,6 +24,33 @@ CarState::CarState(): Node("car_state")
     this->declare_parameter<std::string>("mission", "autocross");
     this->get_parameter("mission", kMission);
 
+    this->declare_parameter<double>("dt_threshold_imu", 0.05);
+    this->get_parameter("dt_threshold_imu", dt_threshold_imu_);
+
+    this->declare_parameter<double>("dt_threshold_extensometer", 0.05);
+    this->get_parameter("dt_threshold_extensometer", dt_threshold_extensometer_);
+
+    this->declare_parameter<double>("dt_threshold_fl", 0.05);
+    this->get_parameter("dt_threshold_fl", dt_threshold_fl_);
+
+    this->declare_parameter<double>("dt_threshold_fr", 0.05);
+    this->get_parameter("dt_threshold_fr", dt_threshold_fr_);
+
+    this->declare_parameter<double>("dt_threshold_rl", 0.05);
+    this->get_parameter("dt_threshold_rl", dt_threshold_rl_);
+
+    this->declare_parameter<double>("dt_threshold_rr", 0.05);
+    this->get_parameter("dt_threshold_rr", dt_threshold_rr_);
+
+    this->declare_parameter<double>("dt_threshold_inv", 0.05);
+    this->get_parameter("dt_threshold_inv", dt_threshold_inv_);
+
+    this->declare_parameter<double>("dt_threshold_cones_count_actual", 0.05);
+    this->get_parameter("dt_threshold_cones_count_actual", dt_threshold_cones_count_actual_);
+
+    this->declare_parameter<double>("dt_threshold_cones_count_all", 0.05);
+    this->get_parameter("dt_threshold_cones_count_all", dt_threshold_cones_count_all_);
+
 
     state_pub_ = this->create_publisher<common_msgs::msg::State>(
         "/car_state/state", 1);
@@ -123,6 +150,15 @@ CarState::CarState(): Node("car_state")
         std::chrono::milliseconds(static_cast<int>(1000.0 / 100)),
         std::bind(&CarState::on_timer, this));
 
+    last_imu_msg_time_ = this->now();
+    last_extensometer_msg_time_ = this->now();
+    last_fl_ws_msg_time_ = this->now();
+    last_fr_ws_msg_time_ = this->now();
+    last_rl_ws_msg_time_ = this->now();
+    last_rr_ws_msg_time_ = this->now();
+    last_inv_speed_msg_time_ = this->now();
+    last_cones_count_actual_msg_time_ = this->now();
+    last_cones_count_all_msg_time_ = this->now();
 
     // Create TF broadcaster
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
@@ -147,6 +183,15 @@ void CarState::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
 // TODO publish imu separated in arussim
 void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
 {   
+    auto now_time = this->now();
+    double dt = (now_time - last_imu_msg_time_).seconds();
+    last_imu_msg_time_ = now_time;
+
+    if(dt > dt_threshold_imu_) {
+        plausibility_++;
+        std::cout << "IMU dt: " << dt << std::endl;
+    }
+
     ax_ = msg-> linear_acceleration.x;
     ay_ = msg-> linear_acceleration.y;
     r_ = msg->angular_velocity.z;
@@ -154,42 +199,106 @@ void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
 
 void CarState::ax_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
+    auto now_time = this->now();
+    double dt = (now_time - last_imu_msg_time_).seconds();
+    last_imu_msg_time_ = now_time;
+
+    if(dt > dt_threshold_imu_) {
+        plausibility_++;
+        std::cout << "IMU dt: " << dt << std::endl;
+    }
+
     ax_ = - msg->data; // TODO calibrate IMU
 }
 
 void CarState::ay_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
+    auto now_time = this->now();
+    double dt = (now_time - last_imu_msg_time_).seconds();
+    std::cout << "IMU dt: " << dt << std::endl;
+    last_imu_msg_time_ = now_time;
+
     ay_ = msg->data;
 }
 
 void CarState::r_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
+    auto now_time = this->now();
+    double dt = (now_time - last_imu_msg_time_).seconds();
+    std::cout << "IMU dt: " << dt << std::endl;
+    last_imu_msg_time_ = now_time;
+
     r_ = - msg->data; // TODO calibrate IMU
 }
 
 void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
+    auto now_time = this->now();
+    double dt = (now_time - last_extensometer_msg_time_).seconds();
+    last_extensometer_msg_time_ = now_time;
+
+    if(dt > dt_threshold_extensometer_) {
+        plausibility_++;
+        std::cout << "Extensometer dt: " << dt << std::endl;
+    }
+
     delta_ = msg->data;
 }
 
 void CarState::fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
+    auto now_time = this->now();
+    double dt = (now_time - last_fl_ws_msg_time_).seconds();
+    last_fl_ws_msg_time_ = now_time;
+
+    if(dt > dt_threshold_fl_) {
+        plausibility_++;
+        std::cout << "FL wheelspeed dt: " << dt << std::endl;
+    }
+
     v_front_left_ = 1/msg->data;
 }
 
 void CarState::fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
+    auto now_time = this->now();
+    double dt = (now_time - last_fr_ws_msg_time_).seconds();
+    last_fr_ws_msg_time_ = now_time;
+
+    if(dt > dt_threshold_fr_) {
+        plausibility_++;
+        std::cout << "FR wheelspeed dt: " << dt << std::endl;
+    }
+
     v_front_right_ = 1/msg->data;
     std::cout << "v_front_right_: " << v_front_right_ << std::endl;
 }
 
 void CarState::rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
+    auto now_time = this->now();
+    double dt = (now_time - last_rl_ws_msg_time_).seconds();
+    last_rl_ws_msg_time_ = now_time;
+
+    if(dt > dt_threshold_rl_) {
+        plausibility_++;
+        std::cout << "RL wheelspeed dt: " << dt << std::endl;
+    }
+
     v_rear_left_ = 1/msg->data;
 }
 
 void CarState::rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
+    auto now_time = this->now();
+    double dt = (now_time - last_rr_ws_msg_time_).seconds();
+    last_rr_ws_msg_time_ = now_time;
+
+    if(dt > dt_threshold_rr_) {
+        plausibility_++;
+        std::cout << "RR wheelspeed dt: " << dt << std::endl;
+    }
+
     v_rear_right_ = 1/msg->data;
 }
 
@@ -204,6 +313,15 @@ void CarState::wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::Sha
 
 void CarState::inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
+    auto now_time = this->now();
+    double dt = (now_time - last_inv_speed_msg_time_).seconds();
+    last_inv_speed_msg_time_ = now_time;
+
+    if(dt > dt_threshold_inv_) {
+        plausibility_++;
+        std::cout << "Inv speed dt: " << dt << std::endl;
+    }
+
     vx_ = msg->data;
 }
 
@@ -236,11 +354,29 @@ void CarState::lap_count_callback(const std_msgs::msg::Int16 msg)
 
 void CarState::cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg)
 {
+    auto now_time = this->now();
+    double dt = (now_time - last_cones_count_actual_msg_time_).seconds();
+    last_cones_count_actual_msg_time_ = now_time;
+
+    if(dt > dt_threshold_cones_count_actual_) {
+        plausibility_++;
+        std::cout << "Cones count actual dt: " << dt << std::endl;
+    }
+
     cones_count_actual_ = msg.width;
 }
 
 void CarState::cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg)
 {   
+    auto now_time = this->now();
+    double dt = (now_time - last_cones_count_all_msg_time_).seconds();
+    last_cones_count_all_msg_time_ = now_time;
+
+    if(dt > dt_threshold_cones_count_all_) {
+        plausibility_++;
+        std::cout << "Cones count all dt: " << dt << std::endl;
+    }
+
     cones_count_all_ = msg.width;
 }
 
@@ -322,6 +458,8 @@ void CarState::on_timer()
     auto steering_check_msg = std_msgs::msg::Bool();
     steering_check_msg.data = run_check_msg.data && (vx_ >= 0.5);
     steer_check_pub_->publish(steering_check_msg);
+
+    std::cout << "Plausibility: " << plausibility_ << std::endl;
 }
 
 void CarState::get_tf_position()
