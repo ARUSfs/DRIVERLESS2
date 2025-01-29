@@ -62,6 +62,7 @@ class PathPlanning : public rclcpp::Node
         double kMaxYAcc;
         double kMaxXAcc;
         bool kColor;
+        double kPrevRouteBias;
         
         // Suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;

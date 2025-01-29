@@ -24,6 +24,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("ay_max", 5.0);
     this->declare_parameter<double>("ax_max", 5.0);
     this->declare_parameter<bool>("color", false);
+    this->declare_parameter<double>("prev_route_bias", 0.75);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
@@ -36,6 +37,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("ay_max", kMaxYAcc);
     this->get_parameter("ax_max", kMaxXAcc);
     this->get_parameter("color", kColor);
+    this->get_parameter("prev_route_bias", kPrevRouteBias);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
@@ -303,26 +305,28 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
 }
 
 std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
-    //! Still to adjust: threshold (0.75), number of last routes (6) and route count (4)
+
     std::vector<CDT::V2d<double>> final_route = previous_midpoint_routes_.back();
-    int threshold = 0.75*final_route.size(); // Threshold per route to be considered valid
-    if (previous_midpoint_routes_.size() < 6){
+    // Create threshold to validate last route based on route lenght
+    double threshold = 10*final_route.size()*kPrevRouteBias;
+    if (previous_midpoint_routes_.size() < 10){
         return final_route;
     }
-    std::vector<std::vector<CDT::V2d<double>>> last_routes(previous_midpoint_routes_.end()-6, previous_midpoint_routes_.end());
+    // Create a list of the last 10 routes
+    std::vector<std::vector<CDT::V2d<double>>> last_routes(previous_midpoint_routes_.end()-10, previous_midpoint_routes_.end());
     
+    // Count the number of points in the last routes that are in the final route
     int route_count = 0;
     for (int i = 0; i<last_routes.size()-1; i++){
         int point_count = compare_lists(last_routes[i], final_route);
-        if (point_count > threshold){
-            route_count++;
-        }
-        if (route_count > 4){
-            return final_route;
-        }
+        route_count += point_count;
     }
-    return previous_midpoint_routes_[previous_midpoint_routes_.size()-2];
-
+    // If the route is validated, return it. Otherwise, return the previous route
+    if (route_count > threshold){
+        return final_route;
+    } else {
+        return previous_midpoint_routes_[previous_midpoint_routes_.size()-2];
+    }
 }
 
 
