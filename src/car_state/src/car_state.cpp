@@ -275,8 +275,8 @@ void CarState::on_timer()
     state_pub_->publish(state_msg);
 
 
-    if(as_status_==3 && target_speed_==0.0 && vx_<0.5){ 
-        as_status_ = 4;
+    if(as_status_== 3 && target_speed_== 0.0 && vx_ < 0.5){ 
+        as_status_ = 5;
     }
 
     // Publish car info message
