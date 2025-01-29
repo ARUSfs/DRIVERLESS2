@@ -190,12 +190,15 @@ void CarState::perception_callback(const sensor_msgs::msg::PointCloud2 msg)
     double dt = (now_time - last_cones_count_actual_msg_time_).seconds();
     last_cones_count_actual_msg_time_ = now_time;
 
+    cones_count_actual_ = msg.width;
+
     if(dt > kThresholdConesCountActual) {
         plausibility_++;
-        std::cout << "Perception dt: " << dt << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "Perception dt: %f", dt);
+    } else if (cones_count_actual_ == 0) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "No cones detected by perception");
     }
-
-    cones_count_actual_ = msg.width;
 }
 
 // TODO publish imu separated in arussim
@@ -207,12 +210,25 @@ void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
 
     if(dt > kThresholdImu) {
         plausibility_++;
-        std::cout << "IMU dt: " << dt << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "IMU dt: %f", dt);
     }
-
+    
     ax_ = msg-> linear_acceleration.x;
     ay_ = msg-> linear_acceleration.y;
     r_ = msg->angular_velocity.z;
+
+    if (ax_ < -15 || ax_ > 15) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible ax: %f", ax_);
+    }
+    if (ay_ < -5 || ay_ > 5) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible ay: %f", ay_);
+    }
+    if (r_ < -3 || r_ > 3) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible r: %f", r_);
+    }
 }
 
 void CarState::ax_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -223,30 +239,35 @@ void CarState::ax_callback(const std_msgs::msg::Float32::SharedPtr msg)
 
     if(dt > kThresholdImu) {
         plausibility_++;
-        std::cout << "IMU dt: " << dt << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "IMU dt: %f", dt);
     }
-
+    
     ax_ = - msg->data; // TODO calibrate IMU
+
+    if (ax_ < -15 || ax_ > 15) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible ax: %f", ax_);
+    }
 }
 
 void CarState::ay_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    auto now_time = this->now();
-    double dt = (now_time - last_imu_msg_time_).seconds();
-    std::cout << "IMU dt: " << dt << std::endl;
-    last_imu_msg_time_ = now_time;
-
     ay_ = msg->data;
+
+    if (ay_ < -5 || ay_ > 5) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible ay: %f", ay_);
+    }
 }
 
 void CarState::r_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    auto now_time = this->now();
-    double dt = (now_time - last_imu_msg_time_).seconds();
-    std::cout << "IMU dt: " << dt << std::endl;
-    last_imu_msg_time_ = now_time;
-
     r_ = - msg->data; // TODO calibrate IMU
+
+    if (r_ < -3 || r_ > 3) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible r: %f", r_);
+    }
 }
 
 void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -257,10 +278,15 @@ void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg
 
     if(dt > kThresholdExtensometer) {
         plausibility_++;
-        std::cout << "Extensometer dt: " << dt << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "Extensometer dt: %f", dt);
     }
-
+    
     delta_ = msg->data;
+
+    if (delta_ < -21 || delta_ > 21) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible delta: %f", delta_);
+    }
 }
 
 void CarState::fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -271,10 +297,15 @@ void CarState::fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
 
     if(dt > kThresholdFl) {
         plausibility_++;
-        std::cout << "FL wheelspeed dt: " << dt << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "FL wheelspeed dt: %f", dt);
     }
 
     v_front_left_ = 1/msg->data;
+
+    if (v_front_left_ > 100) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible FL wheelspeed: %f", v_front_left_);
+    }
 }
 
 void CarState::fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -285,11 +316,15 @@ void CarState::fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
 
     if(dt > kThresholdFr) {
         plausibility_++;
-        std::cout << "FR wheelspeed dt: " << dt << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "FR wheelspeed dt: %f", dt);
     }
 
     v_front_right_ = 1/msg->data;
-    std::cout << "v_front_right_: " << v_front_right_ << std::endl;
+
+    if (v_front_right_ > 100) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible FR wheelspeed: %f", v_front_right_);
+    }
 }
 
 void CarState::rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -300,10 +335,15 @@ void CarState::rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
 
     if(dt > kThresholdRl) {
         plausibility_++;
-        std::cout << "RL wheelspeed dt: " << dt << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "RL wheelspeed dt: %f", dt);
     }
 
     v_rear_left_ = 1/msg->data;
+
+    if (v_rear_left_ > 100) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible RL wheelspeed: %f", v_rear_left_);
+    }
 }
 
 void CarState::rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -314,10 +354,15 @@ void CarState::rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
 
     if(dt > kThresholdRr) {
         plausibility_++;
-        std::cout << "RR wheelspeed dt: " << dt << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "RR wheelspeed dt: %f", dt);
     }
 
     v_rear_right_ = 1/msg->data;
+
+    if (v_rear_right_ > 100) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible RR wheelspeed: %f", v_rear_right_);
+    }
 }
 
 // TODO publish wheel speeds separated in arussim
@@ -337,10 +382,15 @@ void CarState::inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 
     if(dt > kThresholdInv) {
         plausibility_++;
-        std::cout << "Inv speed dt: " << dt << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "Inv speed dt: %f", dt);
     }
 
     vx_ = msg->data;
+
+    if (vx_ > 100) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible speed: %f", vx_);
+    }
 }
 
 void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg)
@@ -378,10 +428,15 @@ void CarState::cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 m
 
     if(dt > kThresholdConesCountActual) {
         plausibility_++;
-        std::cout << "Cones count actual dt: " << dt << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "Cones count actual dt: %f", dt);
     }
 
     cones_count_actual_ = msg.width;
+
+    if (cones_count_actual_ == 0) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "No cones detected by perception");
+    }
 }
 
 void CarState::cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg)
@@ -392,10 +447,15 @@ void CarState::cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg)
 
     if(dt > kThresholdConesCountAll) {
         plausibility_++;
-        std::cout << "Cones count all dt: " << dt << std::endl;
+        RCLCPP_ERROR(this->get_logger(), "Cones count all dt: %f", dt);
     }
 
     cones_count_all_ = msg.width;
+
+    if (cones_count_all_ == 0) {
+        plausibility_++;
+        RCLCPP_ERROR(this->get_logger(), "No cones detected by slam");
+    }
 }
 
 void CarState::on_timer()
