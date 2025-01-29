@@ -196,4 +196,66 @@ namespace ColorEstimation
             }
         }
     }
+
+    void coloring3(std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore>& clusters_centers, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered)
+    {
+        for (size_t i = 0; i < clusters_centers.size(); ++i)
+        {
+            PointXYZColorScore& center = clusters_centers[i];
+            const auto& indices = cluster_indices[i];
+
+            double distance = std::sqrt(center.x * center.x + center.y * center.y + center.z * center.z);
+
+            if (distance < 3)
+            {
+                std::cout << "Distancia: " << distance << std::endl;
+                
+                std::vector<double> z_values, intensities, avgIntensities, intensitiesInLayer, layer;
+                
+                for (const auto& index : indices.indices) 
+                {
+                    const auto& point = cloud_filtered->points[index];
+                    z_values.push_back(point.z);
+                    intensities.push_back(point.intensity);
+                }
+
+                std::sort(z_values.begin(), z_values.end());
+
+                for (size_t j = 0; j < z_values.size() - 1; ++j)
+                {
+                    double difference = z_values[j + 1] - z_values[j];
+                    intensitiesInLayer.push_back(intensities[j]);
+
+                    if (difference > 0.01)
+                    {
+                        layer.push_back(z_values[j]);
+                        double avgIntensity = std::accumulate(intensitiesInLayer.begin(), intensitiesInLayer.end(), 0.0) / intensitiesInLayer.size();
+                        avgIntensities.push_back(avgIntensity);
+                        intensitiesInLayer.clear();
+
+                        std::cout << "Layer intensity: " << avgIntensity << std::endl;
+                    }
+                }
+
+                size_t n = layer.size();
+                Eigen::MatrixXd A(n, 3);
+                Eigen::VectorXd b(n);
+
+                for (size_t k = 0; k < n; ++k) 
+                {
+                    double x = layer[k];
+                    double y = avgIntensities[k];
+                    A(k, 0) = x * x;
+                    A(k, 1) = x;
+                    A(k, 2) = 1.0;
+                    b(k) = y;
+                }
+
+                Eigen::VectorXd coefficients = A.colPivHouseholderQr().solve(b);
+                coefficients(0) > 0 ? center.color = 1 : center.color = 2;
+
+                std::cout << "A " << coefficients(0) << std::endl;
+            }
+        }
+    }
 }

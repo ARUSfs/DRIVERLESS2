@@ -162,7 +162,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
     //Apply the ground filter fuction
-    GroundFiltering::novel_ground_filter(cloud, cloud_filtered, cloud_plane, kThresholdGroundFilter);
+    GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov);
     
     //Print the time of the ground filter algorithm used
     std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
