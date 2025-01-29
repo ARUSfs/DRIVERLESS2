@@ -184,7 +184,7 @@ void CarState::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
     }
 }
 
-void CarState::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+void CarState::perception_callback(const sensor_msgs::msg::PointCloud2 msg)
 {
     auto now_time = this->now();
     double dt = (now_time - last_cones_count_actual_msg_time_).seconds();
@@ -195,6 +195,7 @@ void CarState::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPt
         std::cout << "Perception dt: " << dt << std::endl;
     }
 
+    cones_count_actual_ = msg.width;
 }
 
 // TODO publish imu separated in arussim

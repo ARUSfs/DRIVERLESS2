@@ -58,7 +58,7 @@ private:
     void cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg);
     void cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg);
     void ami_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+    void perception_callback(const sensor_msgs::msg::PointCloud2 msg);
     
 
     // Functions
