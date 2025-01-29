@@ -13,3 +13,4 @@ car_state:
     dt_threshold_inv: 0.05
     dt_threshold_cones_count_actual: 0.25
     dt_threshold_cones_count_all: 0.25
+    dt_threshold_perception: 0.25

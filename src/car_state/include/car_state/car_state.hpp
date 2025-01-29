@@ -58,6 +58,7 @@ private:
     void cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg);
     void cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg);
     void ami_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     
 
     // Functions
@@ -98,15 +99,15 @@ private:
     int cones_count_all_ = 0;
     double plausibility_ = 0;
 
-    double dt_threshold_imu_;
-    double dt_threshold_extensometer_;
-    double dt_threshold_fl_;
-    double dt_threshold_fr_;
-    double dt_threshold_rl_;
-    double dt_threshold_rr_;
-    double dt_threshold_inv_;
-    double dt_threshold_cones_count_actual_;
-    double dt_threshold_cones_count_all_;
+    double kThresholdImu;
+    double kThresholdExtensometer;
+    double kThresholdFl;
+    double kThresholdFr;
+    double kThresholdRl;
+    double kThresholdRr;
+    double kThresholdInv;
+    double kThresholdConesCountActual;
+    double kThresholdConesCountAll;
 
     bool kSimulation;
     std::string kMission;
@@ -130,6 +131,7 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr target_speed_sub_;
     rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr target_delta_sub_;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cones_count_actual_sub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cones_count_all_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ax_sub_;
