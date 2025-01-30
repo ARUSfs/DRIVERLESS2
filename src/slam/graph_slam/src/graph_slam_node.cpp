@@ -10,12 +10,14 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->declare_parameter("write_csv", false);
     this->declare_parameter("max_pose_edges", 10000);
     this->declare_parameter("max_landmark_edges", 10000);
+    this->declare_parameter("verbose", false);
     this->get_parameter("finish_line_offset", kFinishLineOffset);
     this->get_parameter("track_width", kTrackWidth);
     this->get_parameter("min_lap_distance", kMinLapDistance);
     this->get_parameter("write_csv", kWriteCSV);
     this->get_parameter("max_pose_edges", kMaxPoseEdges);
     this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
+    this->get_parameter("verbose", kVerbose);
 
     // TODO: test other solvers
     using SlamBlockSolver  = g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>>;
@@ -68,6 +70,9 @@ GraphSlam::GraphSlam() : Node("graph_slam")
                     std::bind(&GraphSlam::optimizer_callback, this), optimizer_callback_group_);
 }
 
+/////////////////////////////////////////////////////////////////////////
+///////////////////////////// CALLBACKS /////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
 
 void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
 {   
@@ -77,6 +82,9 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
     u << msg->vx, msg->vy, msg->r;
     vehicle_pose_ += B * u * dt; // TODO check phi in range [-pi, pi]
     driven_distance_ += (B * u * dt).norm();
+
+    // Add the odometry to the buffer to re-predict the pose after optimization
+    odom_buffer_.push_back(u);
     
     if (vehicle_pose_(2) > M_PI) {
         vehicle_pose_(2) -= 2*M_PI;
@@ -95,8 +103,7 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
     pose_vertex->setId(2*pose_vertices_.size()+1); // Use odd ids for pose vertices
     pose_vertex->setEstimate(g2o::SE2(vehicle_pose_));
     pose_vertices_.push_back(pose_vertex);
-    vertices_to_add_.push_back(pose_vertex);
-    
+    pose_vertices_to_add_.push_back(pose_vertex);
 
     if (pose_vertices_.size() < 2) {
         return;
@@ -149,7 +156,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
             landmark_vertex->setId(landmark.id_);
             landmark_vertex->setEstimate(landmark.world_position_);
             landmark_vertices_.push_back(landmark_vertex);
-            vertices_to_add_.push_back(landmark_vertex);
+            landmark_vertices_to_add_.push_back(landmark_vertex);
 
             // Add an edge between the last pose vertex and the new landmark vertex 
             g2o::EdgeSE2PointXY* edge = new g2o::EdgeSE2PointXY();
@@ -178,21 +185,38 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
         edges_to_add_.push_back(edge);
     }
 
-    // std::cout << "Number of vertices: " << optimizer_.vertices().size() << std::endl;
-    // std::cout << "Number of edges: " << optimizer_.edges().size() << std::endl; 
-
     publish_map();
 }
 
 void GraphSlam::optimizer_callback(){
+    
+    update_pose_predictions();
+
     fill_graph();
+
+    double t1 = this->now().seconds();
     optimizer_.initializeOptimization();
     optimizer_.optimize(200);
+
+    if(kVerbose){
+        RCLCPP_INFO(this->get_logger(), "---------------------------------");
+        RCLCPP_INFO(this->get_logger(), "Number of vertices: %d", optimizer_.vertices().size());
+        RCLCPP_INFO(this->get_logger(), "Number of edges: %d", optimizer_.edges().size());
+        RCLCPP_INFO(this->get_logger(), "Optimization time: %f", this->now().seconds() - t1);
+    }
+    
     update_data_association_map();
+
     if(kWriteCSV){
         write_csv_log();
     }
 }
+
+
+/////////////////////////////////////////////////////////////////////////
+///////////////////////////// FUNCTIONS /////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
 
 // Update the world position of the landmarks in the data association map after optimization
 // Landmarks must be pointers to be updated
@@ -207,16 +231,61 @@ void GraphSlam::update_data_association_map(){
     }
 }
 
+
+void GraphSlam::update_pose_predictions(){
+
+    if(last_optimized_pose_ == nullptr){
+        return;
+    }
+
+    std::vector<Eigen::Vector3d> updated_poses;
+    Eigen::Vector3d updated_pose = last_optimized_pose_->estimate().toVector();
+    updated_poses.push_back(updated_pose);
+
+    int index = last_optimized_pose_->id();
+    Eigen::Matrix3d B2 = Eigen::Matrix3d::Identity();
+    Eigen::Vector3d u2 = Eigen::Vector3d::Zero();
+
+    // Re-predict the pose for each odometry measurement in the buffer
+    for (auto u2: odom_buffer_){
+        double phi = updated_pose(2);
+        B2.block(0, 0, 2, 2) << std::cos(phi), -std::sin(phi), std::sin(phi), std::cos(phi);
+        updated_pose += B2 * u2 * dt;
+
+        updated_poses.push_back(updated_pose);
+    }
+
+    // Update the pose vertices with the new predictions
+    for(auto pose_vertex: pose_vertices_to_add_){
+        pose_vertex->setEstimate(g2o::SE2(updated_poses[(pose_vertex->id() - index)/2]));
+    }
+    
+    odom_buffer_.clear();
+
+    // Update the vehicle pose with the last prediction
+    vehicle_pose_ = updated_pose;
+}
+
+
 void GraphSlam::fill_graph(){
-    for (auto vertex: vertices_to_add_){
+    // Get last optimized pose from which predictions will be made
+    last_optimized_pose_ = pose_vertices_.back();
+
+    // Add vertices and edges to the optimizer
+    for (auto vertex: pose_vertices_to_add_){
         optimizer_.addVertex(vertex);
     }
-    vertices_to_add_.clear();
+    pose_vertices_to_add_.clear();
+    for (auto vertex: landmark_vertices_to_add_){
+        optimizer_.addVertex(vertex);
+    }
+    landmark_vertices_to_add_.clear();
     for (auto edge: edges_to_add_){
         optimizer_.addEdge(edge);
     }
     edges_to_add_.clear();
 
+    // Deactivate edges exceding the maximum
     if(pose_edges_.size()-pose_edges_deactivated_ > kMaxPoseEdges){
         for (int i=pose_edges_deactivated_; i<pose_edges_.size()-kMaxPoseEdges; i++){
             pose_edges_[i]->setLevel(2); // Deactivate edge
@@ -226,7 +295,6 @@ void GraphSlam::fill_graph(){
         g2o::VertexSE2* v0 = static_cast<g2o::VertexSE2*>(pose_edges_[pose_edges_deactivated_]->vertex(0));
         v0->setFixed(true);
     }
-
     if(landmark_edges_.size()-landmark_edges_deactivated_ > kMaxLandmarkEdges){
         for (int i=landmark_edges_deactivated_; i<landmark_edges_.size()-kMaxLandmarkEdges; i++){
             landmark_edges_[i]->setLevel(2); // Deactivate edge
@@ -234,6 +302,7 @@ void GraphSlam::fill_graph(){
         landmark_edges_deactivated_ = landmark_edges_.size()-kMaxLandmarkEdges;
     }
 }
+
 
 void GraphSlam::fix_map(){ 
     for (auto vertex : optimizer_.vertices()) {
@@ -248,7 +317,6 @@ void GraphSlam::fix_map(){
 void GraphSlam::publish_map(){
     pcl::PointCloud<ConeXYZColorScore> map;
     for (Landmark* landmark : DA.map_){
-
         if(landmark->color_==UNCOLORED){
             Eigen::Vector2d local_pos = global_to_local(landmark->world_position_);
             if(local_pos.norm() < 6 && local_pos[0] < 0){
@@ -260,7 +328,6 @@ void GraphSlam::publish_map(){
                 }
             }
         }
-
         ConeXYZColorScore cone;
         cone.x = landmark->world_position_(0);
         cone.y = landmark->world_position_(1);
@@ -278,6 +345,7 @@ void GraphSlam::publish_map(){
         final_map_pub_->publish(map_msg);
     }
 }
+
 
 void GraphSlam::check_finish_line(){
     bool lap_finished = vehicle_pose_(0) > kFinishLineOffset-1
@@ -298,6 +366,12 @@ void GraphSlam::check_finish_line(){
         fix_map();
     }
 }
+
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////// UTILS ///////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
 
 // Get the global position given the local position relative to the actual vehicle pose
 Eigen::Vector2d GraphSlam::local_to_global(const Eigen::Vector2d& local_pos) {

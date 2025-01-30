@@ -37,10 +37,13 @@ echo -e "${GREEN}4) ${NC}Install ROS2 Humble\n"
 echo -n "Insert the number of the option you want to install: "
 read option
 
+USER_FOLDER=$(eval echo ~$SUDO_USER)
+
 # Function to install dependencies
 install_dependencies() {
   install_apt_dependencies
   install_pip_dependencies
+  install_complex_dependencies
 }
 
 # Function to install pip dependencies
@@ -82,6 +85,21 @@ install_apt_dependencies() {
   else
     echo -e "${RED}requirements_apt.txt not found.${NC}"
   fi
+}
+
+# Function to install complex dependencies
+install_complex_dependencies(){
+  echo -e "${NC}Installing complex dependencies${NC}"
+  echo -e "${NC}Installing && building g2o. ${YELLOW}It may take a while...${NC}"
+
+  cd $USER_FOLDER && git clone https://github.com/RainerKuemmerle/g2o.git 1>/dev/null
+  sudo chmod 777 -R $USER_FOLDER/g2o
+  cd $USER_FOLDER/g2o && mkdir build && cd build 1>/dev/null
+  cmake ..
+  make 
+  sudo make install
+  
+  echo -e "${GREEN}g2o installed successfully.${NC}"
 }
 
 # Function to install ROS2 Humble
