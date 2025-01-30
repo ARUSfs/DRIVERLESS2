@@ -24,6 +24,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("ay_max", 5.0);
     this->declare_parameter<double>("ax_max", 5.0);
     this->declare_parameter<bool>("color", false);
+    this->declare_parameter<int>("route_back", 10);
     this->declare_parameter<double>("prev_route_bias", 0.75);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
@@ -37,6 +38,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("ay_max", kMaxYAcc);
     this->get_parameter("ax_max", kMaxXAcc);
     this->get_parameter("color", kColor);
+    this->get_parameter("route_back", kRouteBack);
     this->get_parameter("prev_route_bias", kPrevRouteBias);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -308,16 +310,17 @@ std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
 
     std::vector<CDT::V2d<double>> final_route = previous_midpoint_routes_.back();
     // Create threshold to validate last route based on route lenght
-    double threshold = 10*final_route.size()*kPrevRouteBias;
-    if (previous_midpoint_routes_.size() < 10){
+    double threshold = (kRouteBack-1)*final_route.size()*kPrevRouteBias;
+    if (previous_midpoint_routes_.size() < (kRouteBack)){
         return final_route;
     }
     // Create a list of the last 10 routes
-    std::vector<std::vector<CDT::V2d<double>>> last_routes(previous_midpoint_routes_.end()-10, previous_midpoint_routes_.end());
+    std::vector<std::vector<CDT::V2d<double>>> last_routes(previous_midpoint_routes_.end()-kRouteBack,
+                                                           previous_midpoint_routes_.end());
     
     // Count the number of points in the last routes that are in the final route
     int route_count = 0;
-    for (int i = 0; i<last_routes.size()-1; i++){
+    for (int i = 0; i<kRouteBack-1; i++){
         int point_count = compare_lists(last_routes[i], final_route);
         route_count += point_count;
     }

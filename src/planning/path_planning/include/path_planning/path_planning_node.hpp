@@ -62,6 +62,7 @@ class PathPlanning : public rclcpp::Node
         double kMaxYAcc;
         double kMaxXAcc;
         bool kColor;
+        int kRouteBack;
         double kPrevRouteBias;
         
         // Suscribers and publishers
