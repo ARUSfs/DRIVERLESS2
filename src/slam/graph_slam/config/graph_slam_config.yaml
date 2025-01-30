@@ -4,5 +4,6 @@ graph_slam:
     track_width: 3.0
     min_lap_distance: 30.0
     write_csv: false
-    max_pose_edges: 100000
-    max_landmark_edges: 100000
+    max_pose_edges: 10000
+    max_landmark_edges: 10000
+    verbose: false
