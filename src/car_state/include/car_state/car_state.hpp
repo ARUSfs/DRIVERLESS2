@@ -65,6 +65,7 @@ private:
     void on_timer();
     void get_tf_position();
     void initialize_vx_filter();
+    void on_plausability_timer();
 
     // Estimation filters
     KalmanFilter vx_filter_;
@@ -97,7 +98,11 @@ private:
     int lap_count_ = 0;
     int cones_count_actual_ = 0;
     int cones_count_all_ = 0;
-    double plausibility_ = 0;
+    double plausability_ = 0;
+    double prev_plausability_ = 0;
+    bool plausability_OK_ = true;
+    bool epos_OK_ = false;
+    bool inv_OK_ = false;
 
     double kThresholdImu;
     double kThresholdExtensometer;
@@ -108,9 +113,21 @@ private:
     double kThresholdInv;
     double kThresholdConesCountActual;
     double kThresholdConesCountAll;
+    double kMaxError;
 
     bool kSimulation;
     std::string kMission;
+
+    // Define maximum threshold parameters
+    double kMaxAx;
+    double kMaxAy;
+    double kMaxR;
+    double kMaxVFrontLeft;
+    double kMaxVFrontRight;
+    double kMaxVRearLeft;
+    double kMaxVRearRight;
+    double kMaxVx;
+    double kMaxPlausabilityError;
 
     // TF
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -146,6 +163,7 @@ private:
 
     // Timer
     rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::TimerBase::SharedPtr plausability_timer_;
 
     // Time-tracking members
     rclcpp::Time last_imu_msg_time_;

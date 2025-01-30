@@ -13,4 +13,13 @@ car_state:
     dt_threshold_inv: 0.05
     dt_threshold_cones_count_actual: 0.25
     dt_threshold_cones_count_all: 0.25
-    dt_threshold_perception: 0.25
+
+    max_ax: 15.0
+    max_ay: 15.0
+    max_r: 15.0
+    max_v_front_left: 75.0
+    max_v_front_right: 75.0
+    max_v_rear_left: 75.0
+    max_v_rear_right: 75.0
+    max_vx: 75.0
+    max_plausability_error: 5.0
