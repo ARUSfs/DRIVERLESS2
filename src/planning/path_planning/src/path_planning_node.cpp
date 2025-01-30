@@ -110,8 +110,6 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     }
     best_midpoint_route_ = midpoint_routes_[best_route_ind];
 
-    previous_midpoint_routes_.push_back(best_midpoint_route_);
-
     std::vector<CDT::V2d<double>> final_route = this->get_final_route();
 
     // Publish the best trajectory
@@ -307,28 +305,36 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
 }
 
 std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
+    // Create candidate to final route from cost calculations
+    std::vector<CDT::V2d<double>> final_route = best_midpoint_route_;
 
-    std::vector<CDT::V2d<double>> final_route = previous_midpoint_routes_.back();
-    // Create threshold to validate last route based on route lenght
-    double threshold = (kRouteBack-1)*final_route.size()*kPrevRouteBias;
-    if (previous_midpoint_routes_.size() < (kRouteBack)){
+    // Return the final route if there are not enough previous routes
+    if (previous_midpoint_routes_.size() < kRouteBack+1){
+        previous_midpoint_routes_.push_back(final_route);
         return final_route;
     }
-    // Create a list of the last 10 routes
+
+    // Create a list of the last routes
     std::vector<std::vector<CDT::V2d<double>>> last_routes(previous_midpoint_routes_.end()-kRouteBack,
                                                            previous_midpoint_routes_.end());
     
     // Count the number of points in the last routes that are in the final route
     int route_count = 0;
-    for (int i = 0; i<kRouteBack-1; i++){
-        int point_count = compare_lists(last_routes[i], final_route);
+    int total_points = 0;
+    for (int i = 0; i<kRouteBack; i++){
+        int point_count = compare_lists(last_routes[i], final_route, 0.25);
         route_count += point_count;
+        total_points += last_routes[i].size();
     }
-    // If the route is validated, return it. Otherwise, return the previous route
+    
+    // Create threshold to validate last route based on previous route lengths
+    double threshold = total_points*kPrevRouteBias;
+    // If the route is validated, return it and add to previous routes.
     if (route_count > threshold){
+        previous_midpoint_routes_.push_back(final_route);
         return final_route;
-    } else {
-        return previous_midpoint_routes_[previous_midpoint_routes_.size()-2];
+    } else {   // Otherwise, return the previous route
+        return previous_midpoint_routes_[previous_midpoint_routes_.size()-1];
     }
 }
 

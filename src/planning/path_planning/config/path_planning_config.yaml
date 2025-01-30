@@ -20,6 +20,3 @@ path_planning:
     v_max: 5.0
     ay_max: 3.0
     ax_max: 3.0
-
-    # Trajectory generation parameters
-    smooth: 0.3     # in (0, 0.5) interval
