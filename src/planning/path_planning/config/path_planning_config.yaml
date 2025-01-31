@@ -11,10 +11,11 @@ path_planning:
 
     # Route parameters
     len_coeff: 0.25
-    angle_coeff: 0.75
+    angle_coeff: 0.8
     max_angle: 1.0
     route_back: 10
     prev_route_bias: 0.5
+    use_buffer: true
 
     # Profile creation parameters
     v_max: 5.0

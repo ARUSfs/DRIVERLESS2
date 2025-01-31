@@ -64,7 +64,8 @@ class PathPlanning : public rclcpp::Node
         bool kColor;
         int kRouteBack;
         double kPrevRouteBias;
-        
+        bool kUseBuffer;
+
         // Suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;

@@ -26,6 +26,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<bool>("color", false);
     this->declare_parameter<int>("route_back", 10);
     this->declare_parameter<double>("prev_route_bias", 0.75);
+    this->declare_parameter<bool>("use_buffer", false);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
@@ -40,6 +41,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("color", kColor);
     this->get_parameter("route_back", kRouteBack);
     this->get_parameter("prev_route_bias", kPrevRouteBias);
+    this->get_parameter("use_buffer", kUseBuffer);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
@@ -110,8 +112,12 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     }
     best_midpoint_route_ = midpoint_routes_[best_route_ind];
 
-    std::vector<CDT::V2d<double>> final_route = this->get_final_route();
-
+    std::vector<CDT::V2d<double>> final_route;
+    if (kUseBuffer){
+        final_route = this->get_final_route();
+    } else {
+        final_route = best_midpoint_route_;
+    }
     // Publish the best trajectory
     trajectory_pub_ -> publish(this->create_trajectory_msg(final_route));
 
