@@ -23,7 +23,7 @@ CanInterface::CanInterface() : Node("can_interface"){
 
     // Create publishers from the csv file and store them in a key-vector pair
     for (const auto& [key, vector] : csvdata_main) {
-        std::string topic = vector[4];
+        std::string topic = vector[6];
         publishers[key] = this->create_publisher<std_msgs::msg::Float32>(topic, 10);
     }
 
@@ -247,8 +247,10 @@ void CanInterface::read_CAN(int socketCan)
                 CANParseConfig config;
                 config.startByte = std::stoi(main_vector[0]);
                 config.endByte = std::stoi(main_vector[1]);
-                config.scale = std::stof(main_vector[2]);
-                config.offset = std::stof(main_vector[3]);
+                config.isSigned = main_vector[2];
+                config.power = std::stoi(main_vector[3]);
+                config.scale = std::stof(main_vector[4]);
+                config.offset = std::stof(main_vector[5]);
                 config.key = dynamic_key;
                     
                 // Call parse_msg with the populated CANParseConfig
@@ -278,32 +280,54 @@ void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig
     uint8_t numBytes = config.endByte - config.startByte + 1;
 
     if (numBytes == 1) { 
-        rawValue = static_cast<int8_t>(frame.data[config.startByte]);
+        if (config.isSigned == "yes") {
+            rawValue = static_cast<int8_t>(frame.data[config.startByte]);
+        } else {
+            rawValue = static_cast<uint8_t>(frame.data[config.startByte]);
+        }
     } 
     else if (numBytes == 2) { 
-        rawValue = static_cast<int16_t>(
-            (frame.data[config.endByte] << 8) | frame.data[config.startByte]
-        );
+        if (config.isSigned == "yes") {
+            rawValue = static_cast<int16_t>(
+            (frame.data[config.endByte] << 8) | frame.data[config.startByte]);
+        } else {
+            rawValue = static_cast<uint16_t>(
+            (frame.data[config.endByte] << 8) | frame.data[config.startByte]);
+        }
+        
     } 
     else if (numBytes == 3) { 
-        rawValue = static_cast<int32_t>(
+        if (config.isSigned == "yes") {
+            rawValue = static_cast<int32_t>(
             (frame.data[config.startByte + 2] << 16) |
             (frame.data[config.startByte + 1] << 8) |
-             frame.data[config.startByte]
-        );
+             frame.data[config.startByte]);
 
-        // Sign-extend 24-bit value to 32-bit
-        if (rawValue & 0x00800000) { // Check if the sign bit (23rd bit) is set
+            // Sign-extend 24-bit value to 32-bit
+            if (rawValue & 0x00800000) { // Check if the sign bit (23rd bit) is set
             rawValue |= 0xFF000000;  // Extend the sign to the upper bits
+            }
+        } else {
+            rawValue = static_cast<uint32_t>(
+            (frame.data[config.startByte + 2] << 16) |
+            (frame.data[config.startByte + 1] << 8) |
+             frame.data[config.startByte]);
         }
     } 
     else if (numBytes == 4) { 
-        rawValue = static_cast<uint32_t>( // Unsigned for wheelspeed, TODO generalize
+        if (config.isSigned == "yes") {
+            rawValue = static_cast<int32_t>( 
             (frame.data[config.startByte + 3] << 24) |
             (frame.data[config.startByte + 2] << 16) |
             (frame.data[config.startByte + 1] << 8) |
-             frame.data[config.startByte]
-        );
+             frame.data[config.startByte]);
+        } else {
+            rawValue = static_cast<uint32_t>(
+            (frame.data[config.startByte + 3] << 24) |
+            (frame.data[config.startByte + 2] << 16) |
+            (frame.data[config.startByte + 1] << 8) |
+             frame.data[config.startByte]);
+        }   
     } 
     else {
         RCLCPP_ERROR(
@@ -313,7 +337,7 @@ void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig
         );
     }
 
-    float scaledValue = static_cast<float>(rawValue) * config.scale + config.offset;
+    float scaledValue = std::pow(static_cast<float>(rawValue), config.power) * config.scale + config.offset;
 
     // Find the associated publisher, create the message and publish the scaled value.
     auto pub_iter = publishers.find(config.key);
@@ -451,10 +475,10 @@ void CanInterface::send_dl500()
     float clamped_speed_target_ = std::clamp(static_cast<float>(speed_target_ *3.6), 0.0f, 255.0f);
     frame.data[1] = static_cast<uint8_t>(clamped_speed_target_);
 
-    float clamped_steering_angle_actual_ = std::clamp(static_cast<float>((steering_angle_actual_ *57.2958)*0.5), -128.0f, 127.0f);
+    float clamped_steering_angle_actual_ = std::clamp(static_cast<float>((steering_angle_actual_ *57.2958)*2), -128.0f, 127.0f);
     frame.data[2] = static_cast<int8_t>(clamped_steering_angle_actual_);
 
-    float clamped_steering_angle_target_ = std::clamp(static_cast<float>((steering_angle_target_ *57.2958)*0.5), -128.0f, 127.0f);
+    float clamped_steering_angle_target_ = std::clamp(static_cast<float>((steering_angle_target_ *57.2958)*2), -128.0f, 127.0f);
     frame.data[3] = static_cast<int8_t>(clamped_steering_angle_target_);
 
     float clamped_brake_hydr_actual_ = std::clamp(brake_hydr_actual_, 0.0f, 255.0f);
@@ -478,17 +502,17 @@ void CanInterface::send_dl501()
     frame.can_id = 0x501;             
     frame.can_dlc = 6;      
     
-    int16_t clamped_ax_ = static_cast<int16_t>(std::clamp(static_cast<float>(ax_ *1/512 ), -32768.0f, 32767.0f));
+    int16_t clamped_ax_ = static_cast<int16_t>(std::clamp(static_cast<float>(ax_ *512 ), -32768.0f, 32767.0f));
     // Convert to little-endian (break into 2 bytes)
     frame.data[0] = clamped_ax_ & 0xFF;       
     frame.data[1] = (clamped_ax_ >> 8) & 0xFF; 
 
-    int16_t clamped_ay_ = static_cast<int16_t>(std::clamp(static_cast<float>(ay_ *1/512 ), -32768.0f, 32767.0f));
+    int16_t clamped_ay_ = static_cast<int16_t>(std::clamp(static_cast<float>(ay_ *512 ), -32768.0f, 32767.0f));
     // Convert to little-endian (break into 2 bytes)
     frame.data[2] = clamped_ay_ & 0xFF;       
     frame.data[3] = (clamped_ay_ >> 8) & 0xFF; 
 
-    int16_t clamped_yaw_rate_ = static_cast<int16_t>(std::clamp(static_cast<float>(yaw_rate_ *1/512 ), -32768.0f, 32767.0f));
+    int16_t clamped_yaw_rate_ = static_cast<int16_t>(std::clamp(static_cast<float>(yaw_rate_ *128 ), -32768.0f, 32767.0f));
     // Convert to little-endian (break into 2 bytes)
     frame.data[4] = clamped_yaw_rate_ & 0xFF;    
     frame.data[5] = (clamped_yaw_rate_ >> 8) & 0xFF; 

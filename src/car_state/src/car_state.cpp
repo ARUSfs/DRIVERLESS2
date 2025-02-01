@@ -305,7 +305,7 @@ void CarState::fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
         RCLCPP_ERROR(this->get_logger(), "FL wheelspeed dt: %f", dt);
     }
 
-    v_front_left_ = 1/msg->data;
+    v_front_left_ = msg->data;
 
     if (v_front_left_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
@@ -324,7 +324,7 @@ void CarState::fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
         RCLCPP_ERROR(this->get_logger(), "FR wheelspeed dt: %f", dt);
     }
 
-    v_front_right_ = 1/msg->data;
+    v_front_right_ = msg->data;
 
     if (v_front_right_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
@@ -343,7 +343,7 @@ void CarState::rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
         RCLCPP_ERROR(this->get_logger(), "RL wheelspeed dt: %f", dt);
     }
 
-    v_rear_left_ = 1/msg->data;
+    v_rear_left_ = msg->data;
 
     if (v_rear_left_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
@@ -362,7 +362,7 @@ void CarState::rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
         RCLCPP_ERROR(this->get_logger(), "RR wheelspeed dt: %f", dt);
     }
 
-    v_rear_right_ = 1/msg->data;
+    v_rear_right_ = msg->data;
 
     if (v_rear_right_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
