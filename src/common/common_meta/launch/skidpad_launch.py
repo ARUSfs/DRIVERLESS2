@@ -25,8 +25,7 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(rslidar_launch)),
         create_node(pkg='can_interface'),
-        create_node(pkg='epos_interface', 
-                    exec='steering_handle.py'),
+        create_node(pkg='epos_interface'),
         create_node(pkg='perception'),
         create_node(pkg='skidpad_planning',
                     params=[{'target_first_lap': 3.0, 

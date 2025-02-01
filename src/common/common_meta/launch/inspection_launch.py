@@ -19,8 +19,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_node(pkg='can_interface'),
-        create_node(pkg='epos_interface', 
-                    exec='steering_handle.py'),
+        create_node(pkg='epos_interface'),
         create_node(pkg='inspection_control'),
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
