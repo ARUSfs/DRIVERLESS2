@@ -45,6 +45,8 @@ PathPlanning::PathPlanning() : Node("path_planning")
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
+    final_map_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+        "/slam/final_map", 10, std::bind(&PathPlanning::final_map_callback, this, std::placeholders::_1));
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
         "/car_state/state", 10, std::bind(&PathPlanning::car_state_callback, this, std::placeholders::_1));
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
@@ -125,6 +127,61 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     
 }
 
+void PathPlanning::final_map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr map_msg){
+    pcl::fromROSMsg(*map_msg, pcl_cloud_);
+
+    ConeXYZColorScore origin(0, 0, 0, UNCOLORED, 1);
+    CDT::Triangulation<double> triangulation;
+    triangulation = this->create_triangulation(pcl_cloud_, true);
+    
+    pcl_cloud_.push_back(origin);
+    // Publish the triangulation as a ROS2 message
+    common_msgs::msg::Triangulation triangulation_msg;
+    if (triangulation.isFinalized()){
+        triangulation_msg = this->create_triangulation_msg(triangulation);
+    }
+    triangulation_pub_ -> publish(triangulation_msg);
+
+    // Get attributes from the triangulation
+    vertices_ = triangulation.vertices;
+    triangles_ = triangulation.triangles;
+
+    // Construct the tree from the triangulation. Initializing it from each of the origin triangles
+    int orig_index = this->get_vertex_index(CDT::V2d<double>::make(0, 0));
+    std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
+    triangle_routes_ = {};
+    for (int i = 0; i<o_triangles.size(); i++){
+        SimplexTree tree(triangles_, o_triangles[i], o_triangles);
+        for (int j = 0; j<tree.index_routes.size(); j++){
+            triangle_routes_.push_back(tree.index_routes[j]);
+        }
+    }
+
+    // Transform the triangles routes to midpoints routes
+    midpoint_routes_ = {};
+    this->get_midpoint_routes(true);
+
+    // Get the cost of each route
+    if(midpoint_routes_.size()==0){ // Return if there are no routes
+        return;
+    }
+
+    // From the routes, select the one that is looking forward
+    int best_route_ind = 0;
+    for (int i = 0; i<midpoint_routes_.size(); i++){
+        double angle_forward = abs(atan2(midpoint_routes_[i][1].y, midpoint_routes_[i][1].x));
+        bool route_looking_forward = angle_forward < M_PI/2;
+        if (route_looking_forward){
+            best_route_ind = i;
+            break;
+        }
+    }
+    best_midpoint_route_ = midpoint_routes_[best_route_ind];
+
+    // Publish the best trajectory
+    trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
+}
+
 void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr state_msg)
 {
     x_ = state_msg->x;
@@ -136,7 +193,8 @@ void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr s
     origin_ = ConeXYZColorScore(x_, y_, 0, UNCOLORED, 1);
 }
 
-CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
+CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud,
+                                                              bool final_map){
     // Initialize empty triangulation and empty points vector
     CDT::Triangulation<double> triangulation;
     std::vector<CDT::V2d<double>> points;
@@ -152,7 +210,7 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
     // Iterate over the triangles and delete the ones that don't meet the conditions
     CDT::TriangleVec triangles = triangulation.triangles;
     CDT::Triangulation<double>::V2dVec vertices = triangulation.vertices;
-    CDT::TriIndUSet deleled_tri;
+    CDT::TriIndUSet deleted_tri;
     for (int i=0; i<triangles.size(); i++) {
         // Angle and length calculations
         CDT::VerticesArr3 vert_ind = triangles[i].vertices;
@@ -170,17 +228,21 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
 
         // Delete triangles with long edges or big angles (except the ones with the origin vertex)
         // and triangles with the same color
-        if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
-            deleled_tri.insert(i);
+        if (final_map) {
+            if (a.color == b.color and b.color == c.color){
+                deleted_tri.insert(i);
+            }
+        } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
+            deleted_tri.insert(i);
         } else if ((a.x == origin_.x and a.y == origin_.y) or     // Check if the origin vertex is
                     (b.x == origin_.x and b.y == origin_.y) or    // in the triangle and skip it
                     (c.x == origin_.x and c.y == origin_.y)){     // (origin vertex is the car position)
             continue;
         } else if (a_angle > kMaxTriAngle or b_angle > kMaxTriAngle or c_angle > kMaxTriAngle){
-            deleled_tri.insert(i);
+            deleted_tri.insert(i);
         } 
     }
-    triangulation.removeTriangles(deleled_tri);
+    triangulation.removeTriangles(deleted_tri);
     return triangulation;
 }
 
@@ -246,9 +308,14 @@ CDT::Edge PathPlanning::get_share_edge(CDT::Triangle triangle1, CDT::Triangle tr
     return shared_edge;
 }
 
-void PathPlanning::get_midpoint_routes(){
+void PathPlanning::get_midpoint_routes(bool final_map){
     for (const auto &ind_route : triangle_routes_){
-        std::vector<CDT::V2d<double>> mid_route = {CDT::V2d<double>::make(x_,y_)}; // Start from the car position
+        std::vector<CDT::V2d<double>> mid_route;
+        if (final_map){
+            mid_route = {CDT::V2d<double>::make(0,0)}; // Start from the origin
+        } else {
+            mid_route = {CDT::V2d<double>::make(x_,y_)}; // Start from the car position
+        }
         for (int i = 0; i < ind_route.size()-1; i++){
             CDT::Triangle triangle = triangles_[ind_route[i]];
             CDT::Triangle next_triangle = triangles_[ind_route[i+1]];
@@ -262,6 +329,9 @@ void PathPlanning::get_midpoint_routes(){
             CDT::V2d<double> midpoint = CDT::V2d<double>::make((vertices_[v1].x+vertices_[v2].x)/2, 
                                                                (vertices_[v1].y+vertices_[v2].y)/2);
             mid_route.push_back(midpoint);
+        }
+        if (final_map) {
+            mid_route.push_back(CDT::V2d<double>::make(0,0)); // End at the origin
         }
         midpoint_routes_.push_back(mid_route);
     }

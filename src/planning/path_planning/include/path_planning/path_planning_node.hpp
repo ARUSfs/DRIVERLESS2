@@ -69,6 +69,7 @@ class PathPlanning : public rclcpp::Node
         // Suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
+        rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr final_map_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
 
@@ -104,6 +105,8 @@ class PathPlanning : public rclcpp::Node
          */
         void perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg);
 
+        void final_map_callback(sensor_msgs::msg::PointCloud2::SharedPtr final_map_msg);
+
         /**
          * @brief Callback function for the car state topic.
          * Update the car state variables when a new message is received.
@@ -117,7 +120,8 @@ class PathPlanning : public rclcpp::Node
          * @param input_cloud 
          * @return CDT::Triangulation<double> 
          */
-        CDT::Triangulation<double> create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud);
+        CDT::Triangulation<double> create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud,
+                                                        bool final_map = false);
 
         /**
          * @brief Create a triangulation msg object from CDT triangulation
@@ -159,7 +163,7 @@ class PathPlanning : public rclcpp::Node
         /**
          * @brief Transform the triangle routes into a vector of the midpoints crossed by the route.
          */
-        void get_midpoint_routes();
+        void get_midpoint_routes(bool final_map = false);
 
         /**
          * @brief Calculate the cost of a given route based on the distance and angle between consecutive points and
