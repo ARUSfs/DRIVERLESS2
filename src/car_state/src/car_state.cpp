@@ -559,10 +559,7 @@ void CarState::on_timer()
     auto steering_check_msg = std_msgs::msg::Bool();
     steering_check_msg.data = run_check_msg.data && (vx_ >= 0.5);
     steer_check_pub_->publish(steering_check_msg);
-}
 
-void CarState::on_plausability_timer()
-{
     // Debug
     std::cout << "Plausability: " << plausability_ << std::endl;
 
