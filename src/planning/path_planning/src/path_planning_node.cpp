@@ -56,6 +56,9 @@ PathPlanning::PathPlanning() : Node("path_planning")
 
 void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {   
+    if (lap_count_ >= 1){
+        return;
+    }
     // Save the point cloud as a pcl object from ROS2 msg
     pcl::fromROSMsg(*per_msg, pcl_cloud_);
 
@@ -128,6 +131,9 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
 }
 
 void PathPlanning::final_map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr map_msg){
+    if (lap_count_ < 1){
+        return;
+    }
     pcl::fromROSMsg(*map_msg, pcl_cloud_);
 
     ConeXYZColorScore origin(0, 0, 0, UNCOLORED, 1);
@@ -191,6 +197,10 @@ void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr s
     vy_ = state_msg->vy;
     v_ = hypot(vx_, vy_);
     origin_ = ConeXYZColorScore(x_, y_, 0, UNCOLORED, 1);
+}
+
+void PathPlanning::lap_count_callback(const std_msgs::msg::Int16::SharedPtr lap_count_msg){
+    lap_count_ = lap_count_msg->data;
 }
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud,

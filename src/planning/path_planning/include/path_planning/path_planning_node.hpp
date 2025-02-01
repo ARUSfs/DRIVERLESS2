@@ -20,6 +20,7 @@
 // ROS2 libraries and msg tipes
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <std_msgs/msg/int16.hpp>
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>
@@ -70,8 +71,10 @@ class PathPlanning : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr final_map_sub_;
+        rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
+
 
         // CarState
         double x_=0;
@@ -81,6 +84,9 @@ class PathPlanning : public rclcpp::Node
         double vy_;
         double v_;
         ConeXYZColorScore origin_ = ConeXYZColorScore();
+
+        // Lap count
+        int lap_count_ = 0;
 
         // Point cloud
         pcl::PointCloud<ConeXYZColorScore> pcl_cloud_;
@@ -106,6 +112,8 @@ class PathPlanning : public rclcpp::Node
         void perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg);
 
         void final_map_callback(sensor_msgs::msg::PointCloud2::SharedPtr final_map_msg);
+
+        void lap_count_callback(std_msgs::msg::Int16::SharedPtr lap_count_msg);
 
         /**
          * @brief Callback function for the car state topic.
