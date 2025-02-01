@@ -58,7 +58,6 @@ private:
     void cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg);
     void cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg);
     void ami_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void perception_callback(const sensor_msgs::msg::PointCloud2 msg);
     
 
     // Functions
@@ -88,7 +87,7 @@ private:
     int ami_ = 0;
     int ebs_status_ = 0;
     int ebs_redundancy_status_ = 0;
-    double target_speed_ = 0;
+    double target_speed_ = -1;
     double target_delta_ = 0;
     int steering_state_ = 0;
     double torque_actual_ = 0;
@@ -98,40 +97,29 @@ private:
     int cones_count_actual_ = 0;
     int cones_count_all_ = 0;
     double plausability_ = 0;
-    double prev_plausability_ = 0;
-    bool plausability_OK_ = true;
-    bool epos_OK_ = false;
-    bool inv_OK_ = false;
+    bool epos_OK_ = true; //TODO: subscribe from epos_interface
 
+    bool kSimulation;
+    std::string kMission;
+
+    bool kSafeMode;
     double kThresholdImu;
     double kThresholdExtensometer;
-    double kThresholdFl;
-    double kThresholdFr;
-    double kThresholdRl;
-    double kThresholdRr;
+    double kThresholdWheelSpeed;
     double kThresholdInv;
     double kThresholdConesCountActual;
     double kThresholdConesCountAll;
     double kMaxError;
 
-    bool kSimulation;
-    std::string kMission;
-
     // Maximum threshold parameters
     double kMaxAx;
     double kMaxAy;
     double kMaxR;
-    double kMaxVFrontLeft;
-    double kMaxVFrontRight;
-    double kMaxVRearLeft;
-    double kMaxVRearRight;
     double kMaxVx;
     double kMaxPlausabilityError;
 
     //Error weights
-    double kErrorWeightAx;
-    double kErrorWeightAy;
-    double kErrorWeightR;
+    double kErrorWeightIMU;
     double kErrorWeightExtensometer;
     double kErrorWeightWheelSpeed;
     double kErrorWeightInvSpeed;

@@ -4,12 +4,12 @@ car_state:
     simulation: false
     mission: "autocross"
 
+    safe_mode: false
+
+    # Following parameters only used in safe mode for plausability checks
     dt_threshold_imu: 0.05
     dt_threshold_extensometer: 0.05
-    dt_threshold_fl: 0.05
-    dt_threshold_fr: 0.05
-    dt_threshold_rl: 0.05
-    dt_threshold_rr: 0.05
+    dt_threshold_wheelspeed: 0.05
     dt_threshold_inv: 0.05
     dt_threshold_cones_count_actual: 0.25
     dt_threshold_cones_count_all: 0.25
@@ -17,16 +17,10 @@ car_state:
     max_ax: 15.0
     max_ay: 15.0
     max_r: 15.0
-    max_v_front_left: 75.0
-    max_v_front_right: 75.0
-    max_v_rear_left: 75.0
-    max_v_rear_right: 75.0
     max_vx: 75.0
     max_plausability_error: 20.0
 
-    error_weight_ax: 2.0
-    error_weight_ay: 2.0
-    error_weight_r: 2.0
+    error_weight_imu: 2.0
     error_weight_extensometer: 2.0
     error_weight_wheel_speed: 2.0
     error_weight_inv_speed: 2.0
