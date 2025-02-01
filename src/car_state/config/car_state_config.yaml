@@ -22,13 +22,13 @@ car_state:
     max_v_rear_left: 75.0
     max_v_rear_right: 75.0
     max_vx: 75.0
-    max_plausability_error: 5.0
+    max_plausability_error: 20.0
 
-    error_weight_ax: 1.0
-    error_weight_ay: 1.0
-    error_weight_r: 1.0
-    error_weight_extensometer: 1.0
-    error_weight_wheel_speed: 1.0
-    error_weight_inv_speed: 1.0
+    error_weight_ax: 2.0
+    error_weight_ay: 2.0
+    error_weight_r: 2.0
+    error_weight_extensometer: 2.0
+    error_weight_wheel_speed: 2.0
+    error_weight_inv_speed: 2.0
     error_weight_cones_count_actual: 11.0
     error_weight_cones_count_all: 11.0
