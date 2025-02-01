@@ -531,7 +531,6 @@ void CarState::on_timer()
     if (plausability_ > 0){
         plausability_--;
     }
-    std::cout << "Plausability: " << plausability_ << std::endl;
 
 
     // Publish run check
