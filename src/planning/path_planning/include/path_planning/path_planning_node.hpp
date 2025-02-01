@@ -62,7 +62,10 @@ class PathPlanning : public rclcpp::Node
         double kMaxYAcc;
         double kMaxXAcc;
         bool kColor;
-        
+        int kRouteBack;
+        double kPrevRouteBias;
+        bool kUseBuffer;
+
         // Suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
@@ -89,6 +92,8 @@ class PathPlanning : public rclcpp::Node
         std::vector<std::vector<int>> triangle_routes_;
         std::vector<std::vector<CDT::V2d<double>>> midpoint_routes_;
         std::vector<CDT::V2d<double>> best_midpoint_route_;
+        std::vector<std::vector<CDT::V2d<double>>> previous_midpoint_routes_;
+        int invalid_counter=0;
 
         /**
          * @brief Callback function for the perception topic.
@@ -164,6 +169,15 @@ class PathPlanning : public rclcpp::Node
          * @return float result of the cost function.
          */
         double get_route_cost(std::vector<CDT::V2d<double>> &route);
+
+        /**
+         * @brief Get the final route after comparing with previous routes to avoid outliers.
+         * Compare the best route in last iteration to the n (6) previous and count in how many of 
+         * them the route is present in more than x% (75%) of the points. In that case, return the
+         * route, otherwise return the second to last route.
+         * @return std::vector<CDT::V2d<double>> final route to be published.
+         */
+        std::vector<CDT::V2d<double>> get_final_route();
 
         /**
          * @brief Create a trajectory msg object from a given route.

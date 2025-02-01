@@ -24,6 +24,9 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("ay_max", 5.0);
     this->declare_parameter<double>("ax_max", 5.0);
     this->declare_parameter<bool>("color", false);
+    this->declare_parameter<int>("route_back", 10);
+    this->declare_parameter<double>("prev_route_bias", 0.75);
+    this->declare_parameter<bool>("use_buffer", false);
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
@@ -36,6 +39,9 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("ay_max", kMaxYAcc);
     this->get_parameter("ax_max", kMaxXAcc);
     this->get_parameter("color", kColor);
+    this->get_parameter("route_back", kRouteBack);
+    this->get_parameter("prev_route_bias", kPrevRouteBias);
+    this->get_parameter("use_buffer", kUseBuffer);
 
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
@@ -91,22 +97,32 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     this->get_midpoint_routes();
 
     // Get the cost of each route
-    if(midpoint_routes_.size()>0){
-        int best_route_ind = 0;
-        double min_cost = INFINITY;
-        for (int i = 0; i<midpoint_routes_.size(); i++){
-            double cost = this->get_route_cost(midpoint_routes_[i]);
-            if (cost < min_cost){
-                min_cost = cost;
-                best_route_ind = i;
-            }
-        }
-        best_midpoint_route_ = midpoint_routes_[best_route_ind];
-
-        // Publish the best trajectory
-        trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
-
+    if(midpoint_routes_.size()==0){ // Return if there are no routes
+        return;
     }
+
+    int best_route_ind = 0;
+    double min_cost = INFINITY;
+    for (int i = 0; i<midpoint_routes_.size(); i++){
+        double cost = this->get_route_cost(midpoint_routes_[i]);
+        if (cost < min_cost){
+            min_cost = cost;
+            best_route_ind = i;
+        }
+    }
+    best_midpoint_route_ = midpoint_routes_[best_route_ind];
+
+    std::vector<CDT::V2d<double>> final_route;
+    if (kUseBuffer){
+        previous_midpoint_routes_.push_back(best_midpoint_route_);
+        final_route = this->get_final_route();
+    } else {
+        final_route = best_midpoint_route_;
+    }
+    // Publish the best trajectory
+    trajectory_pub_ -> publish(this->create_trajectory_msg(final_route));
+
+    
 }
 
 void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr state_msg)
@@ -294,6 +310,42 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
     route_cost += kAngleCoeff*angle_diff_sum - kLenCoeff*route_length; // Curvature
     return route_cost;
 }
+
+std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
+    // Create candidate to final route from cost calculations
+    std::vector<CDT::V2d<double>> final_route = previous_midpoint_routes_.back();
+
+    // Return the final route if there are not enough previous routes
+    if (previous_midpoint_routes_.size() < kRouteBack+1){
+        return final_route;
+    }
+
+    // Create a list of the last routes
+    std::vector<std::vector<CDT::V2d<double>>> last_routes(previous_midpoint_routes_.end()-kRouteBack-1,
+                                                           previous_midpoint_routes_.end()-1);
+    
+    // Count the number of points in the last routes that are in the final route
+    int route_count = 0;
+    int total_points = 0;
+    for (int i = 0; i<kRouteBack; i++){
+        int point_count = compare_lists(last_routes[i], final_route, 0.25);
+        route_count += point_count;
+        total_points += last_routes[i].size();
+    }
+    
+    // Create threshold to validate last route based on previous route lengths
+    double threshold = total_points*kPrevRouteBias;
+    // If the route is validated, return it and add to previous routes.
+    if (route_count > threshold){
+        invalid_counter = 0;
+        return final_route;
+    } else {   // Otherwise, return the previous route
+        invalid_counter++;
+        return previous_midpoint_routes_[previous_midpoint_routes_.size() - 1 - invalid_counter];
+    }
+}
+
+
 
 common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT::V2d<double>> route){
     int route_size = route.size();
