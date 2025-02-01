@@ -49,6 +49,8 @@ PathPlanning::PathPlanning() : Node("path_planning")
         "/slam/final_map", 10, std::bind(&PathPlanning::final_map_callback, this, std::placeholders::_1));
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
         "/car_state/state", 10, std::bind(&PathPlanning::car_state_callback, this, std::placeholders::_1));
+    lap_count_sub_ = this->create_subscription<std_msgs::msg::Int16>(
+        "/slam/lap_count", 10, std::bind(&PathPlanning::lap_count_callback, this, std::placeholders::_1));
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
 
@@ -247,6 +249,8 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
         } else if ((a.x == origin_.x and a.y == origin_.y) or     // Check if the origin vertex is
                     (b.x == origin_.x and b.y == origin_.y) or    // in the triangle and skip it
                     (c.x == origin_.x and c.y == origin_.y)){     // (origin vertex is the car position)
+            continue;
+        } else if (a.color != UNCOLORED and b.color != UNCOLORED and c.color != UNCOLORED) {
             continue;
         } else if (a_angle > kMaxTriAngle or b_angle > kMaxTriAngle or c_angle > kMaxTriAngle){
             deleted_tri.insert(i);
