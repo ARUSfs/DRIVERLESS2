@@ -244,13 +244,19 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
             if (a.color == b.color and b.color == c.color){
                 deleted_tri.insert(i);
             }
-        } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
+            continue;
+        } else {
+            if (a.color != UNCOLORED and a.color == b.color and b.color == c.color){
+                deleted_tri.insert(i);
+            }
+        }
+        if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
             deleted_tri.insert(i);
         } else if ((a.x == origin_.x and a.y == origin_.y) or     // Check if the origin vertex is
                     (b.x == origin_.x and b.y == origin_.y) or    // in the triangle and skip it
                     (c.x == origin_.x and c.y == origin_.y)){     // (origin vertex is the car position)
             continue;
-        } else if (a.color != UNCOLORED and b.color != UNCOLORED and c.color != UNCOLORED) {
+        } else if (a.color != UNCOLORED and b.color != UNCOLORED and c.color != UNCOLORED){
             continue;
         } else if (a_angle > kMaxTriAngle or b_angle > kMaxTriAngle or c_angle > kMaxTriAngle){
             deleted_tri.insert(i);
