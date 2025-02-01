@@ -114,6 +114,7 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
 
     std::vector<CDT::V2d<double>> final_route;
     if (kUseBuffer){
+        previous_midpoint_routes_.push_back(best_midpoint_route_);
         final_route = this->get_final_route();
     } else {
         final_route = best_midpoint_route_;
@@ -312,17 +313,16 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
 
 std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
     // Create candidate to final route from cost calculations
-    std::vector<CDT::V2d<double>> final_route = best_midpoint_route_;
+    std::vector<CDT::V2d<double>> final_route = previous_midpoint_routes_.back();
 
     // Return the final route if there are not enough previous routes
     if (previous_midpoint_routes_.size() < kRouteBack+1){
-        previous_midpoint_routes_.push_back(final_route);
         return final_route;
     }
 
     // Create a list of the last routes
-    std::vector<std::vector<CDT::V2d<double>>> last_routes(previous_midpoint_routes_.end()-kRouteBack,
-                                                           previous_midpoint_routes_.end());
+    std::vector<std::vector<CDT::V2d<double>>> last_routes(previous_midpoint_routes_.end()-kRouteBack-1,
+                                                           previous_midpoint_routes_.end()-1);
     
     // Count the number of points in the last routes that are in the final route
     int route_count = 0;
@@ -337,10 +337,11 @@ std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
     double threshold = total_points*kPrevRouteBias;
     // If the route is validated, return it and add to previous routes.
     if (route_count > threshold){
-        previous_midpoint_routes_.push_back(final_route);
+        invalid_counter = 0;
         return final_route;
     } else {   // Otherwise, return the previous route
-        return previous_midpoint_routes_[previous_midpoint_routes_.size()-1];
+        invalid_counter++;
+        return previous_midpoint_routes_[previous_midpoint_routes_.size() - 1 - invalid_counter];
     }
 }
 
