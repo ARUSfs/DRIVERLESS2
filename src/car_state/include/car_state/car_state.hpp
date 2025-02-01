@@ -87,7 +87,7 @@ private:
     int ami_ = 0;
     int ebs_status_ = 0;
     int ebs_redundancy_status_ = 0;
-    double target_speed_ = 0;
+    double target_speed_ = -1;
     double target_delta_ = 0;
     int steering_state_ = 0;
     double torque_actual_ = 0;
@@ -96,10 +96,35 @@ private:
     int lap_count_ = 0;
     int cones_count_actual_ = 0;
     int cones_count_all_ = 0;
-
+    double plausability_ = 0;
+    bool epos_OK_ = true; //TODO: subscribe from epos_interface
 
     bool kSimulation;
     std::string kMission;
+
+    bool kSafeMode;
+    double kThresholdImu;
+    double kThresholdExtensometer;
+    double kThresholdWheelSpeed;
+    double kThresholdInv;
+    double kThresholdConesCountActual;
+    double kThresholdConesCountAll;
+    double kMaxError;
+
+    // Maximum threshold parameters
+    double kMaxAx;
+    double kMaxAy;
+    double kMaxR;
+    double kMaxVx;
+    double kMaxPlausabilityError;
+
+    //Error weights
+    double kErrorWeightIMU;
+    double kErrorWeightExtensometer;
+    double kErrorWeightWheelSpeed;
+    double kErrorWeightInvSpeed;
+    double kErrorWeightConesCountActual;
+    double kErrorWeightConesCountAll;    
 
     // TF
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -120,6 +145,7 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr target_speed_sub_;
     rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr target_delta_sub_;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cones_count_actual_sub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cones_count_all_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ax_sub_;
@@ -134,4 +160,15 @@ private:
 
     // Timer
     rclcpp::TimerBase::SharedPtr timer_;
+
+    // Time-tracking members
+    rclcpp::Time last_imu_msg_time_;
+    rclcpp::Time last_extensometer_msg_time_;
+    rclcpp::Time last_fl_ws_msg_time_;
+    rclcpp::Time last_fr_ws_msg_time_;
+    rclcpp::Time last_rl_ws_msg_time_;
+    rclcpp::Time last_rr_ws_msg_time_;
+    rclcpp::Time last_inv_speed_msg_time_;
+    rclcpp::Time last_cones_count_actual_msg_time_;
+    rclcpp::Time last_cones_count_all_msg_time_;
 };
