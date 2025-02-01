@@ -418,7 +418,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
         v_grip.push_back(v);
     }
 
-    speed_profile[0] = v_;
+    speed_profile[0] = std::max(v_, 0.5);
 
     for (int i = 1; i<speed_profile.size(); i++){
         double ds = s[i]-s[i-1];
