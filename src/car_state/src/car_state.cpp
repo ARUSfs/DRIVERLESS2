@@ -567,6 +567,13 @@ void CarState::on_timer()
             run_check_msg.data = as_status_ == 3;
         }
         run_check_pub_->publish(run_check_msg);
+    } else {
+        if(kSimulation){
+            run_check_msg.data = false;
+        } else {
+            run_check_msg.data = as_status_ == 4;
+        }
+        run_check_pub_->publish(run_check_msg);
     }
 
     // Publish steering check
