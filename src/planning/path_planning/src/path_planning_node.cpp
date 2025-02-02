@@ -15,6 +15,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<std::string>("perception_topic", "/perception");
     this->declare_parameter<std::string>("triangulation_topic", "/triangulation"); 
     this->declare_parameter<std::string>("trajectory_topic", "/trajectory");
+    this->declare_parameter<std::string>("final_trajectory_topic", "/final_trajectory");
     this->declare_parameter<double>("max_tri_len", 7);
     this->declare_parameter<double>("max_tri_angle", 2.9);
     this->declare_parameter<double>("len_coeff", 1.0);
@@ -30,6 +31,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
+    this->get_parameter("final_trajectory_topic", kFinalTrajectoryTopic);
     this->get_parameter("max_tri_len", kMaxTriLen);
     this->get_parameter("max_tri_angle", kMaxTriAngle);
     this->get_parameter("len_coeff", kLenCoeff);
@@ -49,16 +51,14 @@ PathPlanning::PathPlanning() : Node("path_planning")
         "/slam/final_map", 10, std::bind(&PathPlanning::final_map_callback, this, std::placeholders::_1));
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
         "/car_state/state", 10, std::bind(&PathPlanning::car_state_callback, this, std::placeholders::_1));
-    lap_count_sub_ = this->create_subscription<std_msgs::msg::Int16>(
-        "/slam/lap_count", 10, std::bind(&PathPlanning::lap_count_callback, this, std::placeholders::_1));
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
-
+    final_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kFinalTrajectoryTopic, 10);
 }
 
 void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {   
-    if (lap_count_ >= 1){
+    if (final_map_){
         return;
     }
     // Save the point cloud as a pcl object from ROS2 msg
@@ -133,14 +133,14 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
 }
 
 void PathPlanning::final_map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr map_msg){
-    if (lap_count_ < 1){
-        return;
-    }
+    
+    final_map_ = true;
+
     pcl::fromROSMsg(*map_msg, pcl_cloud_);
 
     ConeXYZColorScore origin(0, 0, 0, UNCOLORED, 1);
     CDT::Triangulation<double> triangulation;
-    triangulation = this->create_triangulation(pcl_cloud_, true);
+    triangulation = this->create_triangulation(pcl_cloud_);
     
     pcl_cloud_.push_back(origin);
     // Publish the triangulation as a ROS2 message
@@ -167,7 +167,7 @@ void PathPlanning::final_map_callback(const sensor_msgs::msg::PointCloud2::Share
 
     // Transform the triangles routes to midpoints routes
     midpoint_routes_ = {};
-    this->get_midpoint_routes(true);
+    this->get_midpoint_routes();
 
     // Get the cost of each route
     if(midpoint_routes_.size()==0){ // Return if there are no routes
@@ -187,7 +187,7 @@ void PathPlanning::final_map_callback(const sensor_msgs::msg::PointCloud2::Share
     best_midpoint_route_ = midpoint_routes_[best_route_ind];
 
     // Publish the best trajectory
-    trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
+    final_trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
 }
 
 void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr state_msg)
@@ -201,12 +201,7 @@ void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr s
     origin_ = ConeXYZColorScore(x_, y_, 0, UNCOLORED, 1);
 }
 
-void PathPlanning::lap_count_callback(const std_msgs::msg::Int16::SharedPtr lap_count_msg){
-    lap_count_ = lap_count_msg->data;
-}
-
-CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud,
-                                                              bool final_map){
+CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
     // Initialize empty triangulation and empty points vector
     CDT::Triangulation<double> triangulation;
     std::vector<CDT::V2d<double>> points;
@@ -240,7 +235,7 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
 
         // Delete triangles with long edges or big angles (except the ones with the origin vertex)
         // and triangles with the same color
-        if (final_map) {
+        if (final_map_) {
             if (a.color == b.color and b.color == c.color){
                 deleted_tri.insert(i);
             } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
@@ -330,10 +325,10 @@ CDT::Edge PathPlanning::get_share_edge(CDT::Triangle triangle1, CDT::Triangle tr
     return shared_edge;
 }
 
-void PathPlanning::get_midpoint_routes(bool final_map){
+void PathPlanning::get_midpoint_routes(){
     for (const auto &ind_route : triangle_routes_){
         std::vector<CDT::V2d<double>> mid_route;
-        if (final_map){
+        if (final_map_){
             mid_route = {CDT::V2d<double>::make(0,0)}; // Start from the origin
         } else {
             mid_route = {CDT::V2d<double>::make(x_,y_)}; // Start from the car position
@@ -352,7 +347,7 @@ void PathPlanning::get_midpoint_routes(bool final_map){
                                                                (vertices_[v1].y+vertices_[v2].y)/2);
             mid_route.push_back(midpoint);
         }
-        if (final_map) {
+        if (final_map_) {
             mid_route.push_back(CDT::V2d<double>::make(0,0)); // End at the origin
         }
         midpoint_routes_.push_back(mid_route);

@@ -54,6 +54,7 @@ class PathPlanning : public rclcpp::Node
         std::string kPerceptionTopic;
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
+        std::string kFinalTrajectoryTopic;
         double kMaxTriLen;
         double kMaxTriAngle;
         double kLenCoeff;
@@ -71,10 +72,9 @@ class PathPlanning : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr final_map_sub_;
-        rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
-
+        rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr final_trajectory_pub_;
 
         // CarState
         double x_=0;
@@ -86,7 +86,7 @@ class PathPlanning : public rclcpp::Node
         ConeXYZColorScore origin_ = ConeXYZColorScore();
 
         // Lap count
-        int lap_count_ = 0;
+        bool final_map_ = false;
 
         // Point cloud
         pcl::PointCloud<ConeXYZColorScore> pcl_cloud_;
@@ -111,9 +111,13 @@ class PathPlanning : public rclcpp::Node
          */
         void perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg);
 
+        /**
+         * @brief Callback function to the final map topic.
+         * When one lap is completed, the final map is received and the algorithm slightly changes
+         * to take advantage of the new information such as the color of the cones.
+         * @param final_map_msg 
+         */
         void final_map_callback(sensor_msgs::msg::PointCloud2::SharedPtr final_map_msg);
-
-        void lap_count_callback(std_msgs::msg::Int16::SharedPtr lap_count_msg);
 
         /**
          * @brief Callback function for the car state topic.
@@ -128,8 +132,7 @@ class PathPlanning : public rclcpp::Node
          * @param input_cloud 
          * @return CDT::Triangulation<double> 
          */
-        CDT::Triangulation<double> create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud,
-                                                        bool final_map = false);
+        CDT::Triangulation<double> create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud);
 
         /**
          * @brief Create a triangulation msg object from CDT triangulation
@@ -171,7 +174,7 @@ class PathPlanning : public rclcpp::Node
         /**
          * @brief Transform the triangle routes into a vector of the midpoints crossed by the route.
          */
-        void get_midpoint_routes(bool final_map = false);
+        void get_midpoint_routes();
 
         /**
          * @brief Calculate the cost of a given route based on the distance and angle between consecutive points and
