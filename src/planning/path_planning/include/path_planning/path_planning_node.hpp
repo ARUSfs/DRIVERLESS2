@@ -7,20 +7,29 @@
  * @version 0.1
  * @date 23-10-2024
  */
-#include <rclcpp/rclcpp.hpp>
-#include "CDT.h"
+// General libraries
+#include <cmath>
+#include <Eigen/Dense>
+#include <unsupported/Eigen/Splines>
+
+// Triangulation libraries
+#include <CDT.h>
 #include <Triangulation.h>
 #include <CDTUtils.h>
-#include "ConeXYZColorScore.h"
-#include "path_planning/simplex_tree.hpp"
+
+// ROS2 libraries and msg tipes
+#include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
-#include "common_msgs/msg/state.hpp"
-#include <Eigen/Dense>
-#include <unsupported/Eigen/Splines>
+#include <common_msgs/msg/state.hpp>
+#include "ConeXYZColorScore.h"
+
+// Custom libraries
+#include "simplex_tree.hpp"
+#include "utils.hpp"
 
 
 /**
@@ -52,8 +61,11 @@ class PathPlanning : public rclcpp::Node
         double kMaxVel;
         double kMaxYAcc;
         double kMaxXAcc;
-        double kSmooth;
-        
+        bool kColor;
+        int kRouteBack;
+        double kPrevRouteBias;
+        bool kUseBuffer;
+
         // Suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
@@ -61,12 +73,16 @@ class PathPlanning : public rclcpp::Node
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
 
         // CarState
-        double x_;
-        double y_;
+        double x_=0;
+        double y_=0;
         double yaw_;
         double vx_;
         double vy_;
         double v_;
+        ConeXYZColorScore origin_ = ConeXYZColorScore();
+
+        // Point cloud
+        pcl::PointCloud<ConeXYZColorScore> pcl_cloud_;
 
         // Triangulation attributes
         CDT::TriangleVec triangles_;
@@ -76,6 +92,8 @@ class PathPlanning : public rclcpp::Node
         std::vector<std::vector<int>> triangle_routes_;
         std::vector<std::vector<CDT::V2d<double>>> midpoint_routes_;
         std::vector<CDT::V2d<double>> best_midpoint_route_;
+        std::vector<std::vector<CDT::V2d<double>>> previous_midpoint_routes_;
+        int invalid_counter=0;
 
         /**
          * @brief Callback function for the perception topic.
@@ -110,42 +128,12 @@ class PathPlanning : public rclcpp::Node
         common_msgs::msg::Triangulation create_triangulation_msg(CDT::Triangulation<double> triangulation);
 
         /**
-         * @brief Get the mid points of the edges of the triangulation. 
-         * It returns a vector of V2d points containing the mid points without duplicates.
-         * @param triangulation CDT object containing the triangulation.
-         * @return std::vector<CDT::V2d<double>> 
-         */
-        std::vector<CDT::V2d<double>> get_midpoints(CDT::Triangulation<double> triangulation);
-
-        /**
          * @brief Calculate the euclidean norm of a vector. 
          * i.e.: if v=(x,y), norm(v) = (x^2 + y^2)^(1/2).
          * @param v Vector to calculate the norm.
          * @return double 
          */
         double norm(CDT::V2d<double> v);
-
-        /**
-         * @brief Get the closest midpoint to the origin as a CDT 2D vector.
-         * 
-         * @param midpoint_arr Array of midpoints to calculate the closest one.
-         * @return CDT::V2d<double> 
-         */
-        CDT::V2d<double> get_closest_midpoint(std::vector<CDT::V2d<double>> midpoint_arr);
-
-        /**
-         * @brief Get the closest triangle object using the centroid as reference.
-         * @return int Index of the closest triangle found.
-         */
-        int get_closest_triangle();
-
-        /**
-         * @brief Calulate the centroid of a triangle given its index in the triangulation.
-         * Centroid is defined as the average of the vertices of the triangle.
-         * @param triangle_ind int index of the triangle in the triangulation.
-         * @return CDT::V2d<double> point containing the centroid of the triangle.
-         */
-        CDT::V2d<double> compute_centroid(int triangle_ind);
 
         /**
          * @brief Get the index of the origin vertex in the triangulation.
@@ -182,7 +170,14 @@ class PathPlanning : public rclcpp::Node
          */
         double get_route_cost(std::vector<CDT::V2d<double>> &route);
 
-        
+        /**
+         * @brief Get the final route after comparing with previous routes to avoid outliers.
+         * Compare the best route in last iteration to the n (6) previous and count in how many of 
+         * them the route is present in more than x% (75%) of the points. In that case, return the
+         * route, otherwise return the second to last route.
+         * @return std::vector<CDT::V2d<double>> final route to be published.
+         */
+        std::vector<CDT::V2d<double>> get_final_route();
 
         /**
          * @brief Create a trajectory msg object from a given route.
