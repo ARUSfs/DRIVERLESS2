@@ -72,6 +72,11 @@ Controller::Controller() : Node("controller"),
         "/car_state/run_check", 1, std::bind(&Controller::run_check_callback, this, std::placeholders::_1));
     trayectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kTrajectoryTopic, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
+    final_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
+        "/path_planning/final_trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
+    optimized_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
+        "/trajectory_optimization/trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
+
 
     // Publishers
     cmd_pub_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
