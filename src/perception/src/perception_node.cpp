@@ -20,6 +20,12 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<double>("h_fov", 180.0);
     this->declare_parameter<double>("threshold_ground_filter", 0.05);
     this->declare_parameter<double>("radius", 1.0);
+    this->declare_parameter<int>("number_sections", 8);
+    this->declare_parameter<double>("angle_threshold", 20);
+    this->declare_parameter<int>("number_rings", 6);
+    this->declare_parameter<int>("number_sectors", 8);
+    this->declare_parameter<double>("max_radius", 25);
+    this->declare_parameter<int>("minimum_ransac_points", 30);
     this->declare_parameter<double>("threshold_scoring", 0.4);
 
     //Get the parameters
@@ -30,6 +36,12 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("h_fov", kHFov);
     this->get_parameter("threshold_ground_filter", kThresholdGroundFilter);
     this->get_parameter("radius", kRadius);
+    this->get_parameter("number_sections", kNumberSections);
+    this->get_parameter("angle_threshold", kAngleThreshold);
+    this->get_parameter("number_rings", kNumberRings);
+    this->get_parameter("number_sectors", kNumberSectors);
+    this->get_parameter("max_radius", kMaxRadius);
+    this->get_parameter("minimum_ransac_points", kMinimumRansacPoints);
     this->get_parameter("threshold_scoring", kThresholdScoring);
 
     //Transform into radians
@@ -71,7 +83,8 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_in
         double min_z = min_point.z;
 
         //Filter the cluster by size and keep the center of the cluster
-        if ((max_z - min_z) > 0.1 && (max_z - min_z) < 0.4 && (max_x - min_x) < 0.4 && (max_y - min_y) < 0.4)
+        //if ((max_z - min_z) > 0.1 && (max_z - min_z) < 0.4 && (max_x - min_x) < 0.4 && (max_y - min_y) < 0.4)
+        if (true)
         {
             PointXYZColorScore center;
             center.x = (max_x + min_x) / 2;
@@ -151,7 +164,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
     //Crop the point cloud
-    Cropping::crop_filter_condition(cloud, kMaxXFov, kMaxYFov, kMaxZFov, kHFov);
+    Cropping::crop_filter_cropbox(cloud, kMaxXFov, kMaxYFov, kMaxZFov);
 
     //print the number of filtered points and the time of the cropping function used
     //std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
@@ -162,7 +175,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
     //Apply the ground filter fuction
-    GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov);
+    GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
     
     //Print the time of the ground filter algorithm used
     std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;

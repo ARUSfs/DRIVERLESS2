@@ -93,7 +93,7 @@ namespace ColorEstimation
                     }
                 }*/
 
-                double minI = *std::min_element(avgIntensities.begin(), avgIntensities.end());
+                /*double minI = *std::min_element(avgIntensities.begin(), avgIntensities.end());
                 double maxI = *std::max_element(avgIntensities.begin(), avgIntensities.end());
                 double avgGlobalIntensity = std::accumulate(avgIntensities.begin(), avgIntensities.end(), 0.0) / avgIntensities.size();
                 double globalIntensity = maxI - minI;
@@ -101,7 +101,7 @@ namespace ColorEstimation
                 std::cout << "Max intensity: " << maxI << std::endl;
                 std::cout << "Min intensity: " << minI << std::endl;
                 std::cout << "Intensity difference: " << globalIntensity << std::endl;
-                std::cout << "Deviation: " << avgGlobalIntensity - globalIntensity << std::endl;
+                std::cout << "Deviation: " << avgGlobalIntensity - globalIntensity << std::endl;*/
 
                 /*size_t n = layers.size();
                 Eigen::VectorXd x(n);

@@ -77,6 +77,73 @@ namespace GroundFiltering
     }
 
     /**
+    * @brief Auxiliar function for grid ground filter, apply ransac in the square specified and check if the normal vector is close to be paralel to the previus
+    * normal vector (that is ground), if not, repeat the process after taking out the false ground.
+    * @param grid_cloud The raw point cloud of the specified square.
+    * @param temp_filtered The temporal cloud cloud that will store the not planar points.
+    * @param temp_plane The temporal cloud that will store the planar points.
+    * @param coefficients The coefficients of the planar ecuation.
+    * @param threshold The threshold that will determine if the point belong to the ground.
+    * @param cloud_filtered The point cloud that will store the not planar points.
+    * @param cloud_plane The point cloud that will store the planar points.
+    * @param prev_normal The normal vector of the previus calculated plane.
+    * @param normal The normal vector of the current plane, that will be recalculated.
+    * @param angle_threshold The threshold that will determine if the potencial plane is discard as plane or not.
+    */
+    void ransac_checking_normal_vectors(pcl::PointCloud<pcl::PointXYZI>::Ptr& grid_cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& temp_filtered, 
+        pcl::PointCloud<pcl::PointXYZI>::Ptr& temp_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, 
+        pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, Eigen::Vector3d& prev_normal, 
+        Eigen::Vector3d& normal, double angle_threshold, int minimum_ransac_points)
+    {
+        // Filter the squares with just a few points
+        if (!(grid_cloud->size() < static_cast<std::size_t>(minimum_ransac_points)))
+        {
+            // Create new temporal clouds to store the ground and not ground points if neccesary
+            pcl::PointCloud<pcl::PointXYZI>::Ptr new_temp_filtered(new pcl::PointCloud<pcl::PointXYZI>);
+            pcl::PointCloud<pcl::PointXYZI>::Ptr new_temp_plane(new pcl::PointCloud<pcl::PointXYZI>);
+
+            // Apply ransac
+            GroundFiltering::ransac_ground_filter(grid_cloud, temp_filtered, temp_plane, coefficients, threshold);
+
+            // Extract the coefficients of the plane of ecuation Ax + By + Cz + D = 0
+            double A = coefficients->values[0];
+            double B = coefficients->values[1];
+            double C = coefficients->values[2];
+
+            // Calculate the normal vector of the plane and normalize it
+            normal = Eigen::Vector3d(A, B, C).normalized();
+
+            // Calculate angle between the two vector using the dot product
+            double cos_angle = prev_normal.dot(normal);
+            double angle = std::acos(cos_angle);
+            
+            // If the angle between the planes is too big, the plane is not ground
+            if (angle > angle_threshold)
+            {
+                // Store the points in cloud filtered as it is not ground
+                *cloud_filtered += *temp_plane;
+
+                // Call the function again until the ground is suitable
+                ransac_checking_normal_vectors(temp_filtered, new_temp_filtered, new_temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, 
+                    prev_normal, normal, angle_threshold, minimum_ransac_points);
+            }
+
+            if (new_temp_filtered->points.empty())
+            {
+                // Store the ground and not ground points in the specified clouds
+                *cloud_filtered += *temp_filtered;
+                *cloud_plane += *temp_plane;
+            }
+            else
+            {
+                // Store the ground and not ground points in the specified clouds
+                *cloud_filtered += *new_temp_filtered;
+                *cloud_plane += *new_temp_plane;
+            }
+        }
+    }
+
+    /**
     * @brief Divide the cloud in the specified numbers of squares as a grid and apply ransac segmentation on each square.
     * @param cloud The raw point cloud that will be filtered.
     * @param cloud_filtered The point cloud that will store the not planar points.
@@ -88,18 +155,24 @@ namespace GroundFiltering
     * @param Mz The lenght in the z axis.
     */
     void grid_ground_filter(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, 
-        pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, double Mx, double My, double Mz)
+        pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, double Mx, double My, double Mz,
+        int number_sections, double angle_threshold, int minimum_ransac_points)
     {
-        double kNumSections = 8;
+        // Initialize the variables
+        Eigen::Vector3d prev_normal(0, 0, 1);
+        Eigen::Vector3d normal(0, 0, 1);
+
+        // Transform the angle threshold from degree to radians
+        angle_threshold *= (M_PI/180);
 
         // Define the measures if the grid
-        double x_step = (Mx - 0) / kNumSections;
-        double y_step = (My - (-My)) / kNumSections;
+        double x_step = (Mx - 0) / number_sections;
+        double y_step = (My - (-My)) / number_sections;
 
         // Iterate on each square
-        for (int i = 0; i < kNumSections; ++i)
+        for (int i = 0; i < number_sections; ++i)
         {
-            for (int j = 0; j < kNumSections; ++j)
+            for (int j = 0; j < number_sections; ++j)
             {
                 // Define the square
                 Eigen::Vector4f min_pt(0 + i * x_step, -My + j * y_step, -100.0, 1.0);
@@ -116,19 +189,13 @@ namespace GroundFiltering
                 // Create temporal clouds to store the ground and not ground points
                 pcl::PointCloud<pcl::PointXYZI>::Ptr temp_filtered(new pcl::PointCloud<pcl::PointXYZI>);
                 pcl::PointCloud<pcl::PointXYZI>::Ptr temp_plane(new pcl::PointCloud<pcl::PointXYZI>);
-
-                // Filter the squares with just a few points
-                if (grid_cloud->size() < 30)
-                {
-                    continue;
-                }
                 
-                // Apply ransac
-                GroundFiltering::ransac_ground_filter(grid_cloud, temp_filtered, temp_plane, coefficients, threshold);
+                // Apply ransac and check the normal vectors
+                ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, 
+                    prev_normal, normal, angle_threshold, minimum_ransac_points);
 
-                // Store the ground and not ground points in the specified clouds
-                *cloud_filtered += *temp_filtered;
-                *cloud_plane += *temp_plane;
+                // Update the variables for the next iteration
+                prev_normal = normal;
             }
         }
     }
@@ -139,7 +206,8 @@ namespace GroundFiltering
     * @param num_rings The number of rings.
     * @param num_sectors The number of sectors.
     */
-    void divide_into_segments(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, std::vector<std::vector<Segment>>& segments, int num_rings, int num_sectors, double max_radius)
+    void divide_into_segments(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, std::vector<std::vector<Segment>>& segments, int num_rings, int num_sectors, 
+        double max_radius)
     {  
         // Resize the empty segments
         segments.resize(num_rings, std::vector<Segment>(num_sectors));
@@ -178,6 +246,7 @@ namespace GroundFiltering
         {
             if (point.z < min_z) 
             {
+                // If a point with less z coordinate is found, it is the new lowest point
                 min_z = point.z;
                 lowest_point = point;
             }
@@ -196,10 +265,12 @@ namespace GroundFiltering
     {
         // Calculate the normal vector of the plane and the distance from the point to the plane
         Eigen::Vector3f normal(plane[0], plane[1], plane[2]);
-        float distance = (plane[0] * point.x + plane[1] * point.y + plane[2] * point.z + plane[3]) /
+
+        // Calculate the distance from the point to the plane using the formula (Ax + By + Cz + D) / (A² + B² * c²)^(1/2)
+        double distance = (plane[0] * point.x + plane[1] * point.y + plane[2] * point.z + plane[3]) /
             normal.norm();
 
-        // Calculate the proyection of the point in the plane
+        // Calculate the proyection of the point in the plane using the formula pxi = xi - distance * coef(xi)
         pcl::PointXYZI projection;
         projection.x = point.x - distance * plane[0];
         projection.y = point.y - distance * plane[1];
@@ -231,14 +302,23 @@ namespace GroundFiltering
         return Eigen::Vector4f(normal[0], normal[1], normal[2], d);
     }
 
+    /**
+    * @brief Auxiliar function for novel ground filter, adjust the a suitable plane to each segment
+    * @param segments The segments.
+    * @param planes The output planes.
+    * @param angle_threshold The threshold to compare the normal vector of two consecutives planes.
+    */
     void fit_planes(const std::vector<std::vector<Segment>>& segments, std::vector<Eigen::Vector4f>& planes, double angle_threshold)
     {
+        // iterate on each segment
         for (size_t ring_idx = 0; ring_idx < segments.size(); ++ring_idx) 
         {
             for (size_t sector_idx = 0; sector_idx < segments[ring_idx].size(); ++sector_idx) 
             {
+                // Filter the empty segments
                 if (segments[ring_idx][sector_idx].points.empty()) continue;
 
+                // Find the lowest point of the segment
                 pcl::PointXYZI p1 = find_lowest_point(segments[ring_idx][sector_idx]);
 
                 if (ring_idx > 0 && sector_idx > 0) 
@@ -252,7 +332,13 @@ namespace GroundFiltering
                     {
                         Eigen::Vector3f normal_current(plane[0], plane[1], plane[2]);
                         Eigen::Vector3f normal_previous(planes.back()[0], planes.back()[1], planes.back()[2]);
-                        if (normal_current.dot(normal_previous) < std::cos(angle_threshold)) continue;
+
+                        // Calculate angle between the two vector using the dot product
+                        double cos_angle = normal_current.dot(normal_previous);
+                        double angle = std::acos(cos_angle);
+
+                        // If the plane is not ground discard it
+                        if (angle > angle_threshold) continue;
                     }
 
                     planes.push_back(plane);
@@ -266,13 +352,15 @@ namespace GroundFiltering
     * @param segments The segments.
     * @param planes The output planes.
     * @param angle_threshold The threshold to compare the normal vector of two consecutives planes.
-    * @param threshold The threshold that will determine if the point belong to the ground.
+    * @param num_rings The number of rings.
+    * @param num_sectors The number of sectors.
     */
-    void fit_planes2(const std::vector<std::vector<Segment>>& segments, std::vector<Eigen::Vector4f>& planes, double angle_threshold, double num_rings, double num_sectors)
+    void fit_planes2(const std::vector<std::vector<Segment>>& segments, std::vector<Eigen::Vector4f>& planes, double angle_threshold, double num_rings, 
+    double num_sectors)
     {
         // Initialize the neccesary variables
         std::vector<std::vector<pcl::PointXYZI>> centers;
-        Eigen::Vector3f prev_normal(0, 0, 0); 
+        Eigen::Vector3f prev_normal(0, 0, 1); 
 
         // Resize the centers
         centers.resize(num_rings, std::vector<pcl::PointXYZI>(num_sectors));
@@ -282,11 +370,13 @@ namespace GroundFiltering
         {
             for (size_t sector_idx = 0; sector_idx < segments[ring_idx].size(); ++sector_idx) 
             {
+                // Rename the segment for easier coding
                 const auto& segment = segments[ring_idx][sector_idx];
                 
                 // Validation in case of the segment is empty
                 if (segment.points.empty()) continue;
 
+                // Define the points that will compose the plane
                 pcl::PointXYZI p1;
                 pcl::PointXYZI p2;
                 pcl::PointXYZI p3;
@@ -294,6 +384,7 @@ namespace GroundFiltering
                 // Define the first point
                 if (ring_idx == 0)
                 {
+                    // If we are working on the first ring, the first point is the center (right below the lidar) with the lowest z coordinate in the segment
                     pcl::PointXYZI temp_point = find_lowest_point(segment);
                     p1.x = 0.0;
                     p1.y = 0.0;
@@ -301,22 +392,26 @@ namespace GroundFiltering
                 }
                 else
                 {
+                    // If we are not working on the first ring, the first point is the center of the plane of the same segment in the previus ring
                     p1 = centers[ring_idx - 1][sector_idx];
                 }
 
                 // Define the second and thrid point
                 if (sector_idx == 0)
                 {
+                    // If we are working in the first sector, the second are third point are the lowest of the segment and the lowest of the neighbor, respectively
                     p2 = find_lowest_point(segment);
                     p3 = find_lowest_point(segments[ring_idx][sector_idx + 1]);
                 }
                 else if (sector_idx == segments[ring_idx].size() - 1)
                 {
+                    // If we are working in the last sector, the second are third point are the lowest of the neighbor and the lowest of the segment, respectively
                     p2 = find_lowest_point(segment);
                     p3 = find_lowest_point(segments[ring_idx][sector_idx - 1]);
                 }
                 else
                 {
+                    // If we are working in the first sector, the second are third point are the lowest of the neighbors
                     p2 = find_lowest_point(segments[ring_idx][sector_idx + 1]);
                     p3 = find_lowest_point(segments[ring_idx][sector_idx - 1]);
                 }
@@ -334,8 +429,12 @@ namespace GroundFiltering
                 // Compare the normal vector of this segment to the one of the previus segment
                 if (!planes.empty()) 
                 {
+                    // Calculate angle between the two vector using the dot product
                     double cos_angle = prev_normal.dot(normal);
-                    if (cos_angle < std::cos(angle_threshold)) continue;
+                    double angle = std::acos(cos_angle);
+
+                    // If the plane is not ground discard it
+                    if (angle > angle_threshold) continue;
                 }
 
                 // Update the variables for the next iteration
@@ -364,7 +463,7 @@ namespace GroundFiltering
         // Iterate on each plane
         for (const auto& plane : planes) 
         {
-            // Calculate the distance from the point to the plane
+            // Calculate the distance from the point to the plane using the formula (Ax + By + Cz + D) / (A² + B² * c²)^(1/2)
             double distance = std::abs(plane[0] * point.x + plane[1] * point.y + plane[2] * point.z + plane[3]) /
                 std::sqrt(plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2]);
 
@@ -382,13 +481,10 @@ namespace GroundFiltering
     * @param threshold The threshold that will determine if the point belong to the ground.
     */
     void novel_ground_filter(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, 
-        pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, double threshold)
+        pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, double threshold, int num_rings, int num_sectors, double max_radius, double angle_threshold)
     {
-        // Define the parameters
-        int num_rings = 6;
-        int num_sectors = 8;
-        double max_radius = 25;
-        double angle_threshold = 0.2;
+        // Transform the angle threshold from degree to radians
+        angle_threshold *= (M_PI/180);
 
         // Divide the point cloud in segments
         std::vector<std::vector<Segment>> segments;
@@ -396,7 +492,7 @@ namespace GroundFiltering
 
         // Find the suitable plane for each segment
         std::vector<Eigen::Vector4f> planes;
-        fit_planes(segments, planes, angle_threshold);
+        fit_planes2(segments, planes, angle_threshold, num_rings, num_sectors);
 
     
         // Iterate on each point to decide if is part of the ground or not

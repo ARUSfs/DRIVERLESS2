@@ -46,7 +46,13 @@ class Perception : public rclcpp::Node
         double kMaxZFov;
         double kHFov;
         double kThresholdGroundFilter;
+        int kNumberSections;
+        double kAngleThreshold;
+        int kNumberRings;
+        int kNumberSectors;
+        double kMaxRadius;
         double kRadius;
+        int kMinimumRansacPoints;
         double kThresholdScoring;
 
         //Subscriber
