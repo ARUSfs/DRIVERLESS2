@@ -243,6 +243,8 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
         if (final_map) {
             if (a.color == b.color and b.color == c.color){
                 deleted_tri.insert(i);
+            } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
+                deleted_tri.insert(i);
             }
             continue;
         } else {
