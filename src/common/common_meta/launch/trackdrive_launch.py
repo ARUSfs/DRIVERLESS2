@@ -36,6 +36,7 @@ def generate_launch_description():
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
                     'mission': 'trackdrive'}]),
+        create_node(pkg='trajectory_optimization')
         rosbag_record
     ])
 
