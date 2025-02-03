@@ -41,8 +41,18 @@ CarState::CarState(): Node("car_state")
     this->declare_parameter<double>("error_weight_cones_count_actual", 1.0);
     this->declare_parameter<double>("error_weight_cones_count_all", 1.0);
     this->declare_parameter<double>("error_weight_extensometer", 1.0);
-    
-    // Retrieve parameters after declaration
+
+    this->declare_parameter<std::string>("extensometer_topic", "/can_interface/extensometer");
+    this->declare_parameter<std::string>("imu_ax_topic", "/can_interface/IMU/ax");
+    this->declare_parameter<std::string>("imu_ay_topic", "/can_interface/IMU/ay");
+    this->declare_parameter<std::string>("imu_r_topic", "/can_interface/IMU/r");
+    this->declare_parameter<std::string>("inversor_topic", "/can_interface/inv_speed");
+    this->declare_parameter<std::string>("as_status_topic", "/can_interface/AS_status");
+    this->declare_parameter<std::string>("fl_wheel_speed_topic", "/can_interface/fl_wheel_speed");
+    this->declare_parameter<std::string>("fr_wheel_speed_topic", "/can_interface/fr_wheel_speed");
+    this->declare_parameter<std::string>("rl_wheel_speed_topic", "/can_interface/rl_wheel_speed");
+    this->declare_parameter<std::string>("rr_wheel_speed_topic", "/can_interface/rr_wheel_speed");
+
     this->get_parameter("get_arussim_ground_truth", get_arussim_ground_truth);
     this->get_parameter("simulation", kSimulation);
     this->get_parameter("mission", kMission);
@@ -69,6 +79,17 @@ CarState::CarState(): Node("car_state")
     this->get_parameter("error_weight_inv_speed", kErrorWeightInvSpeed);
     this->get_parameter("error_weight_cones_count_actual", kErrorWeightConesCountActual);
     this->get_parameter("error_weight_cones_count_all", kErrorWeightConesCountAll);
+
+    this->get_parameter("extensometer_topic", kExtensometerTopic);
+    this->get_parameter("imu_ax_topic", kIMUaxTopic);
+    this->get_parameter("imu_ay_topic", kIMUayTopic);
+    this->get_parameter("imu_r_topic", kIMUrTopic);
+    this->get_parameter("inversor_topic", kInversorTopic);
+    this->get_parameter("as_status_topic", kAsStatusTopic);
+    this->get_parameter("fl_wheel_speed_topic", kFLWheelSpeedTopic);
+    this->get_parameter("fr_wheel_speed_topic", kFRWheelSpeedTopic);
+    this->get_parameter("rl_wheel_speed_topic", kRLWheelSpeedTopic);
+    this->get_parameter("rr_wheel_speed_topic", kRRWheelSpeedTopic);
 
 
     state_pub_ = this->create_publisher<common_msgs::msg::State>(
@@ -113,56 +134,42 @@ CarState::CarState(): Node("car_state")
     }
 
     // TODO: Adapt simulator to real life topics structure
-    if(kSimulation){
-        extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/arussim/extensometer", 1, std::bind(&CarState::
-                extensometer_callback, this, std::placeholders::_1));
+    extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        kExtensometerTopic, 1, std::bind(&CarState::
+            extensometer_callback, this, std::placeholders::_1));
 
-        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-            "/arussim/imu", 1, std::bind(&CarState::
-                imu_callback, this, std::placeholders::_1));
+    ax_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        kIMUaxTopic, 1, std::bind(&CarState::
+            ax_callback, this, std::placeholders::_1));
+    
+    ay_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        kIMUayTopic, 1, std::bind(&CarState::
+            ay_callback, this, std::placeholders::_1));
 
-        wheel_speeds_sub_ = this->create_subscription<common_msgs::msg::FourWheelDrive>(
-            "/arussim_interface/wheel_speeds", 1, std::bind(&CarState::
-                wheel_speeds_callback, this, std::placeholders::_1));
-    } else {
-        extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can_interface/extensometer", 1, std::bind(&CarState::
-                extensometer_callback, this, std::placeholders::_1));
+    r_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        kIMUrTopic, 1, std::bind(&CarState::
+            r_callback, this, std::placeholders::_1));
 
-        ax_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can_interface/IMU/ax", 1, std::bind(&CarState::
-                ax_callback, this, std::placeholders::_1));
-        
-        ay_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can_interface/IMU/ay", 1, std::bind(&CarState::
-                ay_callback, this, std::placeholders::_1));
+    inv_speed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        kInversorTopic, 1, std::bind(&CarState::
+            inv_speed_callback, this, std::placeholders::_1));
+    
+    as_status_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        kAsStatusTopic, 1, std::bind(&CarState::
+            as_status_callback, this, std::placeholders::_1));
 
-        r_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can_interface/IMU/yaw_rate", 1, std::bind(&CarState::
-                r_callback, this, std::placeholders::_1));
-
-        inv_speed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can_interface/inv_speed", 1, std::bind(&CarState::
-                inv_speed_callback, this, std::placeholders::_1));
-        
-        as_status_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can_interface/AS_status", 1, std::bind(&CarState::
-                as_status_callback, this, std::placeholders::_1));
-
-        fl_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can_interface/fl_wheel_speed", 1, std::bind(&CarState::
-                fl_wheelspeed_callback, this, std::placeholders::_1));
-        fr_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can_interface/fr_wheel_speed", 1, std::bind(&CarState::
-                fr_wheelspeed_callback, this, std::placeholders::_1));
-        rl_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can_interface/rl_wheel_speed", 1, std::bind(&CarState::
-                rl_wheelspeed_callback, this, std::placeholders::_1));
-        rr_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can_interface/rr_wheel_speed", 1, std::bind(&CarState::
-                rr_wheelspeed_callback, this, std::placeholders::_1));
-    }
+    fl_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        kFLWheelSpeedTopic, 1, std::bind(&CarState::
+            fl_wheelspeed_callback, this, std::placeholders::_1));
+    fr_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        kFRWheelSpeedTopic, 1, std::bind(&CarState::
+            fr_wheelspeed_callback, this, std::placeholders::_1));
+    rl_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        kRLWheelSpeedTopic, 1, std::bind(&CarState::
+            rl_wheelspeed_callback, this, std::placeholders::_1));
+    rr_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        kRRWheelSpeedTopic, 1, std::bind(&CarState::
+            rr_wheelspeed_callback, this, std::placeholders::_1));
 
     // Configure timer once in the constructor based on the selected controller and frequency
     timer_ = this->create_wall_timer(
@@ -202,37 +209,6 @@ void CarState::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
         brake_hydr_pressure_ = 0;
     }else{
         brake_hydr_pressure_ = 100;
-    }
-}
-
-
-// TODO publish imu separated in arussim
-void CarState::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
-{   
-    auto now_time = this->now();
-    double dt = (now_time - last_imu_msg_time_).seconds();
-    last_imu_msg_time_ = now_time;
-
-    if(dt > kThresholdImu) {
-        plausability_ += kErrorWeightIMU ;
-        RCLCPP_ERROR(this->get_logger(), "IMU dt: %f", dt);
-    }
-    
-    ax_ = msg-> linear_acceleration.x;
-    ay_ = msg-> linear_acceleration.y;
-    r_ = msg->angular_velocity.z;
-
-    if (ax_ < -kMaxAx || ax_ > kMaxAx) {
-        plausability_ += kErrorWeightIMU;
-        RCLCPP_ERROR(this->get_logger(), "ax_ out of range: %f", ax_);
-    }
-    if (ay_ < -kMaxAy || ay_ > kMaxAy) {
-        plausability_ += kErrorWeightIMU;
-        RCLCPP_ERROR(this->get_logger(), "ay_ out of range: %f", ay_);
-    }
-    if (r_ < -kMaxR || r_ > kMaxR) {
-        plausability_ += kErrorWeightIMU;
-        RCLCPP_ERROR(this->get_logger(), "r_ out of range: %f", r_);
     }
 }
 
@@ -368,15 +344,6 @@ void CarState::rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
         plausability_ += kErrorWeightWheelSpeed;
         RCLCPP_ERROR(this->get_logger(), "v_rear_right_ exceeds max: %f", v_rear_right_);
     }
-}
-
-// TODO publish wheel speeds separated in arussim
-void CarState::wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::SharedPtr msg)
-{
-    v_front_right_ = msg-> front_right;
-    v_front_left_ = msg-> front_left;
-    v_rear_right_ = msg-> rear_right;
-    v_rear_left_ = msg-> rear_left;
 }
 
 void CarState::inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg)

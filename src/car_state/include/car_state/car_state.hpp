@@ -126,18 +126,29 @@ private:
     double kErrorWeightConesCountActual;
     double kErrorWeightConesCountAll;    
 
+    // Topics
+    std::string kExtensometerTopic;
+    std::string kIMUaxTopic;
+    std::string kIMUayTopic;
+    std::string kIMUrTopic;
+    std::string kInversorTopic;
+    std::string kAsStatusTopic;
+    std::string kFLWheelSpeedTopic;
+    std::string kFRWheelSpeedTopic;
+    std::string kRLWheelSpeedTopic;
+    std::string kRRWheelSpeedTopic;
+
+
     // TF
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::unique_ptr<tf2_ros::TransformListener> tf_listener_;
 
     // Subscribers
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr extensometer_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr fl_wheelspeed_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr fr_wheelspeed_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr rl_wheelspeed_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr rr_wheelspeed_sub_;
-    rclcpp::Subscription<common_msgs::msg::FourWheelDrive>::SharedPtr wheel_speeds_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr inv_speed_sub_;
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr arussim_ground_truth_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr as_status_sub_;
@@ -145,7 +156,6 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr target_speed_sub_;
     rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr target_delta_sub_;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cones_count_actual_sub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cones_count_all_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ax_sub_;
