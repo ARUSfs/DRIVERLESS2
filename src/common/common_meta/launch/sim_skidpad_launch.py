@@ -18,7 +18,15 @@ def generate_launch_description():
         create_node(pkg='arussim_interface'),
         create_node(pkg='car_state', 
                     params=[{'simulation': True, 
-                    'mission': 'skidpad'}]),
+                    'mission': 'skidpad',
+                    'extensometer_topic': '/arussim/extensometer',
+                    'imu_ax_topic': '/arussim/IMU/ax',
+                    'imu_ay_topic': '/arussim/IMU/ay',
+                    'imu_r_topic': '/arussim/IMU/yaw_rate',
+                    'fr_wheel_speed_topic': '/arussim/fr_wheel_speed',
+                    'fl_wheel_speed_topic': '/arussim/fl_wheel_speed',
+                    'rr_wheel_speed_topic': '/arussim/rr_wheel_speed',
+                    'rl_wheel_speed_topic': '/arussim/rl_wheel_speed'}]),
         create_node(pkg='graph_slam')
     ])
 
