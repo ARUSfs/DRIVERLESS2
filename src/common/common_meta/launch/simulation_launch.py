@@ -25,7 +25,8 @@ def generate_launch_description():
                     'fl_wheel_speed_topic': '/arussim/fl_wheel_speed',
                     'rr_wheel_speed_topic': '/arussim/rr_wheel_speed',
                     'rl_wheel_speed_topic': '/arussim/rl_wheel_speed'}]),
-        create_node(pkg='graph_slam')
+        create_node(pkg='graph_slam'),
+        create_node(pkg='trajectory_optimization')
     ])
 
 

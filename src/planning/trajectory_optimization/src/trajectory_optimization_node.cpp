@@ -25,7 +25,7 @@ TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization
     this->get_parameter("v_max", kVMax);
     this->get_parameter("d_max", kDMax);
 
-    this->declare_parameter<std::string>("trajectory_topic", "/arussim_interface/fixed_trajectory");
+    this->declare_parameter<std::string>("trajectory_topic", "/path_planning/midpoints_to_optimize");
     this->declare_parameter<std::string>("car_state_topic", "/car_state/state");
     this->declare_parameter<std::string>("optimized_trajectory_topic", "/trajectory_optimization/trajectory");
     this->get_parameter("trajectory_topic", kTrajectoryTopic);

@@ -26,13 +26,13 @@ EOF
 echo -e "${BLUE}Welcome to the ARUS Driverless2 dependencies installer.${NC}"
 echo -e "This script provides an easy way to install the dependencies required to run the ARUS Driverless2 software and the ROS2 Humble distribution."
 echo -e "This script was tested on Ubuntu 22.04.2 LTS (Jammy Jellyfish)"
-echo -e "Made by Ángel García. Last update: 20-01-2025\n"
+echo -e "Made by Ángel García. Last update: 03-02-2025\n"
 echo -e "${NC}"
 
 # Selection menu
 echo -e "Select the option you want to install:\n"
-echo -e "${GREEN}1) ${NC}Install all dependencies"
-echo -e "${GREEN}4) ${NC}Install ROS2 Humble\n"
+echo -e "${GREEN}1) ${NC}Install ROS2 Humble"
+echo -e "${GREEN}2) ${NC}Install all dependencies\n"
 
 echo -n "Insert the number of the option you want to install: "
 read option
