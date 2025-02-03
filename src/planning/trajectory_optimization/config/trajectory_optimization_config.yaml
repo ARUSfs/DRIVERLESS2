@@ -6,7 +6,7 @@ trajectory_optimization:
     d_max: 0.7
 
     #Topic
-    trajectory_topic: "/arussim_interface/fixed_trajectory"
+    trajectory_topic: "/path_planning/midpoints_to_optimize"
     car_state_topic: "/car_state/state"
     optimized_trajectory_topic: "/trajectory_optimization/trajectory"
 

@@ -17,7 +17,8 @@ def generate_launch_description():
         create_node(pkg='car_state', 
                     params=[{'simulation': True, 
                     'mission': 'trackdrive'}]),
-        create_node(pkg='graph_slam')
+        create_node(pkg='graph_slam'),
+        create_node(pkg='trajectory_optimization')
     ])
 
 
