@@ -223,7 +223,7 @@ void CarState::ax_callback(const std_msgs::msg::Float32::SharedPtr msg)
         RCLCPP_ERROR(this->get_logger(), "IMU dt: %f", dt);
     }
     
-    ax_ = msg->data;
+    ax_ = - msg->data;
 
     if (ax_ < -kMaxAx || ax_ > kMaxAx) {
         plausability_ += kErrorWeightIMU;
@@ -243,7 +243,7 @@ void CarState::ay_callback(const std_msgs::msg::Float32::SharedPtr msg)
 
 void CarState::r_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    r_ = msg->data;
+    r_ = - msg->data;
 
     if (r_ < -kMaxR || r_ > kMaxR) {
         plausability_ += kErrorWeightIMU;
