@@ -13,7 +13,7 @@ perception:
     threshold_ground_filter: 0.075
 
     number_sections: 8
-    angle_threshold: 20.0
+    angle_threshold: 35.0
     minimum_ransac_points: 30
 
     number_rings: 6
