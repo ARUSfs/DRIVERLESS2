@@ -51,9 +51,12 @@ PathPlanning::PathPlanning() : Node("path_planning")
         "/slam/lap_count", 10, std::bind(&PathPlanning::lap_count_callback, this, std::placeholders::_1));
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
         "/car_state/state", 10, std::bind(&PathPlanning::car_state_callback, this, std::placeholders::_1));
+    optimizer_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
+        "/trajectory_optimization/trajectory", 10, std::bind(&PathPlanning::optimizer_callback, this, std::placeholders::_1));
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
     unsmoothed_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kPointsToOptimizeTopic, 10);
+
 }
 
 void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
@@ -158,6 +161,12 @@ void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr s
 void PathPlanning::lap_count_callback(const std_msgs::msg::Int16::SharedPtr lap_msg)
 {
     lap_count_ = lap_msg->data;
+}
+
+void PathPlanning::optimizer_callback(const common_msgs::msg::Trajectory::SharedPtr optimizer_msg)
+{
+    rclcpp::shutdown();
+    return;
 }
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){

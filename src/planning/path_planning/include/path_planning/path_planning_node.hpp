@@ -72,6 +72,7 @@ class PathPlanning : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
+        rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimizer_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr unsmoothed_pub_;
@@ -121,6 +122,8 @@ class PathPlanning : public rclcpp::Node
          */
         void car_state_callback(common_msgs::msg::State::SharedPtr state_msg);
         
+        void optimizer_callback(common_msgs::msg::Trajectory::SharedPtr optimizer_msg);
+
         /**
          * @brief Create a triangulation object from a point cloud and erase super triangle.
          * 
