@@ -51,10 +51,10 @@ class PathPlanning : public rclcpp::Node
         PathPlanning();
     private:
         // Parameters from configuration file
-        std::string kPerceptionTopic;
+        std::string kMapTopic;
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
-        std::string kFinalTrajectoryTopic;
+        std::string kPointsToOptimizeTopic;
         double kMaxTriLen;
         double kMaxTriAngle;
         double kLenCoeff;
@@ -69,12 +69,12 @@ class PathPlanning : public rclcpp::Node
         bool kUseBuffer;
 
         // Suscribers and publishers
-        rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
+        rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
-        rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr final_map_sub_;
+        rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
-        rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr final_trajectory_pub_;
+        rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr unsmoothed_pub_;
 
         // CarState
         double x_=0;
@@ -86,7 +86,7 @@ class PathPlanning : public rclcpp::Node
         ConeXYZColorScore origin_ = ConeXYZColorScore();
 
         // Lap count
-        bool final_map_ = false;
+        int lap_count_ = 0;
 
         // Point cloud
         pcl::PointCloud<ConeXYZColorScore> pcl_cloud_;
@@ -109,15 +109,10 @@ class PathPlanning : public rclcpp::Node
          * 
          * @param per_msg The point cloud received from the perception.
          */
-        void perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg);
+        void map_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg);
 
-        /**
-         * @brief Callback function to the final map topic.
-         * When one lap is completed, the final map is received and the algorithm slightly changes
-         * to take advantage of the new information such as the color of the cones.
-         * @param final_map_msg 
-         */
-        void final_map_callback(sensor_msgs::msg::PointCloud2::SharedPtr final_map_msg);
+
+        void lap_count_callback(std_msgs::msg::Int16::SharedPtr lap_msg);
 
         /**
          * @brief Callback function for the car state topic.
@@ -199,5 +194,5 @@ class PathPlanning : public rclcpp::Node
          * @param route std::vector<CDT::V2d<double>> vector containing the route.
          * @return common_msgs::msg::Trajectory parsed trajectory message to ROS2 format.
          */
-        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<CDT::V2d<double>> route);
+        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<CDT::V2d<double>> route, bool smoothed = true);
 };
