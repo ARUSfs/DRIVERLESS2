@@ -19,6 +19,7 @@
 #include "scoring.h"
 #include "PointXYZColorScore.h"
 #include <pcl/common/common.h>
+#include <Eigen/Dense>
 
 /**
  * @class Perception
@@ -44,7 +45,13 @@ class Perception : public rclcpp::Node
         double kMaxZFov;
         double kHFov;
         double kThresholdGroundFilter;
+        int kNumberSections;
+        double kAngleThreshold;
+        int kNumberRings;
+        int kNumberSectors;
+        double kMaxRadius;
         double kRadius;
+        int kMinimumRansacPoints;
         double kThresholdScoring;
 
         //Subscriber

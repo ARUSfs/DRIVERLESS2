@@ -26,3 +26,14 @@ car_state:
     error_weight_inv_speed: 2.0
     error_weight_cones_count_actual: 11.0
     error_weight_cones_count_all: 11.0
+
+    extensometer_topic: "/can_interface/extensometer"
+    imu_ax_topic: "/can_interface/IMU/ax"
+    imu_ay_topic: "/can_interface/IMU/ay"
+    imu_r_topic: "/can_interface/IMU/yaw_rate"
+    inversor_topic: "/can_interface/inv_speed"
+    as_status_topic: "/can_interface/AS_status"
+    fl_wheel_speed_topic: "/can_interface/fl_wheel_speed"
+    fr_wheel_speed_topic: "/can_interface/fr_wheel_speed"
+    rl_wheel_speed_topic: "/can_interface/rl_wheel_speed"
+    rr_wheel_speed_topic: "/can_interface/rr_wheel_speed"

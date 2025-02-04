@@ -4,16 +4,24 @@ perception:
     lidar_topic: "/rslidar_points"
 
     #Parameters of FOV
-    max_x_fov: 25.0
-    max_y_fov: 20.0
+    max_x_fov: 30.0
+    max_y_fov: 15.0
     max_z_fov: 0.0
     h_fov: 180.0
 
     #Parameters of ground filter
-    threshold_ground_filter: 0.05
+    threshold_ground_filter: 0.075
+
+    number_sections: 8
+    angle_threshold: 35.0
+    minimum_ransac_points: 30
+
+    number_rings: 6
+    number_sectors: 8
+    max_radius: 25.0
 
     #Parameters of clustering
     radius: 0.15
 
     #Parameters of scoring
-    threshold_scoring: 0.75
+    threshold_scoring: 0.85

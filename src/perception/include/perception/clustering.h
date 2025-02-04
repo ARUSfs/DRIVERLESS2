@@ -16,7 +16,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-namespace Clustering{
+namespace Clustering
+{
     /**
     * @brief Implements euclidean clustering.
     * @param cloud The filtered point cloud from which we will extract the clusters.
