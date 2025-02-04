@@ -17,7 +17,8 @@
 #include <pcl/point_types.h>
 #include "PointXYZColorScore.h"
 
-namespace Scoring{
+namespace Scoring
+{
     /**
     * @brief Score every cluster by how similar its to a cone and based on the distance between
     * its points and what would be the real cone, and then only keep the ones that a have a certain similarity to be considered cones.
