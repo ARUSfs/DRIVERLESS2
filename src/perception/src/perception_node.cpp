@@ -9,6 +9,7 @@
  */
 
 #include "perception/perception_node.hpp"
+bool DEBUG = false;
 
 Perception::Perception() : Node("Perception")
 {
@@ -165,7 +166,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Cropping::crop_filter_cropbox(cloud, kMaxXFov, kMaxYFov, kMaxZFov);
 
     //print the number of filtered points and the time of the cropping function used
-    std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
+    if (DEBUG) std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
 
     //Define the variables for the ground filter
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
@@ -176,7 +177,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
     
     //Print the time of the ground filter algorithm used
-    std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
+    if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
 
     //Extract the clusters from the point cloud
     std::vector<pcl::PointIndices> cluster_indices;
@@ -187,21 +188,21 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Perception::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers); 
 
     //Print the number of possibles cones
-    std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
+    if (DEBUG) std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
 
     //Recover ground points
     Perception::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius);
     
     //Print the time of the reconstruction function
-    std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
+    if (DEBUG) std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
 
     //Score the clusters and keep the ones that will be consider cones
     pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
     Scoring::scoring_surface(cloud_filtered, final_map, cluster_indices, clusters_centers, kThresholdScoring);
 
     //Print the number of cones and the time of the scoring
-    std::cout << "Number of cones: " << final_map->size() << std::endl;
-    std::cout << "Scoring time: " << this->now().seconds() - start_time << std::endl;
+    if (DEBUG) std::cout << "Number of cones: " << final_map->size() << std::endl;
+    if (DEBUG) std::cout << "Scoring time: " << this->now().seconds() - start_time << std::endl;
 
     //Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;

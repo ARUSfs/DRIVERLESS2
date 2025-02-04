@@ -4,8 +4,8 @@ perception:
     lidar_topic: "/rslidar_points"
 
     #Parameters of FOV
-    max_x_fov: 25.0
-    max_y_fov: 20.0
+    max_x_fov: 30.0
+    max_y_fov: 15.0
     max_z_fov: 0.0
     h_fov: 180.0
 
