@@ -20,6 +20,10 @@ perception:
     number_sectors: 8
     max_radius: 25.0
 
+    # Parameters of accumulation
+    buffer_size: 5
+    accumulation_threshold: 0.01
+
     #Parameters of clustering
     radius: 0.15
 
