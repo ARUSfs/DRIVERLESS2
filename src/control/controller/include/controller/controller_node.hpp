@@ -73,7 +73,7 @@ private:
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
     rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trayectory_sub_;
     rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr final_trajectory_sub_;
-    rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_sub_;
+    // rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_sub_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr run_check_sub_;
 
     //Timers

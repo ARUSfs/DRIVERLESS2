@@ -74,8 +74,8 @@ Controller::Controller() : Node("controller"),
         kTrajectoryTopic, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
     final_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         "/path_planning/final_trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
-    optimized_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        "/trajectory_optimization/trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
+    // optimized_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
+    //     "/trajectory_optimization/trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
 
 
     // Publishers

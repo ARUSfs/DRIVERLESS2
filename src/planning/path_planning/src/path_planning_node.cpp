@@ -12,10 +12,10 @@
 
 PathPlanning::PathPlanning() : Node("path_planning")
 {
-    this->declare_parameter<std::string>("perception_topic", "/perception");
-    this->declare_parameter<std::string>("triangulation_topic", "/triangulation"); 
-    this->declare_parameter<std::string>("trajectory_topic", "/trajectory");
-    this->declare_parameter<std::string>("final_trajectory_topic", "/final_trajectory");
+    this->declare_parameter<std::string>("map_topic", "/slam/map");
+    this->declare_parameter<std::string>("triangulation_topic", "/path_planning/triangulation"); 
+    this->declare_parameter<std::string>("trajectory_topic", "/path_planning/trajectory");
+    this->declare_parameter<std::string>("points_to_optimize_topic", "/path_planning/midpoints_to_optimize");
     this->declare_parameter<double>("max_tri_len", 7);
     this->declare_parameter<double>("max_tri_angle", 2.9);
     this->declare_parameter<double>("len_coeff", 1.0);
@@ -28,10 +28,10 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<int>("route_back", 10);
     this->declare_parameter<double>("prev_route_bias", 0.75);
     this->declare_parameter<bool>("use_buffer", false);
-    this->get_parameter("perception_topic", kPerceptionTopic);
+    this->get_parameter("map_topic", kMapTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
-    this->get_parameter("final_trajectory_topic", kFinalTrajectoryTopic);
+    this->get_parameter("points_to_optimize_topic", kPointsToOptimizeTopic);
     this->get_parameter("max_tri_len", kMaxTriLen);
     this->get_parameter("max_tri_angle", kMaxTriAngle);
     this->get_parameter("len_coeff", kLenCoeff);
@@ -45,22 +45,22 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("prev_route_bias", kPrevRouteBias);
     this->get_parameter("use_buffer", kUseBuffer);
 
-    perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        kPerceptionTopic, 10, std::bind(&PathPlanning::perception_callback, this, std::placeholders::_1));
-    final_map_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "/slam/final_map", 10, std::bind(&PathPlanning::final_map_callback, this, std::placeholders::_1));
+    map_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+        kMapTopic, 10, std::bind(&PathPlanning::map_callback, this, std::placeholders::_1));
+    lap_count_sub_ = this->create_subscription<std_msgs::msg::Int16>(
+        "/slam/lap_count", 10, std::bind(&PathPlanning::lap_count_callback, this, std::placeholders::_1));
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
         "/car_state/state", 10, std::bind(&PathPlanning::car_state_callback, this, std::placeholders::_1));
+    optimizer_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
+        "/trajectory_optimization/trajectory", 10, std::bind(&PathPlanning::optimizer_callback, this, std::placeholders::_1));
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
-    final_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kFinalTrajectoryTopic, 10);
+    unsmoothed_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kPointsToOptimizeTopic, 10);
+
 }
 
-void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
+void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {   
-    if (final_map_){
-        return;
-    }
     // Save the point cloud as a pcl object from ROS2 msg
     pcl::fromROSMsg(*per_msg, pcl_cloud_);
 
@@ -69,9 +69,13 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
         RCLCPP_INFO(this->get_logger(), "Empty point cloud");
         return;
     }
-    
-    // Add the current car position to the point cloud
-    pcl_cloud_.push_back(origin_);
+
+    if (lap_count_ == 0){
+        // Add the current car position to the point cloud
+        pcl_cloud_.push_back(origin_);
+    } else {
+        pcl_cloud_.push_back(ConeXYZColorScore(0, 0, 0, UNCOLORED, 1));
+    }
 
     // Create the triangulation
     CDT::Triangulation<double> triangulation;
@@ -89,10 +93,26 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     triangles_ = triangulation.triangles;
 
     // Construct the tree from the triangulation. Initializing it from each of the origin triangles
-    int orig_index = this->get_vertex_index(CDT::V2d<double>::make(x_,y_));
+    int orig_index;
+    if (lap_count_ == 0){
+        orig_index = this->get_vertex_index(CDT::V2d<double>::make(x_,y_));
+    } else {
+        orig_index = this->get_vertex_index(CDT::V2d<double>::make(0,0));
+    }
     std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
     triangle_routes_ = {};
     for (int i = 0; i<o_triangles.size(); i++){
+        CDT::V2d<double> centroid = compute_centroid(o_triangles[i], triangles_, vertices_);
+        double angle_diff;
+        if (lap_count_ == 0){
+            angle_diff = abs(atan2(centroid.y-y_, centroid.x-x_)-yaw_);
+        } else {
+            angle_diff = abs(atan2(centroid.y, centroid.x));
+        }
+        double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
+        if (corrected_angle_diff > M_PI/2){
+            continue;
+        }
         SimplexTree tree(triangles_, o_triangles[i], o_triangles);
         for (int j = 0; j<tree.index_routes.size(); j++){
             triangle_routes_.push_back(tree.index_routes[j]);
@@ -120,74 +140,22 @@ void PathPlanning::perception_callback(const sensor_msgs::msg::PointCloud2::Shar
     best_midpoint_route_ = midpoint_routes_[best_route_ind];
 
     std::vector<CDT::V2d<double>> final_route;
+
     if (kUseBuffer){
         previous_midpoint_routes_.push_back(best_midpoint_route_);
         final_route = this->get_final_route();
     } else {
         final_route = best_midpoint_route_;
     }
+
+    if (lap_count_ > 0){
+        // Publish the unsmoothed trajectory
+        unsmoothed_pub_ -> publish(this->create_trajectory_msg(final_route, false));
+    }
+
     // Publish the best trajectory
     trajectory_pub_ -> publish(this->create_trajectory_msg(final_route));
-
     
-}
-
-void PathPlanning::final_map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr map_msg){
-    
-    final_map_ = true;
-
-    pcl::fromROSMsg(*map_msg, pcl_cloud_);
-
-    ConeXYZColorScore origin(0, 0, 0, UNCOLORED, 1);
-    CDT::Triangulation<double> triangulation;
-    triangulation = this->create_triangulation(pcl_cloud_);
-    
-    pcl_cloud_.push_back(origin);
-    // Publish the triangulation as a ROS2 message
-    common_msgs::msg::Triangulation triangulation_msg;
-    if (triangulation.isFinalized()){
-        triangulation_msg = this->create_triangulation_msg(triangulation);
-    }
-    triangulation_pub_ -> publish(triangulation_msg);
-
-    // Get attributes from the triangulation
-    vertices_ = triangulation.vertices;
-    triangles_ = triangulation.triangles;
-
-    // Construct the tree from the triangulation. Initializing it from each of the origin triangles
-    int orig_index = this->get_vertex_index(CDT::V2d<double>::make(0, 0));
-    std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
-    triangle_routes_ = {};
-    for (int i = 0; i<o_triangles.size(); i++){
-        SimplexTree tree(triangles_, o_triangles[i], o_triangles);
-        for (int j = 0; j<tree.index_routes.size(); j++){
-            triangle_routes_.push_back(tree.index_routes[j]);
-        }
-    }
-
-    // Transform the triangles routes to midpoints routes
-    midpoint_routes_ = {};
-    this->get_midpoint_routes();
-
-    // Get the cost of each route
-    if(midpoint_routes_.size()==0){ // Return if there are no routes
-        return;
-    }
-
-    // From the routes, select the one that is looking forward
-    int best_route_ind = 0;
-    for (int i = 0; i<midpoint_routes_.size(); i++){
-        double angle_forward = abs(atan2(midpoint_routes_[i][1].y, midpoint_routes_[i][1].x));
-        bool route_looking_forward = angle_forward < M_PI/2;
-        if (route_looking_forward){
-            best_route_ind = i;
-            break;
-        }
-    }
-    best_midpoint_route_ = midpoint_routes_[best_route_ind];
-
-    // Publish the best trajectory
-    final_trajectory_pub_ -> publish(this->create_trajectory_msg(best_midpoint_route_));
 }
 
 void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr state_msg)
@@ -199,6 +167,17 @@ void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr s
     vy_ = state_msg->vy;
     v_ = hypot(vx_, vy_);
     origin_ = ConeXYZColorScore(x_, y_, 0, UNCOLORED, 1);
+}
+
+void PathPlanning::lap_count_callback(const std_msgs::msg::Int16::SharedPtr lap_msg)
+{
+    lap_count_ = lap_msg->data;
+}
+
+void PathPlanning::optimizer_callback(const common_msgs::msg::Trajectory::SharedPtr optimizer_msg)
+{
+    rclcpp::shutdown();
+    return;
 }
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
@@ -235,7 +214,7 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
 
         // Delete triangles with long edges or big angles (except the ones with the origin vertex)
         // and triangles with the same color
-        if (final_map_) {
+        if (lap_count_ > 0) {
             if (a.color == b.color and b.color == c.color){
                 deleted_tri.insert(i);
             } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
@@ -328,7 +307,7 @@ CDT::Edge PathPlanning::get_share_edge(CDT::Triangle triangle1, CDT::Triangle tr
 void PathPlanning::get_midpoint_routes(){
     for (const auto &ind_route : triangle_routes_){
         std::vector<CDT::V2d<double>> mid_route;
-        if (final_map_){
+        if (lap_count_ > 0){
             mid_route = {CDT::V2d<double>::make(0,0)}; // Start from the origin
         } else {
             mid_route = {CDT::V2d<double>::make(x_,y_)}; // Start from the car position
@@ -347,7 +326,7 @@ void PathPlanning::get_midpoint_routes(){
                                                                (vertices_[v1].y+vertices_[v2].y)/2);
             mid_route.push_back(midpoint);
         }
-        if (final_map_) {
+        if (lap_count_ > 0) {
             mid_route.push_back(CDT::V2d<double>::make(0,0)); // End at the origin
         }
         midpoint_routes_.push_back(mid_route);
@@ -358,11 +337,16 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
     // Initialize the cost to 0
     double route_cost = 0;
     int route_size = route.size();
+    double angle_forward;
     if (route_size < 3){
         return INFINITY;
     }
     // Check if the route is looking forward (angle difference with the yaw is less than pi/2 radians)
-    double angle_forward = abs(atan2(route[1].y-y_, route[1].x-x_)-yaw_);
+    if (lap_count_ == 0){
+        angle_forward = abs(atan2(route[1].y-y_, route[1].x-x_)-yaw_);
+    } else {
+        angle_forward = abs(atan2(route[1].y, route[1].x));
+    }
     double corrected_angle_forward = std::min(angle_forward, 2*M_PI-angle_forward);
     bool route_looking_forward = corrected_angle_forward < M_PI/2;
     if (!route_looking_forward){
@@ -434,7 +418,8 @@ std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
 
 
 
-common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT::V2d<double>> route){
+common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT::V2d<double>> route,
+                                                                 bool smoothed){
     int route_size = route.size();
     int degree = 2 ;
     common_msgs::msg::Trajectory trajectory_msg;
@@ -442,6 +427,16 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
     trajectory_msg.s = {0.0};
 
     std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile;
+
+    if (!smoothed){
+        for (int i = 0; i<route_size; i++){
+            common_msgs::msg::PointXY point;
+            point.x = route[i].x;
+            point.y = route[i].y;
+            trajectory_msg.points.push_back(point);
+        }
+        return trajectory_msg;
+    }
 
     if (route_size < 3){
         common_msgs::msg::PointXY point;
