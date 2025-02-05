@@ -10,11 +10,13 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 def generate_launch_description():
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir = f"/home/arus/.ros/acceleration_bag_{timestamp}"
+    home_dir = os.path.expanduser("~")
+    output_dir = os.path.join(home_dir, f"ARUS_logs/bagfiles/acceleration_bag_{timestamp}")
 
+    # Record rosbag with mcap extension in steps of 500MB
     rosbag_record = ExecuteProcess(
         cmd=['ros2', 'bag', 'record', '-a', 
-             '-o', output_dir],
+             '-o', output_dir, '-s', 'mcap', '--max-bag-size', '500000000'],
         output='screen'
     )
 
