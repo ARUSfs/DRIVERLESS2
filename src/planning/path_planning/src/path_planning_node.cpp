@@ -102,6 +102,17 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
     triangle_routes_ = {};
     for (int i = 0; i<o_triangles.size(); i++){
+        CDT::V2d<double> centroid = compute_centroid(o_triangles[i], triangles_, vertices_);
+        double angle_diff;
+        if (lap_count_ == 0){
+            angle_diff = abs(atan2(centroid.y-y_, centroid.x-x_)-yaw_);
+        } else {
+            angle_diff = abs(atan2(centroid.y, centroid.x));
+        }
+        double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
+        if (corrected_angle_diff > M_PI/2){
+            continue;
+        }
         SimplexTree tree(triangles_, o_triangles[i], o_triangles);
         for (int j = 0; j<tree.index_routes.size(); j++){
             triangle_routes_.push_back(tree.index_routes[j]);
