@@ -20,6 +20,11 @@
 #include "PointXYZColorScore.h"
 #include <pcl/common/common.h>
 #include <Eigen/Dense>
+#include "common_msgs/msg/state.hpp"
+#include <pcl/common/transforms.h>
+#include <deque>
+#include <omp.h>
+#include <iostream>
 
 /**
  * @class Perception
@@ -53,13 +58,25 @@ class Perception : public rclcpp::Node
         double kRadius;
         int kMinimumRansacPoints;
         double kThresholdScoring;
+        double kAccumulationThreshold;
+        int kBufferSize;
+
+        // Variables
+        double car_x;
+        double car_y;
+        double car_yaw;
+        std::deque<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>> cluster_buffer;
+        std::deque<std::vector<PointXYZColorScore>> center_buffer;
 
         //Subscriber
         std::string kLidarTopic;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_sub_;
+        std::string kStateTopic;
+        rclcpp::Subscription<common_msgs::msg::State>::SharedPtr state_sub_;
 
         //Publishers
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr accumulation_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
 
         /**
@@ -92,4 +109,26 @@ class Perception : public rclcpp::Node
         void reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, 
             std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore> cluster_centers, 
             double radius);
+
+        /**
+        * @brief Auxiliar function for the call back function.
+        * @brief Callback function for the car state topic.
+        * When the car state topic recieves a message, this function is called and performs
+        * all the necessary steps to process the information.
+        * @param state_msg The information received from the car state node.
+        */
+        void state_callback(common_msgs::msg::State::SharedPtr state_msg);
+
+        /**
+        * @brief Auxiliar function for the lidar call back function.
+        * Accumulates the clusters of the last 5 frames of the lidar call back.
+        * @param cluster_points The points of the clusters.
+        * @param clusters_centers The centers of the clusters.
+        * @param kBufferSize The size of both cluster and center buffers.
+        * @param final_clusters THe acumulated clusters.
+        * @param final_centers The updated centers.
+        */
+        void accumulate_clusters(std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& cluster_points, std::vector<PointXYZColorScore>&
+            clusters_centers, int kBufferSize, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& final_clusters, 
+            std::vector<PointXYZColorScore>& final_centers, double AccumulationThreshold);
 };
