@@ -16,7 +16,7 @@ path_planning:
     max_angle: 1.15
     route_back: 10
     prev_route_bias: 0.5
-    use_buffer: false
+    use_buffer: true
 
     # Profile creation parameters
     v_max: 5.0

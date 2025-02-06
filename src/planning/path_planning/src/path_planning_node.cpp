@@ -64,8 +64,6 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     // Save the point cloud as a pcl object from ROS2 msg
     pcl::fromROSMsg(*per_msg, pcl_cloud_);
 
-    double t0 = this->now().seconds();
-
     // Check if the point cloud is empty and return if it is
     if(pcl_cloud_.size() == 0){
         RCLCPP_INFO(this->get_logger(), "Empty point cloud");
@@ -104,6 +102,8 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
     triangle_routes_ = {};
 
+
+    // Get the straightest triangle from the origin
     int straight_triangle_index;
     double min_corrected_angle_diff = INFINITY;
     for (int i = 0; i<o_triangles.size(); i++){
@@ -120,7 +120,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
             straight_triangle_index=i;
         }
     }
-    SimplexTree tree(triangles_, o_triangles[straight_triangle_index], o_triangles);
+    SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index);
     std::cout << "----------" << tree.index_routes.size() << "----------" << std::endl;
     for (int j = 0; j<tree.index_routes.size(); j++){
         triangle_routes_.push_back(tree.index_routes[j]);
@@ -166,7 +166,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     // Publish the best trajectory
-    trajectory_pub_ -> publish(this->create_trajectory_msg(final_route, false));
+    trajectory_pub_ -> publish(this->create_trajectory_msg(final_route));
 
     std::cout << std::endl;
     std::cout << std::endl;

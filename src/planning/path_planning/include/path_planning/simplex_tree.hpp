@@ -31,7 +31,7 @@ class SimplexTree {
      * @brief Construct a new generic tree object.
      * @param key int index of the triangle.
      */
-    SimplexTree(CDT::TriangleVec triangle_list, int origin, std::vector<int> o_triangles);
+    SimplexTree(CDT::TriangleVec triangle_list, int origin, int orig_vertex);
 
     /**
      * @brief Recursive function to create the tree structure.
@@ -41,29 +41,32 @@ class SimplexTree {
      * @param triangle_list triangulation.triangles object containing all the triangles.
      * @param index triangle index from which to start
      * @param visited array containing the visited triangle in the current route.
+     * @param passed_vertices array containing the vertices that have been passed 
+     * so any triangle containing them is not visited.
      * @return SimplexNode* pointer to the created tree.
      */
-    SimplexNode* create_tree_aux(CDT::TriangleVec triangle_list, int index, std::vector<int> visited, std::vector<int> ignored);
+    SimplexNode* create_tree_aux(CDT::TriangleVec triangle_list, int index, 
+                                    std::vector<int> visited, std::vector<int> passed_vertices);
 };
 
-SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, std::vector<int> o_triangles) {
+SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int orig_vertex) {
     CDT::Triangle origin = triangle_list[origin_ind]; // Get triangle from index
     CDT::NeighborsArr3 neighbors = origin.neighbors;  // Get neighbors of the triangle
 
     std::vector<int> visited = {origin_ind}; // Initialize visited array with the origin index
-    std::vector<int> ignored = {origin_ind}; // Initialize visited array with the origin index
-    for (auto v : o_triangles){
-        ignored.push_back(v); // Add the origin triangles to the visited array
-    }
+    std::vector<int> passed_vertices = {orig_vertex}; // Initialize visited array with the origin index
+
     root.index = origin_ind;                 // Set the root index to the origin index
 
     // Filter neighbors to find which of them are valid
     for (int i = 0; i<3; i++){
-        if ((neighbors[i]<=triangle_list.size()) and 
-            (std::find(o_triangles.begin(),o_triangles.end(),neighbors[i])==o_triangles.end())){
+        if((neighbors[i]<=triangle_list.size()) && 
+                triangle_list[neighbors[i]].vertices[0] != orig_vertex &&
+                triangle_list[neighbors[i]].vertices[1] != orig_vertex &&
+                triangle_list[neighbors[i]].vertices[2] != orig_vertex){
+
             visited.push_back(neighbors[i]); // Add the valid neighbors to the visited array
-            ignored.push_back(neighbors[i]); // Add the valid neighbors to the ignored array
-            root.left = SimplexTree::create_tree_aux(triangle_list, neighbors[i], visited, ignored);
+            root.left = SimplexTree::create_tree_aux(triangle_list, neighbors[i], visited, passed_vertices);
             break;
         }
     }
@@ -72,28 +75,44 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, std::ve
 
 
 SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int index,
-                                          std::vector<int> visited, std::vector<int> ignored) {
-    SimplexNode* node;        // Create an empty node
-    node->index = index;      // Set the index of the node to the current index
-    
+                                          std::vector<int> visited, std::vector<int> passed_vertices) {
+
+    SimplexNode* node = new SimplexNode(index);
     CDT::Triangle triangle = triangle_list[index];     // Get the triangle from the index
     CDT::NeighborsArr3 neighbors = triangle.neighbors; // Get the neighbors of the triangle
+
     
-    // Perform the same filtering as in the constructor
     std::vector<int> valid_neighbors = {};
     for (int i = 0; i<3; i++){
-        if ((neighbors[i]<=triangle_list.size()) and 
-            (std::find(ignored.begin(),ignored.end(),neighbors[i])==ignored.end())){
-            valid_neighbors.push_back(neighbors[i]);
+        if (neighbors[i]>triangle_list.size()) continue; 
+        
+        CDT::Triangle n_triangle = triangle_list[neighbors[i]];
+        bool good = true;
+        for (auto v: n_triangle.vertices){
+            if (std::find(passed_vertices.begin(),passed_vertices.end(),v)!=passed_vertices.end()){
+                good = false;
+            }
         }
+        if (good) valid_neighbors.push_back(neighbors[i]);
+        
     }
+    
 
     // Only change is that the node is returned when there is only one valid neighbor
     if (valid_neighbors.size() == 1){
         // In case only one neighbor is valid, create the left child and return the node
         visited.push_back(valid_neighbors[0]);
-        ignored.push_back(valid_neighbors[0]);
-        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited, ignored);
+
+
+        CDT::Triangle next_triangle = triangle_list[valid_neighbors[0]];
+
+        for (auto v: triangle.vertices){
+            if (std::find(next_triangle.vertices.begin(),next_triangle.vertices.end(),v)==next_triangle.vertices.end()){
+                passed_vertices.push_back(v);
+            }
+        }
+
+        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited, passed_vertices);
         return node;
     }
     else if (valid_neighbors.size() == 2){
@@ -102,12 +121,29 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
         std::vector<int> visited_right = visited;
         visited_left.push_back(valid_neighbors[0]);
         visited_right.push_back(valid_neighbors[1]);
-        ignored.push_back(valid_neighbors[0]);
-        ignored.push_back(valid_neighbors[1]);
-        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited_left, ignored);
-        node->right = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[1], visited_right, ignored);
+
+
+        std::vector<int> passed_vertices_left = passed_vertices;
+        CDT::Triangle left_triangle = triangle_list[valid_neighbors[0]];
+        for (auto v: triangle.vertices){
+            if (std::find(left_triangle.vertices.begin(),left_triangle.vertices.end(),v)==left_triangle.vertices.end()){
+                passed_vertices_left.push_back(v);
+            }
+        }
+
+        std::vector<int> passed_vertices_right = passed_vertices;
+        CDT::Triangle right_triangle = triangle_list[valid_neighbors[1]];
+        for (auto v: triangle.vertices){
+            if (std::find(right_triangle.vertices.begin(),right_triangle.vertices.end(),v)==right_triangle.vertices.end()){
+                passed_vertices_right.push_back(v);
+            }
+        }
+
+        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited_left, passed_vertices_left);
+        node->right = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[1], visited_right, passed_vertices_right);
         return node;
     }
+
     /* In case there are no valid neighbors, return the node with no children 
     and add the visited route to the routes array in the tree attribute */
     index_routes.push_back(visited);
