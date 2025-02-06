@@ -18,6 +18,7 @@
 #include "perception/cropping.h"
 #include "scoring.h"
 #include "PointXYZColorScore.h"
+#include "color_estimation.h"
 #include <pcl/common/common.h>
 #include <Eigen/Dense>
 
@@ -61,6 +62,8 @@ class Perception : public rclcpp::Node
         //Publishers
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_2;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_3;
 
         /**
          * @brief Callback function for the lidar topic.

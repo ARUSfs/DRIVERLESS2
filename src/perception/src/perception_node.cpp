@@ -9,7 +9,7 @@
  */
 
 #include "perception/perception_node.hpp"
-bool DEBUG = false;
+bool DEBUG = true;
 
 Perception::Perception() : Node("Perception")
 {
@@ -55,6 +55,8 @@ Perception::Perception() : Node("Perception")
     //Create the publishers
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/filtered_cloud", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map", 10);
+    map_pub_2 = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map2", 10);
+    map_pub_3 = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map3", 10);
 }
 
 /**
@@ -204,6 +206,50 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     if (DEBUG) std::cout << "Number of cones: " << final_map->size() << std::endl;
     if (DEBUG) std::cout << "Scoring time: " << this->now().seconds() - start_time << std::endl;
 
+    //Estime the color of the closest cones
+    ColorEstimation::color_estimation4(cluster_indices, clusters_centers, cloud_filtered);
+
+    //Print the time of the color estimation function
+    if (DEBUG) std::cout << "Color estimation time: " << this->now().seconds() - start_time << std::endl;
+
+    //Update the colors of final map points
+    for (auto& point : final_map->points) 
+    {
+        for (const auto& center : clusters_centers) 
+        {
+            if (point.x == center.x && point.y == center.y && point.z == center.z) 
+            {
+                point.color = center.color;
+            }
+        }
+    }
+
+    pcl::PointCloud<PointXYZColorScore>::Ptr final_map2(new pcl::PointCloud<PointXYZColorScore>);
+    for (const PointXYZColorScore& p : final_map->points)
+    {
+        if (p.color == 1)
+        {
+            final_map2->points.push_back(p);
+        }
+    }
+
+    //pcl::PointCloud<PointXYZColorScore>::Ptr final_map3(new pcl::PointCloud<PointXYZColorScore>);
+
+    /*PointXYZColorScore closest_point = final_map2->points[0];
+    float min_distance = std::sqrt(closest_point.x * closest_point.x + closest_point.y * closest_point.y + closest_point.z * closest_point.z);
+    for (const PointXYZColorScore& p : final_map->points) 
+    {
+        float distance = std::sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+        if (distance < min_distance) 
+        {
+            min_distance = distance;
+            closest_point = p;
+        }
+    }
+    final_map3->points.push_back(closest_point);*/
+
+    if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;
+
     //Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;
     pcl::toROSMsg(*cloud_filtered, filtered_msg);
@@ -215,6 +261,18 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::toROSMsg(*final_map, map_msg);
     map_msg.header.frame_id="/rslidar";
     map_pub_->publish(map_msg);
+
+    //Publish the map cloud
+    sensor_msgs::msg::PointCloud2 map_msg2;
+    pcl::toROSMsg(*final_map2, map_msg2);
+    map_msg2.header.frame_id="/rslidar";
+    map_pub_2->publish(map_msg2);
+
+    //Publish the map cloud
+    sensor_msgs::msg::PointCloud2 map_msg3;
+    pcl::toROSMsg(*final_map2, map_msg3);
+    map_msg3.header.frame_id="/rslidar";
+    map_pub_3->publish(map_msg3);
 }
 
 int main(int argc, char * argv[])
