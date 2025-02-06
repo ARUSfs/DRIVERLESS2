@@ -110,10 +110,11 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
             angle_diff = abs(atan2(centroid.y, centroid.x));
         }
         double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
-        if (corrected_angle_diff > M_PI/2){
+        if (corrected_angle_diff > M_PI/3){
             continue;
         }
         SimplexTree tree(triangles_, o_triangles[i], o_triangles);
+        std::cout << "----------" << tree.index_routes.size() << "----------" << std::endl;
         for (int j = 0; j<tree.index_routes.size(); j++){
             triangle_routes_.push_back(tree.index_routes[j]);
         }
@@ -122,22 +123,29 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     // Transform the triangles routes to midpoints routes
     midpoint_routes_ = {};
     this->get_midpoint_routes();
+    std::cout << "**********" << midpoint_routes_.size() << "**********" << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
 
     // Get the cost of each route
     if(midpoint_routes_.size()==0){ // Return if there are no routes
         return;
+    } else if (midpoint_routes_.size()==1){ // Return the only route if there is only one
+        best_midpoint_route_ = midpoint_routes_[0];
+    } else {
+       int best_route_ind = 0;
+        double min_cost = INFINITY;
+        for (int i = 0; i<midpoint_routes_.size(); i++){
+            double cost = this->get_route_cost(midpoint_routes_[i]);
+            if (cost < min_cost){
+                min_cost = cost;
+                best_route_ind = i;
+            }
+        }
+        best_midpoint_route_ = midpoint_routes_[best_route_ind];
     }
 
-    int best_route_ind = 0;
-    double min_cost = INFINITY;
-    for (int i = 0; i<midpoint_routes_.size(); i++){
-        double cost = this->get_route_cost(midpoint_routes_[i]);
-        if (cost < min_cost){
-            min_cost = cost;
-            best_route_ind = i;
-        }
-    }
-    best_midpoint_route_ = midpoint_routes_[best_route_ind];
+    
 
     std::vector<CDT::V2d<double>> final_route;
 
@@ -214,29 +222,43 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
 
         // Delete triangles with long edges or big angles (except the ones with the origin vertex)
         // and triangles with the same color
-        if (lap_count_ > 0) {
-            if (a.color == b.color and b.color == c.color){
-                deleted_tri.insert(i);
-            } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
-                deleted_tri.insert(i);
-            }
+        if (lap_count_==0 && ((a.x == origin_.x and a.y == origin_.y) or     // Check if the origin vertex is
+                                (b.x == origin_.x and b.y == origin_.y) or    // in the triangle and skip it
+                                (c.x == origin_.x and c.y == origin_.y))){     // (origin vertex is the car position)
             continue;
-        } else {
-            if (a.color != UNCOLORED and a.color == b.color and b.color == c.color){
-                deleted_tri.insert(i);
-            }
         }
-        if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
+
+        if (a.color != UNCOLORED and a.color == b.color and b.color == c.color){
             deleted_tri.insert(i);
-        } else if ((a.x == origin_.x and a.y == origin_.y) or     // Check if the origin vertex is
-                    (b.x == origin_.x and b.y == origin_.y) or    // in the triangle and skip it
-                    (c.x == origin_.x and c.y == origin_.y)){     // (origin vertex is the car position)
-            continue;
-        } else if (a.color != UNCOLORED and b.color != UNCOLORED and c.color != UNCOLORED){
-            continue;
+        } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
+            deleted_tri.insert(i);
         } else if (a_angle > kMaxTriAngle or b_angle > kMaxTriAngle or c_angle > kMaxTriAngle){
             deleted_tri.insert(i);
         } 
+
+        // if (lap_count_ > 0) {
+        //     if (a.color == b.color and b.color == c.color){
+        //         deleted_tri.insert(i);
+        //     } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
+        //         deleted_tri.insert(i);
+        //     }
+        //     continue;
+        // } else {
+        //     if (a.color != UNCOLORED and a.color == b.color and b.color == c.color){
+        //         deleted_tri.insert(i);
+        //     }
+        // }
+        // if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
+        //     deleted_tri.insert(i);
+        // } else if ((a.x == origin_.x and a.y == origin_.y) or     // Check if the origin vertex is
+        //             (b.x == origin_.x and b.y == origin_.y) or    // in the triangle and skip it
+        //             (c.x == origin_.x and c.y == origin_.y)){     // (origin vertex is the car position)
+        //     continue;
+        // } else if (a.color != UNCOLORED and b.color != UNCOLORED and c.color != UNCOLORED){
+        //     continue;
+        // } else if (a_angle > kMaxTriAngle or b_angle > kMaxTriAngle or c_angle > kMaxTriAngle){
+        //     deleted_tri.insert(i);
+        // } 
     }
     triangulation.removeTriangles(deleted_tri);
     return triangulation;
@@ -351,6 +373,7 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
     bool route_looking_forward = corrected_angle_forward < M_PI/2;
     if (!route_looking_forward){
         return INFINITY;
+        std::cout << "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW" << std::endl;
     }
 
     // Initialize the properties of the route
@@ -369,16 +392,23 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
         route_out.push_back(route[i+1]);
 
         // If the angle is too big, cut the route and return the cost
-        if (corrected_angle_diff > kMaxAngle){
-            angle_diff_sum += angle_diff;
-            route = route_out;           // Cut the route
-            return kAngleCoeff*angle_diff_sum-kLenCoeff*route_length;
-        } else{
-            angle_diff_sum += angle_diff;
-        }
+        // if (corrected_angle_diff > kMaxAngle){
+        //     angle_diff_sum += angle_diff;
+        //     route = route_out;           // Cut the route
+        //     return kAngleCoeff*angle_diff_sum-kLenCoeff*route_length;
+        // } else{
+        
+        // if (corrected_angle_diff > M_PI/6) angle_diff_sum += corrected_angle_diff;
+        if (corrected_angle_diff > M_PI/6) angle_diff_sum += 3*pow(corrected_angle_diff-M_PI/6, 2)+1; // f(x) =
+        std::cout << "Angle diff: " << corrected_angle_diff << std::endl;
+        
     }
+    std::cout << "Route length: " << route_length << std::endl;
+    std::cout << "Angle diff sum: " << angle_diff_sum << std::endl;
 
-    route_cost += kAngleCoeff*angle_diff_sum - kLenCoeff*route_length; // Curvature
+    route_cost = kAngleCoeff*angle_diff_sum - kLenCoeff*route_length; // Curvature
+    std::cout << "Route cost: " << route_cost << std::endl;
+    std::cout << ".................." << std::endl;
     return route_cost;
 }
 
