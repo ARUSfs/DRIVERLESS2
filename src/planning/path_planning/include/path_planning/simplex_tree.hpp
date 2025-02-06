@@ -100,16 +100,12 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
         // In case two neighbors are valid, create both children and return the node
         std::vector<int> visited_left = visited;
         std::vector<int> visited_right = visited;
-        std::vector<int> ignored_left = ignored;
-        std::vector<int> ignored_right = ignored;
         visited_left.push_back(valid_neighbors[0]);
         visited_right.push_back(valid_neighbors[1]);
-        ignored_left.push_back(valid_neighbors[0]);
-        ignored_left.push_back(valid_neighbors[1]);
-        ignored_right.push_back(valid_neighbors[0]);
-        ignored_right.push_back(valid_neighbors[1]);
-        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited_left, ignored_left);
-        node->right = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[1], visited_right, ignored_right);
+        ignored.push_back(valid_neighbors[0]);
+        ignored.push_back(valid_neighbors[1]);
+        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited_left, ignored);
+        node->right = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[1], visited_right, ignored);
         return node;
     }
     /* In case there are no valid neighbors, return the node with no children 
