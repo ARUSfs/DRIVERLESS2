@@ -162,7 +162,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     // Publish the best trajectory
-    trajectory_pub_ -> publish(this->create_trajectory_msg(final_route));
+    trajectory_pub_ -> publish(this->create_trajectory_msg(final_route, false));
     
 }
 

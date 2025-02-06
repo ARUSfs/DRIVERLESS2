@@ -43,8 +43,7 @@ class SimplexTree {
      * @param visited array containing the visited triangle in the current route.
      * @return SimplexNode* pointer to the created tree.
      */
-    SimplexNode* create_tree_aux(CDT::TriangleVec triangle_list, int index, std::vector<int> visited,
-                                 std::vector<int> o_triangles);
+    SimplexNode* create_tree_aux(CDT::TriangleVec triangle_list, int index, std::vector<int> visited, std::vector<int> ignored);
 };
 
 SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, std::vector<int> o_triangles) {
@@ -52,13 +51,19 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, std::ve
     CDT::NeighborsArr3 neighbors = origin.neighbors;  // Get neighbors of the triangle
 
     std::vector<int> visited = {origin_ind}; // Initialize visited array with the origin index
+    std::vector<int> ignored = {origin_ind}; // Initialize visited array with the origin index
+    for (auto v : o_triangles){
+        ignored.push_back(v); // Add the origin triangles to the visited array
+    }
     root.index = origin_ind;                 // Set the root index to the origin index
 
     // Filter neighbors to find which of them are valid
     for (int i = 0; i<3; i++){
         if ((neighbors[i]<=triangle_list.size()) and 
             (std::find(o_triangles.begin(),o_triangles.end(),neighbors[i])==o_triangles.end())){
-            root.left = SimplexTree::create_tree_aux(triangle_list, neighbors[i], visited, o_triangles);
+            visited.push_back(neighbors[i]); // Add the valid neighbors to the visited array
+            ignored.push_back(neighbors[i]); // Add the valid neighbors to the ignored array
+            root.left = SimplexTree::create_tree_aux(triangle_list, neighbors[i], visited, ignored);
             break;
         }
     }
@@ -67,8 +72,7 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, std::ve
 
 
 SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int index,
-                                          std::vector<int> visited, std::vector<int> o_triangles) {
-    visited.push_back(index); // Add the current index to the visited array
+                                          std::vector<int> visited, std::vector<int> ignored) {
     SimplexNode* node;        // Create an empty node
     node->index = index;      // Set the index of the node to the current index
     
@@ -78,21 +82,34 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
     // Perform the same filtering as in the constructor
     std::vector<int> valid_neighbors = {};
     for (int i = 0; i<3; i++){
-        if ((neighbors[i]<=triangle_list.size()) and (std::find(visited.begin(),visited.end(),neighbors[i])==visited.end())
-            and std::find(o_triangles.begin(),o_triangles.end(),neighbors[i])==o_triangles.end()){
+        if ((neighbors[i]<=triangle_list.size()) and 
+            (std::find(ignored.begin(),ignored.end(),neighbors[i])==ignored.end())){
             valid_neighbors.push_back(neighbors[i]);
         }
     }
+
     // Only change is that the node is returned when there is only one valid neighbor
     if (valid_neighbors.size() == 1){
         // In case only one neighbor is valid, create the left child and return the node
-        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited, o_triangles);
+        visited.push_back(valid_neighbors[0]);
+        ignored.push_back(valid_neighbors[0]);
+        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited, ignored);
         return node;
     }
     else if (valid_neighbors.size() == 2){
         // In case two neighbors are valid, create both children and return the node
-        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited, o_triangles);
-        node->right = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[1], visited, o_triangles);;
+        std::vector<int> visited_left = visited;
+        std::vector<int> visited_right = visited;
+        std::vector<int> ignored_left = ignored;
+        std::vector<int> ignored_right = ignored;
+        visited_left.push_back(valid_neighbors[0]);
+        visited_right.push_back(valid_neighbors[1]);
+        ignored_left.push_back(valid_neighbors[0]);
+        ignored_left.push_back(valid_neighbors[1]);
+        ignored_right.push_back(valid_neighbors[0]);
+        ignored_right.push_back(valid_neighbors[1]);
+        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited_left, ignored_left);
+        node->right = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[1], visited_right, ignored_right);
         return node;
     }
     /* In case there are no valid neighbors, return the node with no children 
