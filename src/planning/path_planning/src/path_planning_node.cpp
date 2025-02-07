@@ -120,10 +120,10 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
             straight_triangle_index=i;
         }
     }
-    SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index);
-    std::cout << "----------" << tree.index_routes.size() << "----------" << std::endl;
-    for (int j = 0; j<tree.index_routes.size(); j++){
-        triangle_routes_.push_back(tree.index_routes[j]);
+    SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index, pcl_cloud_);
+    std::cout << "----------" << tree.index_routes_.size() << "----------" << std::endl;
+    for (int j = 0; j<tree.index_routes_.size(); j++){
+        triangle_routes_.push_back(tree.index_routes_[j]);
     }
 
     // Transform the triangles routes to midpoints routes
@@ -242,30 +242,6 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
         } else if (a_angle > kMaxTriAngle or b_angle > kMaxTriAngle or c_angle > kMaxTriAngle){
             deleted_tri.insert(i);
         }
-
-        // if (lap_count_ > 0) {
-        //     if (a.color == b.color and b.color == c.color){
-        //         deleted_tri.insert(i);
-        //     } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
-        //         deleted_tri.insert(i);
-        //     }
-        //     continue;
-        // } else {
-        //     if (a.color != UNCOLORED and a.color == b.color and b.color == c.color){
-        //         deleted_tri.insert(i);
-        //     }
-        // }
-        // if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
-        //     deleted_tri.insert(i);
-        // } else if ((a.x == origin_.x and a.y == origin_.y) or     // Check if the origin vertex is
-        //             (b.x == origin_.x and b.y == origin_.y) or    // in the triangle and skip it
-        //             (c.x == origin_.x and c.y == origin_.y)){     // (origin vertex is the car position)
-        //     continue;
-        // } else if (a.color != UNCOLORED and b.color != UNCOLORED and c.color != UNCOLORED){
-        //     continue;
-        // } else if (a_angle > kMaxTriAngle or b_angle > kMaxTriAngle or c_angle > kMaxTriAngle){
-        //     deleted_tri.insert(i);
-        // }
     }
     triangulation.removeTriangles(deleted_tri);
     return triangulation;
