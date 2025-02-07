@@ -9,9 +9,11 @@
 
  namespace ColorEstimation
  {
-    void color_estimation(std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore>& clusters_centers, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered)
+    void color_estimation1(std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore>& clusters_centers, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered)
     {
-        double distance_threshold = 3.0;
+        double distance_threshold = 5.0;
+        std::vector<std::pair<double, size_t>> a_id_pairs;
+        double cte = 250.0;
 
         for (size_t i = 0; i < clusters_centers.size(); ++i)
         {
@@ -24,16 +26,25 @@
             {
                 std::cout << "Distancia: " << distance << std::endl;
                 
-                std::vector<double> z_values, intensities, avgIntensities, intensitiesInLayer;
+                std::vector<std::pair<double, double>> z_intensity_pairs;
+                std::vector<double> z_values, intensities, intensitiesInLayer, layerIntensities, layers;
                 
                 for (const auto& index : indices.indices) 
                 {
                     const auto& point = cloud_filtered->points[index];
-                    z_values.push_back(point.z);
-                    intensities.push_back(point.intensity);
+                    z_intensity_pairs.emplace_back(point.z, point.intensity);
                 }
 
-                std::sort(z_values.begin(), z_values.end());
+                std::sort(z_intensity_pairs.begin(), z_intensity_pairs.end(), [](const std::pair<double, double>& a, const std::pair<double, double>& b) 
+                {
+                    return a.first < b.first;
+                });
+
+                for (const auto& pair : z_intensity_pairs) 
+                {
+                    z_values.push_back(pair.first);
+                    intensities.push_back(pair.second);
+                }
 
                 for (size_t j = 0; j < z_values.size() - 1; ++j)
                 {
@@ -42,36 +53,61 @@
 
                     if (difference > 0.01)
                     {
-                        double avgIntensity = std::accumulate(intensitiesInLayer.begin(), intensitiesInLayer.end(), 0.0) / intensitiesInLayer.size();
-                        avgIntensities.push_back(avgIntensity);
+                        double inten = std::accumulate(intensitiesInLayer.begin(), intensitiesInLayer.end(), 0.0) / intensitiesInLayer.size();
+                        layerIntensities.push_back(inten);
                         intensitiesInLayer.clear();
 
-                        std::cout << "Layer intensity: " << avgIntensity << std::endl;
+                        layers.push_back(z_values[j + 1]);
                     }
                 }
                 
-                if (avgIntensities.size() == 0) continue;
+                if (layerIntensities.size() == 0) continue;
 
-                double minI = *std::min_element(avgIntensities.begin(), avgIntensities.end());
-                double maxI = *std::max_element(avgIntensities.begin(), avgIntensities.end());
-                double globalIntensity = maxI - minI;
-                double avgGlobalIntensity = std::accumulate(avgIntensities.begin(), avgIntensities.end(), 0.0) / avgIntensities.size();
-                double deviation = avgGlobalIntensity - globalIntensity;
+                size_t n = layers.size();
 
-                std::cout << "Intensity difference: " << globalIntensity << std::endl;
-                std::cout << "Deviation: " << avgGlobalIntensity - globalIntensity << std::endl;
+                Eigen::MatrixXd A(n, 3);
+                Eigen::VectorXd b(n);
 
-                if (deviation < -10)
+                for (size_t k = 0; k < n; ++k) 
                 {
-                    center.color = 4;
-
-                    std::cout << "Color cambiado a: " << center.color << std::endl;    
+                    double x = layers[k];
+                    double y = layerIntensities[k];
+                    A(k, 0) = x * x;
+                    A(k, 1) = x;
+                    A(k, 2) = 1.0;
+                    b(k) = y;
                 }
-                else if (deviation > 10)
-                {
-                    center.color = 5;
 
-                    std::cout << "Color cambiado a: " << center.color << std::endl;    
+                Eigen::VectorXd coefficients = A.colPivHouseholderQr().solve(b);
+                double a = std::abs(coefficients(0));
+                a_id_pairs.emplace_back(a, i);
+
+                std::cout << "A " << a << std::endl;
+            }
+        }
+
+        double sum = std::accumulate(a_id_pairs.begin(), a_id_pairs.end(), 0.0, [](double acc, const std::pair<double, size_t>& p) 
+        {
+            return acc + p.first;
+        });
+        double globalA = sum / a_id_pairs.size();
+        std::cout << "Global a: " << globalA << std::endl;
+
+        for (size_t k = 0; k < clusters_centers.size(); ++k)
+        {
+            for (const auto& pair : a_id_pairs)
+            {
+                size_t id = pair.second;
+                if (k == id)
+                {
+                    if (pair.first > globalA + cte)
+                    {
+                        clusters_centers[k].color = 1;
+                    }
+                    else if (pair.first < globalA - cte)
+                    {
+                        clusters_centers[k].color = 2;
+                    }
                 }
             }
         }
@@ -79,7 +115,9 @@
 
     void color_estimation2(std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore>& clusters_centers, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered)
     {
-        double distance_threshold = 3.0;
+        double distance_threshold = 5.0;
+        std::vector<std::pair<double, size_t>> averages_id_pairs;
+        double cte = 15.0;
 
         for (size_t i = 0; i < clusters_centers.size(); ++i)
         {
@@ -91,17 +129,26 @@
             if (distance < distance_threshold)
             {
                 std::cout << "Distancia: " << distance << std::endl;
-                
-                std::vector<double> z_values, intensities, avgIntensities, intensitiesInLayer, layers;
+
+                std::vector<std::pair<double, double>> z_intensity_pairs;
+                std::vector<double> z_values, intensities, intensitiesInLayer, layerIntensities, layers, middle_i;
                 
                 for (const auto& index : indices.indices) 
                 {
                     const auto& point = cloud_filtered->points[index];
-                    z_values.push_back(point.z);
-                    intensities.push_back(point.intensity);
+                    z_intensity_pairs.emplace_back(point.z, point.intensity);
                 }
 
-                std::sort(z_values.begin(), z_values.end());
+                std::sort(z_intensity_pairs.begin(), z_intensity_pairs.end(), [](const std::pair<double, double>& a, const std::pair<double, double>& b) 
+                {
+                    return a.first < b.first;
+                });
+
+                for (const auto& pair : z_intensity_pairs) 
+                {
+                    z_values.push_back(pair.first);
+                    intensities.push_back(pair.second);
+                }
 
                 for (size_t j = 0; j < z_values.size() - 1; ++j)
                 {
@@ -110,344 +157,54 @@
 
                     if (difference > 0.01)
                     {
-                        double avgIntensity = std::accumulate(intensitiesInLayer.begin(), intensitiesInLayer.end(), 0.0) / intensitiesInLayer.size();
-                        avgIntensities.push_back(avgIntensity);
+                        double inten = std::accumulate(intensitiesInLayer.begin(), intensitiesInLayer.end(), 0.0) / intensitiesInLayer.size();
+                        layerIntensities.push_back(inten);
                         intensitiesInLayer.clear();
 
                         layers.push_back(z_values[j + 1]);
-
-                        std::cout << "Layer intensity: " << avgIntensity << std::endl;
                     }
                 }
                 
-                if (avgIntensities.size() == 0) continue;
+                if (layerIntensities.size() == 0) continue;
 
-                double avg = std::accumulate(intensities.begin(), intensities.end(), 0.0) / intensities.size();
+                size_t n = std::round(layers.size() / 3);
 
-                std::cout << "Average intensity: " << avg << std::endl;
-
-                /*size_t n = layers.size();
-                Eigen::MatrixXd A(n, 3);
-                Eigen::VectorXd b(n);
-
-                for (size_t k = 0; k < n; ++k) 
+                for (size_t k = n; k < 2 * n; ++k)
                 {
-                    double x = layers[k];
-                    double y = avgIntensities[k];
-                    A(k, 0) = x * x;
-                    A(k, 1) = x;
-                    A(k, 2) = 1.0;
-                    b(k) = y;
+                    middle_i.push_back(layerIntensities[k]);
                 }
 
-                Eigen::VectorXd coefficients = A.colPivHouseholderQr().solve(b);
-                double a = std::abs(coefficients(0));
+                if (middle_i.size() == 0) continue;
 
-                if (a > 1000)
-                {
-                    center.color = 1;
-                }
-                else if (a < 500)
-                {
-                    center.color = 2;
-                }
-
-                std::cout << "A " << coefficients(0) << std::endl;*/
-                
-                center.color = 1;
+                double average = std::accumulate(middle_i.begin(), middle_i.end(), 0.0) / middle_i.size();
+                averages_id_pairs.emplace_back(average, i);
+                std::cout << "Average: " << average << std::endl;
             }
         }
-    }
 
-    void color_estimation3(std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore>& clusters_centers, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered)
-    {
-        double distance_threshold = 3.0;
-
-        for (size_t i = 0; i < clusters_centers.size(); ++i)
+        double sum = std::accumulate(averages_id_pairs.begin(), averages_id_pairs.end(), 0.0, [](double acc, const std::pair<double, size_t>& p) 
         {
-            PointXYZColorScore& center = clusters_centers[i];
-            const auto& indices = cluster_indices[i];
+            return acc + p.first;
+        });
+        double globalAvg = sum / averages_id_pairs.size();
+        std::cout << "Global avg: " << globalAvg << std::endl;
 
-            double distance = std::sqrt(center.x * center.x + center.y * center.y + center.z * center.z);
-
-            if (distance < distance_threshold)
+        for (size_t k = 0; k < clusters_centers.size(); ++k)
+        {
+            for (const auto& pair : averages_id_pairs)
             {
-                std::cout << "Distancia: " << distance << std::endl;
-                
-                std::vector<double> z_values, intensities, avgIntensities, intensitiesInLayer, layers;
-                
-                for (const auto& index : indices.indices) 
+                size_t id = pair.second;
+                if (k == id)
                 {
-                    const auto& point = cloud_filtered->points[index];
-                    z_values.push_back(point.z);
-                    intensities.push_back(point.intensity);
-                }
-
-                std::sort(z_values.begin(), z_values.end());
-
-                for (size_t j = 0; j < z_values.size() - 1; ++j)
-                {
-                    double difference = z_values[j + 1] - z_values[j];
-                    intensitiesInLayer.push_back(intensities[j]);
-
-                    if (difference > 0.01)
+                    if (pair.first > globalAvg + cte)
                     {
-                        double avgIntensity = std::accumulate(intensitiesInLayer.begin(), intensitiesInLayer.end(), 0.0) / intensitiesInLayer.size();
-                        avgIntensities.push_back(avgIntensity);
-                        intensitiesInLayer.clear();
-
-                        layers.push_back(z_values[j + 1]);
-
-                        std::cout << "Layer intensity: " << avgIntensity << std::endl;
+                        clusters_centers[k].color = 1;
                     }
-                }
-                
-                if (avgIntensities.size() == 0) continue;
-
-                size_t n = layers.size();
-
-                double avgGlobalIntensity = std::accumulate(avgIntensities.begin(), avgIntensities.end(), 0.0) / avgIntensities.size();
-
-                for (size_t k = 0; k < n; ++k)
-                {
-                    if (avgIntensities[k] < 0.30 * avgGlobalIntensity)
+                    else if (pair.first < globalAvg - cte)
                     {
-                        avgIntensities.erase(avgIntensities.begin() + k);
-                        layers.erase(layers.begin() + k);
+                        clusters_centers[k].color = 2;
                     }
                 }
-
-                double minI = *std::min_element(avgIntensities.begin(), avgIntensities.end());
-                double maxI = *std::max_element(avgIntensities.begin(), avgIntensities.end());
-                double globalIntensity = maxI - minI;
-                double new_avgGlobalIntensity = std::accumulate(avgIntensities.begin(), avgIntensities.end(), 0.0) / avgIntensities.size();
-                double deviation = std::abs(new_avgGlobalIntensity - globalIntensity);
-                
-                for (double i : avgIntensities)
-                {
-                    std::cout << "Layer intesity after: " << i << std::endl;
-                }
-
-                std::cout << "Deviation: " << deviation << std::endl;
-
-                Eigen::MatrixXd A(n, 3);
-                Eigen::VectorXd b(n);
-
-                for (size_t k = 0; k < n; ++k) 
-                {
-                    double x = layers[k];
-                    double y = avgIntensities[k];
-                    A(k, 0) = x * x;
-                    A(k, 1) = x;
-                    A(k, 2) = 1.0;
-                    b(k) = y;
-                }
-
-                Eigen::VectorXd coefficients = A.colPivHouseholderQr().solve(b);
-                double a = std::abs(coefficients(0));
-
-                std::cout << "A " << coefficients(0) << std::endl;
-
-                if (deviation < 15 && a < 500)
-                {
-                    center.color = 1; 
-                }
-                else if (deviation > 15 && a > 1000)
-                {
-                    center.color = 2; 
-                }   
-            }
-        }
-    }
-
-    void color_estimation4(std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore>& clusters_centers, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered)
-    {
-        double distance_threshold = 3.0;
-        std::vector<double> avgs;
-        double coloring_threshold = 8.0;
-
-        for (size_t i = 0; i < clusters_centers.size(); ++i)
-        {
-            PointXYZColorScore& center = clusters_centers[i];
-            const auto& indices = cluster_indices[i];
-
-            double distance = std::sqrt(center.x * center.x + center.y * center.y + center.z * center.z);
-
-            if (distance < distance_threshold)
-            {
-                std::cout << "Distancia: " << distance << std::endl;
-                
-                std::vector<double> intensities;
-                
-                for (const auto& index : indices.indices) 
-                {
-                    const auto& point = cloud_filtered->points[index];
-                    intensities.push_back(point.intensity);
-                }
-
-                double avg = std::accumulate(intensities.begin(), intensities.end(), 0.0) / intensities.size();
-                avgs.push_back(avg);
-
-                intensities.clear();
-
-                std::cout << "Average intensity: " << avg << std::endl;
-            }
-        }
-
-        double global_avg = std::accumulate(avgs.begin(), avgs.end(), 0.0) / avgs.size();
-
-        std::cout << "Global average intensity: " << global_avg << std::endl;
-
-        for (size_t k = 0; k < avgs.size(); ++k)
-        {
-            if (avgs[k] > global_avg + coloring_threshold)
-            {
-                clusters_centers[k].color = 1;
-            }
-            else if (avgs[k] < global_avg - coloring_threshold)
-            {
-                clusters_centers[k].color = 2;
-            }
-        }
-    }
-
-    void color_estimation5(std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore>& clusters_centers, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered)
-    {
-        double distance_threshold = 3.0;
-        std::vector<double> avgLayers;
-        double coloring_threshold = 8.0;
-
-        for (size_t i = 0; i < clusters_centers.size(); ++i)
-        {
-            PointXYZColorScore& center = clusters_centers[i];
-            const auto& indices = cluster_indices[i];
-
-            double distance = std::sqrt(center.x * center.x + center.y * center.y + center.z * center.z);
-
-            if (distance < distance_threshold)
-            {
-                std::cout << "Distancia: " << distance << std::endl;
-                
-                std::vector<double> z_values, intensities, avgs, intensitiesInLayer;
-                
-                for (const auto& index : indices.indices) 
-                {
-                    const auto& point = cloud_filtered->points[index];
-                    z_values.push_back(point.z);
-                    intensities.push_back(point.intensity);
-                }
-
-                std::sort(z_values.begin(), z_values.end());
-
-                for (size_t j = 0; j < z_values.size() - 1; ++j)
-                {
-                    double difference = z_values[j + 1] - z_values[j];
-                    intensitiesInLayer.push_back(intensities[j]);
-
-                    if (difference > 0.01)
-                    {
-                        double avgIntensity = std::accumulate(intensitiesInLayer.begin(), intensitiesInLayer.end(), 0.0) / intensitiesInLayer.size();
-                        avgs.push_back(avgIntensity);
-                        intensitiesInLayer.clear();
-                    }
-                }
-
-                double avgLayer = std::accumulate(avgs.begin(), avgs.end(), 0.0) / avgs.size();
-                avgLayers.push_back(avgLayer);
-
-                std::cout << "Avg layer intensity: " << avgLayer << std::endl;
-            }
-        }
-
-        double global_avg = std::accumulate(avgLayers.begin(), avgLayers.end(), 0.0) / avgLayers.size();
-
-        std::cout << "Global layer intensity: " << global_avg << std::endl;
-
-        for (size_t k = 0; k < avgLayers.size(); ++k)
-        {
-            if (avgLayers[k] > global_avg + coloring_threshold)
-            {
-                clusters_centers[k].color = 1;
-            }
-            else if (avgLayers[k] < global_avg - coloring_threshold)
-            {
-                clusters_centers[k].color = 2;
-            }
-        }
-    }
-
-    void color_estimation45(std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore>& clusters_centers, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered)
-    {
-        double distance_threshold = 3.0;
-        std::vector<double> avgLayers, avgss;
-        double coloring_threshold = 8.0;
-
-        for (size_t i = 0; i < clusters_centers.size(); ++i)
-        {
-            PointXYZColorScore& center = clusters_centers[i];
-            const auto& indices = cluster_indices[i];
-
-            double distance = std::sqrt(center.x * center.x + center.y * center.y + center.z * center.z);
-
-            if (distance < distance_threshold)
-            {
-                std::cout << "Distancia: " << distance << std::endl;
-                
-                std::vector<double> z_values, intensities, avgs, intensitiesInLayer;
-                
-                for (const auto& index : indices.indices) 
-                {
-                    const auto& point = cloud_filtered->points[index];
-                    z_values.push_back(point.z);
-                    intensities.push_back(point.intensity);
-                }
-
-                double avgg = std::accumulate(intensities.begin(), intensities.end(), 0.0) / intensities.size();
-                avgss.push_back(avgg);
-
-                intensities.clear();
-
-                std::cout << "Average intensity: " << avgg << std::endl;
-
-                std::sort(z_values.begin(), z_values.end());
-
-                for (size_t j = 0; j < z_values.size() - 1; ++j)
-                {
-                    double difference = z_values[j + 1] - z_values[j];
-                    intensitiesInLayer.push_back(intensities[j]);
-
-                    if (difference > 0.01)
-                    {
-                        double avgIntensity = std::accumulate(intensitiesInLayer.begin(), intensitiesInLayer.end(), 0.0) / intensitiesInLayer.size();
-                        avgs.push_back(avgIntensity);
-                        intensitiesInLayer.clear();
-                    }
-                }
-
-                double avgLayer = std::accumulate(avgs.begin(), avgs.end(), 0.0) / avgs.size();
-                avgLayers.push_back(avgLayer);
-
-                std::cout << "Avg layer intensity: " << avgLayer << std::endl;
-            }
-        }
-
-        double global_avg = std::accumulate(avgLayers.begin(), avgLayers.end(), 0.0) / avgLayers.size();
-
-        std::cout << "Global layer intensity: " << global_avg << std::endl;
-
-        double global_avgg = std::accumulate(avgss.begin(), avgss.end(), 0.0) / avgss.size();
-
-        std::cout << "Global average intensity: " << global_avgg << std::endl;
-
-        for (size_t k = 0; k < avgLayers.size(); ++k)
-        {
-            if (avgLayers[k] > global_avg + coloring_threshold || avgss[k] > global_avgg + coloring_threshold)
-            {
-                clusters_centers[k].color = 1;
-            }
-            else if (avgLayers[k] < global_avg - coloring_threshold || avgss[k] < global_avgg - coloring_threshold)
-            {
-                clusters_centers[k].color = 2;
             }
         }
     }

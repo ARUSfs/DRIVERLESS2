@@ -63,7 +63,6 @@ class Perception : public rclcpp::Node
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_2;
-        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_3;
 
         /**
          * @brief Callback function for the lidar topic.
