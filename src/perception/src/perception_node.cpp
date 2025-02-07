@@ -27,7 +27,9 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<int>("number_sectors", 8);
     this->declare_parameter<double>("max_radius", 25);
     this->declare_parameter<int>("minimum_ransac_points", 30);
-    this->declare_parameter<double>("threshold_scoring", 0.4);
+    this->declare_parameter<double>("threshold_scoring", 0.8);
+    this->declare_parameter<double>("distance_threshold", 0.4);
+    this->declare_parameter<double>("coloring_threshold", 0.4);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
@@ -44,6 +46,8 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("max_radius", kMaxRadius);
     this->get_parameter("minimum_ransac_points", kMinimumRansacPoints);
     this->get_parameter("threshold_scoring", kThresholdScoring);
+    this->get_parameter("distance_threshold", kDistanceThreshold);
+    this->get_parameter("coloring_threshold", kColoringThreshold);
 
     //Transform into radians
     kHFov *= (M_PI/180);
@@ -206,7 +210,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     if (DEBUG) std::cout << "Scoring time: " << this->now().seconds() - start_time << std::endl;
 
     //Estime the color of the closest cones
-    ColorEstimation::color_estimation2(cluster_indices, clusters_centers, cloud_filtered);
+    ColorEstimation::color_estimation(cluster_indices, clusters_centers, cloud_filtered, kDistanceThreshold, kColoringThreshold);
 
     //Print the time of the color estimation function
     if (DEBUG) std::cout << "Color estimation time: " << this->now().seconds() - start_time << std::endl;

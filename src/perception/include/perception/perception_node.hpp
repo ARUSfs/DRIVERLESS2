@@ -54,6 +54,8 @@ class Perception : public rclcpp::Node
         double kRadius;
         int kMinimumRansacPoints;
         double kThresholdScoring;
+        double kDistanceThreshold;
+        double kColoringThreshold;
 
         //Subscriber
         std::string kLidarTopic;
