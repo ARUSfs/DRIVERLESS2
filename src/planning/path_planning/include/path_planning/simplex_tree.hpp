@@ -92,20 +92,31 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
     SimplexNode* node = new SimplexNode(index);
     CDT::Triangle triangle = triangle_list[index];     // Get the triangle from the index
     CDT::NeighborsArr3 neighbors = triangle.neighbors; // Get the neighbors of the triangle
-
     
     std::vector<int> valid_neighbors = {};
     for (int i = 0; i<3; i++){
         if (neighbors[i]>triangle_list.size()) continue; 
         
         CDT::Triangle n_triangle = triangle_list[neighbors[i]];
-        bool good = true;
+        std::vector<ConeXYZColorScore> next_edge = {};
+
         for (auto v: n_triangle.vertices){
-            if (in(v, passed_vertices)){
-                good = false;
+            if (!in(v, triangle.vertices)){
+                if (in(v, passed_vertices)){ // Check the neighbor doesn't contain any passed vertex
+                    next_edge.clear();
+                    break;
+                }
+            } else {
+                next_edge.push_back(cones_cloud_.points[v]);
             }
         }
-        if (good) valid_neighbors.push_back(neighbors[i]);
+        if (next_edge.size() == 2 &&
+            (next_edge[0].color == UNCOLORED ||  
+             next_edge[1].color == UNCOLORED || 
+             next_edge[0].color != next_edge[1].color) && // Check the edge is not colored or is colored with different colors
+             distance(next_edge[0], next_edge[1]) > 2.0){ // Check the edge is longer than 2.0 meters
+            valid_neighbors.push_back(neighbors[i]);
+        }
         
     }
     
