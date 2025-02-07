@@ -420,16 +420,16 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
     cones_count_actual_ = msg.cones_count_actual;
     cones_count_all_ = msg.cones_count_all;
 
-    if(as_status_ == 4){ // Finished
+    if(as_status_ == 5){ // Finished
         struct can_frame frame;
         frame.can_id = 0x202;             
         frame.can_dlc = 3;                
         frame.data[0] = 0x01;
         frame.data[1] = 0x01;
-        frame.data[2] = 0x03;
+        frame.data[2] = 0x03; // TODO: change to 0x05
 
         write(socketCan1, &frame, sizeof(struct can_frame));           
-    }else if(as_status_ == 4){ // Emergency
+    }else if(as_status_ == 4){ // Emergency 
         struct can_frame frame;
         frame.can_id = 0x202;             
         frame.can_dlc = 3;                

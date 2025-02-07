@@ -4,7 +4,7 @@
  */
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/int16.hpp"
+#include "std_msgs/msg/float32.hpp"
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/cmd.hpp"
 #include "inspection/PID.hpp"
@@ -22,7 +22,7 @@ private:
 
     // Callbacks
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
-    void as_status_callback(const std_msgs::msg::Int16::SharedPtr msg);
+    void as_status_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void on_timer();
 
     // Status AS
@@ -40,12 +40,12 @@ private:
 
     //Subscribers
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
-    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr as_status_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr as_status_sub_;
 
     //Timers
     rclcpp::TimerBase::SharedPtr timer_; 
     
     //Publishers
     rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_pub_;
-    rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr finish_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr finish_pub_;
 };
