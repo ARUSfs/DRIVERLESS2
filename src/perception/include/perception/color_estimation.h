@@ -147,29 +147,5 @@
                 clusters_centers[id].color = 2;
             }
         }
-
-        // Iterate on each center
-        /*for (size_t k = 0; k < clusters_centers.size(); ++k)
-        {
-            // Iterate on each average intensity - cone id pair
-            for (const auto& pair : averages_id)
-            {
-                // If the cone has one of the stores id we may reassign a new color to it
-                size_t id = pair.second;
-                if (k == id)
-                {
-                    // If the cone has a much larger intensity than the global average it means is a left cone
-                    if (pair.first > global_average_intensity + coloring_threshold)
-                    {
-                        clusters_centers[k].color = 1;
-                    }
-                    // If the cone has a much larger intensity than the global average it means is a right cone
-                    else if (pair.first < global_average_intensity - coloring_threshold)
-                    {
-                        clusters_centers[k].color = 2;
-                    }
-                }
-            }
-        }*/
     }
  }
