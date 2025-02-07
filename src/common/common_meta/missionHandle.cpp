@@ -100,7 +100,7 @@ void mission_loop()
                 {
                     // Si recibes un mensaje con ID 0x186 que no es HV_ON, puedes considerar que HV_ON está apagado
                     HV_ON = false;
-                    std::cout << "HV OFF" << std::endl;
+                    // std::cout << "HV OFF" << std::endl;
                 }
             }
             else if (id == 0x185 && data0 == 0x01)
