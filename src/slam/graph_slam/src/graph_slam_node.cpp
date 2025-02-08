@@ -11,6 +11,7 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->declare_parameter("max_pose_edges", 10000);
     this->declare_parameter("max_landmark_edges", 10000);
     this->declare_parameter("verbose", false);
+    this->declare_parameter("perception_topic", "/perception/map");
     this->get_parameter("finish_line_offset", kFinishLineOffset);
     this->get_parameter("track_width", kTrackWidth);
     this->get_parameter("min_lap_distance", kMinLapDistance);
@@ -18,6 +19,7 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->get_parameter("max_pose_edges", kMaxPoseEdges);
     this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
     this->get_parameter("verbose", kVerbose);
+    this->get_parameter("perception_topic", kPerceptionTopic);
 
     // TODO: test other solvers
     using SlamBlockSolver  = g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>>;
@@ -63,7 +65,7 @@ GraphSlam::GraphSlam() : Node("graph_slam")
 
     state_sub_ = this->create_subscription<common_msgs::msg::State>("/car_state/state", 10, 
                     std::bind(&GraphSlam::state_callback, this, std::placeholders::_1), collector_options);
-    perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/arussim/perception", 10,
+    perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(kPerceptionTopic, 10,
                     std::bind(&GraphSlam::perception_callback, this, std::placeholders::_1), collector_options);           
     // TODO: run optimizer depending on the number of edges/itereations
     optimizer_timer_ = this->create_wall_timer(std::chrono::milliseconds(1000),
