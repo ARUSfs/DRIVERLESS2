@@ -16,7 +16,7 @@ def generate_launch_description():
     # Record rosbag with mcap extension in steps of 20GB
     rosbag_record = ExecuteProcess(
         cmd=['ros2', 'bag', 'record', '-a', 
-             '-o', output_dir, '-s', 'mcap', '--max-bag-size', '20000000000'],
+             '-o', output_dir, '-s', 'mcap', '--max-bag-size', '10000000'],
         output='screen'
     )
 

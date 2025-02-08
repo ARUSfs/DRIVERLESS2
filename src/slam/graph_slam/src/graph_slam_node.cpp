@@ -143,7 +143,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
         //Extract the cone position
         ConeXYZColorScore cone = cloud.points[i];
 
-        observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_));
+        observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x+1.5, cone.y), vehicle_pose_));
     }
     
     DA.match_observations(observed_landmarks, unmatched_landmarks);
