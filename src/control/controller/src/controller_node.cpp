@@ -74,8 +74,8 @@ Controller::Controller() : Node("controller"),
         kTrajectoryTopic, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
     final_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         "/path_planning/final_trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
-    // optimized_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-    //     "/trajectory_optimization/trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
+    optimized_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
+        "/trajectory_optimization/trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
 
 
     // Publishers
@@ -143,10 +143,10 @@ void Controller::get_global_index() {
 
     
     // If the trajectory is not updated, the search starts from the last index
-    if(!new_trajectory_){
-        i = index_global_; 
-    }
-    new_trajectory_ = false;
+    // if(!new_trajectory_){
+    //     i = index_global_; 
+    // }
+    // new_trajectory_ = false;
 
     // Search for the closest point from the current position
     // N+10 and i%N is added to allow restarting loops (trackdrive)
