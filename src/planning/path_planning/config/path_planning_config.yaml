@@ -11,8 +11,8 @@ path_planning:
     color: true
 
     # Route parameters
-    len_coeff: 0.25
-    angle_coeff: 0.7
+    len_coeff: 0.01
+    angle_coeff: 1.0
     max_angle: 1.15
     route_back: 10
     prev_route_bias: 0.5

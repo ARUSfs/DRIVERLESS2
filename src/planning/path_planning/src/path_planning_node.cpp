@@ -1,19 +1,19 @@
 /**
  * @file path_planning_node.cpp
  * @author Ignacio Sánchez Isidro (igsais12@gmail.com)
- * @brief Main file for the Path Planning node. Contains the main function and the implementation 
- * of the methods to achieve a robust and reliable path planning algorithm for the ARUS Team 
+ * @brief Main file for the Path Planning node. Contains the main function and the implementation
+ * of the methods to achieve a robust and reliable path planning algorithm for the ARUS Team
  * which extracts the midpoints of the track that the ART will follow.
  * @version 0.1
  * @date 29-10-2024
- * 
+ *
  */
 #include "path_planning/path_planning_node.hpp"
 
 PathPlanning::PathPlanning() : Node("path_planning")
 {
     this->declare_parameter<std::string>("map_topic", "/slam/map");
-    this->declare_parameter<std::string>("triangulation_topic", "/path_planning/triangulation"); 
+    this->declare_parameter<std::string>("triangulation_topic", "/path_planning/triangulation");
     this->declare_parameter<std::string>("trajectory_topic", "/path_planning/trajectory");
     this->declare_parameter<std::string>("points_to_optimize_topic", "/path_planning/midpoints_to_optimize");
     this->declare_parameter<double>("max_tri_len", 7);
@@ -60,7 +60,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
 }
 
 void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
-{   
+{
     // Save the point cloud as a pcl object from ROS2 msg
     pcl::fromROSMsg(*per_msg, pcl_cloud_);
 
@@ -76,7 +76,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     } else {
         pcl_cloud_.push_back(ConeXYZColorScore(0, 0, 0, UNCOLORED, 1));
     }
-
+    
     // Create the triangulation
     CDT::Triangulation<double> triangulation;
     triangulation = this->create_triangulation(pcl_cloud_);
@@ -101,6 +101,11 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
     std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
     triangle_routes_ = {};
+
+
+    // Get the straightest triangle from the origin
+    int straight_triangle_index;
+    double min_corrected_angle_diff = INFINITY;
     for (int i = 0; i<o_triangles.size(); i++){
         CDT::V2d<double> centroid = compute_centroid(o_triangles[i], triangles_, vertices_);
         double angle_diff;
@@ -110,34 +115,41 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
             angle_diff = abs(atan2(centroid.y, centroid.x));
         }
         double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
-        if (corrected_angle_diff > M_PI/2){
-            continue;
+        if (corrected_angle_diff < min_corrected_angle_diff){
+            min_corrected_angle_diff = corrected_angle_diff;
+            straight_triangle_index=i;
         }
-        SimplexTree tree(triangles_, o_triangles[i], o_triangles);
-        for (int j = 0; j<tree.index_routes.size(); j++){
-            triangle_routes_.push_back(tree.index_routes[j]);
-        }
+    }
+    SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index, pcl_cloud_);
+    std::cout << "----------" << tree.index_routes_.size() << "----------" << std::endl;
+    for (int j = 0; j<tree.index_routes_.size(); j++){
+        triangle_routes_.push_back(tree.index_routes_[j]);
     }
 
     // Transform the triangles routes to midpoints routes
     midpoint_routes_ = {};
     this->get_midpoint_routes();
+    std::cout << "**********" << midpoint_routes_.size() << "**********" << std::endl;
 
     // Get the cost of each route
     if(midpoint_routes_.size()==0){ // Return if there are no routes
         return;
+    } else if (midpoint_routes_.size()==1){ // Return the only route if there is only one
+        best_midpoint_route_ = midpoint_routes_[0];
+    } else {
+       int best_route_ind = 0;
+        double min_cost = INFINITY;
+        for (int i = 0; i<midpoint_routes_.size(); i++){
+            double cost = this->get_route_cost(midpoint_routes_[i]);
+            if (cost < min_cost){
+                min_cost = cost;
+                best_route_ind = i;
+            }
+        }
+        best_midpoint_route_ = midpoint_routes_[best_route_ind];
     }
 
-    int best_route_ind = 0;
-    double min_cost = INFINITY;
-    for (int i = 0; i<midpoint_routes_.size(); i++){
-        double cost = this->get_route_cost(midpoint_routes_[i]);
-        if (cost < min_cost){
-            min_cost = cost;
-            best_route_ind = i;
-        }
-    }
-    best_midpoint_route_ = midpoint_routes_[best_route_ind];
+
 
     std::vector<CDT::V2d<double>> final_route;
 
@@ -155,7 +167,10 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
     // Publish the best trajectory
     trajectory_pub_ -> publish(this->create_trajectory_msg(final_route));
-    
+
+    std::cout << std::endl;
+    std::cout << std::endl;
+
 }
 
 void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr state_msg)
@@ -214,29 +229,19 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
 
         // Delete triangles with long edges or big angles (except the ones with the origin vertex)
         // and triangles with the same color
-        if (lap_count_ > 0) {
-            if (a.color == b.color and b.color == c.color){
-                deleted_tri.insert(i);
-            } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
-                deleted_tri.insert(i);
-            }
+        if (lap_count_==0 && ((a.x == origin_.x and a.y == origin_.y) or     // Check if the origin vertex is
+                                (b.x == origin_.x and b.y == origin_.y) or    // in the triangle and skip it
+                                (c.x == origin_.x and c.y == origin_.y))){     // (origin vertex is the car position)
             continue;
-        } else {
-            if (a.color != UNCOLORED and a.color == b.color and b.color == c.color){
-                deleted_tri.insert(i);
-            }
         }
-        if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
+
+        if (a.color != UNCOLORED and a.color == b.color and b.color == c.color){
             deleted_tri.insert(i);
-        } else if ((a.x == origin_.x and a.y == origin_.y) or     // Check if the origin vertex is
-                    (b.x == origin_.x and b.y == origin_.y) or    // in the triangle and skip it
-                    (c.x == origin_.x and c.y == origin_.y)){     // (origin vertex is the car position)
-            continue;
-        } else if (a.color != UNCOLORED and b.color != UNCOLORED and c.color != UNCOLORED){
-            continue;
+        } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
+            deleted_tri.insert(i);
         } else if (a_angle > kMaxTriAngle or b_angle > kMaxTriAngle or c_angle > kMaxTriAngle){
             deleted_tri.insert(i);
-        } 
+        }
     }
     triangulation.removeTriangles(deleted_tri);
     return triangulation;
@@ -318,11 +323,11 @@ void PathPlanning::get_midpoint_routes(){
             CDT::Edge share_edge = this->get_share_edge(triangle, next_triangle);
             CDT::VertInd v1 = share_edge.v1();
             CDT::VertInd v2 = share_edge.v2();
-            if (kColor and (pcl_cloud_[v1].color != UNCOLORED) and 
+            if (kColor and (pcl_cloud_[v1].color != UNCOLORED) and
                            (pcl_cloud_[v1].color == pcl_cloud_[v2].color)){
                 break;
             }
-            CDT::V2d<double> midpoint = CDT::V2d<double>::make((vertices_[v1].x+vertices_[v2].x)/2, 
+            CDT::V2d<double> midpoint = CDT::V2d<double>::make((vertices_[v1].x+vertices_[v2].x)/2,
                                                                (vertices_[v1].y+vertices_[v2].y)/2);
             mid_route.push_back(midpoint);
         }
@@ -334,32 +339,19 @@ void PathPlanning::get_midpoint_routes(){
 }
 
 double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
-    // Initialize the cost to 0
-    double route_cost = 0;
     int route_size = route.size();
     double angle_forward;
-    if (route_size < 3){
+    if (route_size < 4){
         return INFINITY;
     }
-    // Check if the route is looking forward (angle difference with the yaw is less than pi/2 radians)
-    if (lap_count_ == 0){
-        angle_forward = abs(atan2(route[1].y-y_, route[1].x-x_)-yaw_);
-    } else {
-        angle_forward = abs(atan2(route[1].y, route[1].x));
-    }
-    double corrected_angle_forward = std::min(angle_forward, 2*M_PI-angle_forward);
-    bool route_looking_forward = corrected_angle_forward < M_PI/2;
-    if (!route_looking_forward){
-        return INFINITY;
-    }
-
+   
     // Initialize the properties of the route
     double route_length = CDT::distance(route[0], route[1]);
     double angle_diff_sum = 0;
 
     // Store the route while iterating
     std::vector<CDT::V2d<double>> route_out = {CDT::V2d<double>::make(x_, y_)};
-    
+
     // Iterate over the route and calculate the cost
     for (int i = 0; i<route_size-2;i++){
         route_length += CDT::distance(route[i+1], route[i+2]);
@@ -369,16 +361,23 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
         route_out.push_back(route[i+1]);
 
         // If the angle is too big, cut the route and return the cost
-        if (corrected_angle_diff > kMaxAngle){
-            angle_diff_sum += angle_diff;
-            route = route_out;           // Cut the route
-            return kAngleCoeff*angle_diff_sum-kLenCoeff*route_length;
-        } else{
-            angle_diff_sum += angle_diff;
-        }
-    }
+        // if (corrected_angle_diff > kMaxAngle){
+        //     angle_diff_sum += angle_diff;
+        //     route = route_out;           // Cut the route
+        //     return kAngleCoeff*angle_diff_sum-kLenCoeff*route_length;
+        // } else{
 
-    route_cost += kAngleCoeff*angle_diff_sum - kLenCoeff*route_length; // Curvature
+        // if (corrected_angle_diff > M_PI/6) angle_diff_sum += corrected_angle_diff;
+        if (corrected_angle_diff > M_PI/6) angle_diff_sum += 3*pow(corrected_angle_diff-M_PI/6, 2)+1; // f(x) =
+        // std::cout << "Angle diff: " << corrected_angle_diff << std::endl;
+
+    }
+    // std::cout << "Route length: " << route_length << std::endl;
+    // std::cout << "Angle diff sum: " << angle_diff_sum << std::endl;
+
+    double route_cost = kAngleCoeff*angle_diff_sum - kLenCoeff*route_length; // Curvature
+    // std::cout << "Route cost: " << route_cost << std::endl;
+    // std::cout << ".................." << std::endl;
     return route_cost;
 }
 
@@ -394,7 +393,7 @@ std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
     // Create a list of the last routes
     std::vector<std::vector<CDT::V2d<double>>> last_routes(previous_midpoint_routes_.end()-kRouteBack-1,
                                                            previous_midpoint_routes_.end()-1);
-    
+
     // Count the number of points in the last routes that are in the final route
     int route_count = 0;
     int total_points = 0;
@@ -403,7 +402,7 @@ std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
         route_count += point_count;
         total_points += last_routes[i].size();
     }
-    
+
     // Create threshold to validate last route based on previous route lengths
     double threshold = total_points*kPrevRouteBias;
     // If the route is validated, return it and add to previous routes.
@@ -454,7 +453,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
 
     Eigen::Spline<double, 2> b_spline = Eigen::SplineFitting<Eigen::Spline<double, 2>>::Interpolate(
         control_points, degree);
-    
+
     // Add the points to the trajectory message
     for (double i = 0; i<route_size*10-1; i++){
         Eigen::Vector2d point_1 = b_spline(i/(10*route_size));
@@ -531,7 +530,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT
         trajectory_msg.speed_profile.push_back(speed_profile[i]);
         trajectory_msg.acc_profile.push_back(acc_profile[i]);
     }
-    
+
     return trajectory_msg;
 }
 

@@ -6,6 +6,9 @@
  * 
  * @date 17-01-2025
  */
+
+#pragma once
+
 #include <cmath>
 #include <iostream>
 
@@ -67,4 +70,17 @@ CDT::V2d<double> compute_centroid(int triangle_ind, CDT::TriangleVec triangles, 
     c = vertices[c_ind];
     CDT::V2d<double> centroid = CDT::V2d<double>::make((a.x+b.x+c.x)/3, (a.y+b.y+c.y)/3);
     return centroid;
+}
+
+template <typename T>
+bool in(const T& value, const std::vector<T>& container) {
+    return std::find(container.begin(), container.end(), value) != container.end();
+}
+
+bool in(unsigned int& value, CDT::VerticesArr3& container) {
+    return std::find(container.begin(), container.end(), value) != container.end();
+}
+
+bool in(unsigned int& value, std::vector<int>& container) {
+    return std::find(container.begin(), container.end(), value) != container.end();
 }
