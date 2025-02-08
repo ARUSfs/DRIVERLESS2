@@ -428,7 +428,11 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
         frame.data[1] = 0x01;
         frame.data[2] = 0x03; // TODO: change to 0x05
 
-        write(socketCan1, &frame, sizeof(struct can_frame));           
+        write(socketCan1, &frame, sizeof(struct can_frame));  
+
+        std::string kill_command = "./home/arus/ws/src/DRIVERLESS2/src/common/common_meta/killer.sh";
+        int ret1 = system(kill_command.c_str());
+
     }else if(as_status_ == 4){ // Emergency 
         struct can_frame frame;
         frame.can_id = 0x202;             
@@ -438,6 +442,9 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
         frame.data[2] = 0x04;
 
         write(socketCan1, &frame, sizeof(struct can_frame));   
+
+        std::string kill_command = "./home/arus/ws/src/DRIVERLESS2/src/common/common_meta/killer.sh";
+        int ret2 = system(kill_command.c_str());
     }
 }
 
