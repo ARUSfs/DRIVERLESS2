@@ -31,7 +31,7 @@ namespace Clustering
 
         //configure the algorithm
         pcl::EuclideanClusterExtraction<pcl::PointXYZI> extraction;
-        extraction.setClusterTolerance(0.4);
+        extraction.setClusterTolerance(0.6);
         extraction.setMinClusterSize(4);
         extraction.setMaxClusterSize(200);
         extraction.setSearchMethod(tree);
