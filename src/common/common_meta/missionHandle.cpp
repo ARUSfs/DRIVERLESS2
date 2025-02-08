@@ -18,7 +18,7 @@ bool running = true; // Variable para controlar la ejecución del programa
 int socket_can_rx = -1;
 int socket_can_tx = -1;
 uint8_t mission;
-std::string baseCommand = "ros2 launch common_meta ";
+std::string baseCommand = "bash -c \'ros2 launch common_meta ";
 
 
 const std::string CAN_INTERFACE_RX = "can0"; // Interfaz CAN para recibir mensajes
@@ -59,16 +59,17 @@ void launchMission()
                 return;
         }
 
+        command += "\'";
+
         printf("Launching mission: %s\n", command.c_str());
         int ret = system(command.c_str());
-
         if (ret == 0)
         {
-            printf("Mission launched succesfully\n");
+            std::cout << "Mission launched succesfully" << std::endl;
         }
         else
         {
-            printf("Error launching mission\n");
+            std::cout << "Error launching mission" << std::endl;
         }
     });
 }
@@ -93,27 +94,27 @@ void mission_loop()
                 if (data0 == 0x00 && data1 == 0x0F)
                 {
                     HV_ON = true;
-                    printf("HV ON\n");
+                    std::cout << "HV ON" << std::endl;
                 }
                 else
                 {
                     // Si recibes un mensaje con ID 0x186 que no es HV_ON, puedes considerar que HV_ON está apagado
                     HV_ON = false;
-                    printf("HV OFF\n");
+                    // std::cout << "HV OFF" << std::endl;
                 }
             }
             else if (id == 0x185 && data0 == 0x01)
             {
                 if (HV_ON)
                 {
-                    printf("Mission received\n");
+                    std::cout << "Mission received" << std::endl;
                     mission = data1;
                     launchMission();
                     // No cerrar sockets ni salir del bucle
                 }
                 else
                 {
-                    printf("Mission received but HV OFF. Ignoring mission.\n");
+                    std::cout << "Mission received but HV OFF. Ignoring mission." << std::endl;
                 }
             }
         }

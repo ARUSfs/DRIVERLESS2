@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Buscar los PIDs de todos los procesos relacionados con ros2
-processes=$(ps aux | grep -E '_exec|rviz|ros2' | grep -v grep)
+processes=$(ps aux | grep -E '_exec|rviz|ros2|missionHandle' | grep -v grep)
 
 # Si encontramos algún proceso, los mostramos y los matamos
 if [ -n "$processes" ]; then
