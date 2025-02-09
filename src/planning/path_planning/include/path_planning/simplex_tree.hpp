@@ -35,11 +35,18 @@ class SimplexTree {
      */
     std::vector<std::vector<int>> index_routes_;
 
+    /**
+     * @brief Array of arrays containing the midpoints of the edges in the routes.
+     * 
+     */
     std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
 
     /**
      * @brief Construct a new generic tree object.
-     * @param key int index of the triangle.
+     * @param triangle_list triangulation.triangles object containing all the triangles.
+     * @param origin index of the origin triangle.
+     * @param orig_vertex index of the origin vertex.
+     * @param cones_cloud pcl::PointCloud object containing the cones in the map.
      */
     SimplexTree(CDT::TriangleVec triangle_list, int origin, int orig_vertex, 
                                     pcl::PointCloud<ConeXYZColorScore> cones_cloud);
