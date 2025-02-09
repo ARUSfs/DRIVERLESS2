@@ -55,7 +55,7 @@ Perception::Perception() : Node("Perception")
     vx = 0.0;
     vy = 0.0;
     yaw_rate = 0.0;
-    dt = 0.01;
+    dt = 0.1;
     cluster_buffer.clear();
     center_buffer.clear();
 
@@ -172,9 +172,9 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
 
 void Perception::rigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
                               double vx, double vy, double yaw_rate, double dt) {
-    double delta_x = vx * dt;
-    double delta_y = vy * dt;
-    double delta_theta = yaw_rate * dt;
+    double delta_x = -vx * dt;
+    double delta_y = -vy * dt;
+    double delta_theta = -yaw_rate * dt;
 
     Eigen::Matrix4f transformation = Eigen::Matrix4f::Identity();
     transformation(0, 0) = cos(delta_theta);
