@@ -54,6 +54,7 @@ class SimplexTree {
      * @param visited array containing the visited triangle in the current route.
      * @param passed_vertices array containing the vertices that have been passed 
      * so any triangle containing them is not visited.
+     * @param mid_route array containing the midpoints of the edges in the route.
      * @return SimplexNode* pointer to the created tree.
      */
     SimplexNode* create_tree_aux(CDT::TriangleVec triangle_list, int index, 

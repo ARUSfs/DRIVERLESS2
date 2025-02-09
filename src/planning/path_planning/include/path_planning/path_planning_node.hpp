@@ -59,7 +59,6 @@ class PathPlanning : public rclcpp::Node
         double kMaxTriAngle;
         double kLenCoeff;
         double kAngleCoeff;
-        double kMaxAngle;
         double kMaxVel;
         double kMaxYAcc;
         double kMaxXAcc;
@@ -100,7 +99,7 @@ class PathPlanning : public rclcpp::Node
         std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
         std::vector<ConeXYZColorScore> best_midpoint_route_;
         std::vector<std::vector<ConeXYZColorScore>> previous_midpoint_routes_;
-        int invalid_counter=0;
+        int invalid_counter_=0;
 
         /**
          * @brief Callback function for the perception topic.
@@ -111,7 +110,10 @@ class PathPlanning : public rclcpp::Node
          */
         void map_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg);
 
-
+        /**
+         * @brief Callback funtion to actualize lap counter.
+         * @param lap_msg int16 message containing the lap count.
+         */
         void lap_count_callback(std_msgs::msg::Int16::SharedPtr lap_msg);
 
         /**
@@ -121,6 +123,11 @@ class PathPlanning : public rclcpp::Node
          */
         void car_state_callback(common_msgs::msg::State::SharedPtr state_msg);
         
+        /**
+         * @brief Callback function for the optimizer topic.
+         * Shutdown the node when a message is received from the optimizer.
+         * @param optimizer_msg Common_msgs message containing the optimized trajectory.
+         */
         void optimizer_callback(common_msgs::msg::Trajectory::SharedPtr optimizer_msg);
 
         /**

@@ -20,7 +20,6 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("max_tri_angle", 2.9);
     this->declare_parameter<double>("len_coeff", 1.0);
     this->declare_parameter<double>("angle_coeff", 1.0);
-    this->declare_parameter<double>("max_angle", M_PI);
     this->declare_parameter<double>("v_max", 10.0);
     this->declare_parameter<double>("ay_max", 5.0);
     this->declare_parameter<double>("ax_max", 5.0);
@@ -36,7 +35,6 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("max_tri_angle", kMaxTriAngle);
     this->get_parameter("len_coeff", kLenCoeff);
     this->get_parameter("angle_coeff", kAngleCoeff);
-    this->get_parameter("max_angle", kMaxAngle);
     this->get_parameter("v_max", kMaxVel);
     this->get_parameter("ay_max", kMaxYAcc);
     this->get_parameter("ax_max", kMaxXAcc);
@@ -290,7 +288,7 @@ double PathPlanning::get_route_cost(std::vector<ConeXYZColorScore> &route){
     if (route_size < 4){
         return INFINITY;
     }
-   
+
     // Initialize the properties of the route
     double route_length = distance(route[0], route[1]);
     double angle_diff_sum = 0;
@@ -334,11 +332,11 @@ std::vector<ConeXYZColorScore> PathPlanning::get_final_route(){
     double threshold = total_points*kPrevRouteBias;
     // If the route is validated, return it and add to previous routes.
     if (route_count > threshold){
-        invalid_counter = 0;
+        invalid_counter_ = 0;
         return final_route;
     } else {   // Otherwise, return the previous route
-        invalid_counter++;
-        return previous_midpoint_routes_[previous_midpoint_routes_.size() - 1 - invalid_counter];
+        invalid_counter_++;
+        return previous_midpoint_routes_[previous_midpoint_routes_.size() - 1 - invalid_counter_];
     }
 }
 
