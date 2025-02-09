@@ -55,6 +55,7 @@ Perception::Perception() : Node("Perception")
     vx = 0.0;
     vy = 0.0;
     yaw_rate = 0.0;
+    dt = 0.01;
     cluster_buffer.clear();
     center_buffer.clear();
 
@@ -169,7 +170,7 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
     }
 }
 
-void applyRigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
+void Perception::rigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
                               double vx, double vy, double yaw_rate, double dt) {
     double delta_x = vx * dt;
     double delta_y = vy * dt;
@@ -198,37 +199,43 @@ void Perception::accumulate_clusters(std::vector<pcl::PointCloud<pcl::PointXYZI>
     clusters_centers, int kBufferSize, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& final_clusters, std::vector<PointXYZColorScore>& final_centers,
     double AccumulationThreshold)
 {
-    // Store the clusters in the buffer
-    if (cluster_buffer.size() >= static_cast<size_t>(kBufferSize))
-    {
+    // Remove the oldest cluster if buffer is full
+    if (cluster_buffer.size() >= static_cast<size_t>(kBufferSize)) {
         cluster_buffer.pop_front();
-    }
-    cluster_buffer.push_back(cluster_points);
-
-    // Store the centers in the buffer
-    if (center_buffer.size() >= static_cast<size_t>(kBufferSize))
-    {
         center_buffer.pop_front();
     }
+    
+    // Add the newest frame 
+    cluster_buffer.push_back(cluster_points);
     center_buffer.push_back(clusters_centers);
 
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> all_clusters;
     std::vector<PointXYZColorScore> all_centers;
 
-    for (size_t i = 0; i < center_buffer.size(); ++i)
-    {
+    // Iterate over all stored frames (except the latest one)
+    for (size_t i = 0; i < center_buffer.size() - 1; ++i) {  
         const auto& centers = center_buffer[i];
-        const auto& clusters = cluster_buffer[i];
+        auto& clusters = cluster_buffer[i]; 
 
-        for (size_t j = 0; j < centers.size(); ++j)
-        {
+        for (size_t j = 0; j < centers.size(); ++j) {
+            rigidTransformation(clusters[j], vx, vy, yaw_rate, dt);
             all_centers.push_back(centers[j]);
             all_clusters.push_back(clusters[j]);
         }
     }
 
+    // Process the last frame
+    const auto& latest_centers = center_buffer.back();
+    const auto& latest_clusters = cluster_buffer.back();
+    
+    for (size_t j = 0; j < latest_centers.size(); ++j) {
+        all_centers.push_back(latest_centers[j]);
+        all_clusters.push_back(latest_clusters[j]);
+    }
+
     std::vector<bool> merged(all_clusters.size(), false);
 
+    // Merging clusters based on distance threshold
     for (size_t k = 0; k < all_centers.size(); ++k)
     {
         if (merged[k]) continue;
@@ -323,7 +330,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //transformation(0, 3) = car_x;
     //transformation(1, 3) = car_y;
 
-    // Apply the transformation+
+    // Apply the transformation
     //pcl::transformPointCloud(*cloud_filtered, *cloud_filtered, transformation);
 
     //Extract the clusters from the point cloud
@@ -363,6 +370,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Perception::accumulate_clusters(cluster_points, clusters_centers, kBufferSize, final_clusters, final_centers,
     kAccumulationThreshold);
 
+    // Merge clusters into a single point cloud
     int i = 0;
     pcl::PointCloud<pcl::PointXYZI>::Ptr clusters_cloud(new pcl::PointCloud<pcl::PointXYZI>);
     for (auto c : final_clusters)

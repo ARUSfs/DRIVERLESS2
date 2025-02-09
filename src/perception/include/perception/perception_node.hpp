@@ -65,6 +65,7 @@ class Perception : public rclcpp::Node
         double vx;
         double vy;
         double yaw_rate;
+        double dt;
         std::deque<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>> cluster_buffer;
         std::deque<std::vector<PointXYZColorScore>> center_buffer;
 
@@ -127,7 +128,7 @@ class Perception : public rclcpp::Node
         * @param yaw_rate Yaw rate of the car.
         * @param dt Time interval.
         */
-        void applyRigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
+        void rigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
                                       double vx, double vy, double yaw_rate, double dt);
 
         /**

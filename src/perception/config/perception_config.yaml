@@ -2,6 +2,7 @@ perception:
   ros__parameters:
     #Topic
     lidar_topic: "/rslidar_points"
+    state_topic: "/car_state/state"
 
     #Parameters of FOV
     max_x_fov: 30.0
