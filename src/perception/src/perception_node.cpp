@@ -52,9 +52,9 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("buffer_size", kBufferSize);
 
     // Initialize the variables
-    car_x = 0.0;
-    car_y = 0.0;
-    car_yaw = 0.0;
+    vx = 0.0;
+    vy = 0.0;
+    yaw_rate = 0.0;
     cluster_buffer.clear();
     center_buffer.clear();
 
@@ -169,6 +169,23 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
     }
 }
 
+void applyRigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
+                              double vx, double vy, double yaw_rate, double dt) {
+    double delta_x = vx * dt;
+    double delta_y = vy * dt;
+    double delta_theta = yaw_rate * dt;
+
+    Eigen::Matrix4f transformation = Eigen::Matrix4f::Identity();
+    transformation(0, 0) = cos(delta_theta);
+    transformation(0, 1) = -sin(delta_theta);
+    transformation(1, 0) = sin(delta_theta);
+    transformation(1, 1) = cos(delta_theta);
+    transformation(0, 3) = delta_x;
+    transformation(1, 3) = delta_y;
+
+    pcl::transformPointCloud(*cloud, *cloud, transformation);
+}
+
 /**
 * @brief Accumulate the custers of the last 5 frames.
 * @param cluster_points The points of the clusters.
@@ -181,7 +198,7 @@ void Perception::accumulate_clusters(std::vector<pcl::PointCloud<pcl::PointXYZI>
     clusters_centers, int kBufferSize, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& final_clusters, std::vector<PointXYZColorScore>& final_centers,
     double AccumulationThreshold)
 {
-    // Store the clusters in the buffer+
+    // Store the clusters in the buffer
     if (cluster_buffer.size() >= static_cast<size_t>(kBufferSize))
     {
         cluster_buffer.pop_front();
@@ -260,9 +277,9 @@ void Perception::accumulate_clusters(std::vector<pcl::PointCloud<pcl::PointXYZI>
 */
 void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_msg)
 {
-    car_x = state_msg->x;
-    car_y = state_msg->y;
-    car_yaw = state_msg->yaw;
+    vx = state_msg->vx;
+    vy = state_msg->vy;
+    yaw_rate = state_msg->r;
 }
 
 
@@ -296,18 +313,18 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
 
     // Define the base for the transformation matrx
-    Eigen::Matrix4f transformation = Eigen::Matrix4f::Identity();
+    //Eigen::Matrix4f transformation = Eigen::Matrix4f::Identity();
 
     // Adjust the transformation matrix
-    transformation(0, 0) = std::cos(car_yaw);
-    transformation(0, 1) = -std::sin(car_yaw);
-    transformation(1, 0) = std::sin(car_yaw);
-    transformation(1, 1) = std::cos(car_yaw);
-    transformation(0, 3) = car_x;
-    transformation(1, 3) = car_y;
+    //transformation(0, 0) = std::cos(car_yaw);
+    //transformation(0, 1) = -std::sin(car_yaw);
+    //transformation(1, 0) = std::sin(car_yaw);
+    //transformation(1, 1) = std::cos(car_yaw);
+    //transformation(0, 3) = car_x;
+    //transformation(1, 3) = car_y;
 
     // Apply the transformation+
-    pcl::transformPointCloud(*cloud_filtered, *cloud_filtered, transformation);
+    //pcl::transformPointCloud(*cloud_filtered, *cloud_filtered, transformation);
 
     //Extract the clusters from the point cloud
     std::vector<pcl::PointIndices> cluster_indices;

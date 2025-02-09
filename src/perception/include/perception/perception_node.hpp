@@ -62,9 +62,9 @@ class Perception : public rclcpp::Node
         int kBufferSize;
 
         // Variables
-        double car_x;
-        double car_y;
-        double car_yaw;
+        double vx;
+        double vy;
+        double yaw_rate;
         std::deque<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>> cluster_buffer;
         std::deque<std::vector<PointXYZColorScore>> center_buffer;
 
@@ -118,6 +118,17 @@ class Perception : public rclcpp::Node
         * @param state_msg The information received from the car state node.
         */
         void state_callback(common_msgs::msg::State::SharedPtr state_msg);
+
+        /**
+        * @brief Function to apply rigid transformation to a point cloud
+        * @param cloud Points of the cloud.
+        * @param vx  Linear velocities along X.
+        * @param vy  Linear velocities along Y.
+        * @param yaw_rate Yaw rate of the car.
+        * @param dt Time interval.
+        */
+        void applyRigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
+                                      double vx, double vy, double yaw_rate, double dt);
 
         /**
         * @brief Auxiliar function for the lidar call back function.
