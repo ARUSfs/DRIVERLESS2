@@ -8,10 +8,13 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     return LaunchDescription([
-        create_node(pkg='acc_planning'),
+        create_node(pkg='acc_planning',
+                    params=[{'target_speed': 10.0,
+                             'min_acc': 5.0,
+                             'max_dec': 5.0,
+                             'track_length': 75.0}]),
         create_node(pkg='controller',
                     params=[{'trajectory': "/acc_planning/trajectory",
-                             'target': 10.0,
                              'min_cmd': -100.0,
                              'max_cmd': 100.0}]),
         create_node(pkg='visualization'),

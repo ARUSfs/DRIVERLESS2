@@ -8,7 +8,14 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     return LaunchDescription([
-        create_node(pkg='skidpad_planning'),
+        create_node(pkg='skidpad_planning',
+                    params=[{'target_first_lap': 5.0, 
+                    'target_second_lap': 10.0,
+                    'top_accx_forwards': 5.0,
+                    'top_accx_backwards': 7.0,
+                    'top_accy': 6.0,
+                    'step_width_1': 0.0,
+                    'step_width_2': 0.0}]),
         create_node(pkg='controller',
                     params=[{'trajectory': "/skidpad_planning/trajectory",
                              'target': 10.0,

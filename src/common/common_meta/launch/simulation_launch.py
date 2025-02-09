@@ -8,7 +8,10 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     return LaunchDescription([
-        create_node(pkg='path_planning'),
+        create_node(pkg='path_planning',
+                    params=[{'v_max': 5.0,
+                             'ax_max': 3.0,
+                             'ay_max': 3.0}]),
         create_node(pkg='controller',
                     params=[{'min_cmd': -100.0,
                              'max_cmd': 100.0}]),
