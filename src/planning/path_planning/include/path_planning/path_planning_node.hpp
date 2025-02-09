@@ -97,10 +97,9 @@ class PathPlanning : public rclcpp::Node
         CDT::Triangulation<double>::V2dVec vertices_;
         
         // Routes
-        std::vector<std::vector<int>> triangle_routes_;
-        std::vector<std::vector<CDT::V2d<double>>> midpoint_routes_;
-        std::vector<CDT::V2d<double>> best_midpoint_route_;
-        std::vector<std::vector<CDT::V2d<double>>> previous_midpoint_routes_;
+        std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
+        std::vector<ConeXYZColorScore> best_midpoint_route_;
+        std::vector<std::vector<ConeXYZColorScore>> previous_midpoint_routes_;
         int invalid_counter=0;
 
         /**
@@ -162,26 +161,13 @@ class PathPlanning : public rclcpp::Node
         std::vector<int> get_triangles_from_vert(int vert_index);
 
         /**
-         * @brief Get the edge shared by two neighbor triangles.
-         * @param triangle1 CDT::Triangle first triangle.
-         * @param triangle2 CDT::Triangle second triangle.
-         * @return CDT::Edge edge shared by the two triangles.
-         */
-        CDT::Edge get_share_edge(CDT::Triangle triangle1, CDT::Triangle triangle2);
-
-        /**
-         * @brief Transform the triangle routes into a vector of the midpoints crossed by the route.
-         */
-        void get_midpoint_routes();
-
-        /**
          * @brief Calculate the cost of a given route based on the distance and angle between consecutive points and
          * the total distance of the route. If the route has a "stop condition" (i.e. the angle between two segments is
          * bigger than a threshold), the route is modified to stop before the stop condition.
          * @param route vector of CDT::V2d<double> points containing the route through the midpoints.
          * @return float result of the cost function.
          */
-        double get_route_cost(std::vector<CDT::V2d<double>> &route);
+        double get_route_cost(std::vector<ConeXYZColorScore> &route);
 
         /**
          * @brief Get the final route after comparing with previous routes to avoid outliers.
@@ -190,12 +176,12 @@ class PathPlanning : public rclcpp::Node
          * route, otherwise return the second to last route.
          * @return std::vector<CDT::V2d<double>> final route to be published.
          */
-        std::vector<CDT::V2d<double>> get_final_route();
+        std::vector<ConeXYZColorScore> get_final_route();
 
         /**
          * @brief Create a trajectory msg object from a given route.
          * @param route std::vector<CDT::V2d<double>> vector containing the route.
          * @return common_msgs::msg::Trajectory parsed trajectory message to ROS2 format.
          */
-        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<CDT::V2d<double>> route, bool smoothed = true);
+        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<ConeXYZColorScore> route, bool smoothed = true);
 };

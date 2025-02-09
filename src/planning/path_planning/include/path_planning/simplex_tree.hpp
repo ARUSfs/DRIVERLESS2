@@ -35,6 +35,8 @@ class SimplexTree {
      */
     std::vector<std::vector<int>> index_routes_;
 
+    std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
+
     /**
      * @brief Construct a new generic tree object.
      * @param key int index of the triangle.
@@ -55,7 +57,8 @@ class SimplexTree {
      * @return SimplexNode* pointer to the created tree.
      */
     SimplexNode* create_tree_aux(CDT::TriangleVec triangle_list, int index, 
-                                    std::vector<int> visited, std::vector<int> passed_vertices);
+                                 std::vector<int> visited, std::vector<int> passed_vertices,
+                                 std::vector<ConeXYZColorScore> mid_route);
 };
 
 SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int orig_vertex,
@@ -70,6 +73,8 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int ori
 
     root_.index = origin_ind;                 // Set the root index to the origin index
 
+    std::vector<ConeXYZColorScore> mid_route = {cones_cloud_.points[orig_vertex]}; // Start at the origin
+
     // Filter neighbors to find which of them are valid
     for (int i = 0; i<3; i++){
         if((neighbors[i]<=triangle_list.size()) && 
@@ -78,7 +83,8 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int ori
                 triangle_list[neighbors[i]].vertices[2] != orig_vertex){
 
             visited.push_back(neighbors[i]); // Add the valid neighbors to the visited array
-            root_.left = SimplexTree::create_tree_aux(triangle_list, neighbors[i], visited, passed_vertices);
+            root_.left = SimplexTree::create_tree_aux(triangle_list, neighbors[i], visited, passed_vertices,
+                                                      mid_route);
             break;
         }
     }
@@ -87,12 +93,13 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int ori
 
 
 SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int index,
-                                          std::vector<int> visited, std::vector<int> passed_vertices) {
+                                          std::vector<int> visited, std::vector<int> passed_vertices,
+                                          std::vector<ConeXYZColorScore> mid_route) {
 
     SimplexNode* node = new SimplexNode(index);
     CDT::Triangle triangle = triangle_list[index];     // Get the triangle from the index
     CDT::NeighborsArr3 neighbors = triangle.neighbors; // Get the neighbors of the triangle
-    
+    std::vector<ConeXYZColorScore> neighbor_edge = {};
     std::vector<int> valid_neighbors = {};
     for (int i = 0; i<3; i++){
         if (neighbors[i]>triangle_list.size()) continue; 
@@ -116,6 +123,8 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
              next_edge[0].color != next_edge[1].color) && // Check the edge is not colored or is colored with different colors
              distance(next_edge[0], next_edge[1]) > 2.0){ // Check the edge is longer than 2.0 meters
             valid_neighbors.push_back(neighbors[i]);
+            neighbor_edge.push_back(ConeXYZColorScore((next_edge[0].x+next_edge[1].x)/2,
+                                                      (next_edge[0].y+next_edge[1].y)/2, 0, UNCOLORED, 1));
         }
         
     }
@@ -125,7 +134,7 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
     if (valid_neighbors.size() == 1){
         // In case only one neighbor is valid, create the left child and return the node
         visited.push_back(valid_neighbors[0]);
-
+        mid_route.push_back(neighbor_edge[0]);
 
         CDT::Triangle next_triangle = triangle_list[valid_neighbors[0]];
 
@@ -135,7 +144,7 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
             }
         }
 
-        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited, passed_vertices);
+        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited, passed_vertices, mid_route);
         return node;
     }
     else if (valid_neighbors.size() == 2){
@@ -144,6 +153,11 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
         std::vector<int> visited_right = visited;
         visited_left.push_back(valid_neighbors[0]);
         visited_right.push_back(valid_neighbors[1]);
+
+        std::vector<ConeXYZColorScore> mid_route_left = mid_route;
+        std::vector<ConeXYZColorScore> mid_route_right = mid_route;
+        mid_route_left.push_back(neighbor_edge[0]);
+        mid_route_right.push_back(neighbor_edge[1]);
 
 
         std::vector<int> passed_vertices_left = passed_vertices;
@@ -162,13 +176,16 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
             }
         }
 
-        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited_left, passed_vertices_left);
-        node->right = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[1], visited_right, passed_vertices_right);
+        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited_left,
+                                                  passed_vertices_left, mid_route_left);
+        node->right = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[1], visited_right,
+                                                   passed_vertices_right, mid_route_right);
         return node;
     }
 
     /* In case there are no valid neighbors, return the node with no children 
     and add the visited route to the routes array in the tree attribute */
     index_routes_.push_back(visited);
+    midpoint_routes_.push_back(mid_route);
     return node;
 }

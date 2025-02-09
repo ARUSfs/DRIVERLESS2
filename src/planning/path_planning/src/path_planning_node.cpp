@@ -100,8 +100,6 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         orig_index = this->get_vertex_index(CDT::V2d<double>::make(0,0));
     }
     std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
-    triangle_routes_ = {};
-
 
     // Get the straightest triangle from the origin
     int straight_triangle_index;
@@ -120,16 +118,11 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
             straight_triangle_index=i;
         }
     }
-    SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index, pcl_cloud_);
-    std::cout << "----------" << tree.index_routes_.size() << "----------" << std::endl;
-    for (int j = 0; j<tree.index_routes_.size(); j++){
-        triangle_routes_.push_back(tree.index_routes_[j]);
-    }
 
-    // Transform the triangles routes to midpoints routes
+    // Create the tree and get the midpoint routes
     midpoint_routes_ = {};
-    this->get_midpoint_routes();
-    std::cout << "**********" << midpoint_routes_.size() << "**********" << std::endl;
+    SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index, pcl_cloud_);
+    midpoint_routes_ = tree.midpoint_routes_;
 
     // Get the cost of each route
     if(midpoint_routes_.size()==0){ // Return if there are no routes
@@ -149,9 +142,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         best_midpoint_route_ = midpoint_routes_[best_route_ind];
     }
 
-
-
-    std::vector<CDT::V2d<double>> final_route;
+    std::vector<ConeXYZColorScore> final_route;
 
     if (kUseBuffer){
         previous_midpoint_routes_.push_back(best_midpoint_route_);
@@ -167,9 +158,6 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
     // Publish the best trajectory
     trajectory_pub_ -> publish(this->create_trajectory_msg(final_route));
-
-    std::cout << std::endl;
-    std::cout << std::endl;
 
 }
 
@@ -296,49 +284,7 @@ std::vector<int> PathPlanning::get_triangles_from_vert(int vert_index){
     return o_triangles;
 }
 
-CDT::Edge PathPlanning::get_share_edge(CDT::Triangle triangle1, CDT::Triangle triangle2){
-    CDT::VerticesArr3 vertices1 = triangle1.vertices;
-    CDT::VerticesArr3 vertices2 = triangle2.vertices;
-    std::vector<int> shared_vertices = {};
-    for (int i = 0; i<3; i++){
-        if (std::find(vertices2.begin(), vertices2.end(), vertices1[i])!=vertices2.end()){
-            shared_vertices.push_back(vertices1[i]);
-        };
-    }
-    CDT::Edge shared_edge(shared_vertices[0], shared_vertices[1]);
-    return shared_edge;
-}
-
-void PathPlanning::get_midpoint_routes(){
-    for (const auto &ind_route : triangle_routes_){
-        std::vector<CDT::V2d<double>> mid_route;
-        if (lap_count_ > 0){
-            mid_route = {CDT::V2d<double>::make(0,0)}; // Start from the origin
-        } else {
-            mid_route = {CDT::V2d<double>::make(x_,y_)}; // Start from the car position
-        }
-        for (int i = 0; i < ind_route.size()-1; i++){
-            CDT::Triangle triangle = triangles_[ind_route[i]];
-            CDT::Triangle next_triangle = triangles_[ind_route[i+1]];
-            CDT::Edge share_edge = this->get_share_edge(triangle, next_triangle);
-            CDT::VertInd v1 = share_edge.v1();
-            CDT::VertInd v2 = share_edge.v2();
-            if (kColor and (pcl_cloud_[v1].color != UNCOLORED) and
-                           (pcl_cloud_[v1].color == pcl_cloud_[v2].color)){
-                break;
-            }
-            CDT::V2d<double> midpoint = CDT::V2d<double>::make((vertices_[v1].x+vertices_[v2].x)/2,
-                                                               (vertices_[v1].y+vertices_[v2].y)/2);
-            mid_route.push_back(midpoint);
-        }
-        if (lap_count_ > 0) {
-            mid_route.push_back(CDT::V2d<double>::make(0,0)); // End at the origin
-        }
-        midpoint_routes_.push_back(mid_route);
-    }
-}
-
-double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
+double PathPlanning::get_route_cost(std::vector<ConeXYZColorScore> &route){
     int route_size = route.size();
     double angle_forward;
     if (route_size < 4){
@@ -346,44 +292,25 @@ double PathPlanning::get_route_cost(std::vector<CDT::V2d<double>> &route){
     }
    
     // Initialize the properties of the route
-    double route_length = CDT::distance(route[0], route[1]);
+    double route_length = distance(route[0], route[1]);
     double angle_diff_sum = 0;
-
-    // Store the route while iterating
-    std::vector<CDT::V2d<double>> route_out = {CDT::V2d<double>::make(x_, y_)};
 
     // Iterate over the route and calculate the cost
     for (int i = 0; i<route_size-2;i++){
-        route_length += CDT::distance(route[i+1], route[i+2]);
+        route_length += distance(route[i+1], route[i+2]);
         double angle_diff = abs(atan2(route[i+2].y-route[i+1].y, route[i+2].x-route[i+1].x)-
                                 atan2(route[i+1].y-route[i].y, route[i+1].x-route[i].x));
         double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
-        route_out.push_back(route[i+1]);
-
-        // If the angle is too big, cut the route and return the cost
-        // if (corrected_angle_diff > kMaxAngle){
-        //     angle_diff_sum += angle_diff;
-        //     route = route_out;           // Cut the route
-        //     return kAngleCoeff*angle_diff_sum-kLenCoeff*route_length;
-        // } else{
-
-        // if (corrected_angle_diff > M_PI/6) angle_diff_sum += corrected_angle_diff;
         if (corrected_angle_diff > M_PI/6) angle_diff_sum += 3*pow(corrected_angle_diff-M_PI/6, 2)+1; // f(x) =
-        // std::cout << "Angle diff: " << corrected_angle_diff << std::endl;
 
     }
-    // std::cout << "Route length: " << route_length << std::endl;
-    // std::cout << "Angle diff sum: " << angle_diff_sum << std::endl;
-
     double route_cost = kAngleCoeff*angle_diff_sum - kLenCoeff*route_length; // Curvature
-    // std::cout << "Route cost: " << route_cost << std::endl;
-    // std::cout << ".................." << std::endl;
     return route_cost;
 }
 
-std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
+std::vector<ConeXYZColorScore> PathPlanning::get_final_route(){
     // Create candidate to final route from cost calculations
-    std::vector<CDT::V2d<double>> final_route = previous_midpoint_routes_.back();
+    std::vector<ConeXYZColorScore> final_route = previous_midpoint_routes_.back();
 
     // Return the final route if there are not enough previous routes
     if (previous_midpoint_routes_.size() < kRouteBack+1){
@@ -391,7 +318,7 @@ std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
     }
 
     // Create a list of the last routes
-    std::vector<std::vector<CDT::V2d<double>>> last_routes(previous_midpoint_routes_.end()-kRouteBack-1,
+    std::vector<std::vector<ConeXYZColorScore>> last_routes(previous_midpoint_routes_.end()-kRouteBack-1,
                                                            previous_midpoint_routes_.end()-1);
 
     // Count the number of points in the last routes that are in the final route
@@ -417,7 +344,7 @@ std::vector<CDT::V2d<double>> PathPlanning::get_final_route(){
 
 
 
-common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<CDT::V2d<double>> route,
+common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<ConeXYZColorScore> route,
                                                                  bool smoothed){
     int route_size = route.size();
     int degree = 2 ;

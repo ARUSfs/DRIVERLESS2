@@ -49,6 +49,19 @@ int compare_lists(std::vector<CDT::V2d<double>> list1, std::vector<CDT::V2d<doub
     return count;
 }
 
+int compare_lists(std::vector<ConeXYZColorScore> list1, std::vector<ConeXYZColorScore> list2, double tolerance=0.1){
+    int count = 0;
+    for (int i = 0; i<list1.size(); i++){
+        for (int j = 0; j<list2.size(); j++){
+            if (distance(list1[i], list2[j])<tolerance){
+                count++;
+                break;
+            }
+        }
+    }
+    return count;
+}
+
 /**
  * @brief Calculate the centroid of a triangle given its index in the triangulation.
  * Centroid is calculated as the arithmetic mean of its three vertices in each coordinate. 
