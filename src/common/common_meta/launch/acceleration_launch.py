@@ -13,10 +13,10 @@ def generate_launch_description():
     home_dir = os.path.expanduser("~")
     output_dir = os.path.join(home_dir, f"ARUS_logs/bagfiles/acceleration_bag_{timestamp}")
 
-    # Record rosbag with mcap extension in steps of 500MB
+    # Record rosbag with mcap extension in steps of 10MB
     rosbag_record = ExecuteProcess(
         cmd=['ros2', 'bag', 'record', '-a', 
-             '-o', output_dir, '-s', 'mcap', '--max-bag-size', '500000000'],
+             '-o', output_dir, '-s', 'mcap', '--max-bag-size', '10000000'],
         output='screen'
     )
 
@@ -30,12 +30,14 @@ def generate_launch_description():
         create_node(pkg='epos_interface'),
         create_node(pkg='perception'),
         create_node(pkg='acc_planning',
-                    params=[{'target': 3.0,
-                             'min_cmd': 0.0,
-                             'max_cmd': 0.1}]),
+                    params=[{'target_speed': 3.0,
+                             'min_acc': 5.0,
+                             'max_dec': 5.0,
+                             'track_length': 75.0}]),
         create_node(pkg='controller',
                     params=[{'trajectory': "/acc_planning/trajectory",
-                             'target': 3.0}]),
+                             'min_cmd': 0.0,
+                             'max_cmd': 0.1}]),
         create_node(pkg='graph_slam'),
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
