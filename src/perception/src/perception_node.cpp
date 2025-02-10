@@ -27,7 +27,9 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<int>("number_sectors", 8);
     this->declare_parameter<double>("max_radius", 25);
     this->declare_parameter<int>("minimum_ransac_points", 30);
-    this->declare_parameter<double>("threshold_scoring", 0.4);
+    this->declare_parameter<double>("threshold_scoring", 0.8);
+    this->declare_parameter<double>("distance_threshold", 0.4);
+    this->declare_parameter<double>("coloring_threshold", 0.4);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
@@ -44,6 +46,8 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("max_radius", kMaxRadius);
     this->get_parameter("minimum_ransac_points", kMinimumRansacPoints);
     this->get_parameter("threshold_scoring", kThresholdScoring);
+    this->get_parameter("distance_threshold", kDistanceThreshold);
+    this->get_parameter("coloring_threshold", kColoringThreshold);
 
     //Transform into radians
     kHFov *= (M_PI/180);
@@ -151,6 +155,45 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
 }
 
 /**
+ * @brief Filter the final clusters by size to delete the ones that are too small or too large to be considered cones.
+ * @param cluster_indices The indices of the points that form each cluster.
+ * @param cloud_filtered The input point cloud.
+ * @param cluster_centers The center of each cluster.
+ */
+void Perception::filter_clusters(std::vector<pcl::PointIndices>& cluster_indices,
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
+{
+    for (int i = cluster_indices.size() - 1; i >= 0; i--)
+    {
+        //Create a temporal point cloud
+        pcl::PointIndices indices = cluster_indices[i];
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::copyPointCloud(*cloud_filtered, indices, *cluster_cloud);
+
+        //Obtain the new bounding box of the cluster
+        pcl::PointXYZI min_point, max_point;
+        pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
+        double max_x = max_point.x;
+        double min_x = min_point.x;
+        double max_y = max_point.y;
+        double min_y = min_point.y;
+        double max_z = max_point.z;
+        double min_z = min_point.z;
+
+        //Filter the cluster by size and delete the ones that are too small or too large
+        if ((max_z - min_z) < 0.1 || (max_z - min_z) > 0.4 || (max_x - min_x) > 0.4 || (max_y - min_y) > 0.4)
+        {
+            clusters_centers.erase(clusters_centers.begin() + i);
+            cluster_indices.erase(cluster_indices.begin() + i);
+        }
+    }
+    
+    //Resize the vectors
+    clusters_centers.resize(clusters_centers.size());
+    cluster_indices.resize(clusters_centers.size());
+}
+
+/**
  * @brief Create callback function for the lidar topic.
  * @param lidar_msg The point cloud message received from the lidar topic.
  */
@@ -183,6 +226,9 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     std::vector<pcl::PointIndices> cluster_indices;
     Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
 
+    //Print the time of the clustering function
+    if (DEBUG) std::cout << "Clustering time: " << this->now().seconds() - start_time << std::endl;
+
     //Store the clusters centers in a new point cloud
     std::vector<PointXYZColorScore> clusters_centers;
     Perception::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers); 
@@ -196,6 +242,12 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Print the time of the reconstruction function
     if (DEBUG) std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
 
+    //Filter the clusters by size
+    Perception::filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
+
+    //Print the time of the filtering function
+    if (DEBUG) std::cout << "Filtering time: " << this->now().seconds() - start_time << std::endl;
+
     //Score the clusters and keep the ones that will be consider cones
     pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
     Scoring::scoring_surface(cloud_filtered, final_map, cluster_indices, clusters_centers, kThresholdScoring);
@@ -203,6 +255,26 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Print the number of cones and the time of the scoring
     if (DEBUG) std::cout << "Number of cones: " << final_map->size() << std::endl;
     if (DEBUG) std::cout << "Scoring time: " << this->now().seconds() - start_time << std::endl;
+
+    //Estime the color of the closest cones
+    ColorEstimation::color_estimation(cluster_indices, clusters_centers, cloud_filtered, kDistanceThreshold, kColoringThreshold);
+
+    //Print the time of the color estimation function
+    if (DEBUG) std::cout << "Color estimation time: " << this->now().seconds() - start_time << std::endl;
+
+    //Update the colors of final map points
+    for (auto& point : final_map->points) 
+    {
+        for (const auto& center : clusters_centers) 
+        {
+            if (point.x == center.x && point.y == center.y && point.z == center.z) 
+            {
+                point.color = center.color;
+            }
+        }
+    }
+
+    if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;
 
     //Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;
