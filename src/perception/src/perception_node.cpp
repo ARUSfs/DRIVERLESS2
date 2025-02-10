@@ -343,7 +343,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Accumulate the clouds
     //pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_acc;
-    //accumulate_cloud(cloud, cloud_acc, kBufferSize);
+    //accumulate_cloud(cloud, kBufferSize, cloud_acc);
 
     //Apply the ground filter fuction
     GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
@@ -353,21 +353,21 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Accumulate the filtered clouds
     //pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered_acc;
-    //accumulate_cloud(cloud_filtered, cloud_filtered_acc, kBufferSize);
+    //accumulate_cloud(cloud_filtered, kBufferSize, cloud_filtered_acc);
 
     //Extract the clusters from the point cloud
     std::vector<pcl::PointIndices> cluster_indices;
-    Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
+    Clustering::euclidean_clustering(cloud_filtered_acc, cluster_indices);
 
     //Store the clusters centers in a new point cloud
     std::vector<PointXYZColorScore> clusters_centers;
-    Perception::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers); 
+    Perception::get_clusters_centers(cluster_indices, cloud_filtered_acc, clusters_centers); 
 
     //Print the number of possibles cones
     if (DEBUG) std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
 
     //Recover ground points
-    Perception::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius);
+    Perception::reconstruction(cloud_plane, cloud_filtered_acc, cluster_indices, clusters_centers, kRadius);
     
     //Print the time of the reconstruction function
     if (DEBUG) std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
@@ -380,7 +380,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
  
         for (const auto& idx : cluster.indices)
         {
-            pcl::PointXYZI point = cloud_filtered->points[idx];
+            pcl::PointXYZI point = cloud_filtered_acc->points[idx];
             new_cluster->points.push_back(point);
         } 
         cluster_points.push_back(new_cluster);
@@ -409,7 +409,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Score the clusters and keep the ones that will be consider cones
     pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
-    Scoring::scoring_surface(cloud_filtered, final_map, cluster_indices, clusters_centers, kThresholdScoring);
+    Scoring::scoring_surface(cloud_filtered_acc, final_map, cluster_indices, clusters_centers, kThresholdScoring);
 
     //Print the number of cones and the time of the scoring
     if (DEBUG) std::cout << "Number of cones: " << final_map->size() << std::endl;
@@ -417,7 +417,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*cloud_filtered, filtered_msg);
+    pcl::toROSMsg(*cloud_filtered_acc, filtered_msg);
     filtered_msg.header.frame_id="/rslidar";
     filtered_pub_->publish(filtered_msg);
 
