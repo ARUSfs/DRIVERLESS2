@@ -17,9 +17,9 @@ controller:
 
     # PID
     target: 5.0
-    KP: 43.87
-    KI: 0.0
-    KD: 0.0
+    KP: 30.0
+    KI: 1.5
+    KD: 0.05
 
     # Cmd
     min_cmd: 0.0

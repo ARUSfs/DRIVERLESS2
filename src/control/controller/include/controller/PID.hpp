@@ -3,16 +3,18 @@
 
 /**
  * @file PID.hpp
- * 
- * @author Francis Rojas (frarojram@gmail.com).
- * 
+ *
+ * @author Lola Hernandez (lolahercan@gmail.com).
+ *
  * @brief PID,header and implementation for ARUS Team Driverless pipeline.
- * 
+ *
  * @date 15-11-2024
  */
-class PID {
-public: 
-    PID(){
+class PID
+{
+public:
+    PID()
+    {
         KP_ = 0.0;
         KI_ = 0.0;
         KD_ = 0.0;
@@ -20,7 +22,8 @@ public:
         integral_ = 0.0;
     }
 
-    void set_params(double KP, double KI, double KD){
+    void set_params(double KP, double KI, double KD)
+    {
         KP_ = KP;
         KI_ = KI;
         KD_ = KD;
@@ -34,14 +37,40 @@ public:
      * @param dt delta time.
      * @return control for get the goal.
      */
-    double compute_control(double value, double target, double dt) {
+    double compute_control(double value, double target, double dt, double ax)
+    {
+
         double error = target - value;
+
         integral_ += error * dt;
+
         double derivative = (error - previous_error_) / dt;
+
+        double KP_var = 0.0;
+        KP_var = KP_ + (ax / 15.0);
+
+        const double max_integral = 5.0;
+        const double min_integral = -5.0;
+
+        if (integral_ > max_integral)
+        {
+            integral_ = max_integral;
+        }
+        else if (integral_ < min_integral)
+        {
+            integral_ = min_integral;
+        }
+
         previous_error_ = error;
-        return (KP_ * error) + (KI_ * integral_) + (KD_ * derivative);
+
+        if (value > 5)
+        {
+            return (KP_var * error) + (KI_ * integral_) + (KD_ * derivative);
+        }
+
+        return (KP_var * error);
     }
-    
+
 private:
     double KP_;
     double KI_;
@@ -51,4 +80,4 @@ private:
     double integral_;
 };
 
-#endif 
+#endif

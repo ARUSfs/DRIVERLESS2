@@ -34,11 +34,25 @@ public:
     double get_acc_command(double target_speed, 
                          double target_acc, 
                          double vx,  
-                         double dt) 
+                         double dt,
+                         double ax) 
     {
+
+        const double rho = 1.225;
+        const double Cd = 0.3;
+        const double A = 2.0;
+        const double Crr = 0.01;
+        const double mass = 230;
+        const double g = 9.81;
+
         double acc;
-        double control = pid_.compute_control(vx, target_speed, dt)/(230 * 0.2);
-        double feed_forward = target_acc;
+        double control = pid_.compute_control(vx, target_speed, dt, ax);
+
+        double F_drag = 0.5 * rho * Cd * A * vx * vx;
+        double F_roll = Crr * mass * g;
+        double a_loss = (F_drag + F_roll) / mass;
+
+        double feed_forward = target_acc + a_loss;
         acc = control + feed_forward;
         return acc;
     }
