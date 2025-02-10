@@ -46,6 +46,8 @@ class GraphSlam : public rclcpp::Node
     int kMaxPoseEdges;
     int kMaxLandmarkEdges;
     bool kVerbose;
+    double kPosLidarX;
+    std::string kPerceptionTopic;
 
     Eigen::Matrix3d Q = Eigen::Matrix3d::Identity();
     Eigen::Matrix2d R = Eigen::Matrix2d::Identity();

@@ -13,10 +13,10 @@ def generate_launch_description():
     home_dir = os.path.expanduser("~")
     output_dir = os.path.join(home_dir, f"ARUS_logs/bagfiles/skidpad_bag_{timestamp}")
 
-    # Record rosbag with mcap extension in steps of 500MB
+    # Record rosbag with mcap extension in steps of 10MB
     rosbag_record = ExecuteProcess(
         cmd=['ros2', 'bag', 'record', '-a', 
-             '-o', output_dir, '-s', 'mcap', '--max-bag-size', '500000000'],
+             '-o', output_dir, '-s', 'mcap', '--max-bag-size', '10000000'],
         output='screen'
     )
 
@@ -31,10 +31,14 @@ def generate_launch_description():
         create_node(pkg='perception'),
         create_node(pkg='skidpad_planning',
                     params=[{'target_first_lap': 3.0, 
-                    'target_second_lap': 3.0}]),
+                    'target_second_lap': 3.0,
+                    'top_accx_forwards': 5.0,
+                    'top_accx_backwards': 7.0,
+                    'top_accy': 6.0,
+                    'step_width_1': 0.0,
+                    'step_width_2': 0.0}]),
         create_node(pkg='controller',
                     params=[{'trajectory': "/skidpad_planning/trajectory",
-                             'target': 3.0,
                              'min_cmd': 0.0,
                              'max_cmd': 0.1}]),
         create_node(pkg='graph_slam'),
