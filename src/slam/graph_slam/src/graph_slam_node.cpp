@@ -11,6 +11,7 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->declare_parameter("max_pose_edges", 10000);
     this->declare_parameter("max_landmark_edges", 10000);
     this->declare_parameter("verbose", false);
+    this->declare_parameter("pos_lidar_x", 1.5);
     this->declare_parameter("perception_topic", "/perception/map");
     this->get_parameter("finish_line_offset", kFinishLineOffset);
     this->get_parameter("track_width", kTrackWidth);
@@ -19,6 +20,7 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->get_parameter("max_pose_edges", kMaxPoseEdges);
     this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
     this->get_parameter("verbose", kVerbose);
+    this->get_parameter("pos_lidar_x", kPosLidarX);
     this->get_parameter("perception_topic", kPerceptionTopic);
 
     // TODO: test other solvers
@@ -143,7 +145,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
         //Extract the cone position
         ConeXYZColorScore cone = cloud.points[i];
 
-        observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x+1.5, cone.y), vehicle_pose_));
+        observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x+kPosLidarX, cone.y), vehicle_pose_));
     }
     
     DA.match_observations(observed_landmarks, unmatched_landmarks);
