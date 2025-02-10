@@ -343,7 +343,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Accumulate the clouds
     //pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_acc;
-    //accumulate_cloud(cloud, vx, kBufferSize);
+    //accumulate_cloud(cloud, cloud_acc, kBufferSize);
 
     //Apply the ground filter fuction
     GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
@@ -353,7 +353,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Accumulate the filtered clouds
     //pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered_acc;
-    //accumulate_cloud(cloud_filtered, vx, kBufferSize);
+    //accumulate_cloud(cloud_filtered, cloud_filtered_acc, kBufferSize);
 
     //Extract the clusters from the point cloud
     std::vector<pcl::PointIndices> cluster_indices;
