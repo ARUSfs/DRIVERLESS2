@@ -30,6 +30,11 @@ class SimplexTree {
      */
     pcl::PointCloud<ConeXYZColorScore> cones_cloud_;
 
+    double angle_coeff_;
+    double len_coeff_;
+    double min_cost_ = INFINITY;
+    std::vector<ConeXYZColorScore> best_route_;
+
     /**
      * @brief Array of arrays containing all the posible routes through the tree.
      */
@@ -49,7 +54,7 @@ class SimplexTree {
      * @param cones_cloud pcl::PointCloud object containing the cones in the map.
      */
     SimplexTree(CDT::TriangleVec triangle_list, int origin, int orig_vertex, 
-                                    pcl::PointCloud<ConeXYZColorScore> cones_cloud);
+                pcl::PointCloud<ConeXYZColorScore> cones_cloud, double angle_coeff, double len_coeff);
 
     /**
      * @brief Recursive function to create the tree structure.
@@ -66,13 +71,16 @@ class SimplexTree {
      */
     SimplexNode* create_tree_aux(CDT::TriangleVec triangle_list, int index, 
                                  std::vector<int> visited, std::vector<int> passed_vertices,
-                                 std::vector<ConeXYZColorScore> mid_route);
+                                 std::vector<ConeXYZColorScore> mid_route, double route_cost,
+                                 double prev_angle);
 };
 
 SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int orig_vertex,
-                            pcl::PointCloud<ConeXYZColorScore> cones_cloud) {
+                         pcl::PointCloud<ConeXYZColorScore> cones_cloud, double angle_coeff, 
+                         double len_coeff) {
     cones_cloud_ = cones_cloud;
-
+    angle_coeff_ = angle_coeff;
+    len_coeff_ = len_coeff;
     CDT::Triangle origin = triangle_list[origin_ind]; // Get triangle from index
     CDT::NeighborsArr3 neighbors = origin.neighbors;  // Get neighbors of the triangle
 
@@ -82,7 +90,7 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int ori
     root_.index = origin_ind;                 // Set the root index to the origin index
 
     std::vector<ConeXYZColorScore> mid_route = {cones_cloud_.points[orig_vertex]}; // Start at the origin
-
+    double route_cost = 0;
     // Filter neighbors to find which of them are valid
     for (int i = 0; i<3; i++){
         if((neighbors[i]<=triangle_list.size()) && 
@@ -92,7 +100,7 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int ori
 
             visited.push_back(neighbors[i]); // Add the valid neighbors to the visited array
             root_.left = SimplexTree::create_tree_aux(triangle_list, neighbors[i], visited, passed_vertices,
-                                                      mid_route);
+                                                      mid_route, route_cost, 0);
             break;
         }
     }
@@ -102,7 +110,8 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int ori
 
 SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int index,
                                           std::vector<int> visited, std::vector<int> passed_vertices,
-                                          std::vector<ConeXYZColorScore> mid_route) {
+                                          std::vector<ConeXYZColorScore> mid_route, double route_cost,   
+                                          double prev_angle){
 
     SimplexNode* node = new SimplexNode(index);
     CDT::Triangle triangle = triangle_list[index];     // Get the triangle from the index
@@ -142,20 +151,36 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
     if (valid_neighbors.size() == 1){
         // In case only one neighbor is valid, create the left child and return the node
         visited.push_back(valid_neighbors[0]);
+        ConeXYZColorScore prev_midpoint = mid_route.back();
         mid_route.push_back(neighbor_edge[0]);
+        
+        // Cost calculations
+        double angle = atan2(neighbor_edge[0].y-prev_midpoint.y, neighbor_edge[0].x-prev_midpoint.x);
+        double angle_diff = abs(angle-prev_angle);
+        double corr_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
+        double prev_angle = angle; // Save the previous angle for the next iteration
+        double len = distance(neighbor_edge[0], prev_midpoint);
+        if (corr_angle_diff > M_PI/6){
+            route_cost += angle_coeff_*(3*pow(corr_angle_diff-M_PI/6, 2)+1);
+        }
+        route_cost += len_coeff_*len;
+
 
         CDT::Triangle next_triangle = triangle_list[valid_neighbors[0]];
-
         for (auto v: triangle.vertices){
             if (!in(v, next_triangle.vertices)){
                 passed_vertices.push_back(v);
             }
         }
 
-        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited, passed_vertices, mid_route);
+        node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited, 
+                                                  passed_vertices, mid_route, route_cost, prev_angle);
         return node;
     }
     else if (valid_neighbors.size() == 2){
+        // Store the previous midpoint to calculate the angle between the following midpoints
+        ConeXYZColorScore prev_midpoint = mid_route.back();
+
         // In case two neighbors are valid, create both children and return the node
         std::vector<int> visited_left = visited;
         std::vector<int> visited_right = visited;
@@ -166,6 +191,29 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
         std::vector<ConeXYZColorScore> mid_route_right = mid_route;
         mid_route_left.push_back(neighbor_edge[0]);
         mid_route_right.push_back(neighbor_edge[1]);
+
+        // Cost calculations
+        double cost_left = route_cost;
+        double angle_left = atan2(neighbor_edge[0].y-prev_midpoint.y, neighbor_edge[0].x-prev_midpoint.x);
+        double angle_diff_left = abs(angle_left-prev_angle);
+        double corr_angle_diff_left = std::min(angle_diff_left, 2*M_PI-angle_diff_left);
+        double prev_angle_left = angle_left; // Save the previous angle for the next iteration
+        double len_left = distance(neighbor_edge[0], prev_midpoint);
+        if (corr_angle_diff_left > M_PI/6){
+            cost_left += angle_coeff_*(3*pow(corr_angle_diff_left-M_PI/6, 2)+1);
+        }
+        cost_left += len_coeff_*len_left;
+
+        double cost_right = route_cost;
+        double angle_right = atan2(neighbor_edge[1].y-prev_midpoint.y, neighbor_edge[1].x-prev_midpoint.x);
+        double angle_diff_right = abs(angle_right-prev_angle);
+        double corr_angle_diff_right = std::min(angle_diff_right, 2*M_PI-angle_diff_right);
+        double prev_angle_right = angle_right; // Save the previous angle for the next iteration
+        double len_right = distance(neighbor_edge[1], prev_midpoint);
+        if (corr_angle_diff_right > M_PI/6){
+            cost_right += angle_coeff_*(3*pow(corr_angle_diff_right-M_PI/6, 2)+1);
+        }
+        cost_right += len_coeff_*len_right;
 
 
         std::vector<int> passed_vertices_left = passed_vertices;
@@ -185,9 +233,11 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
         }
 
         node->left = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[0], visited_left,
-                                                  passed_vertices_left, mid_route_left);
+                                                  passed_vertices_left, mid_route_left, cost_left,
+                                                  prev_angle_left);
         node->right = SimplexTree::create_tree_aux(triangle_list, valid_neighbors[1], visited_right,
-                                                   passed_vertices_right, mid_route_right);
+                                                   passed_vertices_right, mid_route_right, cost_right,
+                                                   prev_angle_right);
         return node;
     }
 
@@ -195,5 +245,9 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
     and add the visited route to the routes array in the tree attribute */
     index_routes_.push_back(visited);
     midpoint_routes_.push_back(mid_route);
+    if (route_cost < min_cost_){
+        min_cost_ = route_cost;
+        best_route_ = mid_route;
+    }
     return node;
 }

@@ -119,26 +119,27 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
     // Create the tree and get the midpoint routes
     midpoint_routes_ = {};
-    SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index, pcl_cloud_);
-    midpoint_routes_ = tree.midpoint_routes_;
+    SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index, pcl_cloud_,
+                     kAngleCoeff, kLenCoeff);
+    best_midpoint_route_ = tree.best_route_;
 
     // Get the cost of each route
-    if(midpoint_routes_.size()==0){ // Return if there are no routes
-        return;
-    } else if (midpoint_routes_.size()==1){ // Return the only route if there is only one
-        best_midpoint_route_ = midpoint_routes_[0];
-    } else {
-       int best_route_ind = 0;
-        double min_cost = INFINITY;
-        for (int i = 0; i<midpoint_routes_.size(); i++){
-            double cost = this->get_route_cost(midpoint_routes_[i]);
-            if (cost < min_cost){
-                min_cost = cost;
-                best_route_ind = i;
-            }
-        }
-        best_midpoint_route_ = midpoint_routes_[best_route_ind];
-    }
+    // if(midpoint_routes_.size()==0){ // Return if there are no routes
+    //     return;
+    // } else if (midpoint_routes_.size()==1){ // Return the only route if there is only one
+    //     best_midpoint_route_ = midpoint_routes_[0];
+    // } else {
+    //    int best_route_ind = 0;
+    //     double min_cost = INFINITY;
+    //     for (int i = 0; i<midpoint_routes_.size(); i++){
+    //         double cost = this->get_route_cost(midpoint_routes_[i]);
+    //         if (cost < min_cost){
+    //             min_cost = cost;
+    //             best_route_ind = i;
+    //         }
+    //     }
+    //     best_midpoint_route_ = midpoint_routes_[best_route_ind];
+    // }
 
     std::vector<ConeXYZColorScore> final_route;
 
