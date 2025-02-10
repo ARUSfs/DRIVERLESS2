@@ -124,16 +124,37 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
         CDT::Triangle n_triangle = triangle_list[neighbors[i]];
         std::vector<ConeXYZColorScore> next_edge = {};
 
+        bool finish_route = false;
+
         for (auto v: n_triangle.vertices){
             if (!in(v, triangle.vertices)){
                 if (in(v, passed_vertices)){ // Check the neighbor doesn't contain any passed vertex
-                    next_edge.clear();
-                    break;
+                    if (visited.size()>20 && v == passed_vertices[0]){ // If the first vertex is reached again, end the route 
+                        finish_route = true;
+                    } else {
+                        next_edge.clear();
+                        break;
+                    }
                 }
             } else {
                 next_edge.push_back(cones_cloud_.points[v]);
             }
         }
+
+        if (finish_route && next_edge.size() == 2){
+            visited.push_back(neighbors[i]);
+            index_routes_.push_back(visited);
+            mid_route.push_back(ConeXYZColorScore((next_edge[0].x+next_edge[1].x)/2,
+                                                      (next_edge[0].y+next_edge[1].y)/2, 0, UNCOLORED, 1));
+            mid_route.push_back(cones_cloud_.points[passed_vertices[0]]);
+            midpoint_routes_.push_back(mid_route);
+            if (route_cost < min_cost_){
+                min_cost_ = route_cost;
+                best_route_ = mid_route;
+            }
+            return node;
+        }
+
         if (next_edge.size() == 2 &&
             (next_edge[0].color == UNCOLORED ||  
              next_edge[1].color == UNCOLORED || 
