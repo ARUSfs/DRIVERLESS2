@@ -12,10 +12,10 @@ def generate_launch_description():
     home_dir = os.path.expanduser("~")
     output_dir = os.path.join(home_dir, f"ARUS_logs/bagfiles/inspection_bag_{timestamp}")
 
-    # Record rosbag with mcap extension in steps of 500MB
+    # Record rosbag with mcap extension in steps of 10MB
     rosbag_record = ExecuteProcess(
         cmd=['ros2', 'bag', 'record', '-a', 
-             '-o', output_dir, '-s', 'mcap', '--max-bag-size', '500000000'],
+             '-o', output_dir, '-s', 'mcap', '--max-bag-size', '10000000'],
         output='screen'
     )
 

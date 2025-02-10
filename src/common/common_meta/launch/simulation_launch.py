@@ -8,7 +8,10 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     return LaunchDescription([
-        create_node(pkg='path_planning'),
+        create_node(pkg='path_planning',
+                    params=[{'v_max': 5.0,
+                             'ax_max': 3.0,
+                             'ay_max': 3.0}]),
         create_node(pkg='controller',
                     params=[{'min_cmd': -100.0,
                              'max_cmd': 100.0}]),
@@ -25,7 +28,8 @@ def generate_launch_description():
                     'fl_wheel_speed_topic': '/arussim/fl_wheel_speed',
                     'rr_wheel_speed_topic': '/arussim/rr_wheel_speed',
                     'rl_wheel_speed_topic': '/arussim/rl_wheel_speed'}]),
-        create_node(pkg='graph_slam'),
+        create_node(pkg='graph_slam',
+                    params=[{'perception_topic': '/arussim/perception',}]),
         create_node(pkg='trajectory_optimization')
     ])
 
