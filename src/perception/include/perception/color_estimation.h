@@ -47,8 +47,6 @@
             // Process the cone only if it is within the specified distance threshold
             if (distance < distance_threshold)
             {
-                std::cout << "Distancia: " << distance << std::endl;
-   
                 // Iterate on each point of the cluster
                 for (const auto& index : indices.indices) 
                 {
@@ -106,8 +104,6 @@
                 // Calculate the average layer intensity of the center layers of the cone and store it the averages_id vector
                 double average_intensity = std::accumulate(middle_intensities.begin(), middle_intensities.end(), 0.0) / middle_intensities.size();
                 averages_id.emplace_back(average_intensity, i);
-
-                std::cout << "Average intensity: " << average_intensity << std::endl;
             }
 
             // Clear the rest of the vectors as we are going to process a new cone
@@ -127,8 +123,6 @@
             return acc + p.first;
         });
         double global_average_intensity = global_sum / averages_id.size();
-
-        std::cout << "Global average: " << global_average_intensity << std::endl;
 
         // iterate on each (average, id) pair
         for (const auto& pair : averages_id)

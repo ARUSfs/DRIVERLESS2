@@ -9,7 +9,7 @@
  */
 
 #include "perception/perception_node.hpp"
-bool DEBUG = true;
+bool DEBUG = false;
 
 Perception::Perception() : Node("Perception")
 {
@@ -59,7 +59,6 @@ Perception::Perception() : Node("Perception")
     //Create the publishers
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/filtered_cloud", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map", 10);
-    map_pub_2 = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map2", 10);
 }
 
 /**
@@ -156,6 +155,45 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
 }
 
 /**
+ * @brief Filter the final clusters by size to delete the ones that are too small or too large to be considered cones.
+ * @param cluster_indices The indices of the points that form each cluster.
+ * @param cloud_filtered The input point cloud.
+ * @param cluster_centers The center of each cluster.
+ */
+void Perception::filter_clusters(std::vector<pcl::PointIndices>& cluster_indices,
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
+{
+    for (int i = cluster_indices.size() - 1; i >= 0; i--)
+    {
+        //Create a temporal point cloud
+        pcl::PointIndices indices = cluster_indices[i];
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::copyPointCloud(*cloud_filtered, indices, *cluster_cloud);
+
+        //Obtain the new bounding box of the cluster
+        pcl::PointXYZI min_point, max_point;
+        pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
+        double max_x = max_point.x;
+        double min_x = min_point.x;
+        double max_y = max_point.y;
+        double min_y = min_point.y;
+        double max_z = max_point.z;
+        double min_z = min_point.z;
+
+        //Filter the cluster by size and delete the ones that are too small or too large
+        if ((max_z - min_z) < 0.1 || (max_z - min_z) > 0.4 || (max_x - min_x) > 0.4 || (max_y - min_y) > 0.4)
+        {
+            clusters_centers.erase(clusters_centers.begin() + i);
+            cluster_indices.erase(cluster_indices.begin() + i);
+        }
+    }
+    
+    //Resize the vectors
+    clusters_centers.resize(clusters_centers.size());
+    cluster_indices.resize(clusters_centers.size());
+}
+
+/**
  * @brief Create callback function for the lidar topic.
  * @param lidar_msg The point cloud message received from the lidar topic.
  */
@@ -188,6 +226,9 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     std::vector<pcl::PointIndices> cluster_indices;
     Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
 
+    //Print the time of the clustering function
+    if (DEBUG) std::cout << "Clustering time: " << this->now().seconds() - start_time << std::endl;
+
     //Store the clusters centers in a new point cloud
     std::vector<PointXYZColorScore> clusters_centers;
     Perception::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers); 
@@ -200,6 +241,12 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     
     //Print the time of the reconstruction function
     if (DEBUG) std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
+
+    //Filter the clusters by size
+    Perception::filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
+
+    //Print the time of the filtering function
+    if (DEBUG) std::cout << "Filtering time: " << this->now().seconds() - start_time << std::endl;
 
     //Score the clusters and keep the ones that will be consider cones
     pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
@@ -227,15 +274,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         }
     }
 
-    pcl::PointCloud<PointXYZColorScore>::Ptr final_map2(new pcl::PointCloud<PointXYZColorScore>);
-    for (const PointXYZColorScore& p : final_map->points)
-    {
-        if (p.color == 2)
-        {
-            final_map2->points.push_back(p);
-        }
-    }
-
     if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;
 
     //Publish the filtered cloud
@@ -249,12 +287,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::toROSMsg(*final_map, map_msg);
     map_msg.header.frame_id="/rslidar";
     map_pub_->publish(map_msg);
-
-    //Publish the map cloud
-    sensor_msgs::msg::PointCloud2 map_msg2;
-    pcl::toROSMsg(*final_map2, map_msg2);
-    map_msg2.header.frame_id="/rslidar";
-    map_pub_2->publish(map_msg2);
 }
 
 int main(int argc, char * argv[])

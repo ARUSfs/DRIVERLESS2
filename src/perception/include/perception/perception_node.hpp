@@ -64,8 +64,7 @@ class Perception : public rclcpp::Node
         //Publishers
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
-        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_2;
-
+        
         /**
          * @brief Callback function for the lidar topic.
          * When the lidar topic recieves a message, this function is called and performs
@@ -96,4 +95,14 @@ class Perception : public rclcpp::Node
         void reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, 
             std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore> cluster_centers, 
             double radius);
+
+        /**
+        * @brief Auxiliar function for the call back function.
+        * Filter the final clusters by size to delete the ones that are too small or too large to be considered cones.
+        * @param cluster_indices The indices of the points that form each cluster.
+        * @param cloud_filtered The input point cloud.
+        * @param cluster_centers The center of each cluster.
+        */
+        void filter_clusters(std::vector<pcl::PointIndices>& cluster_indices,
+            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
 };
