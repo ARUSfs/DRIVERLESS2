@@ -196,48 +196,9 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Print the time of the reconstruction function
     if (DEBUG) std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
 
-
-    for (int i = cluster_indices.size() - 1; i >= 0; i--)
-    {
-        //Create a temporal point cloud
-        pcl::PointIndices indices = cluster_indices[i];
-        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-        pcl::copyPointCloud(*cloud_filtered, indices, *cluster_cloud);
-
-        //Obtain the new bounding box of the cluster
-        pcl::PointXYZI min_point, max_point;
-        pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
-        double max_x = max_point.x;
-        double min_x = min_point.x;
-        double max_y = max_point.y;
-        double min_y = min_point.y;
-        double max_z = max_point.z;
-        double min_z = min_point.z;
-
-        std::cout << "Cluster " << i << " - X: " << (max_x - min_x) << " Y: " << (max_y - min_y) << " Z: " << (max_z - min_z) << std::endl;
-
-        //Filter the cluster by size and keep the center of the cluster
-        if ((max_z - min_z) < 0.1 || (max_z - min_z) > 0.4 || (max_x - min_x) > 0.4 || (max_y - min_y) > 0.4)
-        {
-            clusters_centers.erase(clusters_centers.begin() + i);
-            cluster_indices.erase(cluster_indices.begin() + i);
-
-            std::cout << "Cluster " << i << " deleted" << std::endl;
-        }
-    }
-    clusters_centers.resize(clusters_centers.size());
-    cluster_indices.resize(clusters_centers.size());
-
-
-
     //Score the clusters and keep the ones that will be consider cones
     pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
-    // Scoring::scoring_surface(cloud_filtered, final_map, cluster_indices, clusters_centers, kThresholdScoring);
-    for (auto c: clusters_centers)
-    {
-        final_map->points.push_back(c);
-    }
-
+    Scoring::scoring_surface(cloud_filtered, final_map, cluster_indices, clusters_centers, kThresholdScoring);
 
     //Print the number of cones and the time of the scoring
     if (DEBUG) std::cout << "Number of cones: " << final_map->size() << std::endl;
