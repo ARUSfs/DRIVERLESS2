@@ -68,6 +68,7 @@ class Perception : public rclcpp::Node
         double dt;
         std::deque<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>> cluster_buffer;
         std::deque<std::vector<PointXYZColorScore>> center_buffer;
+        std::deque<std::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>> cloud_buffer;
 
         //Subscriber
         std::string kLidarTopic;
@@ -129,7 +130,16 @@ class Perception : public rclcpp::Node
         * @param dt Time interval.
         */
         void rigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
-                                      double vx, double vy, double yaw_rate, double dt);
+                double vx, double vy, double yaw_rate, double dt);
+
+        /**
+        * @brief Accumulate the clouds of the last frames.
+        * @param cloud The clouds you want to store in the buffer.
+        * @param kBufferSize The size of cloud buffers.
+        * @param final_cloud THe acumulated cloud.  
+        */
+        void accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int kBufferSize, 
+                pcl::PointCloud<pcl::PointXYZI>::Ptr final_cloud);
 
         /**
         * @brief Auxiliar function for the lidar call back function.

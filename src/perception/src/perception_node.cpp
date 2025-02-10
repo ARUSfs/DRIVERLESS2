@@ -188,6 +188,34 @@ void Perception::rigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud,
 }
 
 /**
+* @brief Accumulate the clouds of the last frames.
+* @param cloud The clouds you want to store in the buffer.
+* @param kBufferSize The size of cloud buffers.
+* @param final_cloud THe acumulated cloud.
+*/
+void Perception::accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int kBufferSize, 
+    pcl::PointCloud<pcl::PointXYZI>::Ptr final_cloud)
+{
+    // Remove the oldest cluster if buffer is full
+    if (cloud_buffer.size() >= static_cast<size_t>(kBufferSize)) {
+        cloud_buffer.pop_front();
+    }
+    
+    // Add the newest frame 
+    cloud_buffer.push_back(cloud);
+
+    for (size_t i = 0; i < cloud_buffer.size() - 1; ++i) {
+        rigidTransformation(cloud_buffer[i], vx, vy, yaw_rate, dt); 
+
+        // Merge into the final accumulated cloud
+        *final_cloud += *cloud_buffer[i];
+    }
+
+    // Add the latest cloud (no transformation needed)
+    *final_cloud += *cloud_buffer.back();
+}
+
+/**
 * @brief Accumulate the custers of the last 5 frames.
 * @param cluster_points The points of the clusters.
 * @param clusters_centers The centers of the clusters.
@@ -313,25 +341,19 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
+    //Accumulate the clouds
+    //pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_acc;
+    //accumulate_cloud(cloud, vx, kBufferSize);
+
     //Apply the ground filter fuction
     GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
     
     //Print the time of the ground filter algorithm used
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
 
-    // Define the base for the transformation matrx
-    //Eigen::Matrix4f transformation = Eigen::Matrix4f::Identity();
-
-    // Adjust the transformation matrix
-    //transformation(0, 0) = std::cos(car_yaw);
-    //transformation(0, 1) = -std::sin(car_yaw);
-    //transformation(1, 0) = std::sin(car_yaw);
-    //transformation(1, 1) = std::cos(car_yaw);
-    //transformation(0, 3) = car_x;
-    //transformation(1, 3) = car_y;
-
-    // Apply the transformation
-    //pcl::transformPointCloud(*cloud_filtered, *cloud_filtered, transformation);
+    //Accumulate the filtered clouds
+    //pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered_acc;
+    //accumulate_cloud(cloud_filtered, vx, kBufferSize);
 
     //Extract the clusters from the point cloud
     std::vector<pcl::PointIndices> cluster_indices;
