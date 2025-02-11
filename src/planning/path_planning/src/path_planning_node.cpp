@@ -265,29 +265,6 @@ std::vector<int> PathPlanning::get_triangles_from_vert(int vert_index){
     return o_triangles;
 }
 
-double PathPlanning::get_route_cost(std::vector<ConeXYZColorScore> &route){
-    int route_size = route.size();
-    if (route_size < 4){
-        return INFINITY;
-    }
-
-    // Initialize the properties of the route
-    double route_length = distance(route[0], route[1]);
-    double angle_diff_sum = 0;
-
-    // Iterate over the route and calculate the cost
-    for (int i = 0; i<route_size-2;i++){
-        route_length += distance(route[i+1], route[i+2]);
-        double angle_diff = abs(atan2(route[i+2].y-route[i+1].y, route[i+2].x-route[i+1].x)-
-                                atan2(route[i+1].y-route[i].y, route[i+1].x-route[i].x));
-        double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
-        if (corrected_angle_diff > M_PI/6) angle_diff_sum += 3*pow(corrected_angle_diff-M_PI/6, 2)+1; // f(x) =
-
-    }
-    double route_cost = kAngleCoeff*angle_diff_sum - kLenCoeff*route_length; // Curvature
-    return route_cost;
-}
-
 std::vector<ConeXYZColorScore> PathPlanning::get_final_route(){
     // Create candidate to final route from cost calculations
     std::vector<ConeXYZColorScore> final_route = previous_midpoint_routes_.back();

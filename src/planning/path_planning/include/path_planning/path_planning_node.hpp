@@ -168,15 +168,6 @@ class PathPlanning : public rclcpp::Node
         std::vector<int> get_triangles_from_vert(int vert_index);
 
         /**
-         * @brief Calculate the cost of a given route based on the distance and angle between consecutive points and
-         * the total distance of the route. If the route has a "stop condition" (i.e. the angle between two segments is
-         * bigger than a threshold), the route is modified to stop before the stop condition.
-         * @param route vector of CDT::V2d<double> points containing the route through the midpoints.
-         * @return float result of the cost function.
-         */
-        double get_route_cost(std::vector<ConeXYZColorScore> &route);
-
-        /**
          * @brief Get the final route after comparing with previous routes to avoid outliers.
          * Compare the best route in last iteration to the n (6) previous and count in how many of 
          * them the route is present in more than x% (75%) of the points. In that case, return the
