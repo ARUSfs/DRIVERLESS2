@@ -38,7 +38,6 @@ public:
                          double dt
                          ) 
     {
-
         const double rho = 1.225;
         const double Cd = 0.3;
         const double A = 2.0;
@@ -50,12 +49,17 @@ public:
         double F_roll = Crr * mass * g;
         double a_loss = (F_drag + F_roll) / mass;
 
-        double acc;
-
         double control = pid_.compute_control(vx, target_speed, dt, target_acc);
 
         double feed_forward = target_acc + a_loss;
-        acc = control + feed_forward;
+        double acc = control + feed_forward;
+
+        // Smooth the acceleration command using exponential moving average
+        static double smoothed_acc = 0.0;
+        double alpha = 0.3; // smoothing factor
+        smoothed_acc = alpha * acc + (1.0 - alpha) * smoothed_acc;
+        acc = smoothed_acc;
+
         return acc;
     }
 

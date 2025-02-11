@@ -1,5 +1,7 @@
 #ifndef PID_HPP
 #define PID_HPP
+#include <deque>
+#include <numeric>
 
 /**
  * @file PID.hpp
@@ -43,9 +45,20 @@ public:
 
         double error = target - value;
 
-        integral_ += error * dt;
+        static std::deque<double> error_history;
+        const size_t window_size = 10;
+        error_history.push_back(error);
 
-        double derivative = (error - previous_error_) / dt;
+        if (error_history.size() > window_size){
+            error_history.pop_front();
+        }
+
+        double smoothed_error = std::accumulate(error_history.begin(), error_history.end(), 0.0) / error_history.size();   
+
+        integral_ += smoothed_error * dt;
+
+        double derivative = (smoothed_error - previous_error_) / dt;
+
 
         double KP_var = 0.0;
         KP_var = KP_ + std::abs(target_acc / 15.0);
@@ -62,14 +75,14 @@ public:
             integral_ = min_integral;
         }
 
-        previous_error_ = error;
+        previous_error_ = smoothed_error;
 
         if (value > 5)
         {
-            return (KP_var * error) + (KI_ * integral_) + (KD_ * derivative);
+            return (KP_var * smoothed_error) + (KI_ * integral_) + (KD_ * derivative);
         }
 
-        return (KP_var * error);
+        return (KP_var * smoothed_error);
     }
 
 private:
