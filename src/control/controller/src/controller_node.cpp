@@ -120,12 +120,11 @@ void Controller::on_timer()
 
         rclcpp::Time current_time = this->get_clock()->now();
         double dt = (current_time - previous_time_).seconds();
-        double acc = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt, ax_);
+        double acc = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
         previous_time_ = current_time;
 
         common_msgs::msg::Cmd cmd;       
         cmd.acc = std::clamp(acc, kMinCmd, kMaxCmd);
-        //std::cout <<"Valor de acc comandado: " << cmd.acc << std::endl;
         cmd.delta = delta;
         cmd_pub_ -> publish(cmd); 
     }

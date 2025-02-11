@@ -8,7 +8,7 @@
  *
  * @brief PID,header and implementation for ARUS Team Driverless pipeline.
  *
- * @date 15-11-2024
+ * @date 11-02-2025
  */
 class PID
 {
@@ -35,9 +35,10 @@ public:
      * @param  value current value.
      * @param  target goal value.
      * @param dt delta time.
+     * @param target_acc target acceleration
      * @return control for get the goal.
      */
-    double compute_control(double value, double target, double dt, double ax)
+    double compute_control(double value, double target, double dt, double target_acc)
     {
 
         double error = target - value;
@@ -47,7 +48,7 @@ public:
         double derivative = (error - previous_error_) / dt;
 
         double KP_var = 0.0;
-        KP_var = KP_ + (ax / 15.0);
+        KP_var = KP_ + std::abs(target_acc / 15.0);
 
         const double max_integral = 5.0;
         const double min_integral = -5.0;
