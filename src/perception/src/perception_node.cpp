@@ -193,27 +193,37 @@ void Perception::rigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud,
 * @param kBufferSize The size of cloud buffers.
 * @param final_cloud THe acumulated cloud.
 */
-void Perception::accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int kBufferSize, 
-    pcl::PointCloud<pcl::PointXYZI>::Ptr final_cloud)
+void Perception::accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
+                                  int kBufferSize, 
+                                  pcl::PointCloud<pcl::PointXYZI>::Ptr final_cloud)
 {
-    // Remove the oldest cluster if buffer is full
+    //Ensure buffer size limit
     if (cloud_buffer.size() >= static_cast<size_t>(kBufferSize)) {
         cloud_buffer.pop_front();
     }
-    
-    // Add the newest frame 
+
+    //Add the latest frame
     cloud_buffer.push_back(cloud);
 
+    //Iterate through stored frames (excluding the latest)
     for (size_t i = 0; i < cloud_buffer.size() - 1; ++i) {
-        rigidTransformation(cloud_buffer[i], vx, vy, yaw_rate, dt); 
+        if (!cloud_buffer[i] || cloud_buffer[i]->empty()) {
+            continue;
+        }
+        //Apply the transformation
+        rigidTransformation(cloud_buffer[i], vx, vy, yaw_rate, dt);
 
-        // Merge into the final accumulated cloud
+        //Merge into final accumulated cloud
         *final_cloud += *cloud_buffer[i];
     }
 
-    // Add the latest cloud (no transformation needed)
+    //Add the latest cloud (unmodified)
+    if (!cloud_buffer.back() || cloud_buffer.back()->empty()) {
+        return;
+    }
     *final_cloud += *cloud_buffer.back();
 }
+
 
 /**
 * @brief Accumulate the custers of the last 5 frames.
@@ -352,8 +362,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
 
     //Accumulate the filtered clouds
-    //pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered_acc;
-    //accumulate_cloud(cloud_filtered, kBufferSize, cloud_filtered_acc);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered_acc(new pcl::PointCloud<pcl::PointXYZI>());
+    accumulate_cloud(cloud_filtered, kBufferSize, cloud_filtered_acc);
 
     //Extract the clusters from the point cloud
     std::vector<pcl::PointIndices> cluster_indices;

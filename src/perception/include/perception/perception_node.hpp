@@ -68,7 +68,7 @@ class Perception : public rclcpp::Node
         double dt;
         std::deque<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>> cluster_buffer;
         std::deque<std::vector<PointXYZColorScore>> center_buffer;
-        std::deque<std::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>> cloud_buffer;
+        std::deque<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_buffer;
 
         //Subscriber
         std::string kLidarTopic;
