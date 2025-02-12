@@ -287,7 +287,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     filtered_msg.header.frame_id="/rslidar";
     filtered_pub_->publish(filtered_msg);
 
-    // Publish the accumulated cloud
+    // Publish the clusters cloud
     sensor_msgs::msg::PointCloud2 clusters_msg;
     pcl::toROSMsg(*clusters_cloud, clusters_msg);
     clusters_msg.header.frame_id="/rslidar";
