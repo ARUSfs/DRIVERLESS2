@@ -17,6 +17,7 @@
 #include "perception/clustering.h"
 #include "perception/cropping.h"
 #include "scoring.h"
+#include "perception/accumulation.h"
 #include "PointXYZColorScore.h"
 #include <pcl/common/common.h>
 #include <Eigen/Dense>
@@ -66,9 +67,6 @@ class Perception : public rclcpp::Node
         double vy;
         double yaw_rate;
         double dt;
-        std::deque<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>> cluster_buffer;
-        std::deque<std::vector<PointXYZColorScore>> center_buffer;
-        std::deque<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_buffer;
 
         //Subscriber
         std::string kLidarTopic;
@@ -120,37 +118,4 @@ class Perception : public rclcpp::Node
         * @param state_msg The information received from the car state node.
         */
         void state_callback(common_msgs::msg::State::SharedPtr state_msg);
-
-        /**
-        * @brief Function to apply rigid transformation to a point cloud
-        * @param cloud Points of the cloud.
-        * @param vx  Linear velocities along X.
-        * @param vy  Linear velocities along Y.
-        * @param yaw_rate Yaw rate of the car.
-        * @param dt Time interval.
-        */
-        void rigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
-                double vx, double vy, double yaw_rate, double dt);
-
-        /**
-        * @brief Accumulate the clouds of the last frames.
-        * @param cloud The clouds you want to store in the buffer.
-        * @param kBufferSize The size of cloud buffers.
-        * @param final_cloud THe acumulated cloud.  
-        */
-        void accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int kBufferSize, 
-                pcl::PointCloud<pcl::PointXYZI>::Ptr final_cloud);
-
-        /**
-        * @brief Auxiliar function for the lidar call back function.
-        * Accumulates the clusters of the last 5 frames of the lidar call back.
-        * @param cluster_points The points of the clusters.
-        * @param clusters_centers The centers of the clusters.
-        * @param kBufferSize The size of both cluster and center buffers.
-        * @param final_clusters THe acumulated clusters.
-        * @param final_centers The updated centers.
-        */
-        void accumulate_clusters(std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& cluster_points, std::vector<PointXYZColorScore>&
-            clusters_centers, int kBufferSize, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& final_clusters, 
-            std::vector<PointXYZColorScore>& final_centers, double AccumulationThreshold);
 };
