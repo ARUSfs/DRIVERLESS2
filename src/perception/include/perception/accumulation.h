@@ -57,7 +57,6 @@ namespace Accumulation
     * @brief Accumulate the clouds of the last frames.
     * @param cloud The clouds you want to store in the buffer.
     * @param kBufferSize The size of cloud buffers.
-    * @param final_cloud THe acumulated cloud.  
     */
     pcl::PointCloud<pcl::PointXYZI>::Ptr accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int kBufferSize,
             double vx, double vy, double yaw_rate, double dt)
@@ -105,13 +104,14 @@ namespace Accumulation
     * @param cluster_points The points of the clusters.
     * @param clusters_centers The centers of the clusters.
     * @param kBufferSize The size of both cluster and center buffers.
-    * @param final_clusters THe acumulated clusters.
-    * @param final_centers The updated centers.
     */
-    void accumulate_clusters(std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& cluster_points, std::vector<PointXYZColorScore>&
-            clusters_centers, int kBufferSize, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& final_clusters, 
-            std::vector<PointXYZColorScore>& final_centers, double AccumulationThreshold,double vx, double vy, double yaw_rate, double dt)
+    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>accumulate_clusters(
+            std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& cluster_points, std::vector<PointXYZColorScore>&
+            clusters_centers, int kBufferSize, double AccumulationThreshold,double vx, double vy, double yaw_rate, double dt)
     {
+        std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> final_clusters;
+        std::vector<PointXYZColorScore> final_centers;
+
         //Clean the buffer the first time
         if (!buffer_cluster_initialized) {
             cluster_buffer.clear();
@@ -196,5 +196,6 @@ namespace Accumulation
                 final_centers.push_back(all_centers[n]);
             }
         }
+        return final_clusters;
     }
 }

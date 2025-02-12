@@ -31,7 +31,8 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<double>("threshold_scoring", 0.4);
     this->declare_parameter<double>("accumulation_threshold", 0.01);
     this->declare_parameter<int>("buffer_size", 10);
-    this->declare_parameter<bool>("accumulation", false);
+    this->declare_parameter<bool>("accumulation_clouds", false);
+    this->declare_parameter<bool>("accumulation_clusters", false);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
@@ -51,7 +52,8 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("threshold_scoring", kThresholdScoring);
     this->get_parameter("accumulation_threshold", kAccumulationThreshold);
     this->get_parameter("buffer_size", kBufferSize);
-    this->get_parameter("accumulation", kAccumulation);
+    this->get_parameter("accumulation_clouds", kAccumulation_clouds);
+    this->get_parameter("accumulation_clusters", kAccumulation_clusters);
 
     // Initialize the variables
     vx = 0.0;
@@ -65,7 +67,7 @@ Perception::Perception() : Node("Perception")
     //Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kLidarTopic, 10, std::bind(&Perception::lidar_callback, this, std::placeholders::_1));
-    if (kAccumulation)
+    if (kAccumulation_clouds || kAccumulation_clusters)
     {
         state_sub_ = this->create_subscription<common_msgs::msg::State>(
             kStateTopic, 10, std::bind(&Perception::state_callback, this, std::placeholders::_1));
@@ -74,8 +76,8 @@ Perception::Perception() : Node("Perception")
     //Create the publishers
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/filtered_cloud", 10);
-    accumulation_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/accumulation", 10);
+    clusters_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+        "/perception/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/map", 10);
 }
@@ -213,7 +215,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Print the time of the ground filter algorithm used
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
 
-    if (kAccumulation)
+    if (kAccumulation_clouds)
     {
         //Accumulate the filtered clouds
         cloud_filtered = Accumulation::accumulate_cloud(cloud_filtered, kBufferSize, vx, vy, yaw_rate, dt);
@@ -250,15 +252,16 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         cluster_points.push_back(new_cluster);
     }
 
-    // Accumulate the clusters
-    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> final_clusters;
-    std::vector<PointXYZColorScore> final_centers;
-    Accumulation::accumulate_clusters(cluster_points, clusters_centers, kBufferSize, final_clusters, final_centers, kAccumulationThreshold, vx, vy, yaw_rate, dt);
+    if (kAccumulation_clusters)
+    {
+        // Accumulate the clusters
+        cluster_points = Accumulation::accumulate_clusters(cluster_points, clusters_centers, kBufferSize, kAccumulationThreshold, vx, vy, yaw_rate, dt);
+    }
 
     // Merge clusters into a single point cloud
     int i = 0;
     pcl::PointCloud<pcl::PointXYZI>::Ptr clusters_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-    for (auto c : final_clusters)
+    for (auto c : cluster_points)
     {
         for (auto &p : c->points)
         {
@@ -285,10 +288,10 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     filtered_pub_->publish(filtered_msg);
 
     // Publish the accumulated cloud
-    sensor_msgs::msg::PointCloud2 accumulation_msg;
-    pcl::toROSMsg(*clusters_cloud, accumulation_msg);
-    accumulation_msg.header.frame_id="/rslidar";
-    accumulation_pub_->publish(accumulation_msg);
+    sensor_msgs::msg::PointCloud2 clusters_msg;
+    pcl::toROSMsg(*clusters_cloud, clusters_msg);
+    clusters_msg.header.frame_id="/rslidar";
+    clusters_pub_->publish(clusters_msg);
 
     //Publish the map cloud
     sensor_msgs::msg::PointCloud2 map_msg;

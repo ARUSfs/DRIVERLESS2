@@ -61,7 +61,8 @@ class Perception : public rclcpp::Node
         double kThresholdScoring;
         double kAccumulationThreshold;
         int kBufferSize;
-        bool kAccumulation;
+        bool kAccumulation_clouds;
+        bool kAccumulation_clusters;
 
         // Variables
         double vx;
@@ -77,7 +78,7 @@ class Perception : public rclcpp::Node
 
         //Publishers
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
-        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr accumulation_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr clusters_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
 
         /**

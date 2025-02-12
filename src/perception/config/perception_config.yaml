@@ -22,7 +22,8 @@ perception:
     max_radius: 25.0
 
     # Parameters of accumulation
-    accumulation: true
+    accumulation_clouds: true
+    accumulation_clusters: true
     buffer_size: 5
     accumulation_threshold: 0.01
 
