@@ -59,7 +59,7 @@ namespace Accumulation
     * @param kBufferSize The size of cloud buffers.
     * @param final_cloud THe acumulated cloud.  
     */
-    void accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int kBufferSize, pcl::PointCloud<pcl::PointXYZI>::Ptr final_cloud, 
+    pcl::PointCloud<pcl::PointXYZI>::Ptr accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int kBufferSize,
             double vx, double vy, double yaw_rate, double dt)
     {
         //Clean the buffer the first time
@@ -77,6 +77,9 @@ namespace Accumulation
         //Add the latest frame
         cloud_buffer.push_back(cloud);
 
+        // Create an accumulated cloud
+        pcl::PointCloud<pcl::PointXYZI>::Ptr accumulated_cloud(new pcl::PointCloud<pcl::PointXYZI>());
+
         //Iterate through stored frames (excluding the latest)
         for (size_t i = 0; i < cloud_buffer.size() - 1; ++i) 
         {
@@ -88,15 +91,12 @@ namespace Accumulation
             rigidTransformation(cloud_buffer[i], vx, vy, yaw_rate, dt);
 
             //Merge into final accumulated cloud
-            *final_cloud += *cloud_buffer[i];
+            *accumulated_cloud += *cloud_buffer[i];
         }
+        // Add the latest frame (unmodified)
+        *accumulated_cloud += *cloud_buffer.back();
 
-        //Add the latest cloud (unmodified)
-        if (!cloud_buffer.back() || cloud_buffer.back()->empty()) 
-        {
-            return;
-        }
-        *final_cloud += *cloud_buffer.back();
+        return accumulated_cloud;
     }
 
     /**

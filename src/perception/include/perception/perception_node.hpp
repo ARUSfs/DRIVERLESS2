@@ -61,6 +61,7 @@ class Perception : public rclcpp::Node
         double kThresholdScoring;
         double kAccumulationThreshold;
         int kBufferSize;
+        bool kAccumulation;
 
         // Variables
         double vx;
