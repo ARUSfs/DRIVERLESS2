@@ -63,7 +63,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     pcl::fromROSMsg(*per_msg, pcl_cloud_);
 
     // Check if the point cloud is empty and return if it is
-    if(pcl_cloud_.size() == 0){
+    if(pcl_cloud_.size() < 3){
         RCLCPP_INFO(this->get_logger(), "Empty point cloud");
         return;
     }
