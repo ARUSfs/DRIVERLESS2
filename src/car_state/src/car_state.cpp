@@ -133,7 +133,6 @@ CarState::CarState(): Node("car_state")
             arussim_ground_truth_callback, this, std::placeholders::_1));
     }
 
-    // TODO: Adapt simulator to real life topics structure
     extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         kExtensometerTopic, 1, std::bind(&CarState::
             extensometer_callback, this, std::placeholders::_1));
@@ -202,7 +201,7 @@ CarState::CarState(): Node("car_state")
 
 void CarState::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    as_status_ = msg->data +1; // TODO: fix AS_status in AS board
+    as_status_ = msg->data; 
 
     if(as_status_ == 3)
     {
