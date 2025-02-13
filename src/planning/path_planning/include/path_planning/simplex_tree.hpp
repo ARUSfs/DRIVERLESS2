@@ -34,6 +34,7 @@ class SimplexTree {
     double len_coeff_;
     double min_cost_ = INFINITY;
     std::vector<ConeXYZColorScore> best_route_;
+    std::vector<std::vector<ConeXYZColorScore>> ending_routes_;
 
     /**
      * @brief Array of arrays containing all the posible routes through the tree.
@@ -121,7 +122,7 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
     std::vector<int> valid_neighbors = {};
     for (int i = 0; i<3; i++){
         if (neighbors[i]>triangle_list.size()) continue; 
-        
+
         CDT::Triangle n_triangle = triangle_list[neighbors[i]];
         std::vector<ConeXYZColorScore> next_edge = {};
 
@@ -149,6 +150,8 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
                                                       (next_edge[0].y+next_edge[1].y)/2, 0, UNCOLORED, 1));
             mid_route.push_back(cones_cloud_.points[passed_vertices[0]]);
             midpoint_routes_.push_back(mid_route);
+            ending_routes_.push_back(mid_route);
+            route_cost -= abs(route_cost)/2;
             if (route_cost < min_cost_){
                 min_cost_ = route_cost;
                 best_route_ = mid_route;
