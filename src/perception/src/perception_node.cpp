@@ -94,7 +94,7 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_in
             center.y = (max_y + min_y) / 2;
             center.z = (max_z + min_z) / 2;
             center.color = 0;
-            center.score = 1;
+            center.score = 0;
             clusters_centers.push_back(center);
 
             it++;
@@ -107,6 +107,93 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_in
     //Resize the cluster indices vector
     cluster_indices.resize(clusters_centers.size());
 }
+
+void Perception::get_clusters_centers_ransac(std::vector<pcl::PointIndices>& cluster_indices,
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
+{
+    for (auto it = cluster_indices.begin(); it != cluster_indices.end(); )
+    {
+        //Create a temporal point cloud
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::copyPointCloud(*cloud_filtered, *it, *cluster_cloud);
+
+        //Obtain the new bounding box of the cluster
+        pcl::PointXYZI min_point, max_point;
+        pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
+        double max_x = max_point.x;
+        double min_x = min_point.x;
+        double max_y = max_point.y;
+        double min_y = min_point.y;
+        double max_z = max_point.z;
+        double min_z = min_point.z;
+
+        if ((max_z - min_z) < 0.4 && (max_x - min_x) < 0.4 && (max_y - min_y) < 0.4)
+        {
+            PointXYZColorScore center;
+            pcl::PointCloud<pcl::PointXYZ>::Ptr base_points(new pcl::PointCloud<pcl::PointXYZ>);
+
+            for (const auto& index : it->indices)
+            {
+                const auto& point = cloud_filtered->points[index];
+
+                if (std::abs(point.z - min_z) < 2.0) 
+                {
+                    base_points->push_back(pcl::PointXYZ(point.x, point.y, 0));
+                }
+            }
+
+            if (base_points->size() > 6)
+            {
+                //std::cout << "Base points: " << base_points->size() << std::endl;
+
+                center.z = (max_z + min_z) / 2;
+
+                //std::cout << "Z: " << center.z << std::endl;
+
+                pcl::SampleConsensusModelCircle3D<pcl::PointXYZ>::Ptr model_circle(
+                    new pcl::SampleConsensusModelCircle3D<pcl::PointXYZ>(base_points));
+
+                pcl::RandomSampleConsensus<pcl::PointXYZ> ransac(model_circle);
+                ransac.setDistanceThreshold(1.0);
+                ransac.computeModel();
+
+                Eigen::VectorXf circle_coefficients;
+                ransac.getModelCoefficients(circle_coefficients);
+
+                center.x = circle_coefficients[0]; 
+                center.y = circle_coefficients[1]; 
+
+                //std::cout << "X: " << center.x << std::endl;
+                //std::cout << "Y: " << center.y << std::endl;
+
+                center.color = 0;
+                center.score = 1;
+                clusters_centers.push_back(center);
+
+                //std::cout << "Clusters centers: " << clusters_centers.size() << std::endl;
+
+                it++;
+            }
+            else
+            {
+                center.x = (max_x + min_x) / 2;
+                center.y = (max_y + min_y) / 2;
+                center.z = (max_z + min_z) / 2;
+                center.color = 0;
+                center.score = 0;
+                clusters_centers.push_back(center);
+
+                it++;
+            }
+        }
+        else
+        {
+            it = cluster_indices.erase(it);
+        }
+    }
+    //Resize the cluster indices vector
+    cluster_indices.resize(clusters_centers.size());
+}  
 
 /**
  * @brief Recover falsely ground filtered points.
@@ -231,7 +318,13 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Store the clusters centers in a new point cloud
     std::vector<PointXYZColorScore> clusters_centers;
-    Perception::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers); 
+    Perception::get_clusters_centers_ransac(cluster_indices, cloud_filtered, clusters_centers);
+
+    /*for (int i = 0; i < clusters_centers.size(); ++i)
+    {
+        std::cout << "1-" << clusters_centers[i].x <<  clusters_centers[i].y << clusters_centers[i].z << std::endl;
+        std::cout << "2-" << clusters_centers2[i].x <<  clusters_centers2[i].y << clusters_centers2[i].z << std::endl;
+    }*/
 
     //Print the number of possibles cones
     if (DEBUG) std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;

@@ -21,6 +21,8 @@
 #include "color_estimation.h"
 #include <pcl/common/common.h>
 #include <Eigen/Dense>
+#include <pcl/sample_consensus/ransac.h>
+#include <pcl/sample_consensus/sac_model_circle3d.h>
 
 /**
  * @class Perception
@@ -104,5 +106,8 @@ class Perception : public rclcpp::Node
         * @param cluster_centers The center of each cluster.
         */
         void filter_clusters(std::vector<pcl::PointIndices>& cluster_indices,
+            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
+
+        void get_clusters_centers_ransac(std::vector<pcl::PointIndices>& cluster_indices,
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
 };
