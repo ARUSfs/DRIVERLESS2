@@ -136,7 +136,7 @@ void IcpSlam::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr map_ms
 		centro.x = 0;
 		centro.y = 0;
 		centro.z = 0;
-		centro.color = 0;
+		centro.color = -1;
 		centro.score = 1;
 		for (const auto& idx : cluster.indices) {
 			centro.x += (*previous_map_)[idx].x;
@@ -178,7 +178,7 @@ void IcpSlam::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr map_ms
 			cono.x = (*previous_map_)[cluster.indices[0]].x;
 			cono.y = (*previous_map_)[cluster.indices[0]].y;
 			cono.z = 0;
-			cono.color = 0;
+			cono.color = -1;
 			cono.score = 1;
 			for (const auto& idx : cluster.indices) {
 								// This is a botch that works but should be changed. PCL ICP doesn't sopport weighted points,

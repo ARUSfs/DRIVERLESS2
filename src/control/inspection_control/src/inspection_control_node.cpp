@@ -42,7 +42,7 @@ void InspectionControl::car_state_callback(const common_msgs::msg::State::Shared
 
 void InspectionControl::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    if (msg->data == 2 && as_status_ != 2){ // TODO: change to 3
+    if (msg->data == 3 && as_status_ != 3){ 
         start_time_ = this->get_clock()->now();
     }
     as_status_ = msg->data;
@@ -50,7 +50,7 @@ void InspectionControl::as_status_callback(const std_msgs::msg::Float32::SharedP
 
 void InspectionControl::on_timer()
 {   
-    if(as_status_ == 2 && this->get_clock()->now().seconds() - start_time_.seconds() < kDuration){
+    if(as_status_ == 3 && this->get_clock()->now().seconds() - start_time_.seconds() < kDuration){
         auto cmd_msg = common_msgs::msg::Cmd();
 
         // 230 is the maximum toque value
@@ -62,7 +62,7 @@ void InspectionControl::on_timer()
         
         cmd_pub_->publish(cmd_msg);
 
-    } else if (as_status_ == 2 && this->get_clock()->now().seconds() - start_time_.seconds() >= kDuration){
+    } else if (as_status_ == 3 && this->get_clock()->now().seconds() - start_time_.seconds() >= kDuration){
         if (vx_ > 0.5){
             auto cmd_msg = common_msgs::msg::Cmd();
             cmd_msg.acc = 0.0;
@@ -70,7 +70,7 @@ void InspectionControl::on_timer()
             cmd_pub_->publish(cmd_msg);
         } else {
             auto finish_msg = std_msgs::msg::Float32();
-            finish_msg.data = 4; // TODO: change to 5
+            finish_msg.data = 5;
             finish_pub_->publish(finish_msg);
         }
     }
