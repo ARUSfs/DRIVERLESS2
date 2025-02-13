@@ -7,7 +7,7 @@ path_planning:
 
     # Triangulation parameters
     max_tri_len: 7.5
-    max_tri_angle: 3.14
+    max_tri_angle: 3.15
     color: true
 
     # Route parameters
