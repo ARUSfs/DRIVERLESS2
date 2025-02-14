@@ -13,6 +13,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
+find_package(common_msgs REQUIRED)
 
 include_directories(
   include
@@ -25,7 +26,8 @@ ament_target_dependencies(perception_exec rclcpp
                             geometry_msgs
                             sensor_msgs 
                             PCL
-                            pcl_conversions)
+                            pcl_conversions
+                            common_msgs)
 
   
 install(TARGETS
