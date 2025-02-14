@@ -43,11 +43,13 @@ private:
     // Callbacks
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
+    void optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void run_check_callback(const std_msgs::msg::Bool::SharedPtr msg);
     void on_timer();
     void get_global_index();
 
     bool run_check_ = false;
+    bool optimized_ = false;
 
     // Variable car state
     double x_;
@@ -72,7 +74,6 @@ private:
     //Subscribers
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
     rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trayectory_sub_;
-    rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr final_trajectory_sub_;
     rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_sub_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr run_check_sub_;
 

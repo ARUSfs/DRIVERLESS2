@@ -27,20 +27,6 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(rslidar_launch)),
         create_node(pkg='can_interface'),
-        create_node(pkg='epos_interface'),
-        create_node(pkg='perception'),
-        create_node(pkg='path_planning',
-                    params=[{'v_max': 2.0,
-                             'ax_max': 3.0,
-                             'ay_max': 3.0}]),
-        create_node(pkg='controller',
-                    params=[{'min_cmd': 0.0,
-                             'max_cmd': 0.1}]),
-        create_node(pkg='graph_slam'),
-        create_node(pkg='car_state', 
-                    params=[{'simulation': False, 
-                    'mission': 'trackdrive'}]),
-        create_node(pkg='trajectory_optimization'),
         rosbag_record
     ])
 

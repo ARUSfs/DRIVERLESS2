@@ -6,6 +6,9 @@
  * 
  * @date 17-01-2025
  */
+
+#pragma once
+
 #include <cmath>
 #include <iostream>
 
@@ -44,4 +47,40 @@ int compare_lists(std::vector<CDT::V2d<double>> list1, std::vector<CDT::V2d<doub
         }
     }
     return count;
+}
+
+/**
+ * @brief Calculate the centroid of a triangle given its index in the triangulation.
+ * Centroid is calculated as the arithmetic mean of its three vertices in each coordinate. 
+ * The centroid always lies inside the triangle's convex hull.
+ * @param triangle_ind int index of the triangle in the triangulation.
+ * @param triangles TriangleVec list of triangles in the triangulation.
+ * @param vertices CDT::Triangulation<double>::V2dVec list of vertices in the triangulation.
+ * @return CDT::V2d<double> Centroid of the triangle as a CDT point.
+ */
+CDT::V2d<double> compute_centroid(int triangle_ind, CDT::TriangleVec triangles, CDT::Triangulation<double>::V2dVec vertices){
+    CDT::V2d<double> a, b, c;
+    CDT::Triangle triangle = triangles[triangle_ind];
+    CDT::VerticesArr3 vertices_index = triangle.vertices;
+    CDT::VertInd a_ind = vertices_index[0];
+    CDT::VertInd b_ind = vertices_index[1];
+    CDT::VertInd c_ind = vertices_index[2];
+    a = vertices[a_ind];
+    b = vertices[b_ind];
+    c = vertices[c_ind];
+    CDT::V2d<double> centroid = CDT::V2d<double>::make((a.x+b.x+c.x)/3, (a.y+b.y+c.y)/3);
+    return centroid;
+}
+
+template <typename T>
+bool in(const T& value, const std::vector<T>& container) {
+    return std::find(container.begin(), container.end(), value) != container.end();
+}
+
+bool in(unsigned int& value, CDT::VerticesArr3& container) {
+    return std::find(container.begin(), container.end(), value) != container.end();
+}
+
+bool in(unsigned int& value, std::vector<int>& container) {
+    return std::find(container.begin(), container.end(), value) != container.end();
 }

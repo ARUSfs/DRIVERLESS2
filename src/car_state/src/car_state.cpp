@@ -133,7 +133,6 @@ CarState::CarState(): Node("car_state")
             arussim_ground_truth_callback, this, std::placeholders::_1));
     }
 
-    // TODO: Adapt simulator to real life topics structure
     extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         kExtensometerTopic, 1, std::bind(&CarState::
             extensometer_callback, this, std::placeholders::_1));
@@ -202,7 +201,7 @@ CarState::CarState(): Node("car_state")
 
 void CarState::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    as_status_ = msg->data +1; // TODO: fix AS_status in AS board
+    as_status_ = msg->data; 
 
     if(as_status_ == 3)
     {
@@ -218,14 +217,14 @@ void CarState::ax_callback(const std_msgs::msg::Float32::SharedPtr msg)
     double dt = (now_time - last_imu_msg_time_).seconds();
     last_imu_msg_time_ = now_time;
 
-    if(dt > kThresholdImu) {
+    if (kSafeMode && (dt > kThresholdImu)) {
         plausability_ += kErrorWeightIMU;
         RCLCPP_ERROR(this->get_logger(), "IMU dt: %f", dt);
     }
     
-    ax_ = - msg->data;
+    ax_ = msg->data;
 
-    if (ax_ < -kMaxAx || ax_ > kMaxAx) {
+    if (kSafeMode && (ax_ < -kMaxAx || ax_ > kMaxAx)) {
         plausability_ += kErrorWeightIMU;
         RCLCPP_ERROR(this->get_logger(), "ax_ out of range: %f", ax_);
     }
@@ -235,7 +234,7 @@ void CarState::ay_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
     ay_ = msg->data;
 
-    if (ay_ < -kMaxAy || ay_ > kMaxAy) {
+    if (kSafeMode && (ay_ < -kMaxAy || ay_ > kMaxAy)) {
         plausability_ += kErrorWeightIMU;
         RCLCPP_ERROR(this->get_logger(), "Mechanically impossible ay: %f", ay_);
     }
@@ -243,9 +242,9 @@ void CarState::ay_callback(const std_msgs::msg::Float32::SharedPtr msg)
 
 void CarState::r_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    r_ = - msg->data;
+    r_ = msg->data;
 
-    if (r_ < -kMaxR || r_ > kMaxR) {
+    if (kSafeMode && (r_ < -kMaxR || r_ > kMaxR)) {
         plausability_ += kErrorWeightIMU;
         RCLCPP_ERROR(this->get_logger(), "Mechanically impossible r: %f", r_);
     }
@@ -257,14 +256,14 @@ void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg
     double dt = (now_time - last_extensometer_msg_time_).seconds();
     last_extensometer_msg_time_ = now_time;
 
-    if(dt > kThresholdExtensometer) {
+    if (kSafeMode && dt > kThresholdExtensometer) {
         plausability_ += kErrorWeightExtensometer;
         RCLCPP_ERROR(this->get_logger(), "Extensometer dt: %f", dt);
     }
     
     delta_ = msg->data;
 
-    if (delta_ < -21 || delta_ > 21) {
+    if (kSafeMode && (delta_ < -21 || delta_ > 21)) {
         plausability_ += kErrorWeightExtensometer;
         RCLCPP_ERROR(this->get_logger(), "delta_ out of range: %f", delta_);
     }
@@ -276,14 +275,14 @@ void CarState::fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
     double dt = (now_time - last_fl_ws_msg_time_).seconds();
     last_fl_ws_msg_time_ = now_time;
 
-    if(dt > kThresholdWheelSpeed) {
+    if (kSafeMode && dt > kThresholdWheelSpeed) {
         plausability_ += kErrorWeightWheelSpeed;
         RCLCPP_ERROR(this->get_logger(), "FL wheelspeed dt: %f", dt);
     }
 
     v_front_left_ = msg->data;
 
-    if (v_front_left_ > kMaxVx) {
+    if (kSafeMode && v_front_left_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
         RCLCPP_ERROR(this->get_logger(), "v_front_left_ exceeds max: %f", v_front_left_);
     }
@@ -295,14 +294,14 @@ void CarState::fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
     double dt = (now_time - last_fr_ws_msg_time_).seconds();
     last_fr_ws_msg_time_ = now_time;
 
-    if(dt > kThresholdWheelSpeed) {
+    if (kSafeMode && dt > kThresholdWheelSpeed) {
         plausability_ += kErrorWeightWheelSpeed;
         RCLCPP_ERROR(this->get_logger(), "FR wheelspeed dt: %f", dt);
     }
 
     v_front_right_ = msg->data;
 
-    if (v_front_right_ > kMaxVx) {
+    if (kSafeMode && v_front_right_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
         RCLCPP_ERROR(this->get_logger(), "v_front_right_ exceeds max: %f", v_front_right_);
     }
@@ -314,14 +313,14 @@ void CarState::rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
     double dt = (now_time - last_rl_ws_msg_time_).seconds();
     last_rl_ws_msg_time_ = now_time;
 
-    if(dt > kThresholdWheelSpeed) {
+    if (kSafeMode && dt > kThresholdWheelSpeed) {
         plausability_ += kErrorWeightWheelSpeed;
         RCLCPP_ERROR(this->get_logger(), "RL wheelspeed dt: %f", dt);
     }
 
     v_rear_left_ = msg->data;
 
-    if (v_rear_left_ > kMaxVx) {
+    if (kSafeMode && v_rear_left_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
         RCLCPP_ERROR(this->get_logger(), "v_rear_left_ exceeds max: %f", v_rear_left_);
     }
@@ -333,14 +332,14 @@ void CarState::rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
     double dt = (now_time - last_rr_ws_msg_time_).seconds();
     last_rr_ws_msg_time_ = now_time;
 
-    if(dt > kThresholdWheelSpeed) {
+    if (kSafeMode && dt > kThresholdWheelSpeed) {
         plausability_ += kErrorWeightWheelSpeed;
         RCLCPP_ERROR(this->get_logger(), "RR wheelspeed dt: %f", dt);
     }
 
     v_rear_right_ = msg->data;
 
-    if (v_rear_right_ > kMaxVx) {
+    if (kSafeMode && v_rear_right_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
         RCLCPP_ERROR(this->get_logger(), "v_rear_right_ exceeds max: %f", v_rear_right_);
     }
@@ -352,14 +351,14 @@ void CarState::inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg)
     double dt = (now_time - last_inv_speed_msg_time_).seconds();
     last_inv_speed_msg_time_ = now_time;
 
-    if(dt > kThresholdInv) {
+    if(kSafeMode && dt > kThresholdInv) {
         plausability_ += kErrorWeightInvSpeed;
         RCLCPP_ERROR(this->get_logger(), "Inv speed dt: %f", dt);
     }
 
     vx_ = msg->data;
 
-    if (vx_ > kMaxVx || vx_ < -0.5) {
+    if (kSafeMode && (vx_ > kMaxVx || vx_ < -0.5)) {
         plausability_ += kErrorWeightInvSpeed;
         RCLCPP_ERROR(this->get_logger(), "vx_ exceeds max: %f", vx_);
     }
@@ -398,14 +397,14 @@ void CarState::cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 m
     double dt = (now_time - last_cones_count_actual_msg_time_).seconds();
     last_cones_count_actual_msg_time_ = now_time;
 
-    if(dt > kThresholdConesCountActual) {
+    if(kSafeMode && dt > kThresholdConesCountActual) {
         plausability_ += kErrorWeightConesCountActual;
         RCLCPP_ERROR(this->get_logger(), "Cones count actual dt: %f", dt);
     }
 
     cones_count_actual_ = msg.width;
 
-    if (cones_count_actual_ <= 0) {
+    if (kSafeMode && cones_count_actual_ <= 0) {
         plausability_+= kErrorWeightConesCountActual;
         RCLCPP_ERROR(this->get_logger(), "No cones detected by perception");
     }
@@ -417,14 +416,14 @@ void CarState::cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg)
     double dt = (now_time - last_cones_count_all_msg_time_).seconds();
     last_cones_count_all_msg_time_ = now_time;
 
-    if(dt > kThresholdConesCountAll) {
+    if(kSafeMode && dt > kThresholdConesCountAll) {
         plausability_ += kErrorWeightConesCountAll;
         RCLCPP_ERROR(this->get_logger(), "Cones count all dt: %f", dt);
     }
 
     cones_count_all_ = msg.width;
 
-    if (cones_count_all_ <= 0) {
+    if (kSafeMode && cones_count_all_ <= 0) {
         plausability_+= kErrorWeightConesCountAll;
         RCLCPP_ERROR(this->get_logger(), "No cones detected by slam");
     }

@@ -24,12 +24,12 @@ InspectionControl::InspectionControl() : Node("inspection_control_node"){
     pid_.set_params(KP, KI, KD);
 
     cmd_pub_ = this->create_publisher<common_msgs::msg::Cmd>("/controller/cmd", 10);
-    finish_pub_ = this->create_publisher<std_msgs::msg::Int16>("/can/AS_status", 10);
+    finish_pub_ = this->create_publisher<std_msgs::msg::Float32>("/can_interface/AS_status", 10);
 
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
             "/car_state/state", 10, std::bind(&InspectionControl::car_state_callback, this, std::placeholders::_1));
-    as_status_sub_ = this->create_subscription<std_msgs::msg::Int16>(
-            "/can/AS_status", 10, std::bind(&InspectionControl::as_status_callback, this, std::placeholders::_1));
+    as_status_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/can_interface/AS_status", 10, std::bind(&InspectionControl::as_status_callback, this, std::placeholders::_1));
     
     timer_ = this->create_wall_timer(
             std::chrono::milliseconds(100), std::bind(&InspectionControl::on_timer, this));
@@ -40,9 +40,9 @@ void InspectionControl::car_state_callback(const common_msgs::msg::State::Shared
     vx_ = msg->vx;
 }
 
-void InspectionControl::as_status_callback(const std_msgs::msg::Int16::SharedPtr msg)
+void InspectionControl::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
-    if (msg->data == 0x02 && as_status_ != 0x02){
+    if (msg->data == 3 && as_status_ != 3){ 
         start_time_ = this->get_clock()->now();
     }
     as_status_ = msg->data;
@@ -50,7 +50,7 @@ void InspectionControl::as_status_callback(const std_msgs::msg::Int16::SharedPtr
 
 void InspectionControl::on_timer()
 {   
-    if(as_status_ == 0x02 && this->get_clock()->now().seconds() - start_time_.seconds() < kDuration){
+    if(as_status_ == 3 && this->get_clock()->now().seconds() - start_time_.seconds() < kDuration){
         auto cmd_msg = common_msgs::msg::Cmd();
 
         // 230 is the maximum toque value
@@ -62,15 +62,15 @@ void InspectionControl::on_timer()
         
         cmd_pub_->publish(cmd_msg);
 
-    } else if (as_status_ == 0x02 && this->get_clock()->now().seconds() - start_time_.seconds() >= kDuration){
+    } else if (as_status_ == 3 && this->get_clock()->now().seconds() - start_time_.seconds() >= kDuration){
         if (vx_ > 0.5){
             auto cmd_msg = common_msgs::msg::Cmd();
             cmd_msg.acc = 0.0;
             cmd_msg.delta = 0.0;
             cmd_pub_->publish(cmd_msg);
         } else {
-            auto finish_msg = std_msgs::msg::Int16();
-            finish_msg.data = 0x03;
+            auto finish_msg = std_msgs::msg::Float32();
+            finish_msg.data = 5;
             finish_pub_->publish(finish_msg);
         }
     }
