@@ -31,7 +31,6 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<double>("threshold_scoring", 0.8);
     this->declare_parameter<double>("distance_threshold", 0.4);
     this->declare_parameter<double>("coloring_threshold", 0.4);
-    this->declare_parameter<double>("threshold_scoring", 0.4);
     this->declare_parameter<double>("accumulation_threshold", 0.01);
     this->declare_parameter<int>("buffer_size", 10);
     this->declare_parameter<bool>("accumulation_clouds", false);
@@ -356,17 +355,19 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;
 
-    //Publish the filtered cloud
-    sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*cloud_filtered, filtered_msg);
-    filtered_msg.header.frame_id="/rslidar";
-    filtered_pub_->publish(filtered_msg);
+    if (DEBUG){
+        //Publish the filtered cloud
+        sensor_msgs::msg::PointCloud2 filtered_msg;
+        pcl::toROSMsg(*cloud_filtered, filtered_msg);
+        filtered_msg.header.frame_id="/rslidar";
+        filtered_pub_->publish(filtered_msg);
 
-    // Publish the clusters cloud
-    sensor_msgs::msg::PointCloud2 clusters_msg;
-    pcl::toROSMsg(*clusters_cloud, clusters_msg);
-    clusters_msg.header.frame_id="/rslidar";
-    clusters_pub_->publish(clusters_msg);
+        // Publish the clusters cloud
+        sensor_msgs::msg::PointCloud2 clusters_msg;
+        pcl::toROSMsg(*clusters_cloud, clusters_msg);
+        clusters_msg.header.frame_id="/rslidar";
+        clusters_pub_->publish(clusters_msg);
+    }
 
     //Publish the map cloud
     sensor_msgs::msg::PointCloud2 map_msg;

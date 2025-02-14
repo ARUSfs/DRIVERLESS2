@@ -124,6 +124,8 @@ class Perception : public rclcpp::Node
         */
         void filter_clusters(std::vector<pcl::PointIndices>& cluster_indices,
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
+        
+        /**
         * @brief Callback function for the car state topic.
         * When the car state topic recieves a message, this function is called and performs
         * all the necessary steps to process the information.
