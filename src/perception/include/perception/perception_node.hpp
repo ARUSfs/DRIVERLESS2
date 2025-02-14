@@ -63,7 +63,8 @@ class Perception : public rclcpp::Node
         double kMaxRadius;
         double kRadius;
         int kMinimumRansacPoints;
-        double kThresholdScoring;
+        double kMinThresholdScoring;
+        double kMaxThresholdScoring;
         double kDistanceThreshold;
         double kColoringThreshold;
         double kAccumulationThreshold;

@@ -28,7 +28,8 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<int>("number_sectors", 8);
     this->declare_parameter<double>("max_radius", 25);
     this->declare_parameter<int>("minimum_ransac_points", 30);
-    this->declare_parameter<double>("threshold_scoring", 0.8);
+    this->declare_parameter<double>("min_threshold_scoring", 0.8);
+    this->declare_parameter<double>("max_threshold_scoring", 0.9);
     this->declare_parameter<double>("distance_threshold", 0.4);
     this->declare_parameter<double>("coloring_threshold", 0.4);
     this->declare_parameter<double>("accumulation_threshold", 0.01);
@@ -48,7 +49,8 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("number_sections", kNumberSections);
     this->get_parameter("angle_threshold", kAngleThreshold);
     this->get_parameter("minimum_ransac_points", kMinimumRansacPoints);
-    this->get_parameter("threshold_scoring", kThresholdScoring);
+    this->get_parameter("min_threshold_scoring", kMinThresholdScoring);
+    this->get_parameter("max_threshold_scoring", kMaxThresholdScoring);
     this->get_parameter("distance_threshold", kDistanceThreshold);
     this->get_parameter("coloring_threshold", kColoringThreshold);
     this->get_parameter("accumulation_threshold", kAccumulationThreshold);
@@ -331,7 +333,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Score the clusters and keep the ones that will be consider cones
     pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
-    Scoring::scoring_surface(cloud_filtered, final_map, cluster_indices, clusters_centers, kThresholdScoring);
+    Scoring::scoring_surface(final_map, cluster_points, clusters_centers, kMinThresholdScoring, kMaxThresholdScoring);
 
 
     //Print the number of cones and the time of the scoring
@@ -340,7 +342,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 
     //Estime the color of the closest cones
-    ColorEstimation::color_estimation(cluster_indices, clusters_centers, cloud_filtered, kDistanceThreshold, kColoringThreshold);
+    ColorEstimation::color_estimation(cluster_points, clusters_centers, kDistanceThreshold, kColoringThreshold);
     if (DEBUG) std::cout << "Color estimation time: " << this->now().seconds() - start_time << std::endl;
 
 

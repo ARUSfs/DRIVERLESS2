@@ -21,7 +21,7 @@
     * @param distance_threshold The distance that decides if the cone is going to be processed or not.
     * @param coloring_threshold The threshold between the global average intensity and the average intensity of each cone.
     */
-    void color_estimation(std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore>& clusters_centers, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered,
+    void color_estimation(std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points, std::vector<PointXYZColorScore>& clusters_centers,
         double distance_threshold, double coloring_threshold)
     {
         // Define a vector to store (average, id) pairs for each cone, where the id will be the index
@@ -39,7 +39,7 @@
         {
             // Define the center and the indices of the cone
             PointXYZColorScore& center = clusters_centers[i];
-            const auto& indices = cluster_indices[i];
+            const auto& cluster = cluster_points[i];
 
             // Calculate the distance from the cone to the origin
             double distance = std::sqrt(center.x * center.x + center.y * center.y + center.z * center.z);
@@ -48,10 +48,9 @@
             if (distance < distance_threshold)
             {
                 // Iterate on each point of the cluster
-                for (const auto& index : indices.indices) 
+                for (const auto& point : cluster->points) 
                 {
                     // Store the (z, intensity) pair of the point
-                    const auto& point = cloud_filtered->points[index];
                     z_intensity.emplace_back(point.z, point.intensity);
                 }
 
