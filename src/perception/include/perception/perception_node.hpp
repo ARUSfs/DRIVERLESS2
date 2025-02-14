@@ -17,12 +17,19 @@
 #include "perception/clustering.h"
 #include "perception/cropping.h"
 #include "scoring.h"
+#include "perception/accumulation.h"
 #include "PointXYZColorScore.h"
 #include "color_estimation.h"
 #include <pcl/common/common.h>
 #include <Eigen/Dense>
+#include "common_msgs/msg/state.hpp"
+#include <pcl/common/transforms.h>
+#include <deque>
+#include <omp.h>
+#include <iostream>
 #include <pcl/sample_consensus/ransac.h>
 #include <pcl/sample_consensus/sac_model_circle3d.h>
+
 
 /**
  * @class Perception
@@ -58,13 +65,26 @@ class Perception : public rclcpp::Node
         double kThresholdScoring;
         double kDistanceThreshold;
         double kColoringThreshold;
+        double kAccumulationThreshold;
+        int kBufferSize;
+        bool kAccumulation_clouds;
+        bool kAccumulation_clusters;
+
+        // Variables
+        double vx;
+        double vy;
+        double yaw_rate;
+        double dt;
 
         //Subscriber
         std::string kLidarTopic;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_sub_;
+        std::string kStateTopic;
+        rclcpp::Subscription<common_msgs::msg::State>::SharedPtr state_sub_;
 
         //Publishers
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr clusters_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
         
         /**
@@ -107,7 +127,17 @@ class Perception : public rclcpp::Node
         */
         void filter_clusters(std::vector<pcl::PointIndices>& cluster_indices,
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
+        
+        /**
+        * @brief Callback function for the car state topic.
+        * When the car state topic recieves a message, this function is called and performs
+        * all the necessary steps to process the information.
+        * @param state_msg The information received from the car state node.
+        */
+        void state_callback(common_msgs::msg::State::SharedPtr state_msg);
+
 
         void get_clusters_centers_ransac(std::vector<pcl::PointIndices>& cluster_indices,
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
+
 };

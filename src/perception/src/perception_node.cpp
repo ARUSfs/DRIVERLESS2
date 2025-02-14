@@ -1,11 +1,11 @@
 /**
  * @file perception_node.hpp
- * @author Alejandro Vallejo Mayo (alejandro.vm.1805@gmail.com)
+ * @author Alejandro Vallejo Mayo (alejandro.vm.1805@gmail.com) and Álvaro Galisteo (galisbermo03@gmail.com)
  * @brief Main file for the Perception node. 
  * Contains the main function and the implementation of the methods to achieve a robust and reliable perception algorithm for the ARUS 
  * Team, which extracts the location of the cones on the track.
- * @version 0.1
- * @date 3-11-2024
+ * @version 0.2
+ * @date 05-02-2025
  */
 
 #include "perception/perception_node.hpp"
@@ -15,6 +15,7 @@ Perception::Perception() : Node("Perception")
 {
     //Declare the parameters
     this->declare_parameter<std::string>("lidar_topic", "/rslidar_points");
+    this->declare_parameter<std::string>("state_topic", "/car_state/state");
     this->declare_parameter<double>("max_x_fov", 25.0);
     this->declare_parameter<double>("max_y_fov", 20.0);
     this->declare_parameter<double>("max_z_fov", 0.0);
@@ -30,9 +31,14 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<double>("threshold_scoring", 0.8);
     this->declare_parameter<double>("distance_threshold", 0.4);
     this->declare_parameter<double>("coloring_threshold", 0.4);
+    this->declare_parameter<double>("accumulation_threshold", 0.01);
+    this->declare_parameter<int>("buffer_size", 10);
+    this->declare_parameter<bool>("accumulation_clouds", false);
+    this->declare_parameter<bool>("accumulation_clusters", false);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
+    this->get_parameter("state_topic", kStateTopic);
     this->get_parameter("max_x_fov", kMaxXFov);
     this->get_parameter("max_y_fov", kMaxYFov);
     this->get_parameter("max_z_fov", kMaxZFov);
@@ -48,17 +54,36 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("threshold_scoring", kThresholdScoring);
     this->get_parameter("distance_threshold", kDistanceThreshold);
     this->get_parameter("coloring_threshold", kColoringThreshold);
+    this->get_parameter("accumulation_threshold", kAccumulationThreshold);
+    this->get_parameter("buffer_size", kBufferSize);
+    this->get_parameter("accumulation_clouds", kAccumulation_clouds);
+    this->get_parameter("accumulation_clusters", kAccumulation_clusters);
+
+    // Initialize the variables
+    vx = 0.0;
+    vy = 0.0;
+    yaw_rate = 0.0;
+    dt = 0.1;
 
     //Transform into radians
     kHFov *= (M_PI/180);
     
-    //Create the subscriber
+    //Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kLidarTopic, 10, std::bind(&Perception::lidar_callback, this, std::placeholders::_1));
-
+    if (kAccumulation_clouds || kAccumulation_clusters)
+    {
+        state_sub_ = this->create_subscription<common_msgs::msg::State>(
+            kStateTopic, 10, std::bind(&Perception::state_callback, this, std::placeholders::_1));
+    }
+    
     //Create the publishers
-    filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/filtered_cloud", 10);
-    map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/perception/map", 10);
+    filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+        "/perception/filtered_cloud", 10);
+    clusters_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+        "/perception/clusters", 10);
+    map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+        "/perception/map", 10);
 }
 
 /**
@@ -280,6 +305,19 @@ void Perception::filter_clusters(std::vector<pcl::PointIndices>& cluster_indices
     cluster_indices.resize(clusters_centers.size());
 }
 
+
+/**
+* @brief Create callback function for the car state topic.
+* @param state_msg The information received from the car state node.
+*/
+void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_msg)
+{
+    vx = state_msg->vx;
+    vy = state_msg->vy;
+    yaw_rate = state_msg->r;
+}
+
+
 /**
  * @brief Create callback function for the lidar topic.
  * @param lidar_msg The point cloud message received from the lidar topic.
@@ -309,6 +347,12 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Print the time of the ground filter algorithm used
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
 
+    if (kAccumulation_clouds)
+    {
+        //Accumulate the filtered clouds
+        cloud_filtered = Accumulation::accumulate_cloud(cloud_filtered, kBufferSize, vx, vy, yaw_rate, dt);
+    }
+    
     //Extract the clusters from the point cloud
     std::vector<pcl::PointIndices> cluster_indices;
     Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
@@ -341,6 +385,41 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Print the time of the filtering function
     if (DEBUG) std::cout << "Filtering time: " << this->now().seconds() - start_time << std::endl;
 
+    // Convert the indices of the clusters to the points of the clusters
+    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points;
+    for (const auto& cluster : cluster_indices)
+    {
+        pcl::PointCloud<pcl::PointXYZI>::Ptr new_cluster(new pcl::PointCloud<pcl::PointXYZI>);
+ 
+        for (const auto& idx : cluster.indices)
+        {
+            pcl::PointXYZI point = cloud_filtered->points[idx];
+            new_cluster->points.push_back(point);
+        } 
+        cluster_points.push_back(new_cluster);
+    }
+
+    if (kAccumulation_clusters)
+    {
+        // Accumulate the clusters
+        cluster_points = Accumulation::accumulate_clusters(cluster_points, clusters_centers, kBufferSize, kAccumulationThreshold, vx, vy, yaw_rate, dt);
+    }
+
+    // Merge clusters into a single point cloud
+    int i = 0;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr clusters_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    for (auto c : cluster_points)
+    {
+        for (auto &p : c->points)
+        {
+            p.intensity = i;
+            clusters_cloud->push_back(p);
+        }
+        i++;
+    }
+    if (DEBUG) std::cout << "Accumulation time: " << this->now().seconds() - start_time << std::endl;
+
+
     //Score the clusters and keep the ones that will be consider cones
     pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
     Scoring::scoring_surface(cloud_filtered, final_map, cluster_indices, clusters_centers, kThresholdScoring);
@@ -369,11 +448,19 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;
 
-    //Publish the filtered cloud
-    sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*cloud_filtered, filtered_msg);
-    filtered_msg.header.frame_id="/rslidar";
-    filtered_pub_->publish(filtered_msg);
+    if (DEBUG){
+        //Publish the filtered cloud
+        sensor_msgs::msg::PointCloud2 filtered_msg;
+        pcl::toROSMsg(*cloud_filtered, filtered_msg);
+        filtered_msg.header.frame_id="/rslidar";
+        filtered_pub_->publish(filtered_msg);
+
+        // Publish the clusters cloud
+        sensor_msgs::msg::PointCloud2 clusters_msg;
+        pcl::toROSMsg(*clusters_cloud, clusters_msg);
+        clusters_msg.header.frame_id="/rslidar";
+        clusters_pub_->publish(clusters_msg);
+    }
 
     //Publish the map cloud
     sensor_msgs::msg::PointCloud2 map_msg;
