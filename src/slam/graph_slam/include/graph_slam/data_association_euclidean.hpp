@@ -29,11 +29,17 @@ class DataAssociation{
                 if(min_distance < 1 && closest_landmark != nullptr){
                     obs.id_ = closest_landmark->id_;
                     obs.covariance_ = closest_landmark->covariance_;
+                    closest_landmark->num_observations_++;
+                    closest_landmark->last_observation_time_ = time(nullptr);
                 }
                 else{
                     obs.id_ = Landmark::UNMATCHED_ID;
                     unmatched_landmarks.emplace_back(obs);
                 }
+            }
+
+            for (auto landmark : map_){
+                std::cout << "Landmark " << landmark->id_ << " has " << landmark->num_observations_ << " observations." << std::endl;
             }
 
             observed_landmarks.erase(std::remove_if(observed_landmarks.begin(), 

@@ -21,6 +21,8 @@ class Landmark {
         Eigen::Vector2d world_position_;
         Eigen::Matrix2d covariance_;
         int color_;
+        int num_observations_;
+        time_t last_observation_time_;
 
         Landmark() {
             id_ = UNINITIALIZED_ID;
