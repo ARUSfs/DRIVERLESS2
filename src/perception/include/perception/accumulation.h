@@ -42,15 +42,23 @@ namespace Accumulation
         double delta_y = -vy * dt;
         double delta_theta = -yaw_rate * dt;
 
-        Eigen::Matrix4f transformation = Eigen::Matrix4f::Identity();
-        transformation(0, 0) = cos(delta_theta);
-        transformation(0, 1) = -sin(delta_theta);
-        transformation(1, 0) = sin(delta_theta);
-        transformation(1, 1) = cos(delta_theta);
-        transformation(0, 3) = delta_x;
-        transformation(1, 3) = delta_y;
+        Eigen::Matrix4f transform_lidar_to_CoG = Eigen::Matrix4f::Identity();
+        transform_lidar_to_CoG(0, 3) = -1.5; 
 
-        pcl::transformPointCloud(*cloud, *cloud, transformation);
+        Eigen::Matrix4f transform_motion = Eigen::Matrix4f::Identity();
+        transform_motion(0, 0) = cos(delta_theta);
+        transform_motion(0, 1) = -sin(delta_theta);
+        transform_motion(1, 0) = sin(delta_theta);
+        transform_motion(1, 1) = cos(delta_theta);
+        transform_motion(0, 3) = delta_x;
+        transform_motion(1, 3) = delta_y;
+
+        Eigen::Matrix4f transform_CoG_to_lidar = Eigen::Matrix4f::Identity();
+        transform_CoG_to_lidar(0, 3) = 1.5;
+
+        Eigen::Matrix4f final_transform = transform_lidar_to_CoG * transform_motion * transform_CoG_to_lidar;
+
+        pcl::transformPointCloud(*cloud, *cloud, final_transform);
     }
 
     /**
