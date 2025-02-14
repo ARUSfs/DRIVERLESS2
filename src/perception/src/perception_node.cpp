@@ -16,10 +16,10 @@ Perception::Perception() : Node("Perception")
     //Declare the parameters
     this->declare_parameter<std::string>("lidar_topic", "/rslidar_points");
     this->declare_parameter<std::string>("state_topic", "/car_state/state");
+    this->declare_parameter<bool>("crop", true);
     this->declare_parameter<double>("max_x_fov", 25.0);
     this->declare_parameter<double>("max_y_fov", 20.0);
     this->declare_parameter<double>("max_z_fov", 0.0);
-    this->declare_parameter<double>("h_fov", 180.0);
     this->declare_parameter<double>("threshold_ground_filter", 0.05);
     this->declare_parameter<double>("radius", 1.0);
     this->declare_parameter<int>("number_sections", 8);
@@ -39,17 +39,14 @@ Perception::Perception() : Node("Perception")
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
     this->get_parameter("state_topic", kStateTopic);
+    this->get_parameter("crop", kCrop);
     this->get_parameter("max_x_fov", kMaxXFov);
     this->get_parameter("max_y_fov", kMaxYFov);
     this->get_parameter("max_z_fov", kMaxZFov);
-    this->get_parameter("h_fov", kHFov);
     this->get_parameter("threshold_ground_filter", kThresholdGroundFilter);
     this->get_parameter("radius", kRadius);
     this->get_parameter("number_sections", kNumberSections);
     this->get_parameter("angle_threshold", kAngleThreshold);
-    this->get_parameter("number_rings", kNumberRings);
-    this->get_parameter("number_sectors", kNumberSectors);
-    this->get_parameter("max_radius", kMaxRadius);
     this->get_parameter("minimum_ransac_points", kMinimumRansacPoints);
     this->get_parameter("threshold_scoring", kThresholdScoring);
     this->get_parameter("distance_threshold", kDistanceThreshold);
@@ -117,7 +114,7 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_in
             PointXYZColorScore center;
             center.x = (max_x + min_x) / 2;
             center.y = (max_y + min_y) / 2;
-            center.z = (max_z + min_z) / 2;
+            center.z = min_z;
             center.color = 0;
             center.score = 0;
             clusters_centers.push_back(center);
@@ -133,92 +130,6 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_in
     cluster_indices.resize(clusters_centers.size());
 }
 
-void Perception::get_clusters_centers_ransac(std::vector<pcl::PointIndices>& cluster_indices,
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
-{
-    for (auto it = cluster_indices.begin(); it != cluster_indices.end(); )
-    {
-        //Create a temporal point cloud
-        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-        pcl::copyPointCloud(*cloud_filtered, *it, *cluster_cloud);
-
-        //Obtain the new bounding box of the cluster
-        pcl::PointXYZI min_point, max_point;
-        pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
-        double max_x = max_point.x;
-        double min_x = min_point.x;
-        double max_y = max_point.y;
-        double min_y = min_point.y;
-        double max_z = max_point.z;
-        double min_z = min_point.z;
-
-        if ((max_z - min_z) < 0.4 && (max_x - min_x) < 0.4 && (max_y - min_y) < 0.4)
-        {
-            PointXYZColorScore center;
-            pcl::PointCloud<pcl::PointXYZ>::Ptr base_points(new pcl::PointCloud<pcl::PointXYZ>);
-
-            for (const auto& index : it->indices)
-            {
-                const auto& point = cloud_filtered->points[index];
-
-                if (std::abs(point.z - min_z) < 2.0) 
-                {
-                    base_points->push_back(pcl::PointXYZ(point.x, point.y, 0));
-                }
-            }
-
-            if (base_points->size() > 6)
-            {
-                //std::cout << "Base points: " << base_points->size() << std::endl;
-
-                center.z = (max_z + min_z) / 2;
-
-                //std::cout << "Z: " << center.z << std::endl;
-
-                pcl::SampleConsensusModelCircle3D<pcl::PointXYZ>::Ptr model_circle(
-                    new pcl::SampleConsensusModelCircle3D<pcl::PointXYZ>(base_points));
-
-                pcl::RandomSampleConsensus<pcl::PointXYZ> ransac(model_circle);
-                ransac.setDistanceThreshold(1.0);
-                ransac.computeModel();
-
-                Eigen::VectorXf circle_coefficients;
-                ransac.getModelCoefficients(circle_coefficients);
-
-                center.x = circle_coefficients[0]; 
-                center.y = circle_coefficients[1]; 
-
-                //std::cout << "X: " << center.x << std::endl;
-                //std::cout << "Y: " << center.y << std::endl;
-
-                center.color = 0;
-                center.score = 1;
-                clusters_centers.push_back(center);
-
-                //std::cout << "Clusters centers: " << clusters_centers.size() << std::endl;
-
-                it++;
-            }
-            else
-            {
-                center.x = (max_x + min_x) / 2;
-                center.y = (max_y + min_y) / 2;
-                center.z = (max_z + min_z) / 2;
-                center.color = 0;
-                center.score = 0;
-                clusters_centers.push_back(center);
-
-                it++;
-            }
-        }
-        else
-        {
-            it = cluster_indices.erase(it);
-        }
-    }
-    //Resize the cluster indices vector
-    cluster_indices.resize(clusters_centers.size());
-}  
 
 /**
  * @brief Recover falsely ground filtered points.
@@ -325,27 +236,30 @@ void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_m
 void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg)
 {   
     double start_time = this->now().seconds();
-    
-    //Transform the message into a pcl point cloud
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::fromROSMsg(*lidar_msg, *cloud);
-
-    //Crop the point cloud
-    Cropping::crop_filter_cropbox(cloud, kMaxXFov, kMaxYFov, kMaxZFov);
-
-    //print the number of filtered points and the time of the cropping function used
-    if (DEBUG) std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
 
     //Define the variables for the ground filter
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+    
+
+
+    //Transform the message into a pcl point cloud
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::fromROSMsg(*lidar_msg, *cloud);
+
+
+    if (kCrop) {
+        //Crop the point cloud
+        Cropping::crop_filter_cropbox(cloud, kMaxXFov, kMaxYFov, kMaxZFov);
+        if (DEBUG) std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
+    }
+
 
     //Apply the ground filter fuction
     GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
-    
-    //Print the time of the ground filter algorithm used
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
+
 
     if (kAccumulation_clouds)
     {
@@ -353,37 +267,28 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         cloud_filtered = Accumulation::accumulate_cloud(cloud_filtered, kBufferSize, vx, vy, yaw_rate, dt);
     }
     
+
     //Extract the clusters from the point cloud
     std::vector<pcl::PointIndices> cluster_indices;
     Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
-
-    //Print the time of the clustering function
     if (DEBUG) std::cout << "Clustering time: " << this->now().seconds() - start_time << std::endl;
+
 
     //Store the clusters centers in a new point cloud
     std::vector<PointXYZColorScore> clusters_centers;
-    Perception::get_clusters_centers_ransac(cluster_indices, cloud_filtered, clusters_centers);
-
-    /*for (int i = 0; i < clusters_centers.size(); ++i)
-    {
-        std::cout << "1-" << clusters_centers[i].x <<  clusters_centers[i].y << clusters_centers[i].z << std::endl;
-        std::cout << "2-" << clusters_centers2[i].x <<  clusters_centers2[i].y << clusters_centers2[i].z << std::endl;
-    }*/
-
-    //Print the number of possibles cones
+    Perception::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers);
     if (DEBUG) std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
+
 
     //Recover ground points
     Perception::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius);
-    
-    //Print the time of the reconstruction function
     if (DEBUG) std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
+
 
     //Filter the clusters by size
     Perception::filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
-
-    //Print the time of the filtering function
     if (DEBUG) std::cout << "Filtering time: " << this->now().seconds() - start_time << std::endl;
+
 
     // Convert the indices of the clusters to the points of the clusters
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points;
@@ -405,34 +310,39 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         cluster_points = Accumulation::accumulate_clusters(cluster_points, clusters_centers, kBufferSize, kAccumulationThreshold, vx, vy, yaw_rate, dt);
     }
 
-    // Merge clusters into a single point cloud
-    int i = 0;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr clusters_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-    for (auto c : cluster_points)
-    {
-        for (auto &p : c->points)
-        {
-            p.intensity = i;
-            clusters_cloud->push_back(p);
-        }
-        i++;
-    }
-    if (DEBUG) std::cout << "Accumulation time: " << this->now().seconds() - start_time << std::endl;
 
+    pcl::PointCloud<pcl::PointXYZI>::Ptr clusters_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    if (DEBUG) {
+        // Publish clusters cloud with different colors
+        int i = 0;
+        for (auto c : cluster_points)
+        {
+            for (auto &p : c->points)
+            {
+                pcl::PointXYZI q = p;
+                q.intensity = i;
+                clusters_cloud->push_back(q);
+            }
+            i++;
+        }
+        std::cout << "Accumulation time: " << this->now().seconds() - start_time << std::endl;
+    }
+    
 
     //Score the clusters and keep the ones that will be consider cones
     pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
     Scoring::scoring_surface(cloud_filtered, final_map, cluster_indices, clusters_centers, kThresholdScoring);
 
+
     //Print the number of cones and the time of the scoring
     if (DEBUG) std::cout << "Number of cones: " << final_map->size() << std::endl;
     if (DEBUG) std::cout << "Scoring time: " << this->now().seconds() - start_time << std::endl;
 
+
     //Estime the color of the closest cones
     ColorEstimation::color_estimation(cluster_indices, clusters_centers, cloud_filtered, kDistanceThreshold, kColoringThreshold);
-
-    //Print the time of the color estimation function
     if (DEBUG) std::cout << "Color estimation time: " << this->now().seconds() - start_time << std::endl;
+
 
     //Update the colors of final map points
     for (auto& point : final_map->points) 

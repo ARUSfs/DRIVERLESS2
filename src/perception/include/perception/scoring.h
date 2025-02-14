@@ -33,8 +33,8 @@ namespace Scoring
         std::vector<PointXYZColorScore>& cluster_centers, double threshold)
     {
         //Define the cone
-        const double kBaseRadius = 11.4;  
-        const double kHeight = 32.5;      
+        const double kBaseRadius = 0.07525;  
+        const double kHeight = 0.40;      
         const double kTSquare = 1.0;   
 
         //iterate on each cluster
@@ -46,19 +46,6 @@ namespace Scoring
             double cone_radius_at_z;
 
             double distance = std::sqrt(center.x * center.x + center.y * center.y + center.z * center.z);
-            
-            //std::cout << "Distance: " << distance << std::endl;
-
-            //Calculate the height of the base
-            double min_z = std::numeric_limits<double>::max();
-            for (const auto& index : indices.indices) 
-            {
-                const auto& point = cloud_filtered->points[index];
-                if (point.z < min_z) 
-                {
-                    min_z = point.z;
-                }
-            }
 
             //Iterate on each point
             for (const auto& index : indices.indices)        
@@ -70,7 +57,7 @@ namespace Scoring
                 double dy = point.y - center.y;
 
                 //Calculate the distance in z to the base of the cone
-                double dz = point.z - min_z;
+                double dz = point.z - center.z;
 
                 //Determinate the cone radius depending on the height in z
                 if (dz > kHeight)
@@ -88,8 +75,8 @@ namespace Scoring
 
                 //Calulate the distante to the surface of the cone
                 double horizontal_distance = std::sqrt(dx * dx + dy * dy);
-                double distance_to_cone_surface = std::abs(horizontal_distance - cone_radius_at_z);
-
+                double distance_to_cone_surface = std::abs(horizontal_distance - cone_radius_at_z)*std::cos(0.1868);
+                std::cout << "Distance to cone surface: " << distance_to_cone_surface << std::endl;
                 //Apply the formula to get the score
                 double score = 1.0 - std::min(distance_to_cone_surface * distance_to_cone_surface / kTSquare, 1.0);
                 total_score += score;

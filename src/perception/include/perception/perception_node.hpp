@@ -50,6 +50,7 @@ class Perception : public rclcpp::Node
 
     private:
         //Parameters
+        bool kCrop;
         double kMaxXFov;
         double kMaxYFov;
         double kMaxZFov;

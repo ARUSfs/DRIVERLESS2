@@ -33,25 +33,4 @@ namespace Cropping
         //Store the cropped cloud
         crop_box_filter.filter(*cloud);
     }   
-
-    /**
-    * @brief Create crop filter function for the point cloud.
-    * @param cloud The point cloud that will be cropped.
-    * @param Mx The lenght in the x axis.
-    * @param My The lenght in the y axis.
-    * @param Mz The lenght in the z axis.
-    * @param H The angular condition.
-    */
-    void crop_filter_condition(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, double& Mx, double& My, double& Mz, double& H)
-    {
-        //Create the condition 
-        auto condition = [Mx, My, Mz, H](const pcl::PointXYZI &point)
-        {
-        return !(point.x < Mx && abs(point.y) < My && point.z < Mz 
-        && abs(atan2(point.y, point.x)) < H / 2 && (abs(point.y) > 0.8 || point.x > 2));
-        };
-
-        //Filter by the condition
-        cloud->erase(std::remove_if(cloud->points.begin(), cloud->points.end(), condition), cloud->points.end());
-    }
 }

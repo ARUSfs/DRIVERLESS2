@@ -5,10 +5,10 @@ perception:
     state_topic: "/car_state/state"
 
     #Parameters of FOV
+    crop: true
     max_x_fov: 30.0
     max_y_fov: 15.0
     max_z_fov: 0.0
-    h_fov: 180.0
 
     #Parameters of ground filter
     threshold_ground_filter: 0.075
@@ -16,10 +16,6 @@ perception:
     number_sections: 8
     angle_threshold: 35.0
     minimum_ransac_points: 30
-
-    number_rings: 6
-    number_sectors: 8
-    max_radius: 25.0
 
     # Parameters of accumulation
     accumulation_clouds: false
