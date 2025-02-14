@@ -132,7 +132,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         final_route = best_midpoint_route_;
     }
 
-    if (lap_count_ > 0){
+    if (lap_count_ > 0 or tree.end_){
         // Publish the unsmoothed trajectory
         unsmoothed_pub_ -> publish(this->create_trajectory_msg(final_route, false));
     }
@@ -304,7 +304,7 @@ std::vector<ConeXYZColorScore> PathPlanning::get_final_route(){
 common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<ConeXYZColorScore> route,
                                                                  bool smoothed){
     int route_size = route.size();
-    int degree = 2 ;
+    int degree = 2;
     common_msgs::msg::Trajectory trajectory_msg;
     double acum = 0.0;
     trajectory_msg.s = {0.0};
@@ -320,8 +320,9 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<Con
         }
         return trajectory_msg;
     }
-
-    if (route_size < 3){
+    if (route_size == 0){
+        return trajectory_msg;
+    } else if (route_size < 3){
         common_msgs::msg::PointXY point;
         point.x = route[0].x;
         point.y = route[0].y;
