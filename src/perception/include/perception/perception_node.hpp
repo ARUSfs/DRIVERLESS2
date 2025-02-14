@@ -27,6 +27,9 @@
 #include <deque>
 #include <omp.h>
 #include <iostream>
+#include <pcl/sample_consensus/ransac.h>
+#include <pcl/sample_consensus/sac_model_circle3d.h>
+
 
 /**
  * @class Perception
@@ -132,4 +135,9 @@ class Perception : public rclcpp::Node
         * @param state_msg The information received from the car state node.
         */
         void state_callback(common_msgs::msg::State::SharedPtr state_msg);
+
+
+        void get_clusters_centers_ransac(std::vector<pcl::PointIndices>& cluster_indices,
+            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
+
 };

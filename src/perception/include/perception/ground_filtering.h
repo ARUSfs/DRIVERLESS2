@@ -115,7 +115,7 @@ namespace GroundFiltering
             if (angle > angle_threshold)
             {
                 // Store the points in cloud filtered as it is not ground
-                *cloud_filtered += *temp_plane;
+                *cloud_plane += *temp_plane;
 
                 // Call the function again until the ground is suitable
                 ransac_checking_normal_vectors(temp_filtered, new_temp_filtered, new_temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, 
@@ -134,6 +134,43 @@ namespace GroundFiltering
                 *cloud_filtered += *new_temp_filtered;
                 *cloud_plane += *new_temp_plane;
             }
+        }
+    }
+
+    void ransac_checking_normal_vectors2(pcl::PointCloud<pcl::PointXYZI>::Ptr& grid_cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& temp_filtered, 
+        pcl::PointCloud<pcl::PointXYZI>::Ptr& temp_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, 
+        pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, int minimum_ransac_points)
+    {
+        // Create new temporal clouds to store the ground and not ground points if neccesary
+        pcl::PointCloud<pcl::PointXYZI>::Ptr new_temp_filtered(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr new_temp_plane(new pcl::PointCloud<pcl::PointXYZI>);
+
+        if (!(grid_cloud->size() < static_cast<std::size_t>(minimum_ransac_points)))
+        {
+            // Apply ransac
+            ransac_ground_filter(grid_cloud, temp_filtered, temp_plane, coefficients, threshold);
+
+            if (cloud_plane->points.size() > static_cast<std::size_t>(minimum_ransac_points))
+            {
+                // Store the planar points
+                *cloud_plane += *temp_plane;
+
+                // Call the function again until the ground is suitable
+                ransac_checking_normal_vectors2(temp_filtered, new_temp_filtered, new_temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, minimum_ransac_points);
+            }
+        }
+
+        if (new_temp_filtered->points.empty())
+        {
+            // Store the ground and not ground points in the specified clouds
+            *cloud_filtered += *temp_filtered;
+            *cloud_plane += *temp_plane;
+        }
+        else
+        {
+            // Store the ground and not ground points in the specified clouds
+            *cloud_filtered += *new_temp_filtered;
+            *cloud_plane += *new_temp_plane;
         }
     }
 
@@ -186,8 +223,7 @@ namespace GroundFiltering
                 pcl::PointCloud<pcl::PointXYZI>::Ptr temp_plane(new pcl::PointCloud<pcl::PointXYZI>);
                 
                 // Apply ransac and check the normal vectors
-                ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, 
-                    prev_normal, normal, angle_threshold, minimum_ransac_points);
+                ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, prev_normal, normal, angle_threshold, minimum_ransac_points);
 
                 // Update the variables for the next iteration
                 prev_normal = normal;
