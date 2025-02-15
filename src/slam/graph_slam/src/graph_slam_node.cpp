@@ -1,4 +1,5 @@
 #include "graph_slam/graph_slam_node.hpp"
+#include <g2o/core/robust_kernel_impl.h>
 // #include "data_association_euclidean.cpp"
 
 GraphSlam::GraphSlam() : Node("graph_slam")
@@ -125,6 +126,9 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
     pose_edge->setMeasurement(transform);
     // The information matrix is the inverse of the covariance matrix
     pose_edge->setInformation(Q.inverse());
+    g2o::RobustKernelHuber* rkPose = new g2o::RobustKernelHuber();
+    pose_edge->setRobustKernel(rkPose);
+    rkPose->setDelta(0.3);
     pose_edges_.push_back(pose_edge);
     edges_to_add_.push_back(pose_edge);
 }
@@ -168,6 +172,9 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
             edge->vertices()[1] = landmark_vertex;
             edge->setMeasurement(landmark.local_position_);
             edge->setInformation(R.inverse());
+            g2o::RobustKernelHuber* rkLandmark = new g2o::RobustKernelHuber();
+            edge->setRobustKernel(rkLandmark);
+            rkLandmark->setDelta(0.3);
             landmark_edges_.push_back(edge);
             edges_to_add_.push_back(edge);
         }
@@ -185,6 +192,9 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
         edge->vertices()[1] = landmark_vertex;
         edge->setMeasurement(landmark.local_position_);
         edge->setInformation(R.inverse());
+        g2o::RobustKernelHuber* rkLandmark = new g2o::RobustKernelHuber();
+        edge->setRobustKernel(rkLandmark);
+        rkLandmark->setDelta(0.3);
         landmark_edges_.push_back(edge);
         edges_to_add_.push_back(edge);
     }
@@ -200,12 +210,12 @@ void GraphSlam::optimizer_callback(){
 
     double t1 = this->now().seconds();
     optimizer_.initializeOptimization();
-    optimizer_.optimize(200);
+    optimizer_.optimize(50);
 
     if(kVerbose){
         RCLCPP_INFO(this->get_logger(), "---------------------------------");
-        RCLCPP_INFO(this->get_logger(), "Number of vertices: %d", optimizer_.vertices().size());
-        RCLCPP_INFO(this->get_logger(), "Number of edges: %d", optimizer_.edges().size());
+        RCLCPP_INFO(this->get_logger(), "Number of vertices: %d", optimizer_.activeVertices().size());
+        RCLCPP_INFO(this->get_logger(), "Number of edges: %d", optimizer_.activeEdges().size());
         RCLCPP_INFO(this->get_logger(), "Optimization time: %f", this->now().seconds() - t1);
     }
     
