@@ -131,7 +131,6 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     // Create the tree and get the midpoint routes
-    midpoint_routes_ = {};
     SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index, pcl_cloud_, yaw_,
                      kAngleCoeff, kLenCoeff, kMaxCost);
     best_midpoint_route_ = tree.best_route_;
@@ -144,7 +143,9 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     } else {
         final_route = best_midpoint_route_;
     }
-    if (final_route.size() <3) std::cout << "-----------0------------" << std::endl;
+
+    if (final_route.size() <3) return;
+
     if ((kUseClosingRoute and tree.end_) || lap_count_ > 0){
         // Publish the unsmoothed trajectory
         unsmoothed_pub_ -> publish(this->create_trajectory_msg(final_route, false));

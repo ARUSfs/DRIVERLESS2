@@ -18,7 +18,7 @@ path_planning:
     route_back: 10
     prev_route_bias: 0.5
     use_buffer: true
-    use_closing_route: true
+    use_closing_route: false
     stop_after_closing: true
 
     # Profile creation parameters
