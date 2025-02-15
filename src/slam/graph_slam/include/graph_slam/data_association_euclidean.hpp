@@ -21,7 +21,7 @@ class DataAssociation{
                 Landmark* closest_landmark = nullptr;
                 for(Landmark* landmark : map_){
                     double distance = (obs.world_position_ - landmark->world_position_).norm();
-                    if(distance < min_distance){
+                    if(distance < min_distance && !landmark->disabled_){
                         min_distance = distance;
                         closest_landmark = landmark;
                     }
@@ -30,7 +30,7 @@ class DataAssociation{
                     obs.id_ = closest_landmark->id_;
                     obs.covariance_ = closest_landmark->covariance_;
                     closest_landmark->num_observations_++;
-                    closest_landmark->last_observation_time_ = time(nullptr);
+                    closest_landmark->last_observation_time_ = time(0);
                 }
                 else{
                     obs.id_ = Landmark::UNMATCHED_ID;
@@ -38,8 +38,11 @@ class DataAssociation{
                 }
             }
 
-            for (auto landmark : map_){
-                std::cout << "Landmark " << landmark->id_ << " has " << landmark->num_observations_ << " observations." << std::endl;
+            // Disable landmarks that might be false positives
+            for (Landmark* landmark : map_){
+                if (time(0) - landmark->last_observation_time_ > 1.0 && landmark->num_observations_ < 10){
+                    landmark->disabled_ = true;
+                }
             }
 
             observed_landmarks.erase(std::remove_if(observed_landmarks.begin(), 
