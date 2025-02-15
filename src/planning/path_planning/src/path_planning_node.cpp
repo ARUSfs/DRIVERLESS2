@@ -20,6 +20,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("max_tri_angle", 2.9);
     this->declare_parameter<double>("len_coeff", 1.0);
     this->declare_parameter<double>("angle_coeff", 1.0);
+    this->declare_parameter<double>("max_cost", 50.0);
     this->declare_parameter<double>("v_max", 10.0);
     this->declare_parameter<double>("ay_max", 5.0);
     this->declare_parameter<double>("ax_max", 5.0);
@@ -37,6 +38,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("max_tri_angle", kMaxTriAngle);
     this->get_parameter("len_coeff", kLenCoeff);
     this->get_parameter("angle_coeff", kAngleCoeff);
+    this->get_parameter("max_cost", kMaxCost);
     this->get_parameter("v_max", kMaxVel);
     this->get_parameter("ay_max", kMaxYAcc);
     this->get_parameter("ax_max", kMaxXAcc);
@@ -131,7 +133,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     // Create the tree and get the midpoint routes
     midpoint_routes_ = {};
     SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index, pcl_cloud_, yaw_,
-                     kAngleCoeff, kLenCoeff);
+                     kAngleCoeff, kLenCoeff, kMaxCost);
     best_midpoint_route_ = tree.best_route_;
 
     std::vector<ConeXYZColorScore> final_route;

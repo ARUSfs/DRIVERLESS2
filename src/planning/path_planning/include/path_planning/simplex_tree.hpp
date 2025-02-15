@@ -32,6 +32,7 @@ class SimplexTree {
 
     double angle_coeff_;
     double len_coeff_;
+    double max_cost_;
     double min_cost_ = INFINITY;
     std::vector<ConeXYZColorScore> best_route_;
     std::vector<std::vector<ConeXYZColorScore>> ending_routes_;
@@ -57,7 +58,7 @@ class SimplexTree {
      */
     SimplexTree(CDT::TriangleVec triangle_list, int origin, int orig_vertex, 
                 pcl::PointCloud<ConeXYZColorScore> cones_cloud, double yaw, double angle_coeff,
-                double len_coeff);
+                double len_coeff, double max_cost);
 
     /**
      * @brief Recursive function to create the tree structure.
@@ -80,10 +81,11 @@ class SimplexTree {
 
 SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int orig_vertex,
                          pcl::PointCloud<ConeXYZColorScore> cones_cloud, double yaw, double angle_coeff, 
-                         double len_coeff) {
+                         double len_coeff, double max_cost) {
     cones_cloud_ = cones_cloud;
     angle_coeff_ = angle_coeff;
     len_coeff_ = len_coeff;
+    max_cost_ = max_cost;
     CDT::Triangle origin = triangle_list[origin_ind]; // Get triangle from index
     CDT::NeighborsArr3 neighbors = origin.neighbors;  // Get neighbors of the triangle
 
@@ -117,6 +119,9 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
                                           double prev_angle){
 
     SimplexNode* node = new SimplexNode(index);
+    if (midpoint_routes_.size() > 2 and route_cost > std::max(max_cost_, min_cost_)){
+        return node;
+    }
     CDT::Triangle triangle = triangle_list[index];     // Get the triangle from the index
     CDT::NeighborsArr3 neighbors = triangle.neighbors; // Get the neighbors of the triangle
     std::vector<ConeXYZColorScore> neighbor_edge = {};

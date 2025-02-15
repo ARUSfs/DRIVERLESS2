@@ -59,6 +59,7 @@ class PathPlanning : public rclcpp::Node
         double kMaxTriAngle;
         double kLenCoeff;
         double kAngleCoeff;
+        double kMaxCost;
         double kMaxVel;
         double kMaxYAcc;
         double kMaxXAcc;
