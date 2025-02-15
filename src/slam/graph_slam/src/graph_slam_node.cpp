@@ -321,6 +321,9 @@ void GraphSlam::fix_map(){
 void GraphSlam::publish_map(){
     pcl::PointCloud<ConeXYZColorScore> map;
     for (Landmark* landmark : DA.map_){
+        if (landmark->disabled_){
+            continue;
+        }
         if(landmark->color_==UNCOLORED){
             Eigen::Vector2d local_pos = global_to_local(landmark->world_position_);
             if(local_pos.norm() < 6 && local_pos[0] < 0){
