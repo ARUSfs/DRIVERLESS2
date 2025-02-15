@@ -27,6 +27,8 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<int>("route_back", 10);
     this->declare_parameter<double>("prev_route_bias", 0.75);
     this->declare_parameter<bool>("use_buffer", false);
+    this->declare_parameter<bool>("use_closing_route", false);
+    this->declare_parameter<bool>("stop_after_closing", false);
     this->get_parameter("map_topic", kMapTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
@@ -42,6 +44,8 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("route_back", kRouteBack);
     this->get_parameter("prev_route_bias", kPrevRouteBias);
     this->get_parameter("use_buffer", kUseBuffer);
+    this->get_parameter("use_closing_route", kUseClosingRoute);
+    this->get_parameter("stop_after_closing", kStopAfterClosing);
 
     map_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kMapTopic, 10, std::bind(&PathPlanning::map_callback, this, std::placeholders::_1));
@@ -59,6 +63,13 @@ PathPlanning::PathPlanning() : Node("path_planning")
 
 void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {
+    if (closing_route_.size() > 0){
+        // Publish the closing route
+        unsmoothed_pub_ -> publish(this->create_trajectory_msg(closing_route_, false));
+        trajectory_pub_ -> publish(this->create_trajectory_msg(closing_route_));
+        return;
+    }
+
     // Save the point cloud as a pcl object from ROS2 msg
     pcl::fromROSMsg(*per_msg, pcl_cloud_);
 
@@ -131,10 +142,11 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     } else {
         final_route = best_midpoint_route_;
     }
-
-    if (lap_count_ > 0 or tree.end_){
+    if (final_route.size() <3) std::cout << "-----------0------------" << std::endl;
+    if ((kUseClosingRoute and tree.end_) || lap_count_ > 0){
         // Publish the unsmoothed trajectory
         unsmoothed_pub_ -> publish(this->create_trajectory_msg(final_route, false));
+        if (kStopAfterClosing) closing_route_ = final_route;
     }
 
     // Publish the best trajectory

@@ -66,6 +66,8 @@ class PathPlanning : public rclcpp::Node
         int kRouteBack;
         double kPrevRouteBias;
         bool kUseBuffer;
+        bool kUseClosingRoute;
+        bool kStopAfterClosing;
 
         // Suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_sub_;
@@ -98,6 +100,7 @@ class PathPlanning : public rclcpp::Node
         // Routes
         std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
         std::vector<ConeXYZColorScore> best_midpoint_route_;
+        std::vector<ConeXYZColorScore> closing_route_= {};
         std::vector<std::vector<ConeXYZColorScore>> previous_midpoint_routes_;
         int invalid_counter_=0;
 
