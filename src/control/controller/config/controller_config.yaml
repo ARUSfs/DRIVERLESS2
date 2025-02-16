@@ -13,7 +13,7 @@ controller:
     target_speed: "/controller/target_speed"
 
     # PP
-    look_ahead_distance: 6.0
+    look_ahead_distance: 5.0
 
     # PID
     target: 5.0

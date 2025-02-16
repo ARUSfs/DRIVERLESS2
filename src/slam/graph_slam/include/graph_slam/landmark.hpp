@@ -31,6 +31,8 @@ class Landmark {
             world_position_ = Eigen::Vector2d::Zero();
             covariance_ = Eigen::Matrix2d::Identity();
             color_ = UNCOLORED;
+            disabled_ = false;
+            last_observation_time_ = time(0);  
         }
 
         Landmark(const Eigen::Vector2d& world_position) {
@@ -39,6 +41,8 @@ class Landmark {
             covariance_ = Eigen::Matrix2d::Identity();
             color_ = UNCOLORED;
             num_observations_ = 0;
+            disabled_ = false;
+            last_observation_time_ = time(0);  
         }
 
         Landmark(const Eigen::Vector2d& local_position, const Eigen::Vector3d vehicle_pose) {
@@ -47,7 +51,9 @@ class Landmark {
             get_world_pos(vehicle_pose);
             covariance_ = Eigen::Matrix2d::Identity();
             color_ = UNCOLORED;
-            num_observations_ = 0;  
+            num_observations_ = 0;
+            disabled_ = false;
+            last_observation_time_ = time(0);  
         }
 
     private:

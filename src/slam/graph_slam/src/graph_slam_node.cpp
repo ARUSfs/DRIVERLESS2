@@ -136,7 +136,7 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
 void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {   
     if (pose_vertices_.size() == 0) {
-        return;
+	return;
     }
 
     std::vector<Landmark> observed_landmarks;
@@ -145,6 +145,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     g2o::VertexSE2* last_pose_vertex = pose_vertices_.back();
     pcl::PointCloud<ConeXYZColorScore> cloud;
     pcl::fromROSMsg(*msg, cloud);
+   
     for (int i = 0; i < msg->width; i++) {
         //Extract the cone position
         ConeXYZColorScore cone = cloud.points[i];
@@ -353,6 +354,8 @@ void GraphSlam::publish_map(){
         cone.score = 1.0;
         map.push_back(cone);
     }
+    std::cout << "DA: " << DA.map_.size() << std::endl;
+    std::cout << "msg: " << map.size() << std::endl;
     
     sensor_msgs::msg::PointCloud2 map_msg;
     pcl::toROSMsg(map, map_msg);
