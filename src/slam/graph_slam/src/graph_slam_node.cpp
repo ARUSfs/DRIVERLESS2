@@ -335,7 +335,7 @@ void GraphSlam::publish_map(){
         if (landmark->disabled_){
             continue;
         }
-        if(landmark->color_==UNCOLORED){
+        if(landmark->color_==UNCOLORED || landmark->num_observations_ < 3){
             Eigen::Vector2d local_pos = global_to_local(landmark->world_position_);
             if(local_pos.norm() < 6 && local_pos[0] < 0){
 
