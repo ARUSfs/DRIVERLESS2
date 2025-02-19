@@ -88,9 +88,10 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     if (lap_count_ == 0){
-        // Add the current car position to the point cloud
+        // In the first lap add current car position as the origin of the tree
         pcl_cloud_.push_back(origin_);
     } else {
+        // In the second lap add the origin (0,0) as the origin of the tree
         pcl_cloud_.push_back(ConeXYZColorScore(0, 0, 0, UNCOLORED, 1));
     }
     
@@ -143,7 +144,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     best_index_route_ = tree.best_index_route_;
 
     // Get the track limits in the second lap
-    if (lap_count_ > 0 && x_>1 && !track_limits_sent_){
+    if (lap_count_ > 0 && x_>3 && !track_limits_sent_){
         track_limits_pub_ -> publish(this->create_track_limits_msg(best_index_route_));
         track_limits_sent_ = true;
     }
@@ -482,13 +483,13 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
         common_msgs::msg::PointXY point;
         point.x = pcl_cloud_.points[left_limit[i]].x;
         point.y = pcl_cloud_.points[left_limit[i]].y;
-        track_limits_msg.left_limit.points.push_back(point);
+        track_limits_msg.left_limit.push_back(point);
     }
     for (int i = 0; i<right_limit.size(); i++){
         common_msgs::msg::PointXY point;
         point.x = pcl_cloud_.points[right_limit[i]].x;
         point.y = pcl_cloud_.points[right_limit[i]].y;
-        track_limits_msg.right_limit.points.push_back(point);
+        track_limits_msg.right_limit.push_back(point);
     }
     
     return track_limits_msg;
