@@ -54,6 +54,8 @@ Visualization::Visualization() : Node("visualization")
         kTrajectoryVisualizationTopic, 10);
     pursuit_point_visualization_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         kPursuitPointVisualizationTopic, 10);
+    track_limits_vis_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
+        "track_limits_vis", 10);
 
     triangulation_sub_ = this->create_subscription<common_msgs::msg::Triangulation>(
         kTriangulationTopic, 10, std::bind(&Visualization::triangulation_callback, this, std::placeholders::_1));
@@ -69,6 +71,8 @@ Visualization::Visualization() : Node("visualization")
         kSkidpadTrajectoryTopic, 10, std::bind(&Visualization::skidpad_trajectory_callback, this, std::placeholders::_1));
     pursuit_point_sub_ = this->create_subscription<common_msgs::msg::PointXY>(
         kPursuitPointTopic, 10, std::bind(&Visualization::pursuit_point_callback, this, std::placeholders::_1));
+    track_limits_sub_ = this->create_subscription<common_msgs::msg::TrackLimits>(
+        "/path_planning/track_limits", 10, std::bind(&Visualization::track_limits_callback, this, std::placeholders::_1));
 
 }
 
@@ -112,6 +116,66 @@ void Visualization::triangulation_callback(const common_msgs::msg::Triangulation
     }
     triangulation_visualization_pub_->publish(marker_array);
     
+}
+
+void Visualization::track_limits_callback(const common_msgs::msg::TrackLimits::SharedPtr msg)
+{
+    visualization_msgs::msg::MarkerArray marker_array;
+    visualization_msgs::msg::Marker delete_marker;
+    delete_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+    marker_array.markers.push_back(delete_marker);
+    visualization_msgs::msg::Marker marker;
+    marker.header.frame_id = "arussim/world";
+    marker.ns = "left_track_limits";
+    marker.id = 0;
+    marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.pose.position.x = 0;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = 0;
+    marker.scale.x = 0.4;
+    marker.scale.y = 0.4;
+    marker.scale.z = 0.4;
+    marker.color.a = kAlpha;
+    marker.color.r = 0.0;
+    marker.color.g = 0.0;
+    marker.color.b = 1.0;
+    marker.lifetime = rclcpp::Duration::from_seconds(0.0);
+    for (int i = 0; i < msg -> left_limit.size(); i++){
+        geometry_msgs::msg::Point p;
+        p.x = msg->left_limit[i].x;
+        p.y = msg->left_limit[i].y;
+        p.z = 0;
+        marker.points.push_back(p);
+    }
+    marker_array.markers.push_back(marker);
+    visualization_msgs::msg::Marker marker2;
+    marker2.header.frame_id = "arussim/world";
+    marker2.ns = "right_track_limits";
+    marker2.id = 1;
+    marker2.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    marker2.action = visualization_msgs::msg::Marker::ADD;
+    marker2.pose.position.x = 0;
+    marker2.pose.position.y = 0;
+    marker2.pose.position.z = 0;
+    marker2.scale.x = 0.4;
+    marker2.scale.y = 0.4;
+    marker2.scale.z = 0.4;
+    marker2.color.a = kAlpha;
+    marker2.color.r = 1.0;
+    marker2.color.g = 1.0;
+    marker2.color.b = 0.0;
+    marker2.lifetime = rclcpp::Duration::from_seconds(0.0);
+    for (int i = 0; i < msg -> right_limit.size(); i++){
+        geometry_msgs::msg::Point p;
+        p.x = msg->right_limit[i].x;
+        p.y = msg->right_limit[i].y;
+        p.z = 0;
+        marker2.points.push_back(p);
+    }
+    marker_array.markers.push_back(marker2);
+    track_limits_vis_pub_->publish(marker_array);
+
 }
 
 void Visualization::arussim_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
