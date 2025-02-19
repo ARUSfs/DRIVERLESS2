@@ -4,6 +4,7 @@ path_planning:
     triangulation_topic: '/path_planning/triangulation'
     trajectory_topic: '/path_planning/trajectory'
     points_to_optimize_topic: '/path_planning/midpoints_to_optimize'
+    track_limits_topic: '/path_planning/track_limits'
 
     # Triangulation parameters
     max_tri_len: 7.5
