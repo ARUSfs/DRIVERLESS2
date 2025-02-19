@@ -12,44 +12,56 @@
 
 PathPlanning::PathPlanning() : Node("path_planning")
 {
+    // Declare and get parameters
+    // Topics
     this->declare_parameter<std::string>("map_topic", "/slam/map");
     this->declare_parameter<std::string>("triangulation_topic", "/path_planning/triangulation");
     this->declare_parameter<std::string>("trajectory_topic", "/path_planning/trajectory");
     this->declare_parameter<std::string>("points_to_optimize_topic", "/path_planning/midpoints_to_optimize");
     this->declare_parameter<std::string>("track_limits_topic", "/path_planning/track_limits");
-    this->declare_parameter<double>("max_tri_len", 7);
-    this->declare_parameter<double>("max_tri_angle", 2.9);
-    this->declare_parameter<double>("len_coeff", 1.0);
-    this->declare_parameter<double>("angle_coeff", 1.0);
-    this->declare_parameter<double>("max_cost", 50.0);
-    this->declare_parameter<double>("v_max", 10.0);
-    this->declare_parameter<double>("ay_max", 5.0);
-    this->declare_parameter<double>("ax_max", 5.0);
-    this->declare_parameter<bool>("color", false);
-    this->declare_parameter<int>("route_back", 10);
-    this->declare_parameter<double>("prev_route_bias", 0.75);
-    this->declare_parameter<bool>("use_buffer", false);
-    this->declare_parameter<bool>("use_closing_route", false);
-    this->declare_parameter<bool>("stop_after_closing", false);
+
     this->get_parameter("map_topic", kMapTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
     this->get_parameter("points_to_optimize_topic", kPointsToOptimizeTopic);
     this->get_parameter("track_limits_topic", kTrackLimitsTopic);
+
+    // Triangulation
+    this->declare_parameter<double>("max_tri_len", 7);
+    this->declare_parameter<double>("max_tri_angle", 2.9);
+    this->declare_parameter<bool>("color", false);
+    
     this->get_parameter("max_tri_len", kMaxTriLen);
     this->get_parameter("max_tri_angle", kMaxTriAngle);
-    this->get_parameter("len_coeff", kLenCoeff);
+    this->get_parameter("color", kColor);
+
+    // Route
+    this->declare_parameter<double>("angle_coeff", 1.0);
+    this->declare_parameter<double>("max_cost", 50.0);
+    this->declare_parameter<double>("len_coeff", 1.0);
+    this->declare_parameter<double>("prev_route_bias", 0.75);
+    this->declare_parameter<int>("route_back", 10);
+    this->declare_parameter<bool>("use_buffer", false);
+    this->declare_parameter<bool>("use_closing_route", false);
+    this->declare_parameter<bool>("stop_after_closing", false);
+    
     this->get_parameter("angle_coeff", kAngleCoeff);
     this->get_parameter("max_cost", kMaxCost);
-    this->get_parameter("v_max", kMaxVel);
-    this->get_parameter("ay_max", kMaxYAcc);
-    this->get_parameter("ax_max", kMaxXAcc);
-    this->get_parameter("color", kColor);
-    this->get_parameter("route_back", kRouteBack);
+    this->get_parameter("len_coeff", kLenCoeff);
     this->get_parameter("prev_route_bias", kPrevRouteBias);
+    this->get_parameter("route_back", kRouteBack);
     this->get_parameter("use_buffer", kUseBuffer);
     this->get_parameter("use_closing_route", kUseClosingRoute);
     this->get_parameter("stop_after_closing", kStopAfterClosing);
+    
+    // Profile creation
+    this->declare_parameter<double>("v_max", 10.0);
+    this->declare_parameter<double>("ay_max", 5.0);
+    this->declare_parameter<double>("ax_max", 5.0);
+
+    this->get_parameter("v_max", kMaxVel);
+    this->get_parameter("ay_max", kMaxYAcc);
+    this->get_parameter("ax_max", kMaxXAcc);
 
     // Subscribers
     map_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
