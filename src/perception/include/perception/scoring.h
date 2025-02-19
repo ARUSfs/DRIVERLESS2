@@ -72,7 +72,6 @@ namespace Scoring
                 //Calulate the distante to the surface of the cone
                 double horizontal_distance = std::sqrt(dx * dx + dy * dy);
                 double distance_to_cone_surface = std::abs(horizontal_distance - cone_radius_at_z)*std::cos(0.1868);
-                std::cout << "Distance to cone: " << distance_to_cone_surface << std::endl;
                 
                 //Apply the formula to get the score
                 double score = 1.0 - std::min(distance_to_cone_surface, 1.0);
@@ -84,7 +83,6 @@ namespace Scoring
             
             //Calculate the suitable threshold
             double dynamic_threshold = std::max(min_threshold, max_threshold - (max_threshold - min_threshold) / 20 * distance);
-            std::cout << "Threshold: " << dynamic_threshold << std::endl;
 
             //Filter by the threshold and keep the clusters that will be cones
             if (average_score >= dynamic_threshold) 
