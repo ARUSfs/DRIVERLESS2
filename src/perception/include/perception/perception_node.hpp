@@ -11,6 +11,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl/common/centroid.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include "perception/ground_filtering.h"
@@ -63,8 +64,7 @@ class Perception : public rclcpp::Node
         double kMaxRadius;
         double kRadius;
         int kMinimumRansacPoints;
-        double kMinThresholdScoring;
-        double kMaxThresholdScoring;
+        double kThresholdScoring;
         double kDistanceThreshold;
         double kColoringThreshold;
         double kAccumulationThreshold;
