@@ -66,11 +66,7 @@ void EPOS_interface::cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg)
         if (!is_shutdown_ && steer_check_ && std::abs(diff) > 0.1){
             epos_.move_to(epos_pos_ + diff);
         }
-    } else {
-        if (!is_shutdown_ && steer_check_){
-            epos_.move_to(angle);
-        }
-    }
+    } 
     
 
     std::vector<double> epos_info = epos_.get_epos_info();
