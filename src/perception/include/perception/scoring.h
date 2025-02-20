@@ -28,30 +28,26 @@ namespace Scoring
     * @param cluster_centers The center of each cluster.
     * @param threshold The threshold that wll the determinate if the cluster is a cone or not.
     */
-    void scoring_surface(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, 
-        pcl::PointCloud<PointXYZColorScore>::Ptr& final_map, std::vector<pcl::PointIndices>& cluster_indices, 
+    void scoring_surface(pcl::PointCloud<PointXYZColorScore>::Ptr& final_map, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points, 
         std::vector<PointXYZColorScore>& cluster_centers, double threshold)
     {
         //Define the cone
         const double kBaseRadius = 0.07525;  
         const double kHeight = 0.40;      
-        const double kTSquare = 1.0;   
 
         //iterate on each cluster
-        for (size_t i = 0; i < cluster_indices.size(); ++i) 
+        for (size_t i = 0; i < cluster_points.size(); ++i) 
         {
             PointXYZColorScore& center = cluster_centers[i];
-            const auto& indices = cluster_indices[i];
+            const auto& cluster = cluster_points[i];
             double total_score = 0.0;
             double cone_radius_at_z;
 
             double distance = std::sqrt(center.x * center.x + center.y * center.y + center.z * center.z);
 
             //Iterate on each point
-            for (const auto& index : indices.indices)        
+            for (const auto& point : cluster->points)    
             {
-                const auto& point = cloud_filtered->points[index];
-
                 //Calculate the distante in x,y to the center of the cone
                 double dx = point.x - center.x;
                 double dy = point.y - center.y;
@@ -78,26 +74,16 @@ namespace Scoring
                 double distance_to_cone_surface = std::abs(horizontal_distance - cone_radius_at_z)*std::cos(0.1868);
                 
                 //Apply the formula to get the score
-                double score = 1.0 - std::min(distance_to_cone_surface * distance_to_cone_surface / kTSquare, 1.0);
+                double score = 1.0 - std::min(std::pow(distance_to_cone_surface,2)/std::pow(0.1,2), 1.0);
+
                 total_score += score;
             }
 
             //Find the score of the cluster
-            double average_score = total_score / indices.indices.size();
-
-            //std::cout << "Score: " << average_score << std::endl;
-
-            const double min_threshold = 0.85;
-            const double max_threshold = 0.95;
+            double average_score = total_score / cluster->size();
             
-            double dynamic_threshold = std::max(min_threshold, max_threshold - (distance / 100));
-
-            //std::cout << "Threshold: " << dynamic_threshold << std::endl;
-
-            //std::cout << "********************************************" << std::endl;
-
             //Filter by the threshold and keep the clusters that will be cones
-            if (average_score >= dynamic_threshold) 
+            if (average_score >= threshold)//dynamic_threshold) 
             {
                 center.score = average_score;
                 final_map->points.push_back(center);
