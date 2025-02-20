@@ -56,7 +56,7 @@ public:
 
         // Smooth the acceleration command using exponential moving average
         static double smoothed_acc = 0.0;
-        double alpha = 0.3; // smoothing factor
+        double alpha = 0.5; // smoothing factor
         smoothed_acc = alpha * acc + (1.0 - alpha) * smoothed_acc;
         acc = smoothed_acc;
 

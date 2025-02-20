@@ -112,7 +112,9 @@ void Controller::on_timer()
         position.x = x_;
         position.y = y_;
         pure_pursuit_.set_position(position, yaw_);
-        auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_, kLAD);
+
+        double cross_track_error = pure_pursuit_.calculateCrossTrackError(position, pointsXY_, index_global_);
+        auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_, cross_track_error);
         common_msgs::msg::PointXY pursuit_point_msg;
         pursuit_point_msg.x = pursuit_point.x;
         pursuit_point_msg.y = pursuit_point.y;
