@@ -193,6 +193,8 @@ MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj
     xpp(n-1) = xpp(n-2);
     ypp(n-1) = ypp(n-2);
 
+    k = VectorXd::Zero(n);
+
     for(int i = 0; i < xpp.size() -1; i++){
         if(xp(i) != yp(i)){
             k(i) = (xp(i)*ypp(i) - xpp(i)*yp(i)) / pow((xp(i)*xp(i) + yp(i)*yp(i)), 1.5);
