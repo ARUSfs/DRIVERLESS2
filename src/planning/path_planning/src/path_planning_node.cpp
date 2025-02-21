@@ -12,43 +12,58 @@
 
 PathPlanning::PathPlanning() : Node("path_planning")
 {
+    // Declare and get parameters
+    // Topics
     this->declare_parameter<std::string>("map_topic", "/slam/map");
     this->declare_parameter<std::string>("triangulation_topic", "/path_planning/triangulation");
     this->declare_parameter<std::string>("trajectory_topic", "/path_planning/trajectory");
     this->declare_parameter<std::string>("points_to_optimize_topic", "/path_planning/midpoints_to_optimize");
-    this->declare_parameter<double>("max_tri_len", 7);
-    this->declare_parameter<double>("max_tri_angle", 2.9);
-    this->declare_parameter<double>("len_coeff", 1.0);
-    this->declare_parameter<double>("angle_coeff", 1.0);
-    this->declare_parameter<double>("max_cost", 50.0);
-    this->declare_parameter<double>("v_max", 10.0);
-    this->declare_parameter<double>("ay_max", 5.0);
-    this->declare_parameter<double>("ax_max", 5.0);
-    this->declare_parameter<bool>("color", false);
-    this->declare_parameter<int>("route_back", 10);
-    this->declare_parameter<double>("prev_route_bias", 0.75);
-    this->declare_parameter<bool>("use_buffer", false);
-    this->declare_parameter<bool>("use_closing_route", false);
-    this->declare_parameter<bool>("stop_after_closing", false);
+    this->declare_parameter<std::string>("track_limits_topic", "/path_planning/track_limits");
+
     this->get_parameter("map_topic", kMapTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
     this->get_parameter("points_to_optimize_topic", kPointsToOptimizeTopic);
+    this->get_parameter("track_limits_topic", kTrackLimitsTopic);
+
+    // Triangulation
+    this->declare_parameter<double>("max_tri_len", 7);
+    this->declare_parameter<double>("max_tri_angle", 2.9);
+    this->declare_parameter<bool>("color", false);
+    
     this->get_parameter("max_tri_len", kMaxTriLen);
     this->get_parameter("max_tri_angle", kMaxTriAngle);
-    this->get_parameter("len_coeff", kLenCoeff);
+    this->get_parameter("color", kColor);
+
+    // Route
+    this->declare_parameter<double>("angle_coeff", 1.0);
+    this->declare_parameter<double>("max_cost", 50.0);
+    this->declare_parameter<double>("len_coeff", 1.0);
+    this->declare_parameter<double>("prev_route_bias", 0.75);
+    this->declare_parameter<int>("route_back", 10);
+    this->declare_parameter<bool>("use_buffer", false);
+    this->declare_parameter<bool>("use_closing_route", false);
+    this->declare_parameter<bool>("stop_after_closing", false);
+    
     this->get_parameter("angle_coeff", kAngleCoeff);
     this->get_parameter("max_cost", kMaxCost);
-    this->get_parameter("v_max", kMaxVel);
-    this->get_parameter("ay_max", kMaxYAcc);
-    this->get_parameter("ax_max", kMaxXAcc);
-    this->get_parameter("color", kColor);
-    this->get_parameter("route_back", kRouteBack);
+    this->get_parameter("len_coeff", kLenCoeff);
     this->get_parameter("prev_route_bias", kPrevRouteBias);
+    this->get_parameter("route_back", kRouteBack);
     this->get_parameter("use_buffer", kUseBuffer);
     this->get_parameter("use_closing_route", kUseClosingRoute);
     this->get_parameter("stop_after_closing", kStopAfterClosing);
+    
+    // Profile creation
+    this->declare_parameter<double>("v_max", 10.0);
+    this->declare_parameter<double>("ay_max", 5.0);
+    this->declare_parameter<double>("ax_max", 5.0);
 
+    this->get_parameter("v_max", kMaxVel);
+    this->get_parameter("ay_max", kMaxYAcc);
+    this->get_parameter("ax_max", kMaxXAcc);
+
+    // Subscribers
     map_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kMapTopic, 10, std::bind(&PathPlanning::map_callback, this, std::placeholders::_1));
     lap_count_sub_ = this->create_subscription<std_msgs::msg::Int16>(
@@ -57,19 +72,22 @@ PathPlanning::PathPlanning() : Node("path_planning")
         "/car_state/state", 10, std::bind(&PathPlanning::car_state_callback, this, std::placeholders::_1));
     optimizer_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         "/trajectory_optimization/trajectory", 10, std::bind(&PathPlanning::optimizer_callback, this, std::placeholders::_1));
+    
+    // Publishers
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
     unsmoothed_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kPointsToOptimizeTopic, 10);
+    track_limits_pub_ = this->create_publisher<common_msgs::msg::TrackLimits>(kTrackLimitsTopic, 10);
 
 }
 
 void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {
-    if (closing_route_.size() > 0){
+    if (kStopAfterClosing && (closing_route_.size() > 0)){
         // Publish the closing route
-        unsmoothed_pub_ -> publish(this->create_trajectory_msg(closing_route_, false));
+        // unsmoothed_pub_ -> publish(this->create_trajectory_msg(closing_route_, false));
         trajectory_pub_ -> publish(this->create_trajectory_msg(closing_route_));
-        return;
+        if (lap_count_ == 0) return;
     }
 
     // Save the point cloud as a pcl object from ROS2 msg
@@ -82,9 +100,10 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     if (lap_count_ == 0){
-        // Add the current car position to the point cloud
+        // In the first lap add current car position as the origin of the tree
         pcl_cloud_.push_back(origin_);
     } else {
+        // In the second lap add the origin (0,0) as the origin of the tree
         pcl_cloud_.push_back(ConeXYZColorScore(0, 0, 0, UNCOLORED, 1));
     }
     
@@ -134,6 +153,13 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index, pcl_cloud_, yaw_,
                      kAngleCoeff, kLenCoeff, kMaxCost);
     best_midpoint_route_ = tree.best_route_;
+    best_index_route_ = tree.best_index_route_;
+
+    // Get the track limits in the second lap
+    if (lap_count_ > 0 && x_>3 && !track_limits_sent_){
+        track_limits_pub_ -> publish(this->create_track_limits_msg(best_index_route_));
+        track_limits_sent_ = true;
+    }
 
     std::vector<ConeXYZColorScore> final_route;
 
@@ -149,7 +175,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     if ((kUseClosingRoute and tree.end_) || lap_count_ > 0){
         // Publish the unsmoothed trajectory
         unsmoothed_pub_ -> publish(this->create_trajectory_msg(final_route, false));
-        if (kStopAfterClosing) closing_route_ = final_route;
+        closing_route_ = final_route;
     }
 
     // Publish the best trajectory
@@ -174,9 +200,8 @@ void PathPlanning::lap_count_callback(const std_msgs::msg::Int16::SharedPtr lap_
 }
 
 void PathPlanning::optimizer_callback(const common_msgs::msg::Trajectory::SharedPtr optimizer_msg)
-{
-    rclcpp::shutdown();
-    return;
+{   
+    if (track_limits_sent_) rclcpp::shutdown(); // End only if the track limits have been sent
 }
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
@@ -432,6 +457,55 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<Con
     }
 
     return trajectory_msg;
+}
+
+common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<int> triangles_route){
+    CDT::Triangle last_triangle = triangles_[triangles_route.back()];
+    CDT::NeighborsArr3 neighbors = last_triangle.neighbors;
+    for (int i = 0; i<3; i++){
+        if (neighbors[i] < triangles_.size() && !in(neighbors[i], triangles_route)){
+            triangles_route.push_back(neighbors[i]);
+        }
+    }
+    std::vector<int> left_limit, right_limit;
+    for (int i = 0; i<triangles_route.size(); i++){
+        CDT::Triangle triangle = triangles_[triangles_route[i]];
+        CDT::VerticesArr3 vertices = triangle.vertices;
+        for (int j = 0; j<3; j++){
+            ConeXYZColorScore cone = pcl_cloud_.points[vertices[j]];
+            int vertex = vertices[j];
+            switch (cone.color){
+            case BLUE:
+                if (!in(vertex, left_limit)){
+                    left_limit.push_back(vertex);
+                }
+                break;
+            case YELLOW:
+                if (!in(vertex, right_limit)){
+                    right_limit.push_back(vertex);
+                }
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    common_msgs::msg::TrackLimits track_limits_msg;
+    for (int i = 0; i<left_limit.size(); i++){
+        common_msgs::msg::PointXY point;
+        point.x = pcl_cloud_.points[left_limit[i]].x;
+        point.y = pcl_cloud_.points[left_limit[i]].y;
+        track_limits_msg.left_limit.push_back(point);
+    }
+    for (int i = 0; i<right_limit.size(); i++){
+        common_msgs::msg::PointXY point;
+        point.x = pcl_cloud_.points[right_limit[i]].x;
+        point.y = pcl_cloud_.points[right_limit[i]].y;
+        track_limits_msg.right_limit.push_back(point);
+    }
+    
+    return track_limits_msg;
+
 }
 
 int main(int argc, char * argv[])

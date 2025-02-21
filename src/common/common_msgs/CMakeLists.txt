@@ -24,6 +24,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Cmd.msg"
   "msg/FourWheelDrive.msg"
   "msg/Cmd4WD.msg"
+  "msg/TrackLimits.msg"
   DEPENDENCIES std_msgs
 )
 

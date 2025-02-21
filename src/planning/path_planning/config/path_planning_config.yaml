@@ -1,9 +1,11 @@
 path_planning:
   ros__parameters:
+    # Topics
     map_topic: '/slam/map'
     triangulation_topic: '/path_planning/triangulation'
     trajectory_topic: '/path_planning/trajectory'
     points_to_optimize_topic: '/path_planning/midpoints_to_optimize'
+    track_limits_topic: '/path_planning/track_limits'
 
     # Triangulation parameters
     max_tri_len: 7.5
@@ -18,8 +20,8 @@ path_planning:
     route_back: 10
     prev_route_bias: 0.5
     use_buffer: true
-    use_closing_route: false
-    stop_after_closing: true
+    use_closing_route: false     # Send the closing route to the trajectory optimizer after getting a route that closes the loop
+    stop_after_closing: true     # Stop generating new routes after getting one that closes the loop
 
     # Profile creation parameters
     v_max: 2.0

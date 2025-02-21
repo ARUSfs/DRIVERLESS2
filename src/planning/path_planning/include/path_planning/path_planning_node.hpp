@@ -26,6 +26,7 @@
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
 #include <common_msgs/msg/state.hpp>
+#include <common_msgs/msg/track_limits.hpp>
 #include "ConeXYZColorScore.h"
 
 // Custom libraries
@@ -55,6 +56,7 @@ class PathPlanning : public rclcpp::Node
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
         std::string kPointsToOptimizeTopic;
+        std::string kTrackLimitsTopic;
         double kMaxTriLen;
         double kMaxTriAngle;
         double kLenCoeff;
@@ -70,14 +72,17 @@ class PathPlanning : public rclcpp::Node
         bool kUseClosingRoute;
         bool kStopAfterClosing;
 
-        // Suscribers and publishers
+        // Suscribers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimizer_sub_;
+
+        // Publishers
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr unsmoothed_pub_;
+        rclcpp::Publisher<common_msgs::msg::TrackLimits>::SharedPtr track_limits_pub_;
 
         // CarState
         double x_=0;
@@ -88,8 +93,9 @@ class PathPlanning : public rclcpp::Node
         double v_;
         ConeXYZColorScore origin_ = ConeXYZColorScore();
 
-        // Lap count
+        // Lap count and state of the algorithm
         int lap_count_ = 0;
+        bool track_limits_sent_ = false;
 
         // Point cloud
         pcl::PointCloud<ConeXYZColorScore> pcl_cloud_;
@@ -101,6 +107,7 @@ class PathPlanning : public rclcpp::Node
         // Routes
         std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
         std::vector<ConeXYZColorScore> best_midpoint_route_;
+        std::vector<int> best_index_route_;
         std::vector<ConeXYZColorScore> closing_route_= {};
         std::vector<std::vector<ConeXYZColorScore>> previous_midpoint_routes_;
         int invalid_counter_=0;
@@ -186,4 +193,12 @@ class PathPlanning : public rclcpp::Node
          * @return common_msgs::msg::Trajectory parsed trajectory message to ROS2 format.
          */
         common_msgs::msg::Trajectory create_trajectory_msg(std::vector<ConeXYZColorScore> route, bool smoothed = true);
+
+        /**
+         * @brief Create a track limits msg object
+         * 
+         * @param triangle_route 
+         * @return common_msgs::msg::TrackLimits 
+         */
+        common_msgs::msg::TrackLimits create_track_limits_msg(std::vector<int> triangle_route);
 };
