@@ -87,50 +87,6 @@ public:
     }
 
     /**
-     * @brief Get cross track error.
-     * @authors Lola Hernández (lolahercan@gmail.com)
-     * @param car_position
-     * @param path
-     * @param global index
-     * @details Calculates the cross track error, difference between car position and path
-     * @return ye, cross track error
-     */
-
-    double calculateCrossTrackError(const Point &car_position,
-                                    const std::vector<Point> &path,
-                                    int global_index)
-    {
-
-        const Point &nearest_point = path[global_index];
-        const Point &next_point = path[(global_index + 1) % path.size()];
-
-        double alpha_k = std::atan2(next_point.y - nearest_point.y,
-                                    next_point.x - nearest_point.x);
-
-        double ye = -(car_position.x - nearest_point.x) * std::sin(alpha_k) +
-                    (car_position.y - nearest_point.y) * std::cos(alpha_k);
-
-        return ye;
-    }
-
-    /**
-     * @brief Get look ahead distance.
-     * @authors Lola Hernández (lolahercan@gmail.com)
-     * @param cross track error
-     * @details Calculate the look ahead distance using formula and fixed parameters
-     * @return look ahead distance
-     */
-
-    double calculateLookAheadDistance(double cross_track_error)
-    {
-        double delta_min_ = 1.0;
-        double delta_max_ = 8.0;
-        double gamma_ = 1.0;
-
-        return (delta_max_ - delta_min_) * std::exp(-gamma_ * std::abs(cross_track_error)) + delta_min_;
-    }
-
-    /**
      * @brief Get steering angle.
      * @authors Team driverless ARUS
      * @param index_global
@@ -139,14 +95,12 @@ public:
      *          angle to send in the command.
      * @return Point to pursue.
      */
-    std::pair<double, Point> get_steering_angle(int index_global, double cross_track_error)
+    std::pair<double, Point> get_steering_angle(int index_global, double look_ahead_distance)
     {
         if (path_.size() <= 1)
         {
             return {prev_steer_, prev_pursuit_point_};
         }
-
-        double look_ahead_distance = calculateLookAheadDistance(cross_track_error);
 
         Point pursuit_point = search_pursuit_point(index_global, look_ahead_distance);
 
