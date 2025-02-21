@@ -332,7 +332,7 @@ void GraphSlam::fix_map(){
 void GraphSlam::publish_map(){
     pcl::PointCloud<ConeXYZColorScore> map;
     for (Landmark* landmark : DA.map_){
-        if (landmark->disabled_ || landmark->num_observations_ < 2){
+        if (landmark->disabled_ || landmark->num_observations_ <= 3){
             continue;
         }
         if(landmark->color_==UNCOLORED){
