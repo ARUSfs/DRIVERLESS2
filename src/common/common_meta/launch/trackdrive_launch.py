@@ -5,7 +5,7 @@ from launch.actions import ExecuteProcess, IncludeLaunchDescription
 from launch_ros.actions import Node
 from datetime import datetime
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-
+ 
 
 def generate_launch_description():
 
@@ -30,12 +30,13 @@ def generate_launch_description():
         create_node(pkg='epos_interface'),
         create_node(pkg='perception'),
         create_node(pkg='path_planning',
-                    params=[{'v_max': 2.0,
+                    params=[{'v_max': 2.5,
                              'ax_max': 3.0,
                              'ay_max': 3.0}]),
         create_node(pkg='controller',
-                    params=[{'min_cmd': 0.0,
-                             'max_cmd': 0.1}]),
+                    params=[{'look_ahead_distance': 4.0,
+                             'min_cmd': 0.0,
+                             'max_cmd': 0.15}]),
         create_node(pkg='graph_slam'),
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
