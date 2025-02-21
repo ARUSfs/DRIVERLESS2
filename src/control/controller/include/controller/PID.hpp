@@ -58,10 +58,10 @@ public:
         integral_ += smoothed_error * dt;
 
         double derivative = (smoothed_error - previous_error_) / dt;
+        previous_error_ = smoothed_error;
 
 
-        double KP_var = 0.0;
-        KP_var = KP_ + std::abs(target_acc / 15.0);
+        double KP_var = KP_ + std::abs(target_acc / 15.0);
 
         const double max_integral = 5.0;
         const double min_integral = -5.0;
@@ -75,14 +75,13 @@ public:
             integral_ = min_integral;
         }
 
-        previous_error_ = smoothed_error;
-
-        if (value > 5)
-        {
+        // if the error is greater than 5, we use the full PID controller
+        if (value > 5) {
             return (KP_var * smoothed_error) + (KI_ * integral_) + (KD_ * derivative);
+        } else {
+            return (KP_var * smoothed_error);
         }
 
-        return (KP_var * smoothed_error);
     }
 
 private:
