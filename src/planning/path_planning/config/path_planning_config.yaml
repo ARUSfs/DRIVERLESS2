@@ -22,6 +22,6 @@ path_planning:
     stop_after_closing: true
 
     # Profile creation parameters
-    v_max: 4
+    v_max: 2.0
     ay_max: 3.0
     ax_max: 3.0
