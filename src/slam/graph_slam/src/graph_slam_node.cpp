@@ -332,10 +332,10 @@ void GraphSlam::fix_map(){
 void GraphSlam::publish_map(){
     pcl::PointCloud<ConeXYZColorScore> map;
     for (Landmark* landmark : DA.map_){
-        if (landmark->disabled_){
+        if (landmark->disabled_ || landmark->num_observations_ < 2){
             continue;
         }
-        if(landmark->color_==UNCOLORED || landmark->num_observations_ < 2){
+        if(landmark->color_==UNCOLORED){
             Eigen::Vector2d local_pos = global_to_local(landmark->world_position_);
             if(local_pos.norm() < 6 && local_pos[0] < 0){
 
@@ -354,8 +354,6 @@ void GraphSlam::publish_map(){
         cone.score = 1.0;
         map.push_back(cone);
     }
-    std::cout << "DA: " << DA.map_.size() << std::endl;
-    std::cout << "msg: " << map.size() << std::endl;
     
     sensor_msgs::msg::PointCloud2 map_msg;
     pcl::toROSMsg(map, map_msg);

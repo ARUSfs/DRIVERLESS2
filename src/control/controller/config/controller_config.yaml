@@ -16,11 +16,11 @@ controller:
     look_ahead_distance: 6.0
 
     # PID
-    target: 3.0
+    target: 5.0
     KP: 43.87
     KI: 0.0
     KD: 0.0
 
     # Cmd
-    min_cmd: -0.1
+    min_cmd: 0.0
     max_cmd: 0.1

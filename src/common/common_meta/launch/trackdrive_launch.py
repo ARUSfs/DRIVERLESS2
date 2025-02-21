@@ -5,7 +5,6 @@ from launch.actions import ExecuteProcess, IncludeLaunchDescription
 from launch_ros.actions import Node
 from datetime import datetime
 from launch.launch_description_sources import PythonLaunchDescriptionSource
- 
 
 def generate_launch_description():
 
