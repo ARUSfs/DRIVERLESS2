@@ -110,6 +110,7 @@ void Controller::on_timer()
         position.x = x_;
         position.y = y_;
         pure_pursuit_.set_position(position, yaw_);
+
         auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_, kLAD);
         common_msgs::msg::PointXY pursuit_point_msg;
         pursuit_point_msg.x = pursuit_point.x;
