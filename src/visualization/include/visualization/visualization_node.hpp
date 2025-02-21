@@ -74,6 +74,7 @@ class Visualization : public rclcpp::Node
         std::string kAccTrajectoryTopic;
         std::string kSkidpadTrajectoryTopic;
         std::string kPursuitPointTopic;
+        std::string kTrackLimitsTopic;
 
         //Topics to publish
         std::string kTriangulationVisualizationTopic;
@@ -81,5 +82,6 @@ class Visualization : public rclcpp::Node
         std::string kARUSSimTrajectoryVisualizationTopic;
         std::string kTrajectoryVisualizationTopic;
         std::string kPursuitPointVisualizationTopic;
+        std::string kTrackLimitsVisualizationTopic;
 
 };

@@ -28,6 +28,8 @@ Visualization::Visualization() : Node("visualization")
     this->declare_parameter("trajectory_visualization_topic", "/visualization/trajectory");
     this->declare_parameter("pursuit_point_topic", "/controller/pursuit_point");
     this->declare_parameter("pursuit_point_visualization_topic", "/visualization/pursuit_point");
+    this->declare_parameter("track_limits_topic", "/path_planning/track_limits");
+    this->declare_parameter("track_limits_visualization_topic", "/visualization/track_limits");
 
     this->get_parameter("alpha", kAlpha);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
@@ -42,6 +44,8 @@ Visualization::Visualization() : Node("visualization")
     this->get_parameter("trajectory_visualization_topic", kTrajectoryVisualizationTopic);
     this->get_parameter("pursuit_point_topic", kPursuitPointTopic);
     this->get_parameter("pursuit_point_visualization_topic", kPursuitPointVisualizationTopic);
+    this->get_parameter("track_limits_topic", kTrackLimitsTopic);
+    this->get_parameter("track_limits_visualization_topic", kTrackLimitsVisualizationTopic);
 
 
     triangulation_visualization_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
@@ -55,7 +59,7 @@ Visualization::Visualization() : Node("visualization")
     pursuit_point_visualization_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         kPursuitPointVisualizationTopic, 10);
     track_limits_vis_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-        "track_limits_vis", 10);
+        kTrackLimitsVisualizationTopic, 10);
 
     triangulation_sub_ = this->create_subscription<common_msgs::msg::Triangulation>(
         kTriangulationTopic, 10, std::bind(&Visualization::triangulation_callback, this, std::placeholders::_1));
@@ -72,7 +76,7 @@ Visualization::Visualization() : Node("visualization")
     pursuit_point_sub_ = this->create_subscription<common_msgs::msg::PointXY>(
         kPursuitPointTopic, 10, std::bind(&Visualization::pursuit_point_callback, this, std::placeholders::_1));
     track_limits_sub_ = this->create_subscription<common_msgs::msg::TrackLimits>(
-        "/path_planning/track_limits", 10, std::bind(&Visualization::track_limits_callback, this, std::placeholders::_1));
+        kTrackLimitsTopic, 10, std::bind(&Visualization::track_limits_callback, this, std::placeholders::_1));
 
 }
 
@@ -148,6 +152,7 @@ void Visualization::track_limits_callback(const common_msgs::msg::TrackLimits::S
         p.z = 0;
         marker.points.push_back(p);
     }
+    marker.points.push_back(marker.points[0]);
     marker_array.markers.push_back(marker);
     visualization_msgs::msg::Marker marker2;
     marker2.header.frame_id = "arussim/world";
@@ -173,6 +178,7 @@ void Visualization::track_limits_callback(const common_msgs::msg::TrackLimits::S
         p.z = 0;
         marker2.points.push_back(p);
     }
+    marker2.points.push_back(marker2.points[0]);
     marker_array.markers.push_back(marker2);
     track_limits_vis_pub_->publish(marker_array);
 
