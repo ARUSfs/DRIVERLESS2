@@ -288,12 +288,15 @@ namespace MinCurvaturepath {
         //If start and end points are the same. 
         //Solver doesn't handle equality constraints, but we can implement it as two inequalities
         // beq <= Aeq*res <= beq
-        MatrixXd Aeq = MatrixXd::Zero(1,n);
-        Aeq(0) = 1;
-        Aeq(n-1) = -1;
-        double beq = 0;
+        MatrixXd Aeq = MatrixXd::Zero(4,n);
+        Aeq(0,0) = 1;
+        Aeq(1,1) = 1;
+        Aeq(2,n-2) = 1;
+        Aeq(3,n-1) = 1;
+        VectorXd beq(4);
+        beq << 0.5, 0.5, 0.5, 0.5;
 
-        VectorXd Alb(1), Aub(1);
+        VectorXd Alb(4), Aub(4);
         Alb << beq;
         Aub << beq;
 

@@ -10,6 +10,8 @@
 
 #include "epos_interface/epos_interface_node.hpp"
 
+bool DEBUG = false;
+
 
 EPOS_interface::EPOS_interface() : Node("EPOS_interface"), 
     epos_() 
@@ -26,6 +28,10 @@ EPOS_interface::EPOS_interface() : Node("EPOS_interface"),
     epos_.enable();
 
     is_shutdown_ = false;
+
+    ext_time_ = this->now().seconds();
+    epos_pos_ = 0.0;
+    ext_pos_ = 0.0;
 
 
     epos_info_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/epos_interface/epos_info", 10);
@@ -55,23 +61,31 @@ void EPOS_interface::cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg)
     double angle = msg -> delta * 180 / M_PI;
     assert(angle <= 20.0 && angle >= -20.0 && "Angle out of range");
 
-    if (!is_shutdown_ && steer_check_) {
-        epos_.move_to(angle);
-    }
+    // Check if the extensometer is working
+    if (this->now().seconds() - ext_time_ < 0.2){
+        double diff = angle - ext_pos_;
+        if (DEBUG) std::cout << "Angle diff: " << diff << std::endl;
+
+        if (!is_shutdown_ && steer_check_ && std::abs(diff) > 0.1){
+            epos_.move_to(epos_pos_ + diff);
+        }
+    } 
     
+
     std::vector<double> epos_info = epos_.get_epos_info();
     std_msgs::msg::Float32MultiArray info_msg;
     for (const auto &value : epos_info) {
         info_msg.data.push_back(value);
     }
+    epos_pos_ = epos_info[1];
     epos_info_pub_->publish(info_msg);
     
 }
 
 void EPOS_interface::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg){
-    if(is_shutdown_){
-        init_pos_ = msg -> data;
-    }
+    // Smooth extensometer value
+    ext_pos_ = 0.8*msg->data*180/M_PI + 0.2*ext_pos_;
+    ext_time_ = this->now().seconds();
 }
 
 void EPOS_interface::steer_check_callback(const std_msgs::msg::Bool::SharedPtr msg){

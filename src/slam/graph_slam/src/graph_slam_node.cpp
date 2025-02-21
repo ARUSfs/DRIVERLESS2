@@ -1,4 +1,5 @@
 #include "graph_slam/graph_slam_node.hpp"
+#include <g2o/core/robust_kernel_impl.h>
 // #include "data_association_euclidean.cpp"
 
 GraphSlam::GraphSlam() : Node("graph_slam")
@@ -11,6 +12,8 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->declare_parameter("max_pose_edges", 10000);
     this->declare_parameter("max_landmark_edges", 10000);
     this->declare_parameter("verbose", false);
+    this->declare_parameter("pos_lidar_x", 1.5);
+    this->declare_parameter("perception_topic", "/perception/map");
     this->get_parameter("finish_line_offset", kFinishLineOffset);
     this->get_parameter("track_width", kTrackWidth);
     this->get_parameter("min_lap_distance", kMinLapDistance);
@@ -18,6 +21,8 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->get_parameter("max_pose_edges", kMaxPoseEdges);
     this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
     this->get_parameter("verbose", kVerbose);
+    this->get_parameter("pos_lidar_x", kPosLidarX);
+    this->get_parameter("perception_topic", kPerceptionTopic);
 
     // TODO: test other solvers
     using SlamBlockSolver  = g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>>;
@@ -63,7 +68,7 @@ GraphSlam::GraphSlam() : Node("graph_slam")
 
     state_sub_ = this->create_subscription<common_msgs::msg::State>("/car_state/state", 10, 
                     std::bind(&GraphSlam::state_callback, this, std::placeholders::_1), collector_options);
-    perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/arussim/perception", 10,
+    perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(kPerceptionTopic, 10,
                     std::bind(&GraphSlam::perception_callback, this, std::placeholders::_1), collector_options);           
     // TODO: run optimizer depending on the number of edges/itereations
     optimizer_timer_ = this->create_wall_timer(std::chrono::milliseconds(1000),
@@ -121,6 +126,9 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
     pose_edge->setMeasurement(transform);
     // The information matrix is the inverse of the covariance matrix
     pose_edge->setInformation(Q.inverse());
+    g2o::RobustKernelHuber* rkPose = new g2o::RobustKernelHuber();
+    pose_edge->setRobustKernel(rkPose);
+    rkPose->setDelta(0.3);
     pose_edges_.push_back(pose_edge);
     edges_to_add_.push_back(pose_edge);
 }
@@ -128,7 +136,7 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
 void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {   
     if (pose_vertices_.size() == 0) {
-        return;
+	return;
     }
 
     std::vector<Landmark> observed_landmarks;
@@ -137,11 +145,12 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     g2o::VertexSE2* last_pose_vertex = pose_vertices_.back();
     pcl::PointCloud<ConeXYZColorScore> cloud;
     pcl::fromROSMsg(*msg, cloud);
+   
     for (int i = 0; i < msg->width; i++) {
         //Extract the cone position
         ConeXYZColorScore cone = cloud.points[i];
 
-        observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_));
+        observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x+kPosLidarX, cone.y), vehicle_pose_));
     }
     
     DA.match_observations(observed_landmarks, unmatched_landmarks);
@@ -164,6 +173,9 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
             edge->vertices()[1] = landmark_vertex;
             edge->setMeasurement(landmark.local_position_);
             edge->setInformation(R.inverse());
+            g2o::RobustKernelHuber* rkLandmark = new g2o::RobustKernelHuber();
+            edge->setRobustKernel(rkLandmark);
+            rkLandmark->setDelta(0.3);
             landmark_edges_.push_back(edge);
             edges_to_add_.push_back(edge);
         }
@@ -181,6 +193,9 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
         edge->vertices()[1] = landmark_vertex;
         edge->setMeasurement(landmark.local_position_);
         edge->setInformation(R.inverse());
+        g2o::RobustKernelHuber* rkLandmark = new g2o::RobustKernelHuber();
+        edge->setRobustKernel(rkLandmark);
+        rkLandmark->setDelta(0.3);
         landmark_edges_.push_back(edge);
         edges_to_add_.push_back(edge);
     }
@@ -196,12 +211,12 @@ void GraphSlam::optimizer_callback(){
 
     double t1 = this->now().seconds();
     optimizer_.initializeOptimization();
-    optimizer_.optimize(200);
+    optimizer_.optimize(50);
 
     if(kVerbose){
         RCLCPP_INFO(this->get_logger(), "---------------------------------");
-        RCLCPP_INFO(this->get_logger(), "Number of vertices: %d", optimizer_.vertices().size());
-        RCLCPP_INFO(this->get_logger(), "Number of edges: %d", optimizer_.edges().size());
+        RCLCPP_INFO(this->get_logger(), "Number of vertices: %d", optimizer_.activeVertices().size());
+        RCLCPP_INFO(this->get_logger(), "Number of edges: %d", optimizer_.activeEdges().size());
         RCLCPP_INFO(this->get_logger(), "Optimization time: %f", this->now().seconds() - t1);
     }
     
@@ -317,6 +332,9 @@ void GraphSlam::fix_map(){
 void GraphSlam::publish_map(){
     pcl::PointCloud<ConeXYZColorScore> map;
     for (Landmark* landmark : DA.map_){
+        if (landmark->disabled_ || landmark->num_observations_ <= 3){
+            continue;
+        }
         if(landmark->color_==UNCOLORED){
             Eigen::Vector2d local_pos = global_to_local(landmark->world_position_);
             if(local_pos.norm() < 6 && local_pos[0] < 0){

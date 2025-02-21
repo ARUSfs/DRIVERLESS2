@@ -26,6 +26,7 @@
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
 #include <common_msgs/msg/state.hpp>
+#include <common_msgs/msg/track_limits.hpp>
 #include "ConeXYZColorScore.h"
 
 // Custom libraries
@@ -51,15 +52,16 @@ class PathPlanning : public rclcpp::Node
         PathPlanning();
     private:
         // Parameters from configuration file
-        std::string kPerceptionTopic;
+        std::string kMapTopic;
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
-        std::string kFinalTrajectoryTopic;
+        std::string kPointsToOptimizeTopic;
+        std::string kTrackLimitsTopic;
         double kMaxTriLen;
         double kMaxTriAngle;
         double kLenCoeff;
         double kAngleCoeff;
-        double kMaxAngle;
+        double kMaxCost;
         double kMaxVel;
         double kMaxYAcc;
         double kMaxXAcc;
@@ -67,14 +69,20 @@ class PathPlanning : public rclcpp::Node
         int kRouteBack;
         double kPrevRouteBias;
         bool kUseBuffer;
+        bool kUseClosingRoute;
+        bool kStopAfterClosing;
 
-        // Suscribers and publishers
-        rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
+        // Suscribers
+        rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
-        rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr final_map_sub_;
+        rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
+        rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimizer_sub_;
+
+        // Publishers
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
-        rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr final_trajectory_pub_;
+        rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr unsmoothed_pub_;
+        rclcpp::Publisher<common_msgs::msg::TrackLimits>::SharedPtr track_limits_pub_;
 
         // CarState
         double x_=0;
@@ -85,8 +93,9 @@ class PathPlanning : public rclcpp::Node
         double v_;
         ConeXYZColorScore origin_ = ConeXYZColorScore();
 
-        // Lap count
-        bool final_map_ = false;
+        // Lap count and state of the algorithm
+        int lap_count_ = 0;
+        bool track_limits_sent_ = false;
 
         // Point cloud
         pcl::PointCloud<ConeXYZColorScore> pcl_cloud_;
@@ -96,11 +105,12 @@ class PathPlanning : public rclcpp::Node
         CDT::Triangulation<double>::V2dVec vertices_;
         
         // Routes
-        std::vector<std::vector<int>> triangle_routes_;
-        std::vector<std::vector<CDT::V2d<double>>> midpoint_routes_;
-        std::vector<CDT::V2d<double>> best_midpoint_route_;
-        std::vector<std::vector<CDT::V2d<double>>> previous_midpoint_routes_;
-        int invalid_counter=0;
+        std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
+        std::vector<ConeXYZColorScore> best_midpoint_route_;
+        std::vector<int> best_index_route_;
+        std::vector<ConeXYZColorScore> closing_route_= {};
+        std::vector<std::vector<ConeXYZColorScore>> previous_midpoint_routes_;
+        int invalid_counter_=0;
 
         /**
          * @brief Callback function for the perception topic.
@@ -109,15 +119,13 @@ class PathPlanning : public rclcpp::Node
          * 
          * @param per_msg The point cloud received from the perception.
          */
-        void perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg);
+        void map_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg);
 
         /**
-         * @brief Callback function to the final map topic.
-         * When one lap is completed, the final map is received and the algorithm slightly changes
-         * to take advantage of the new information such as the color of the cones.
-         * @param final_map_msg 
+         * @brief Callback funtion to actualize lap counter.
+         * @param lap_msg int16 message containing the lap count.
          */
-        void final_map_callback(sensor_msgs::msg::PointCloud2::SharedPtr final_map_msg);
+        void lap_count_callback(std_msgs::msg::Int16::SharedPtr lap_msg);
 
         /**
          * @brief Callback function for the car state topic.
@@ -126,6 +134,13 @@ class PathPlanning : public rclcpp::Node
          */
         void car_state_callback(common_msgs::msg::State::SharedPtr state_msg);
         
+        /**
+         * @brief Callback function for the optimizer topic.
+         * Shutdown the node when a message is received from the optimizer.
+         * @param optimizer_msg Common_msgs message containing the optimized trajectory.
+         */
+        void optimizer_callback(common_msgs::msg::Trajectory::SharedPtr optimizer_msg);
+
         /**
          * @brief Create a triangulation object from a point cloud and erase super triangle.
          * 
@@ -164,40 +179,26 @@ class PathPlanning : public rclcpp::Node
         std::vector<int> get_triangles_from_vert(int vert_index);
 
         /**
-         * @brief Get the edge shared by two neighbor triangles.
-         * @param triangle1 CDT::Triangle first triangle.
-         * @param triangle2 CDT::Triangle second triangle.
-         * @return CDT::Edge edge shared by the two triangles.
-         */
-        CDT::Edge get_share_edge(CDT::Triangle triangle1, CDT::Triangle triangle2);
-
-        /**
-         * @brief Transform the triangle routes into a vector of the midpoints crossed by the route.
-         */
-        void get_midpoint_routes();
-
-        /**
-         * @brief Calculate the cost of a given route based on the distance and angle between consecutive points and
-         * the total distance of the route. If the route has a "stop condition" (i.e. the angle between two segments is
-         * bigger than a threshold), the route is modified to stop before the stop condition.
-         * @param route vector of CDT::V2d<double> points containing the route through the midpoints.
-         * @return float result of the cost function.
-         */
-        double get_route_cost(std::vector<CDT::V2d<double>> &route);
-
-        /**
          * @brief Get the final route after comparing with previous routes to avoid outliers.
          * Compare the best route in last iteration to the n (6) previous and count in how many of 
          * them the route is present in more than x% (75%) of the points. In that case, return the
          * route, otherwise return the second to last route.
          * @return std::vector<CDT::V2d<double>> final route to be published.
          */
-        std::vector<CDT::V2d<double>> get_final_route();
+        std::vector<ConeXYZColorScore> get_final_route();
 
         /**
          * @brief Create a trajectory msg object from a given route.
          * @param route std::vector<CDT::V2d<double>> vector containing the route.
          * @return common_msgs::msg::Trajectory parsed trajectory message to ROS2 format.
          */
-        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<CDT::V2d<double>> route);
+        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<ConeXYZColorScore> route, bool smoothed = true);
+
+        /**
+         * @brief Create a track limits msg object
+         * 
+         * @param triangle_route 
+         * @return common_msgs::msg::TrackLimits 
+         */
+        common_msgs::msg::TrackLimits create_track_limits_msg(std::vector<int> triangle_route);
 };

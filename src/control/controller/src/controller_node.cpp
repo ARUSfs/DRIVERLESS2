@@ -72,10 +72,8 @@ Controller::Controller() : Node("controller"),
         "/car_state/run_check", 1, std::bind(&Controller::run_check_callback, this, std::placeholders::_1));
     trayectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kTrajectoryTopic, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
-    final_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        "/path_planning/final_trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
     optimized_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        "/trajectory_optimization/trajectory", 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
+        "/trajectory_optimization/trajectory", 1, std::bind(&Controller::optimized_trajectory_callback, this, std::placeholders::_1));
 
 
     // Publishers
@@ -160,7 +158,7 @@ void Controller::get_global_index() {
         if (dist < min_dist) {
             min_dist = dist;
             i_global = i % N;
-        } else if(!new_trajectory_ && dist > 5.0){ 
+        } else if(!optimized_ && !new_trajectory_ && dist > 5.0){ 
             // If the distance is greater than 5 meters from last index, 
             // the search is stopped to avoid errors due to loops in the trajectory (skidpad)
             break;
@@ -183,6 +181,13 @@ void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg
     ay_ = msg -> ay;
     delta_ = msg -> delta;
 
+}
+
+void Controller::optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
+{
+    new_trajectory_ = true;
+    optimized_ = true;
+    trajectory_callback(msg);
 }
 
 void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)

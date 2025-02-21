@@ -115,7 +115,7 @@ namespace GroundFiltering
             if (angle > angle_threshold)
             {
                 // Store the points in cloud filtered as it is not ground
-                *cloud_filtered += *temp_plane;
+                *cloud_plane += *temp_plane;
 
                 // Call the function again until the ground is suitable
                 ransac_checking_normal_vectors(temp_filtered, new_temp_filtered, new_temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, 
@@ -136,6 +136,7 @@ namespace GroundFiltering
             }
         }
     }
+
 
     /**
     * @brief Principal function of the file, divide the cloud in the specified numbers of squares as a grid and call the function 
@@ -186,8 +187,7 @@ namespace GroundFiltering
                 pcl::PointCloud<pcl::PointXYZI>::Ptr temp_plane(new pcl::PointCloud<pcl::PointXYZI>);
                 
                 // Apply ransac and check the normal vectors
-                ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, 
-                    prev_normal, normal, angle_threshold, minimum_ransac_points);
+                ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, prev_normal, normal, angle_threshold, minimum_ransac_points);
 
                 // Update the variables for the next iteration
                 prev_normal = normal;

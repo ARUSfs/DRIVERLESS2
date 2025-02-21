@@ -9,9 +9,11 @@ visualization:
     delaunay_trajectory_topic: '/path_planning/trajectory'
     acc_trajectory_topic: '/acc_planning/trajectory'
     skidpad_trajectory_topic: '/skidpad_planning/trajectory'
+    track_limits_topic: '/path_planning/track_limits'
 
     # Topics to publish
     triangulation_visualization_topic: '/visualization/triangulation'
     optimized_trajectory_visualization_topic: '/visualization/trajectory_optimized'
     arussim_trajectory_visualization_topic: '/visualization/arussim_fixed_trajectory'
     trajectory_visualization_topic: '/visualization/trajectory'
+    track_limits_visualization_topic: '/visualization/track_limits'

@@ -11,7 +11,7 @@ def generate_launch_description():
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     home_dir = os.path.expanduser("~")
-    output_dir = os.path.join(home_dir, f"ARUS_logs/bagfiles/acceleration_bag_{timestamp}")
+    output_dir = os.path.join(home_dir, f"ARUS_logs/bagfiles/trackdrive_bag_{timestamp}")
 
     # Record rosbag with mcap extension in steps of 10MB
     rosbag_record = ExecuteProcess(
@@ -27,21 +27,6 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(rslidar_launch)),
         create_node(pkg='can_interface'),
-        create_node(pkg='epos_interface'),
-        create_node(pkg='perception'),
-        create_node(pkg='acc_planning',
-                    params=[{'target_speed': 3.0,
-                             'min_acc': 5.0,
-                             'max_dec': 5.0,
-                             'track_length': 75.0}]),
-        create_node(pkg='controller',
-                    params=[{'trajectory': "/acc_planning/trajectory",
-                             'min_cmd': 0.0,
-                             'max_cmd': 0.1}]),
-        create_node(pkg='graph_slam'),
-        create_node(pkg='car_state', 
-                    params=[{'simulation': False, 
-                    'mission': 'acceleration'}]),
         rosbag_record
     ])
 

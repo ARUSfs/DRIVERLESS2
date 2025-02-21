@@ -6,15 +6,16 @@ from launch_ros.actions import Node
 from datetime import datetime
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
-
 def generate_launch_description():
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir = f"/home/arus/.ros/trackdrive_bag_{timestamp}"
+    home_dir = os.path.expanduser("~")
+    output_dir = os.path.join(home_dir, f"ARUS_logs/bagfiles/trackdrive_bag_{timestamp}")
 
+    # Record rosbag with mcap extension in steps of 10MB
     rosbag_record = ExecuteProcess(
         cmd=['ros2', 'bag', 'record', '-a', 
-             '-o', output_dir],
+             '-o', output_dir, '-s', 'mcap', '--max-bag-size', '10000000'],
         output='screen'
     )
 
@@ -27,16 +28,19 @@ def generate_launch_description():
         create_node(pkg='can_interface'),
         create_node(pkg='epos_interface'),
         create_node(pkg='perception'),
-        create_node(pkg='path_planning'),
+        create_node(pkg='path_planning',
+                    params=[{'v_max': 2.5,
+                             'ax_max': 3.0,
+                             'ay_max': 3.0}]),
         create_node(pkg='controller',
-                    params=[{'target': 3.0,
+                    params=[{'look_ahead_distance': 4.0,
                              'min_cmd': 0.0,
-                             'max_cmd': 0.1}]),
+                             'max_cmd': 0.15}]),
         create_node(pkg='graph_slam'),
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
                     'mission': 'trackdrive'}]),
-        create_node(pkg='trajectory_optimization')
+        create_node(pkg='trajectory_optimization'),
         rosbag_record
     ])
 

@@ -34,8 +34,10 @@ private:
     int MAX_DEC_;
     int PROFILE_VEL_;
     bool is_shutdown_;
-    double init_pos_;
+    double epos_pos_;
+    double ext_pos_;
     bool steer_check_;
+    double ext_time_;
 
     rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr cmd_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr extensometer_sub_;
