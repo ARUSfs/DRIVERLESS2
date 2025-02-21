@@ -426,11 +426,11 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
         frame.can_dlc = 3;                
         frame.data[0] = 0x01;
         frame.data[1] = 0x01;
-        frame.data[2] = 0x05; // TODO: change to 0x05
+        frame.data[2] = 0x05;
 
         write(socketCan1, &frame, sizeof(struct can_frame));  
 
-        std::string kill_command = "./home/arus/ws/src/DRIVERLESS2/src/common/common_meta/killer.sh";
+        std::string kill_command = "/home/arus/ws/src/DRIVERLESS2/src/common/common_meta/killer.sh";
         int ret1 = system(kill_command.c_str());
 
     }else if(as_status_ == 4){ // Emergency 
@@ -443,7 +443,7 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
 
         write(socketCan1, &frame, sizeof(struct can_frame));   
 
-        std::string kill_command = "./home/arus/ws/src/DRIVERLESS2/src/common/common_meta/killer.sh";
+        std::string kill_command = "/home/arus/ws/src/DRIVERLESS2/src/common/common_meta/killer.sh";
         int ret2 = system(kill_command.c_str());
     }
 }
