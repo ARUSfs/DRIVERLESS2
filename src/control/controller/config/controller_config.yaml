@@ -1,6 +1,7 @@
 controller:
   ros__parameters:
-    controller_type: "pure_pursuit"    
+    first_lap_steer_control: "PP"   # PP, MPC
+    optimized_steer_control: "PP"   # PP, MPC
     timer_frequency: 100.0          # timer frecuency in Hz
 
     # Topics

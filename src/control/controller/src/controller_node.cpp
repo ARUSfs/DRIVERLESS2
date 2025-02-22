@@ -19,9 +19,11 @@ Controller::Controller() : Node("controller"),
     speed_control_(),
     pure_pursuit_()
 {
-    this->declare_parameter<std::string>("controller_type", "pure_pursuit");
+    this->declare_parameter<std::string>("first_lap_steer_control", "PP");
+    this->declare_parameter<std::string>("optimized_steer_control", "PP");
     this->declare_parameter<double>("timer_frequency", 100.0);
-    this->get_parameter("controller_type", kControllerType);
+    this->get_parameter("first_lap_steer_control", kFirstLapSteerControl);
+    this->get_parameter("optimized_steer_control", kOptimizedSteerControl);
     this->get_parameter("timer_frequency", kTimerFreq);
 
     // Topic
@@ -106,26 +108,37 @@ void Controller::on_timer()
         if(!(acc_profile_.empty())){
             target_acc = acc_profile_.at(index_global_);
         }
+        
+        double delta_cmd = 0.0;
+        if ((!optimized_ && kFirstLapSteerControl=="PP") || (optimized_ && kOptimizedSteerControl=="PP")){
+            pure_pursuit_.set_path(pointsXY_);
+            Point position;
+            position.x = x_;
+            position.y = y_;
+            pure_pursuit_.set_position(position, yaw_);
 
-        pure_pursuit_.set_path(pointsXY_);
-        Point position;
-        position.x = x_;
-        position.y = y_;
-        pure_pursuit_.set_position(position, yaw_);
+            pure_pursuit_.get_steering_angle(index_global_, kLAD);
+            delta_cmd = pure_pursuit_.delta_cmd_;
+            Point pursuit_point = pure_pursuit_.pursuit_point_;
 
-        auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_, kLAD);
-        common_msgs::msg::PointXY pursuit_point_msg;
-        pursuit_point_msg.x = pursuit_point.x;
-        pursuit_point_msg.y = pursuit_point.y;
-        pursuit_point_pub_ -> publish(pursuit_point_msg);
+            common_msgs::msg::PointXY pursuit_point_msg;
+            pursuit_point_msg.x = pursuit_point.x;
+            pursuit_point_msg.y = pursuit_point.y;
+            pursuit_point_pub_ -> publish(pursuit_point_msg);
+
+        } else if (!optimized_ && kFirstLapSteerControl=="MPC" || optimized_ && kOptimizedSteerControl=="MPC")
+        {
+            /* code */
+        }
+        
 
         double dt = (this->now() - previous_time_).seconds();
-        double acc = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
+        double acc_cmd = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
         previous_time_ = this->now();
 
         common_msgs::msg::Cmd cmd;       
-        cmd.acc = std::clamp(acc, kMinCmd, kMaxCmd);
-        cmd.delta = std::clamp(delta, -kMaxSteer*M_PI/180, kMaxSteer*M_PI/180);;
+        cmd.acc = std::clamp(acc_cmd, kMinCmd, kMaxCmd);
+        cmd.delta = std::clamp(delta_cmd, -kMaxSteer*M_PI/180, kMaxSteer*M_PI/180);;
         cmd_pub_ -> publish(cmd); 
     }
 }
@@ -180,6 +193,9 @@ void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg
     ax_ = msg -> ax;
     ay_ = msg -> ay;
     delta_ = msg -> delta;
+
+    v_delta_ = 0.7*v_delta_ + 0.3*(delta_ - prev_delta_)/0.01;
+    prev_delta_ = delta_;
 
 }
 

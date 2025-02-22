@@ -62,6 +62,9 @@ private:
     double ay_;
     double delta_;
 
+    double v_delta_;
+    double prev_delta_;
+
     //Trajectory variable
     std::vector<Point> pointsXY_;  
     std::vector<float> s_;                                         
@@ -82,7 +85,8 @@ private:
     rclcpp::Time previous_time_ ;
     
     // Parameters
-    std::string kControllerType;
+    std::string kFirstLapSteerControl;
+    std::string kOptimizedSteerControl;
     std::string kStateTopic;
     std::string kTrajectoryTopic;
     std::string kCmdTopic;
