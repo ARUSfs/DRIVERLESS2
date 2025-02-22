@@ -105,10 +105,7 @@ public:
         Point pursuit_point = search_pursuit_point(index_global, look_ahead_distance);
 
         double alpha = std::atan2(pursuit_point.y - car_position_.y, pursuit_point.x - car_position_.x) - yaw_;
-        double delta = std::atan2(2.0 * 1.535 * std::sin(alpha) / look_ahead_distance, 1.0);
-
-        delta = std::max(-0.347, std::min(delta, 0.347));
-        delta = std::clamp(delta, -20 * M_PI / 180, 20 * M_PI / 180);
+        double delta = std::atan2(2.0 * wheel_base_ * std::sin(alpha) / look_ahead_distance, 1.0);
 
         prev_steer_ = delta;
         prev_pursuit_point_ = pursuit_point;
@@ -125,4 +122,6 @@ private:
     size_t pursuit_index_;
     Point prev_pursuit_point_;
     double prev_steer_;
+
+    double wheel_base_ = 1.535; // meters
 };

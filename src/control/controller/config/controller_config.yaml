@@ -22,5 +22,6 @@ controller:
     KD: 0.01
 
     # Cmd
-    min_cmd: 0.0
-    max_cmd: 0.1
+    min_cmd: 0.0    # % inv
+    max_cmd: 0.1    # % inv
+    max_steer: 20.0 # degrees
