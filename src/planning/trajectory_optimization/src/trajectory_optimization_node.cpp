@@ -66,7 +66,11 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::Trajectory::S
     VectorXd twl = twr;
 
     //Get minimal curvature path
-    MatrixXd optimized_trajectory = MinCurvaturepath::get_min_curvature_path(x, y, twr, twl);
+    MatrixXd optimized_trajectory1 = MinCurvaturepath::get_min_curvature_path(x, y, twr, twl);
+    VectorXd traj_x1 = optimized_trajectory1.col(0);
+    VectorXd traj_y1 = optimized_trajectory1.col(1);
+    int m = traj_x1.size();
+    MatrixXd optimized_trajectory = MinCurvaturepath::get_min_curvature_path(traj_x1, traj_y1, 0.5*VectorXd::Ones(m), 0.5*VectorXd::Ones(m));
     VectorXd traj_x = optimized_trajectory.col(0);
     VectorXd traj_y = optimized_trajectory.col(1);
 
@@ -118,8 +122,8 @@ VectorXd TrajectoryOptimization::generate_track_width(VectorXd k, double dmax){
 
     double kk;
     for(int i = 0; i < n; i++){
-        kk = k(seq(max(0, i-20), min(n-1, i+20))).mean();
-        dist(i) = min(dmax, max(0.5, abs(kk*10)));
+        // kk = k(seq(max(0, i-20), min(n-1, i+20))).mean();
+        dist(i) = dmax;//min(dmax, max(0.5, abs(kk*10)));
     }
 
     return dist;
@@ -222,66 +226,94 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
     int m = s.size();
 
     VectorXd speed_profile = VectorXd::Zero(m);
-    speed_profile(0) = speed_;                                  // Begin at car's current speed
+    speed_profile(0) = kVMax;                                  // Current speed for first iteration
     VectorXd v_grip(m), ds(m);
     double v_max_braking;
 
     for(int i = 0; i < m; i++){
-        v_grip(i) = min(sqrt(kAyMax/abs(k(i)+0.0001)), kVMax);  // Calculate maximum speed not to loose grip
+        v_grip(i) = std::min(kVMax, calculate_apex(k(i)));      // Pure lateral grip && speed limit
     }
 
+    // Forwards loop. First iteration. Limit speed by combined ax and grip
     for(int i = 1; i < m; i++){
         ds(i) = s(i) - s(i-1);
-
-        speed_profile(i) = sqrt(speed_profile(i-1)*speed_profile(i-1) + 2*kAxMax*ds(i));
-        if (speed_profile(i) > v_grip(i)){                      // If speed profile generated is greater than grip speed,
-            speed_profile(i) = v_grip(i);                       // keep it at grip speed
-        }
-    }
-    
-    for(int j = m-2; j > -1; j--){
-        v_max_braking = sqrt(speed_profile(j+1)*speed_profile(j+1) + 2*kAxMax*ds(j));   //Maximum allowed speed for safety
-        if(speed_profile(j) > v_max_braking){                   // If speed profile generated is greater than safe speed,
-            speed_profile(j) = v_max_braking;                   // keep it at safe speed
-        }
-    }
-
-    speed_profile(0) = speed_profile(m-1);                      // Begin at final speed and repeat process to get a smooth closed loop
-
-
-    for(int i = 1; i < m; i++){
-
-        speed_profile(i) = sqrt(speed_profile(i-1)*speed_profile(i-1) + 2*kAxMax*ds(i));
-        if (speed_profile(i) > v_grip(i)){                     
+        double ax_max = ggv_ax_throttle(speed_profile(i-1),k(i-1));
+        speed_profile(i) = sqrt(speed_profile(i-1)*speed_profile(i-1) + 2*ax_max*ds(i));
+        if (speed_profile(i) > v_grip(i)){                      
             speed_profile(i) = v_grip(i);                       
         }
     }
-    
-    for(int j = m-2; j > -1; j--){
-        v_max_braking = sqrt(speed_profile(j+1)*speed_profile(j+1) + 2*kAxMax*ds(j));  
-        if(speed_profile(j) > v_max_braking){                   
-            speed_profile(j) = v_max_braking;                  
+
+    // speed_profile(m-1) = speed_profile(1);
+
+    for(int j = m-1; j > 0; j--){
+        double ax_max_braking = ggv_ax_brake(speed_profile(j),k(j));
+        v_max_braking = sqrt(speed_profile(j)*speed_profile(j) + 2*ax_max_braking*ds(j-1));
+        if (speed_profile(j-1) > v_max_braking){
+            speed_profile(j-1) = v_max_braking;
+        }
+    }
+
+    // speed_profile(0) = speed_profile(m-1);                      // Begin at final speed and repeat process to get a smooth closed loop
+
+    // for(int i = 1; i < m; i++){
+    //     ds(i) = s(i) - s(i-1);
+    //     double ax_max = ggv_ax_throttle(speed_profile(i-1),k(i-1));
+    //     double v_throttle = sqrt(speed_profile(i-1)*speed_profile(i-1) + 2*ax_max*ds(i));
+    //     if (v_throttle < speed_profile(i)){                      
+    //         speed_profile(i) = v_throttle;                       
+    //     }
+    // }
+
+    speed_profile(m-1) = speed_profile(1);
+
+    for(int j = m-1; j > 0; j--){
+        double ax_max_braking = ggv_ax_brake(speed_profile(j),k(j));
+        v_max_braking = sqrt(speed_profile(j)*speed_profile(j) + 2*ax_max_braking*ds(j-1));
+        if (speed_profile(j-1) > v_max_braking){
+            speed_profile(j-1) = v_max_braking;
         }
     }
 
     // Generate acceleration profile
     VectorXd acc_profile = VectorXd::Zero(m);
-    acc_profile(0) = acc_;                                      // Begin at car's current acceleration
 
     for(int i = 1; i < m; i++){
-        acc_profile(i) = (speed_profile(i)*speed_profile(i) - speed_profile(i-1)*speed_profile(i-1)) / (2*ds(i));
+        acc_profile(i) = (speed_profile(i)*speed_profile(i) - speed_profile(i-1)*speed_profile(i-1)) / (2*ds(i-1));
     }
 
-    acc_profile(0) = acc_profile(m-1);                          // Begin at final acceleration and repeat process to get a smooth closed loop
-
-    for(int i = 1; i < m; i++){
-        acc_profile(i) = (speed_profile(i)*speed_profile(i) - speed_profile(i-1)*speed_profile(i-1)) / (2*ds(i));
-    }
+    acc_profile(1) = acc_profile(m-1);
 
     MatrixXd res(m,2);
     res << speed_profile, acc_profile;
 
     return res;
+}
+
+double TrajectoryOptimization::calculate_apex(double k){
+
+    if (std::abs(k) < 0.01) {k = 0.01;}
+    double v_grip = std::sqrt(kMuY * kG / (std::abs(k) - kMuY * kCLift / kMass));
+    return v_grip;
+}
+
+double TrajectoryOptimization::ggv_ax_throttle(double v, double k){
+    double ay_max_v = kMuY * (kG + kCLift/kMass * v*v);
+    double ax_max_v = kMuXThrottle * kG + (kMuXThrottle * kCLift - kCDrag) / kMass *v*v;
+
+    double ay = (std::abs(v*v*k) < ay_max_v) ? std::abs(v*v*k) : ay_max_v;
+    double ax_max = ax_max_v * sqrt(1 - std::pow((ay / ay_max_v),2));
+    return ax_max;
+}
+
+double TrajectoryOptimization::ggv_ax_brake(double v, double k){
+    double ay_max_v = kMuY * (kG + kCLift/kMass * v*v);
+    double ax_max_v = kMuxBrake * kG + (kMuXThrottle * kCLift + kCDrag) / kMass *v*v;
+
+    double ay = (std::abs(v*v*k) < ay_max_v) ? std::abs(v*v*k) : ay_max_v;
+    double ax_max = ax_max_v - ax_max_v * ay / ay_max_v;
+    // double ax_max = ax_max_v * sqrt(1 - std::pow((ay / ay_max_v),2));
+    return ax_max;
 }
 
 int main(int argc, char * argv[])
