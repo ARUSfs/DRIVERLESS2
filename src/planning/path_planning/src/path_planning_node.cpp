@@ -370,10 +370,20 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<Con
         return trajectory_msg;
     }
 
+    std::vector<double> new_x, new_y;
+    new_x.push_back(route[0].x);
+    new_y.push_back(route[0].y);
+    for (int i = 1; i<route_size-1;i++){
+        new_x.push_back((0.9*route[i-1].x+1.2*route[i].x+0.9*route[i+1].x)/3);
+        new_y.push_back((0.9*route[i-1].y+1.2*route[i].y+0.9*route[i+1].y)/3);
+    }
+    new_x.push_back(route[route_size-1].x);
+    new_y.push_back(route[route_size-1].y);
+
     Eigen::MatrixXd control_points(2, route_size);
     for (int i = 0; i<route_size; i++){
-        control_points(0, i) = route[i].x;
-        control_points(1, i) = route[i].y;
+        control_points(0, i) = new_x[i]; // route[i].x;
+        control_points(1, i) = new_y[i]; // route[i].y;
     }
 
     Eigen::Spline<double, 2> b_spline = Eigen::SplineFitting<Eigen::Spline<double, 2>>::Interpolate(
