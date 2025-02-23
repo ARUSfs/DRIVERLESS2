@@ -10,6 +10,7 @@ visualization:
     acc_trajectory_topic: '/acc_planning/trajectory'
     skidpad_trajectory_topic: '/skidpad_planning/trajectory'
     track_limits_topic: '/path_planning/track_limits'
+    max_vx_topic: '/arussim/max_vx'
 
     # Topics to publish
     triangulation_visualization_topic: '/visualization/triangulation'
@@ -17,3 +18,4 @@ visualization:
     arussim_trajectory_visualization_topic: '/visualization/arussim_fixed_trajectory'
     trajectory_visualization_topic: '/visualization/trajectory'
     track_limits_visualization_topic: '/visualization/track_limits'
+    optimized_trajectory_colored_visualization_topic: '/visualization/optimized_trajectory_colored'

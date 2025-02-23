@@ -30,6 +30,8 @@ Visualization::Visualization() : Node("visualization")
     this->declare_parameter("pursuit_point_visualization_topic", "/visualization/pursuit_point");
     this->declare_parameter("track_limits_topic", "/path_planning/track_limits");
     this->declare_parameter("track_limits_visualization_topic", "/visualization/track_limits");
+    this->declare_parameter("optimized_trajectory_colored_visualization_topic", "/visualization/optimized_trajectory_colored");
+    this->declare_parameter("max_vx_topic", "/arussim/max_vx");
 
     this->get_parameter("alpha", kAlpha);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
@@ -46,12 +48,16 @@ Visualization::Visualization() : Node("visualization")
     this->get_parameter("pursuit_point_visualization_topic", kPursuitPointVisualizationTopic);
     this->get_parameter("track_limits_topic", kTrackLimitsTopic);
     this->get_parameter("track_limits_visualization_topic", kTrackLimitsVisualizationTopic);
+    this->get_parameter("optimized_trajectory_colored_visualization_topic", kOptimizedTrajectoryColoredVisualizationTopic);
+    this->get_parameter("max_vx_topic", KMaxVxTopic);
 
 
     triangulation_visualization_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
         kTriangulationVisualizationTopic, 10);
     optimized_trajectory_visualization_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         kOptimizedTrajectoryVisualizationTopic, 10);
+    optimized_colored_trajectory_visualization_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        kOptimizedTrajectoryColoredVisualizationTopic, 10);
     arussim_trajectory_visualization_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         kARUSSimTrajectoryVisualizationTopic, 10);
     trajectory_visualization_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
@@ -77,7 +83,19 @@ Visualization::Visualization() : Node("visualization")
         kPursuitPointTopic, 10, std::bind(&Visualization::pursuit_point_callback, this, std::placeholders::_1));
     track_limits_sub_ = this->create_subscription<common_msgs::msg::TrackLimits>(
         kTrackLimitsTopic, 10, std::bind(&Visualization::track_limits_callback, this, std::placeholders::_1));
+    max_vx_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+        KMaxVxTopic, 10, std::bind(&Visualization::max_vx_callback, this, std::placeholders::_1));
+}
 
+void Visualization::max_vx_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    max_vx_ = msg->data;
+    // Republish the optimized trajectory marker when max_vx_ changes
+    if(last_optimized_trajectory_)
+    {
+        auto marker = this->create_trajectory_colored(last_optimized_trajectory_, true);
+        optimized_trajectory_visualization_pub_->publish(marker);
+    }
 }
 
 void Visualization::triangulation_callback(const common_msgs::msg::Triangulation::SharedPtr msg)
@@ -192,8 +210,13 @@ void Visualization::arussim_trajectory_callback(const common_msgs::msg::Trajecto
 
 void Visualization::optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
+    last_optimized_trajectory_ = msg; // store the last optimized trajectory
+
     visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, true, 1.0, 0.5, 0.0, kAlpha);
     optimized_trajectory_visualization_pub_->publish(marker);
+
+    visualization_msgs::msg::Marker marker_colored = this->create_trajectory_colored(msg, true);
+    optimized_colored_trajectory_visualization_pub_->publish(marker_colored);
 }
 
 void Visualization::delaunay_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
@@ -265,6 +288,67 @@ visualization_msgs::msg::Marker Visualization::create_trajectory_marker(
         p.y = msg->points[i].y;
         p.z = 0;
         marker.points.push_back(p);
+    }
+    return marker;
+}
+
+visualization_msgs::msg::Marker Visualization::create_trajectory_colored(
+    const common_msgs::msg::Trajectory::SharedPtr msg, bool global)
+{
+    visualization_msgs::msg::Marker marker;
+    if(global){
+        marker.header.frame_id = "arussim/world";
+    } else {
+        marker.header.frame_id = "arussim/vehicle_cog";
+    }
+    marker.ns = "trajectory_colored";
+    marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.pose.position.x = 0;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = 0;
+    marker.scale.x = 0.2;
+    marker.scale.y = 0.2;
+    marker.scale.z = 0.2;
+    marker.color.a = 1.0;
+    
+    // For each point in the trajectory, compute a color based on speed_profile.
+    for (int i = 0; i < msg->points.size(); i++) {
+        double speed = msg->speed_profile[i];
+        double hue = 240.0 - (std::clamp(speed, 0.0, max_vx_) / max_vx_ * 240.0);
+        double sat = 1.0, val = 1.0;
+        double c = val * sat;
+        double x = c * (1 - fabs(fmod(hue / 60.0, 2) - 1));
+        double m = val - c;
+        double r, g, b;
+        // Hue to RGB conversion
+        if (hue >= 0 && hue < 60) {
+            r = c; g = x; b = 0;
+        } else if (hue < 120) {
+            r = x; g = c; b = 0;
+        } else if (hue < 180) {
+            r = 0; g = c; b = x;
+        } else if (hue < 240) {
+            r = 0; g = x; b = c;
+        } else if (hue < 300) {
+            r = x; g = 0; b = c;
+        } else {
+            r = c; g = 0; b = x;
+        }
+        r += m; g += m; b += m;
+    
+        geometry_msgs::msg::Point p;
+        p.x = msg->points[i].x;
+        p.y = msg->points[i].y;
+        p.z = speed;
+        marker.points.push_back(p);
+    
+        std_msgs::msg::ColorRGBA color;
+        color.r = r;
+        color.g = g;
+        color.b = b;
+        color.a = 1.0;
+        marker.colors.push_back(color);
     }
     return marker;
 }
