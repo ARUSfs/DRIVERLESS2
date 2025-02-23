@@ -21,10 +21,12 @@ Controller::Controller() : Node("controller"),
 {
     this->declare_parameter<std::string>("first_lap_steer_control", "PP");
     this->declare_parameter<std::string>("optimized_steer_control", "PP");
-    this->declare_parameter<double>("timer_frequency", 100.0);
+    this->declare_parameter<double>("speed_timer_frequency", 100.0);
+    this->declare_parameter<double>("steer_timer_frequency", 100.0);
     this->get_parameter("first_lap_steer_control", kFirstLapSteerControl);
     this->get_parameter("optimized_steer_control", kOptimizedSteerControl);
-    this->get_parameter("timer_frequency", kTimerFreq);
+    this->get_parameter("speed_timer_frequency", kSpeedTimerFreq);
+    this->get_parameter("steer_timer_frequency", kSteerTimerFreq);
 
     // Topic
     this->declare_parameter<std::string>("state", "/car_state/state");
@@ -64,10 +66,14 @@ Controller::Controller() : Node("controller"),
 
     previous_time_ = this->get_clock()->now();
 
-    // Timer
-    timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(static_cast<int>(1000.0 / kTimerFreq)),
-        std::bind(&Controller::on_timer, this));
+    // Timers
+    speed_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(static_cast<int>(1000.0 / kSpeedTimerFreq)),
+        std::bind(&Controller::on_speed_timer, this));
+
+    steer_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(static_cast<int>(1000.0 / kSteerTimerFreq)),
+        std::bind(&Controller::on_steer_timer, this));
 
     // Subscribers
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
@@ -91,7 +97,7 @@ Controller::Controller() : Node("controller"),
  * 
  * @details Implement the control algorithm with calls to the controller libraries. 
  */  
-void Controller::on_timer()
+void Controller::on_speed_timer()
 {
     if(!(pointsXY_.empty()) && run_check_){
         get_global_index();
@@ -109,39 +115,43 @@ void Controller::on_timer()
             target_acc = acc_profile_.at(index_global_);
         }
         
-        double delta_cmd = 0.0;
-        if ((!optimized_ && kFirstLapSteerControl=="PP") || (optimized_ && kOptimizedSteerControl=="PP")){
-            pure_pursuit_.set_path(pointsXY_);
-            Point position;
-            position.x = x_;
-            position.y = y_;
-            pure_pursuit_.set_position(position, yaw_);
-
-            pure_pursuit_.get_steering_angle(index_global_, kLAD);
-            delta_cmd = pure_pursuit_.delta_cmd_;
-            Point pursuit_point = pure_pursuit_.pursuit_point_;
-
-            common_msgs::msg::PointXY pursuit_point_msg;
-            pursuit_point_msg.x = pursuit_point.x;
-            pursuit_point_msg.y = pursuit_point.y;
-            pursuit_point_pub_ -> publish(pursuit_point_msg);
-
-        } else if (!optimized_ && kFirstLapSteerControl=="MPC" || optimized_ && kOptimizedSteerControl=="MPC")
-        {
-            /* code */
-        }
-        
 
         double dt = (this->now() - previous_time_).seconds();
-        double acc_cmd = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
+        acc_cmd_ = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
         previous_time_ = this->now();
 
         common_msgs::msg::Cmd cmd;       
-        cmd.acc = std::clamp(acc_cmd, kMinCmd, kMaxCmd);
-        cmd.delta = std::clamp(delta_cmd, -kMaxSteer*M_PI/180, kMaxSteer*M_PI/180);;
+        cmd.acc = std::clamp(acc_cmd_, kMinCmd, kMaxCmd);
+        cmd.delta = std::clamp(delta_cmd_, -kMaxSteer*M_PI/180, kMaxSteer*M_PI/180);;
         cmd_pub_ -> publish(cmd); 
     }
 }
+
+
+void Controller::on_steer_timer()
+{
+    if ((!optimized_ && kFirstLapSteerControl=="PP") || (optimized_ && kOptimizedSteerControl=="PP")){
+        pure_pursuit_.set_path(pointsXY_);
+        Point position;
+        position.x = x_;
+        position.y = y_;
+        pure_pursuit_.set_position(position, yaw_);
+
+        pure_pursuit_.get_steering_angle(index_global_, kLAD);
+        delta_cmd_ = pure_pursuit_.delta_cmd_;
+        Point pursuit_point = pure_pursuit_.pursuit_point_;
+
+        common_msgs::msg::PointXY pursuit_point_msg;
+        pursuit_point_msg.x = pursuit_point.x;
+        pursuit_point_msg.y = pursuit_point.y;
+        pursuit_point_pub_ -> publish(pursuit_point_msg);
+
+    } else if (!optimized_ && kFirstLapSteerControl=="MPC" || optimized_ && kOptimizedSteerControl=="MPC")
+    {
+        /* code */
+    }
+}
+
 
 /**
  * @brief get global index of the vehicle in the trajectory

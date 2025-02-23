@@ -2,7 +2,8 @@ controller:
   ros__parameters:
     first_lap_steer_control: "PP"   # PP, MPC
     optimized_steer_control: "PP"   # PP, MPC
-    timer_frequency: 100.0          # timer frecuency in Hz
+    speed_timer_frequency: 100.0    # speed timer frecuency in Hz
+    steer_timer_frequency: 100.0    # steer timer frecuency in Hz
 
     # Topics
     state: "/car_state/state"

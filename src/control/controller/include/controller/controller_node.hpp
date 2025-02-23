@@ -45,7 +45,8 @@ private:
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void run_check_callback(const std_msgs::msg::Bool::SharedPtr msg);
-    void on_timer();
+    void on_speed_timer();
+    void on_steer_timer();
     void get_global_index();
 
     bool run_check_ = false;
@@ -65,6 +66,9 @@ private:
     double v_delta_;
     double prev_delta_;
 
+    double acc_cmd_;
+    double delta_cmd_;
+
     //Trajectory variable
     std::vector<Point> pointsXY_;  
     std::vector<float> s_;                                         
@@ -81,7 +85,8 @@ private:
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr run_check_sub_;
 
     //Timers
-    rclcpp::TimerBase::SharedPtr timer_; 
+    rclcpp::TimerBase::SharedPtr speed_timer_;
+    rclcpp::TimerBase::SharedPtr steer_timer_;
     rclcpp::Time previous_time_ ;
     
     // Parameters
@@ -93,7 +98,8 @@ private:
     std::string kPursuitPointTopic;
     std::string kTargetSpeedTopic;
 
-    double kTimerFreq;
+    double kSpeedTimerFreq;
+    double kSteerTimerFreq;
     double kLAD;
     double kTargetSpeed;
     double KP;
