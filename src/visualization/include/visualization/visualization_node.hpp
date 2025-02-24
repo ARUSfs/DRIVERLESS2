@@ -37,7 +37,6 @@ class Visualization : public rclcpp::Node
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr skidpad_trajectory_sub_;
         rclcpp::Subscription<common_msgs::msg::PointXY>::SharedPtr pursuit_point_sub_;
         rclcpp::Subscription<common_msgs::msg::TrackLimits>::SharedPtr track_limits_sub_;
-        rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr max_vx_sub_;
 
         //Publishers
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr triangulation_visualization_pub_;
@@ -57,8 +56,6 @@ class Visualization : public rclcpp::Node
         void skidpad_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
         void pursuit_point_callback(const common_msgs::msg::PointXY::SharedPtr msg);
         void track_limits_callback(const common_msgs::msg::TrackLimits::SharedPtr msg);
-        void max_vx_callback(const std_msgs::msg::Float32::SharedPtr msg);
-        double max_vx_ = 15.0;
 
         /**
          * @brief Creates markers for trajectory messages.
@@ -72,15 +69,15 @@ class Visualization : public rclcpp::Node
         double kAlpha;
 
         /**
-         * @brief Creates a colored trajectory marker.
+         * @brief Creates a 3D trajectory marker.
          * @param msg Trajectory message.
          * @param global If true, sets the frame_id to "arussim/world", otherwise "arussim/vehicle_cog".
-         * @return visualization_msgs::msg::Marker Colored trajectory marker.
+         * @return visualization_msgs::msg::Marker 3D trajectory marker.
          */
-        visualization_msgs::msg::Marker create_trajectory_colored(
-            const common_msgs::msg::Trajectory::SharedPtr msg, bool global);
+        visualization_msgs::msg::Marker create_trajectory_3D_marker(
+            const common_msgs::msg::Trajectory::SharedPtr msg, bool global=true,
+            double red=1.0, double green=0.0, double blue=0.0, double alpha=1.0);
             
-        common_msgs::msg::Trajectory::SharedPtr last_optimized_trajectory_ = nullptr;
 
         // Topics to subscribe
         std::string kTriangulationTopic;
@@ -91,7 +88,6 @@ class Visualization : public rclcpp::Node
         std::string kSkidpadTrajectoryTopic;
         std::string kPursuitPointTopic;
         std::string kTrackLimitsTopic;
-        std::string KMaxVxTopic;
 
         //Topics to publish
         std::string kTriangulationVisualizationTopic;
@@ -100,5 +96,5 @@ class Visualization : public rclcpp::Node
         std::string kTrajectoryVisualizationTopic;
         std::string kPursuitPointVisualizationTopic;
         std::string kTrackLimitsVisualizationTopic;
-        std::string kOptimizedTrajectoryColoredVisualizationTopic;
+        std::string kOptimizedTrajectory3DVisualizationTopic;
 };
