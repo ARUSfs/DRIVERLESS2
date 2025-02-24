@@ -39,15 +39,17 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("angle_coeff", 1.0);
     this->declare_parameter<double>("max_cost", 50.0);
     this->declare_parameter<double>("len_coeff", 1.0);
+    this->declare_parameter<double>("smooth_coeff", 1.2);
     this->declare_parameter<double>("prev_route_bias", 0.75);
     this->declare_parameter<int>("route_back", 10);
     this->declare_parameter<bool>("use_buffer", false);
     this->declare_parameter<bool>("use_closing_route", false);
     this->declare_parameter<bool>("stop_after_closing", false);
-    
+
     this->get_parameter("angle_coeff", kAngleCoeff);
     this->get_parameter("max_cost", kMaxCost);
     this->get_parameter("len_coeff", kLenCoeff);
+    this->get_parameter("smooth_coeff", kSmoothCoeff);
     this->get_parameter("prev_route_bias", kPrevRouteBias);
     this->get_parameter("route_back", kRouteBack);
     this->get_parameter("use_buffer", kUseBuffer);
@@ -370,12 +372,13 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<Con
         return trajectory_msg;
     }
 
+    // Perform laplacian smoothing previous to spline fitting
     std::vector<double> new_x, new_y;
     new_x.push_back(route[0].x);
     new_y.push_back(route[0].y);
     for (int i = 1; i<route_size-1;i++){
-        new_x.push_back((0.9*route[i-1].x+1.2*route[i].x+0.9*route[i+1].x)/3);
-        new_y.push_back((0.9*route[i-1].y+1.2*route[i].y+0.9*route[i+1].y)/3);
+        new_x.push_back(((3-kSmoothCoeff)/2*route[i-1].x+kSmoothCoeff*route[i].x+(3-kSmoothCoeff)/2*route[i+1].x)/3);
+        new_y.push_back(((3-kSmoothCoeff)/2*route[i-1].y+kSmoothCoeff*route[i].y+(3-kSmoothCoeff)/2*route[i+1].y)/3);
     }
     new_x.push_back(route[route_size-1].x);
     new_y.push_back(route[route_size-1].y);
