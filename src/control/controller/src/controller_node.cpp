@@ -17,7 +17,8 @@
  */
 Controller::Controller() : Node("controller"),  
     speed_control_(),
-    pure_pursuit_()
+    pure_pursuit_(),
+    lti_mpc_()
 {
     this->declare_parameter<std::string>("first_lap_steer_control", "PP");
     this->declare_parameter<std::string>("optimized_steer_control", "PP");
@@ -117,7 +118,7 @@ void Controller::on_speed_timer()
         
 
         double dt = (this->now() - previous_time_).seconds();
-        acc_cmd_ = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
+        acc_cmd_ = speed_control_.get_acc_command(1.3*target_speed, 1.3*target_acc, vx_, dt);
         previous_time_ = this->now();
 
         common_msgs::msg::Cmd cmd;       
@@ -146,9 +147,15 @@ void Controller::on_steer_timer()
         pursuit_point_msg.y = pursuit_point.y;
         pursuit_point_pub_ -> publish(pursuit_point_msg);
 
-    } else if (!optimized_ && kFirstLapSteerControl=="MPC" || optimized_ && kOptimizedSteerControl=="MPC")
+    } else if ((!optimized_ && kFirstLapSteerControl=="MPC") || (optimized_ && kOptimizedSteerControl=="MPC"))
     {
-        /* code */
+        Point position;
+        position.x = x_;
+        position.y = y_;
+        if (!(s_.empty())){
+            lti_mpc_.set_reference_trajectory(pointsXY_, s_, position, yaw_, vx_, index_global_);
+            delta_cmd_ = lti_mpc_.calculate_control(delta_, v_delta_, vy_, r_);
+        }
     }
 }
 

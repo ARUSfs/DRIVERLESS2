@@ -22,6 +22,7 @@
 #include "controller/speed_control.hpp"
 #include "controller/PID.hpp"
 #include "Point.h"
+#include "lti_mpc.hpp"
 
 /**
  * @brief The Controller class
@@ -39,6 +40,7 @@ private:
     // Instances
     SpeedControl speed_control_;
     Pure_pursuit pure_pursuit_;   
+    LtiMpc lti_mpc_;
 
     // Callbacks
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
