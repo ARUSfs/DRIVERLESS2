@@ -1,9 +1,10 @@
 trajectory_optimization:
   ros__parameters:
-    ax_max: 3.
-    ay_max: 9.
     v_max: 20.
     d_min: 1.2
+    mu_y: 1.1
+    mu_throttle: 0.6
+    mu_brake: 0.9
 
     #Topic
     trajectory_topic: "/path_planning/midpoints_to_optimize"

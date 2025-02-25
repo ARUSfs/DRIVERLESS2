@@ -45,13 +45,11 @@ class TrajectoryOptimization : public rclcpp::Node
         double acc_;
 
         //Parameters
-        double kAxMax;
-        double kAyMax;
         double kVMax;
         double kMinDist;
-        double kMuY = 1.1;
-        double kMuXThrottle = 0.6;
-        double kMuxBrake = 0.9;
+        double kMuY;
+        double kMuXThrottle;
+        double kMuxBrake;
         double kG = 9.81;
         double kCLift = 0.5*1.2*3.5;
         double kCDrag = 0.5*1.2*1.2;
@@ -65,6 +63,8 @@ class TrajectoryOptimization : public rclcpp::Node
         std::string kCarStateTopic;
         std::string kOptimizedTrajectoryTopic;
         std::string kTrackLimitsTopic;
+
+        bool control_simulation_true = false;
 
         //Subscribers and publishers
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trajectory_sub_;

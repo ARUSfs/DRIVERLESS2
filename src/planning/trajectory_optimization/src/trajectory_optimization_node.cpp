@@ -16,12 +16,14 @@
  */
 TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization")
 {   
-    this->declare_parameter<double>("ax_max", 3.);
-    this->declare_parameter<double>("ay_max", 1.5);
+    this->declare_parameter<double>("mu_y", 1.1);
+    this->declare_parameter<double>("mu_throttle", 0.6);
+    this->declare_parameter<double>("mu_brake", 0.9);
     this->declare_parameter<double>("v_max", 8.);
     this->declare_parameter<double>("d_min", 1.2);
-    this->get_parameter("ax_max", kAxMax);
-    this->get_parameter("ay_max", kAyMax);
+    this->get_parameter("mu_y", kMuY);
+    this->get_parameter("mu_throttle", kMuXThrottle);
+    this->get_parameter("mu_brake", kMuxBrake);
     this->get_parameter("v_max", kVMax);
     this->get_parameter("d_min", kMinDist);
 
@@ -62,7 +64,7 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::Trajectory::S
         x(i) = track_xy[i].x;
         y(i) = track_xy[i].y;
     }
-    if(!(track_limit_left_.empty())){
+    if(!(track_limit_left_.empty()) || control_simulation_true){
         //Generate track width vectors
         MatrixXd original_s_k = TrajectoryOptimization::get_distance_and_curvature_values(x, y);
         VectorXd original_k = original_s_k.col(1); //This step won't be necessary when we receive k from the message
@@ -133,17 +135,21 @@ VectorXd TrajectoryOptimization::generate_track_width(VectorXd x, VectorXd y, st
     int m = track_limit.size();
     VectorXd dist = VectorXd::Zero(n);
 
-    for(int i = 0; i < n; i++){
-        double min_dist = 100;
-        for(int j = 0; j < m; j++){
-            double dx = x(i) - track_limit[j].x;
-            double dy = y(i) - track_limit[j].y;
-            double dist_iter = dx*dx+dy*dy;
-            if (dist_iter < min_dist){min_dist = dist_iter;}
+    if(!(track_limit.empty())){
+        for(int i = 0; i < n; i++){
+            double min_dist = 100;
+            for(int j = 0; j < m; j++){
+                double dx = x(i) - track_limit[j].x;
+                double dy = y(i) - track_limit[j].y;
+                double dist_iter = dx*dx+dy*dy;
+                if (dist_iter < min_dist){min_dist = dist_iter;}
+            }
+            dist(i) = std::sqrt(min_dist) - kMinDist;
         }
-        dist(i) = std::sqrt(min_dist) - kMinDist;
+    } else {
+        dist = 0.3*VectorXd::Ones(n);
     }
-
+    
     return dist;
 }
 
