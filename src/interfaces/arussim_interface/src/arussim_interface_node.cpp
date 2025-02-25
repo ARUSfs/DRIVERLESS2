@@ -87,6 +87,7 @@ void ARUSSimInterface::sim_trajectory_callback(const arussim_msgs::msg::Trajecto
     }
     trajectory_msg.speed_profile = msg->speed_profile;
     trajectory_msg.acc_profile = msg->acc_profile;
+    trajectory_msg.s = msg->s;
     trajectory_pub_->publish(trajectory_msg);
 }
 
