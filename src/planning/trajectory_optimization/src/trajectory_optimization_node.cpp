@@ -268,7 +268,16 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
         }
     }
 
-    // speed_profile(m-1) = speed_profile(1);
+    speed_profile(0) = speed_profile(m-1);
+
+    for(int i = 1; i < m; i++){
+        ds(i) = s(i) - s(i-1);
+        double ax_max = ggv_ax_throttle(speed_profile(i-1),k(i-1));
+        speed_profile(i) = sqrt(speed_profile(i-1)*speed_profile(i-1) + 2*ax_max*ds(i));
+        if (speed_profile(i) > v_grip(i)){                      
+            speed_profile(i) = v_grip(i);                       
+        }
+    }
 
     for(int j = m-1; j > 0; j--){
         double ax_max_braking = ggv_ax_brake(speed_profile(j),k(j));
@@ -277,17 +286,6 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
             speed_profile(j-1) = v_max_braking;
         }
     }
-
-    // speed_profile(0) = speed_profile(m-1);                      // Begin at final speed and repeat process to get a smooth closed loop
-
-    // for(int i = 1; i < m; i++){
-    //     ds(i) = s(i) - s(i-1);
-    //     double ax_max = ggv_ax_throttle(speed_profile(i-1),k(i-1));
-    //     double v_throttle = sqrt(speed_profile(i-1)*speed_profile(i-1) + 2*ax_max*ds(i));
-    //     if (v_throttle < speed_profile(i)){                      
-    //         speed_profile(i) = v_throttle;                       
-    //     }
-    // }
 
     speed_profile(m-1) = speed_profile(1);
 
