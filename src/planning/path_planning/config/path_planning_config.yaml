@@ -19,6 +19,7 @@ path_planning:
     max_angle: 1.15
     route_back: 10
     prev_route_bias: 0.5
+    smooth_coeff: 1.5            # Laplacian smoothing coefficient [1.0, 3.0]
     use_buffer: true
     use_closing_route: false     # Send the closing route to the trajectory optimizer after getting a route that closes the loop
     stop_after_closing: true     # Stop generating new routes after getting one that closes the loop
