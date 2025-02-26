@@ -55,6 +55,14 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("KI", KI);
     this->get_parameter("KD", KD);
 
+    // MPC
+    this->declare_parameter<double>("cost_lateral_error", 10);
+    this->declare_parameter<double>("cost_angular_error", 5);
+    this->declare_parameter<double>("cost_steering_delta", 1000); 
+    this->get_parameter("cost_lateral_error", kCostLateralDeviation);
+    this->get_parameter("cost_angular_error", kCostAngularDeviation);
+    this->get_parameter("cost_steering_delta", kCostSteeringDelta);   
+
     // Cmd limits
     this->declare_parameter<double>("min_cmd", 0.0);
     this->declare_parameter<double>("max_cmd", 0.1);
@@ -64,6 +72,7 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("max_steer", kMaxSteer);
 
     speed_control_.pid_.set_params(KP,KI,KD);
+    lti_mpc_.set_params(kCostLateralDeviation,kCostAngularDeviation,kCostSteeringDelta);
 
     previous_time_ = this->get_clock()->now();
 

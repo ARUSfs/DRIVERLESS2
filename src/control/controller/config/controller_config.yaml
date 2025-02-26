@@ -23,6 +23,11 @@ controller:
     KI: 0.55
     KD: 0.01
 
+    # MPC
+    cost_lateral_error: 15.0
+    cost_angular_error: 30.0
+    cost_steering_delta: 1100.0
+
     # Cmd
     min_cmd: 0.0    # % inv
     max_cmd: 0.1    # % inv

@@ -29,8 +29,8 @@ public:
         discretize_model(A, B, kTsMPC, Ad, Bd);
 
         Q.resize(C.rows(),C.rows());
-        Q << 10, 0, 0, 0;
-        R = 1000 * Eigen::MatrixXd::Identity(kPredictionHorizon, kPredictionHorizon);
+        Q << kCostLateralDeviation, 0, 0, kCostAngularDeviation;
+        R = kCostSteeringDelta * Eigen::MatrixXd::Identity(kPredictionHorizon, kPredictionHorizon);
 
         Eigen::MatrixXd PSI = Eigen::MatrixXd::Zero(C.rows() * kPredictionHorizon, Ad.cols());
         Eigen::MatrixXd YPS = Eigen::MatrixXd::Zero(C.rows() * kPredictionHorizon, Bd.cols());
@@ -100,6 +100,12 @@ public:
         }
     }
 
+    void set_params(double cost_lateral, double cost_angular, double cost_delta){
+        kCostAngularDeviation = cost_angular;
+        kCostLateralDeviation = cost_lateral;
+        kCostSteeringDelta = cost_delta;
+    }
+
 private:
     int kPredictionHorizon = 65;
     double kTsMPC = 0.02;
@@ -107,8 +113,8 @@ private:
     std::vector<Point> global_reference_trajectory_;
     std::vector<float> s_;
 
-    double kCorneringStiffnessF = -26010; //-24153;
-    double kCorneringStiffnessR = -21883; //-13728;
+    double kCorneringStiffnessF = -24276;//-26010; //-24153;
+    double kCorneringStiffnessR = -20332;//-21883; //-13728;
 
     double kWheelbase = 1.533;
     double kLf = kWheelbase*0.5073;
@@ -134,6 +140,11 @@ private:
     Eigen::MatrixXd Q;
     Eigen::MatrixXd R;
     Eigen::MatrixXd U;
+
+    // Configurable parameters
+    double kCostLateralDeviation;
+    double kCostAngularDeviation;
+    double kCostSteeringDelta;
 
     double yaw_interp{0.0};
 
