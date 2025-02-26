@@ -516,6 +516,7 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
         point.y = pcl_cloud_.points[right_limit[i]].y;
         track_limits_msg.right_limit.push_back(point);
     }
+    track_limits_msg.trajectory = this->create_trajectory_msg(best_midpoint_route_, true);
     
     return track_limits_msg;
 
