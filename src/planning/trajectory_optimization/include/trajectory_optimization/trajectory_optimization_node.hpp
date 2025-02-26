@@ -67,7 +67,6 @@ class TrajectoryOptimization : public rclcpp::Node
         bool control_simulation_true = false;
 
         //Subscribers and publishers
-        rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trajectory_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Subscription<common_msgs::msg::TrackLimits>::SharedPtr track_limits_sub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_pub_;
@@ -81,7 +80,7 @@ class TrajectoryOptimization : public rclcpp::Node
          *  
          * @param trajectory_msg 
          */
-        void trajectory_callback(common_msgs::msg::Trajectory::SharedPtr trajectory_msg);
+        void trajectory_callback(common_msgs::msg::TrackLimits::SharedPtr trajectory_msg);
       
         /**
          * @brief Callback function for the car_state topic
@@ -91,9 +90,6 @@ class TrajectoryOptimization : public rclcpp::Node
          * @param car_state_msg 
          */        
         void car_state_callback(common_msgs::msg::State::SharedPtr car_state_msg);
-
-        void track_limit_callback(common_msgs::msg::TrackLimits::SharedPtr track_limits_msg);
-
 
         //Auxiliar methods
 

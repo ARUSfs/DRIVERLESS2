@@ -36,12 +36,10 @@ TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization
     this->get_parameter("optimized_trajectory_topic", kOptimizedTrajectoryTopic);
     this->get_parameter("track_limits_topic", kTrackLimitsTopic);
 
-    trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        kTrajectoryTopic, 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
         kCarStateTopic, 1, std::bind(&TrajectoryOptimization::car_state_callback, this, std::placeholders::_1));
     track_limits_sub_ = this->create_subscription<common_msgs::msg::TrackLimits>(
-        kTrackLimitsTopic, 10, std::bind(&TrajectoryOptimization::track_limit_callback, this, std::placeholders::_1));
+        kTrackLimitsTopic, 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
     optimized_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kOptimizedTrajectoryTopic, 10);
 }
 
@@ -54,8 +52,11 @@ TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization
  *  
  * @param trajectory_msg 
  */
-void TrajectoryOptimization::trajectory_callback(common_msgs::msg::Trajectory::SharedPtr trajectory_msg){
-    std::vector<common_msgs::msg::PointXY> track_xy = trajectory_msg -> points;
+void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::SharedPtr track_limits_msg){
+    track_limit_right_ = track_limits_msg->right_limit;
+    track_limit_left_ = track_limits_msg->left_limit;
+    common_msgs::msg::Trajectory trajectory = track_limits_msg-> trajectory;
+    std::vector<common_msgs::msg::PointXY> track_xy = trajectory.points;
     
     //Convert points message to vectors
     int n = track_xy.size();
@@ -114,11 +115,6 @@ void TrajectoryOptimization::car_state_callback(common_msgs::msg::State::SharedP
 
     speed_ = sqrt(vx_*vx_ + vy_*vy_);
     acc_ = sqrt(ax_*ax_ + ay_*ay_);
-}
-
-void TrajectoryOptimization::track_limit_callback(common_msgs::msg::TrackLimits::SharedPtr track_limits_msg){
-    track_limit_right_ = track_limits_msg->right_limit;
-    track_limit_left_ = track_limits_msg->left_limit;
 }
 
 /**
