@@ -97,6 +97,7 @@ private:
     double KD;
     double kMinCmd;
     double kMaxCmd;
+    double kMaxSteer;
 
     rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_pub_;
     rclcpp::Publisher<common_msgs::msg::PointXY>::SharedPtr pursuit_point_pub_;

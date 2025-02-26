@@ -53,8 +53,10 @@ Controller::Controller() : Node("controller"),
     // Cmd limits
     this->declare_parameter<double>("min_cmd", 0.0);
     this->declare_parameter<double>("max_cmd", 0.1);
+    this->declare_parameter<double>("max_steer", 20.0);
     this->get_parameter("min_cmd", kMinCmd);
     this->get_parameter("max_cmd", kMaxCmd);
+    this->get_parameter("max_steer", kMaxSteer);
 
     speed_control_.pid_.set_params(KP,KI,KD);
 
@@ -110,20 +112,20 @@ void Controller::on_timer()
         position.x = x_;
         position.y = y_;
         pure_pursuit_.set_position(position, yaw_);
+
         auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_, kLAD);
         common_msgs::msg::PointXY pursuit_point_msg;
         pursuit_point_msg.x = pursuit_point.x;
         pursuit_point_msg.y = pursuit_point.y;
         pursuit_point_pub_ -> publish(pursuit_point_msg);
 
-        rclcpp::Time current_time = this->get_clock()->now();
-        double dt = (current_time - previous_time_).seconds();
+        double dt = (this->now() - previous_time_).seconds();
         double acc = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
-        previous_time_ = current_time;
+        previous_time_ = this->now();
 
         common_msgs::msg::Cmd cmd;       
         cmd.acc = std::clamp(acc, kMinCmd, kMaxCmd);
-        cmd.delta = delta;
+        cmd.delta = std::clamp(delta, -kMaxSteer*M_PI/180, kMaxSteer*M_PI/180);;
         cmd_pub_ -> publish(cmd); 
     }
 }
@@ -135,28 +137,27 @@ void Controller::on_timer()
  */ 
 void Controller::get_global_index() {
     double min_dist = std::numeric_limits<double>::max();
-    int i_global = -1;
     int N = pointsXY_.size();
-    int i = 0;
 
-    
     // If the trajectory is not updated, the search starts from the last index
-    if(!new_trajectory_){
+    int i;
+    if(new_trajectory_){
+        i = 0; 
+    } else {
         i = index_global_; 
     }
-    new_trajectory_ = false;
 
     // Search for the closest point from the current position
-    // N+10 and i%N is added to allow restarting loops (trackdrive)
-    while (i < N + 10) {
+    // N*1.1 and i%N is added to allow restarting loops (trackdrive)
+    while (i < int(N*1.1)) {
         double dx = pointsXY_[i % N].x - x_;
         double dy = pointsXY_[i % N].y - y_;
         double dist = dx * dx + dy * dy;
 
         if (dist < min_dist) {
             min_dist = dist;
-            i_global = i % N;
-        } else if(!optimized_ && !new_trajectory_ && dist > 5.0){ 
+            index_global_ = i % N;
+        } else if(!new_trajectory_ && dist > 5.0){ 
             // If the distance is greater than 5 meters from last index, 
             // the search is stopped to avoid errors due to loops in the trajectory (skidpad)
             break;
@@ -164,7 +165,8 @@ void Controller::get_global_index() {
         i++;
     }
 
-    index_global_ = i_global;
+    new_trajectory_ = false;
+
 }
 
 void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg)
@@ -197,10 +199,6 @@ void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedP
     }
 
     pointsXY_.clear();
-    s_.clear();
-    k_.clear();
-    speed_profile_.clear();
-    acc_profile_.clear();
 
     std::vector<common_msgs::msg::PointXY> points_common = msg -> points;
     for (const auto &pointXY : points_common) {

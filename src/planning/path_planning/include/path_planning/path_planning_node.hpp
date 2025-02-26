@@ -51,26 +51,33 @@ class PathPlanning : public rclcpp::Node
          */
         PathPlanning();
     private:
-        // Parameters from configuration file
+        // Topics
         std::string kMapTopic;
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
         std::string kPointsToOptimizeTopic;
         std::string kTrackLimitsTopic;
+
+        // Triangulation parameters
         double kMaxTriLen;
         double kMaxTriAngle;
-        double kLenCoeff;
+        bool kColor;
+
+        // Route parameters
         double kAngleCoeff;
         double kMaxCost;
-        double kMaxVel;
-        double kMaxYAcc;
-        double kMaxXAcc;
-        bool kColor;
-        int kRouteBack;
+        double kLenCoeff;
+        double kSmoothCoeff;
         double kPrevRouteBias;
+        int kRouteBack;
         bool kUseBuffer;
         bool kUseClosingRoute;
         bool kStopAfterClosing;
+
+        // Profile creation parameters
+        double kMaxVel;
+        double kMaxYAcc;
+        double kMaxXAcc;
 
         // Suscribers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_sub_;
@@ -190,15 +197,17 @@ class PathPlanning : public rclcpp::Node
         /**
          * @brief Create a trajectory msg object from a given route.
          * @param route std::vector<CDT::V2d<double>> vector containing the route.
+         * @param smoothed bool flag to indicate if the route is splined or not.
          * @return common_msgs::msg::Trajectory parsed trajectory message to ROS2 format.
          */
         common_msgs::msg::Trajectory create_trajectory_msg(std::vector<ConeXYZColorScore> route, bool smoothed = true);
 
         /**
-         * @brief Create a track limits msg object
+         * @brief Create a track limits msg object from a given route.
          * 
-         * @param triangle_route 
-         * @return common_msgs::msg::TrackLimits 
+         * @param triangle_route std::vector<int> vector containing the triangles of the route. 
+         * This route is suposed to be the final and closed route once the first lap is completed.
+         * @return common_msgs::msg::TrackLimits the message to be published.
          */
         common_msgs::msg::TrackLimits create_track_limits_msg(std::vector<int> triangle_route);
 };

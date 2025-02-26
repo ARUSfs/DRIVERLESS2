@@ -1,18 +1,22 @@
 #ifndef PID_HPP
 #define PID_HPP
+#include <deque>
+#include <numeric>
 
 /**
  * @file PID.hpp
- * 
- * @author Francis Rojas (frarojram@gmail.com).
- * 
+ *
+ * @author Lola Hernandez (lolahercan@gmail.com).
+ *
  * @brief PID,header and implementation for ARUS Team Driverless pipeline.
- * 
- * @date 15-11-2024
+ *
+ * @date 11-02-2025
  */
-class PID {
-public: 
-    PID(){
+class PID
+{
+public:
+    PID()
+    {
         KP_ = 0.0;
         KI_ = 0.0;
         KD_ = 0.0;
@@ -20,7 +24,8 @@ public:
         integral_ = 0.0;
     }
 
-    void set_params(double KP, double KI, double KD){
+    void set_params(double KP, double KI, double KD)
+    {
         KP_ = KP;
         KI_ = KI;
         KD_ = KD;
@@ -32,16 +37,53 @@ public:
      * @param  value current value.
      * @param  target goal value.
      * @param dt delta time.
+     * @param target_acc target acceleration
      * @return control for get the goal.
      */
-    double compute_control(double value, double target, double dt) {
+    double compute_control(double value, double target, double dt, double target_acc)
+    {
+
         double error = target - value;
-        integral_ += error * dt;
-        double derivative = (error - previous_error_) / dt;
-        previous_error_ = error;
-        return (KP_ * error) + (KI_ * integral_) + (KD_ * derivative);
+
+        static std::deque<double> error_history;
+        const size_t window_size = 10;
+        error_history.push_back(error);
+
+        if (error_history.size() > window_size){
+            error_history.pop_front();
+        }
+
+        double smoothed_error = std::accumulate(error_history.begin(), error_history.end(), 0.0) / error_history.size();   
+
+        integral_ += smoothed_error * dt;
+
+        double derivative = (smoothed_error - previous_error_) / dt;
+        previous_error_ = smoothed_error;
+
+
+        double KP_var = KP_ + std::abs(target_acc / 15.0);
+
+        const double max_integral = 5.0;
+        const double min_integral = -5.0;
+
+        if (integral_ > max_integral)
+        {
+            integral_ = max_integral;
+        }
+        else if (integral_ < min_integral)
+        {
+            integral_ = min_integral;
+        }
+
+        // if the error is greater than 5, we use the full PID controller
+        if (value > 5) {
+            return (KP_var * smoothed_error) + (KI_ * integral_) + (KD_ * derivative);
+        } else {
+            return (KP_var * smoothed_error);
+        }
+
     }
-    
+
 private:
     double KP_;
     double KI_;
@@ -51,4 +93,4 @@ private:
     double integral_;
 };
 
-#endif 
+#endif
