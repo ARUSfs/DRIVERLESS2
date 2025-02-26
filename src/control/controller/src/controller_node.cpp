@@ -118,7 +118,7 @@ void Controller::on_speed_timer()
         
 
         double dt = (this->now() - previous_time_).seconds();
-        acc_cmd_ = speed_control_.get_acc_command(1.3*target_speed, 1.3*target_acc, vx_, dt);
+        acc_cmd_ = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
         previous_time_ = this->now();
 
         common_msgs::msg::Cmd cmd;       
