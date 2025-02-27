@@ -278,7 +278,10 @@ void GraphSlam::update_pose_predictions(){
     odom_buffer_.clear();
 
     // Update the vehicle pose with the last prediction
-    vehicle_pose_ = updated_pose;
+    double dx = updated_pose(0)-vehicle_pose_(0);
+    double dy = updated_pose(1)-vehicle_pose_(1);
+    double max_offset = 0.5;
+    vehicle_pose_ += (updated_pose-vehicle_pose_)*std::min(1.0, max_offset/std::sqrt(dx*dx+dy*dy));
 }
 
 
