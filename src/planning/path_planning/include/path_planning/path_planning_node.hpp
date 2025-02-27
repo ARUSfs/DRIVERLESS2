@@ -53,6 +53,9 @@ class PathPlanning : public rclcpp::Node
     private:
         // Topics
         std::string kMapTopic;
+        std::string kLapCountTopic;
+        std::string kCarInfoTopic;
+        std::string kOptimizerTopic;
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
         std::string kTrackLimitsTopic;
@@ -80,8 +83,8 @@ class PathPlanning : public rclcpp::Node
 
         // Suscribers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_sub_;
-        rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
+        rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_info_sub_;
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimizer_sub_;
 
         // Publishers

@@ -15,11 +15,17 @@ PathPlanning::PathPlanning() : Node("path_planning")
     // Declare and get parameters
     // Topics
     this->declare_parameter<std::string>("map_topic", "/slam/map");
+    this->declare_parameter<std::string>("lap_count_topic", "/slam/lap_count");
+    this->declare_parameter<std::string>("car_info_topic", "/car_state/car_info");
+    this->declare_parameter<std::string>("optimizer_topic", "/trajectory_optimization/trajectory");
     this->declare_parameter<std::string>("triangulation_topic", "/path_planning/triangulation");
     this->declare_parameter<std::string>("trajectory_topic", "/path_planning/trajectory");
     this->declare_parameter<std::string>("track_limits_topic", "/path_planning/track_limits");
 
     this->get_parameter("map_topic", kMapTopic);
+    this->get_parameter("lap_count_topic", kLapCountTopic);
+    this->get_parameter("car_info_topic", kCarInfoTopic);
+    this->get_parameter("optimizer_topic", kOptimizerTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
     this->get_parameter("track_limits_topic", kTrackLimitsTopic);
@@ -67,11 +73,11 @@ PathPlanning::PathPlanning() : Node("path_planning")
     map_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kMapTopic, 10, std::bind(&PathPlanning::map_callback, this, std::placeholders::_1));
     lap_count_sub_ = this->create_subscription<std_msgs::msg::Int16>(
-        "/slam/lap_count", 10, std::bind(&PathPlanning::lap_count_callback, this, std::placeholders::_1));
-    car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
-        "/car_state/state", 10, std::bind(&PathPlanning::car_state_callback, this, std::placeholders::_1));
+        kLapCountTopic, 10, std::bind(&PathPlanning::lap_count_callback, this, std::placeholders::_1));
+    car_info_sub_ = this->create_subscription<common_msgs::msg::State>(
+        kCarInfoTopic, 10, std::bind(&PathPlanning::car_state_callback, this, std::placeholders::_1));
     optimizer_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        "/trajectory_optimization/trajectory", 10, std::bind(&PathPlanning::optimizer_callback, this, std::placeholders::_1));
+        kOptimizerTopic, 10, std::bind(&PathPlanning::optimizer_callback, this, std::placeholders::_1));
     
     // Publishers
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
