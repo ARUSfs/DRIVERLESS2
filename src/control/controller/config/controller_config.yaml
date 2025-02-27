@@ -1,6 +1,6 @@
 controller:
   ros__parameters:
-    first_lap_steer_control: "PP" # PP, MPC
+    first_lap_steer_control: "MPC" # PP, MPC
     optimized_steer_control: "MPC"   # PP, MPC
     speed_timer_frequency: 100.0    # speed timer frecuency in Hz
     steer_timer_frequency: 50.0    # steer timer frecuency in Hz
