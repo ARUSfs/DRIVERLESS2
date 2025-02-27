@@ -63,10 +63,16 @@ private:
     // Functions
     void on_timer();
     void get_tf_position();
-    void initialize_vx_filter();
+    void initialize_v_filter();
 
     // Estimation filters
-    KalmanFilter vx_filter_;
+    KalmanFilter v_filter_;
+
+    // Car variables
+    double L_ = 1.5333;
+    double mass_distr = 0.55;
+    double lf_ = mass_distr * L_;
+    double lr_ = (1-mass_distr) * L_;
 
     // Private attributes to store received data
     double x_=0;
@@ -82,6 +88,7 @@ private:
     double ax_ = 0;
     double ay_ = 0;
     double delta_ = 0;
+    double inv_ = 0;
 
     int as_status_ = 0;
     int ami_ = 0;

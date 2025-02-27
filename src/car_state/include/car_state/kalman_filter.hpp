@@ -44,6 +44,12 @@ class KalmanFilter
         MatrixXd H_;        // Observation matrix (p x n)
         MatrixXd R_;        // Measurement covariance matrix (p x p)
 
+        // Car variables
+        double L_ = 1.5333;
+        double mass_distr_R_ = 0.55;
+        double lf_ = mass_distr_R_ * L_;
+        double lr_ = (1-mass_distr_R_) * L_;
+
     public:
         /**
          * @brief Construct a new KalmanFilter object
@@ -172,16 +178,22 @@ class KalmanFilter
             if(z.size() != p_) {
                 std::cerr << "Measurement vector length is wrong!\np= " << p_ << std::endl;
             }
+            
 
             // PREDICTION STAGE
-            // Transition matrix 
-            MatrixXd A(n_, n_);
+            // Update model matrices
             std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
             double dt = std::chrono::duration_cast<std::chrono::nanoseconds>(now - t_).count() * pow(10, -9);
-            A = MatrixXd::Identity(n_, n_) + dt*M_; 
+            double dDelta = (u(1) - u_(1)) / dt;
+
+            M_ << MatrixXd::Zero(n_, n_); M_(1,0) = dDelta * lr_ / L_;
+
+            // Transition matrix 
+            MatrixXd A(n_, n_);
+            A = MatrixXd::Identity(n_, n_) + dt * M_; 
 
             // State prediction
-            VectorXd x_pred = A * x_ + dt*B_ * u_;
+            VectorXd x_pred = A * x_ + dt * B_ * u_;
             
             // Covariance prediction
             MatrixXd P_pred = A * P_ * A.transpose() + Q_;
