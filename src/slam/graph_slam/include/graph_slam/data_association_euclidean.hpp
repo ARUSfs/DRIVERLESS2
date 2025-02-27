@@ -1,9 +1,16 @@
 #pragma once
 
+#define PCL_NO_PRECOMPILE
+
 #include <iostream>
 #include <vector>
 #include <Eigen/Dense>
 #include "graph_slam/landmark.hpp"
+
+
+#include "ConeXYZColorScore.h"
+#include <pcl/registration/icp.h>
+#include <pcl/registration/correspondence_estimation.h>
 
 class DataAssociation{
     public:
@@ -16,6 +23,51 @@ class DataAssociation{
 
         void match_observations(std::vector<Landmark>& observed_landmarks, std::vector<Landmark>& unmatched_landmarks)
         {
+
+            pcl::IterativeClosestPoint<ConeXYZColorScore, ConeXYZColorScore> icp;
+            pcl::PointCloud<ConeXYZColorScore>::Ptr obs_map = pcl::PointCloud<ConeXYZColorScore>::Ptr(new pcl::PointCloud<ConeXYZColorScore>);
+            for (Landmark& obs : observed_landmarks){
+                ConeXYZColorScore point;
+                point.x = obs.world_position_.x();
+                point.y = obs.world_position_.y();
+                point.z = 0;
+                point.color = 0;
+                point.score = 1;
+                obs_map->push_back(point);
+            }
+            pcl::PointCloud<ConeXYZColorScore>::Ptr map = pcl::PointCloud<ConeXYZColorScore>::Ptr(new pcl::PointCloud<ConeXYZColorScore>);
+            for (Landmark* landmark : map_){
+                ConeXYZColorScore point;
+                point.x = landmark->world_position_.x();
+                point.y = landmark->world_position_.y();
+                point.z = 0;
+                point.color = 0;
+                point.score = 1;
+                map->push_back(point);
+            }
+
+            icp.setInputSource(obs_map);
+            icp.setInputTarget(map);
+            icp.setMaximumIterations(5);
+            icp.setEuclideanFitnessEpsilon(0.005);
+            icp.setTransformationEpsilon(1e-5);
+
+            pcl::PointCloud<ConeXYZColorScore>::Ptr corrected_obs = pcl::PointCloud<ConeXYZColorScore>::Ptr(new pcl::PointCloud<ConeXYZColorScore>);
+            icp.setMaxCorrespondenceDistance (1.0);
+            icp.align(*corrected_obs);
+            Eigen::Matrix4f transformation = icp.getFinalTransformation();
+
+            for (Landmark& obs : observed_landmarks){
+                std::cout << "Before: " << obs.world_position_.transpose() << std::endl;
+                Eigen::Vector2d corrected_position;
+                corrected_position << transformation(0,0)*obs.world_position_.x() + transformation(0,1)*obs.world_position_.y() + transformation(0,3),
+                                      transformation(1,0)*obs.world_position_.x() + transformation(1,1)*obs.world_position_.y() + transformation(1,3);
+                obs.world_position_ = corrected_position;
+                std::cout << "After: " << obs.world_position_.transpose() << std::endl;
+            }
+
+
+
             for(Landmark& obs : observed_landmarks){
                 double min_distance = std::numeric_limits<double>::max();
                 Landmark* closest_landmark = nullptr;
