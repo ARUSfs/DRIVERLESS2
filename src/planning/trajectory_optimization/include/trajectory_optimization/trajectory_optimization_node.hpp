@@ -8,6 +8,7 @@
 #include "common_msgs/msg/trajectory.hpp"
 #include "common_msgs/msg/point_xy.hpp"
 #include "common_msgs/msg/state.hpp"
+#include "common_msgs/msg/track_limits.hpp"
 #include "libInterpolate/Interpolate.hpp"
 #include <Eigen/Dense>
 #include <cmath>
@@ -44,18 +45,30 @@ class TrajectoryOptimization : public rclcpp::Node
         double acc_;
 
         //Parameters
-        double kAxMax;
-        double kAyMax;
         double kVMax;
-        double kDMax;
+        double kMinDist;
+        double kMuY;
+        double kMuXThrottle;
+        double kMuxBrake;
+        double kG = 9.81;
+        double kCLift = 0.5*1.2*3.5;
+        double kCDrag = 0.5*1.2*1.2;
+        double kMass = 270; 
+
+        // Tracklimits
+        std::vector<common_msgs::msg::PointXY> track_limit_right_;
+        std::vector<common_msgs::msg::PointXY> track_limit_left_;
 
         std::string kTrajectoryTopic;
         std::string kCarStateTopic;
         std::string kOptimizedTrajectoryTopic;
+        std::string kTrackLimitsTopic;
+
+        bool control_simulation_true = false;
 
         //Subscribers and publishers
-        rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trajectory_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
+        rclcpp::Subscription<common_msgs::msg::TrackLimits>::SharedPtr track_limits_sub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_pub_;
 
         /**
@@ -67,7 +80,7 @@ class TrajectoryOptimization : public rclcpp::Node
          *  
          * @param trajectory_msg 
          */
-        void trajectory_callback(common_msgs::msg::Trajectory::SharedPtr trajectory_msg);
+        void trajectory_callback(common_msgs::msg::TrackLimits::SharedPtr trajectory_msg);
       
         /**
          * @brief Callback function for the car_state topic
@@ -77,7 +90,6 @@ class TrajectoryOptimization : public rclcpp::Node
          * @param car_state_msg 
          */        
         void car_state_callback(common_msgs::msg::State::SharedPtr car_state_msg);
-
 
         //Auxiliar methods
 
@@ -90,7 +102,7 @@ class TrajectoryOptimization : public rclcpp::Node
          * 
          * @return VectorXd Vector of track width allowed at each point (both left and rigth)
          */
-        VectorXd generate_track_width(VectorXd k, double dmax);
+        VectorXd generate_track_width(VectorXd x, VectorXd y, std::vector<common_msgs::msg::PointXY> track_limit);
 
         /**
          * @brief Creates the trajectory message to publish
@@ -127,4 +139,10 @@ class TrajectoryOptimization : public rclcpp::Node
          * @return MatrixXd [speed_profile, acc_profile]
          */
         MatrixXd generate_speed_and_acc_profile(VectorXd s, VectorXd k);
+
+        double calculate_apex(double k);
+        
+        double ggv_ax_throttle(double v, double k);
+
+        double ggv_ax_brake(double v, double k);
 };

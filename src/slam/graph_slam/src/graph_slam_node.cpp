@@ -280,8 +280,17 @@ void GraphSlam::update_pose_predictions(){
     // Update the vehicle pose with the last prediction
     double dx = updated_pose(0)-vehicle_pose_(0);
     double dy = updated_pose(1)-vehicle_pose_(1);
-    double max_offset = 0.5;
-    vehicle_pose_ += (updated_pose-vehicle_pose_)*std::min(1.0, max_offset/std::sqrt(dx*dx+dy*dy));
+    double dyaw = updated_pose(2)-vehicle_pose_(2);
+    if (dyaw > M_PI) {
+        dyaw -= 2*M_PI;
+    } else if (dyaw < -M_PI) {
+        dyaw += 2*M_PI;
+    }
+    double max_offset = 1;
+    double max_yaw_offset = M_PI/18;
+    vehicle_pose_(0) += dx*std::min(1.0, max_offset/std::sqrt(dx*dx+dy*dy));
+    vehicle_pose_(1) += dy*std::min(1.0, max_offset/std::sqrt(dx*dx+dy*dy));
+    vehicle_pose_(2) += dyaw*std::min(1.0, max_yaw_offset/std::abs(dyaw));
 }
 
 
