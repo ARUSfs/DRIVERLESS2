@@ -4,7 +4,6 @@ path_planning:
     map_topic: '/slam/map'
     triangulation_topic: '/path_planning/triangulation'
     trajectory_topic: '/path_planning/trajectory'
-    points_to_optimize_topic: '/path_planning/midpoints_to_optimize'
     track_limits_topic: '/path_planning/track_limits'
 
     # Triangulation parameters
@@ -21,8 +20,8 @@ path_planning:
     prev_route_bias: 0.5
     smooth_coeff: 1.5            # Laplacian smoothing coefficient [1.0, 3.0]
     use_buffer: true
-    use_closing_route: false     # Send the closing route to the trajectory optimizer after getting a route that closes the loop
-    stop_after_closing: true     # Stop generating new routes after getting one that closes the loop
+    use_closing_route: true     # Send the closing route to the trajectory optimizer after getting a route that closes the loop
+    stop_after_closing: false     # Stop generating new routes after getting one that closes the loop
 
     # Profile creation parameters
     v_max: 2.0

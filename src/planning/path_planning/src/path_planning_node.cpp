@@ -17,13 +17,11 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<std::string>("map_topic", "/slam/map");
     this->declare_parameter<std::string>("triangulation_topic", "/path_planning/triangulation");
     this->declare_parameter<std::string>("trajectory_topic", "/path_planning/trajectory");
-    this->declare_parameter<std::string>("points_to_optimize_topic", "/path_planning/midpoints_to_optimize");
     this->declare_parameter<std::string>("track_limits_topic", "/path_planning/track_limits");
 
     this->get_parameter("map_topic", kMapTopic);
     this->get_parameter("triangulation_topic", kTriangulationTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
-    this->get_parameter("points_to_optimize_topic", kPointsToOptimizeTopic);
     this->get_parameter("track_limits_topic", kTrackLimitsTopic);
 
     // Triangulation
@@ -78,7 +76,6 @@ PathPlanning::PathPlanning() : Node("path_planning")
     // Publishers
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
-    unsmoothed_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kPointsToOptimizeTopic, 10);
     track_limits_pub_ = this->create_publisher<common_msgs::msg::TrackLimits>(kTrackLimitsTopic, 10);
 
 }
@@ -87,7 +84,6 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 {
     if (kStopAfterClosing && (closing_route_.size() > 0)){
         // Publish the closing route
-        // unsmoothed_pub_ -> publish(this->create_trajectory_msg(closing_route_, false));
         trajectory_pub_ -> publish(this->create_trajectory_msg(closing_route_));
         if (lap_count_ == 0) return;
     }
@@ -175,8 +171,6 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     if (final_route.size() <3) return;
 
     if ((kUseClosingRoute and tree.end_) || lap_count_ > 0){
-        // Publish the unsmoothed trajectory
-        unsmoothed_pub_ -> publish(this->create_trajectory_msg(final_route, false));
         closing_route_ = final_route;
     }
 
@@ -343,8 +337,7 @@ std::vector<ConeXYZColorScore> PathPlanning::get_final_route(){
 
 
 
-common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<ConeXYZColorScore> route,
-                                                                 bool smoothed){
+common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<ConeXYZColorScore> route){
     int route_size = route.size();
     int degree = 2;
     common_msgs::msg::Trajectory trajectory_msg;
@@ -353,15 +346,6 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<Con
 
     std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile;
 
-    if (!smoothed){
-        for (int i = 0; i<route_size; i++){
-            common_msgs::msg::PointXY point;
-            point.x = route[i].x;
-            point.y = route[i].y;
-            trajectory_msg.points.push_back(point);
-        }
-        return trajectory_msg;
-    }
     if (route_size == 0){
         return trajectory_msg;
     } else if (route_size < 3){
@@ -371,7 +355,12 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<Con
         trajectory_msg.points.push_back(point);
         return trajectory_msg;
     }
-
+    std::string ori = "Orig: " + std::to_string(x_) + ", " + std::to_string(y_);
+    //std::string inicio = "Inicio: " + std::to_string(route[0].x) + ", " + std::to_string(route[0].y);
+    
+    for (int i = 0; i<route_size; i++){
+        std::cout << i << ": " << route[i].x << ", " << route[i].y << std::endl;
+    }
     // Perform laplacian smoothing previous to spline fitting
     std::vector<double> new_x, new_y;
     new_x.push_back(route[0].x);
@@ -516,7 +505,7 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
         point.y = pcl_cloud_.points[right_limit[i]].y;
         track_limits_msg.right_limit.push_back(point);
     }
-    track_limits_msg.trajectory = this->create_trajectory_msg(best_midpoint_route_, true);
+    track_limits_msg.trajectory = this->create_trajectory_msg(best_midpoint_route_);
     
     return track_limits_msg;
 

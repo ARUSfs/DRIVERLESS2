@@ -55,7 +55,6 @@ class PathPlanning : public rclcpp::Node
         std::string kMapTopic;
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
-        std::string kPointsToOptimizeTopic;
         std::string kTrackLimitsTopic;
 
         // Triangulation parameters
@@ -88,7 +87,6 @@ class PathPlanning : public rclcpp::Node
         // Publishers
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
-        rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr unsmoothed_pub_;
         rclcpp::Publisher<common_msgs::msg::TrackLimits>::SharedPtr track_limits_pub_;
 
         // CarState
@@ -197,10 +195,9 @@ class PathPlanning : public rclcpp::Node
         /**
          * @brief Create a trajectory msg object from a given route.
          * @param route std::vector<CDT::V2d<double>> vector containing the route.
-         * @param smoothed bool flag to indicate if the route is splined or not.
          * @return common_msgs::msg::Trajectory parsed trajectory message to ROS2 format.
          */
-        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<ConeXYZColorScore> route, bool smoothed = true);
+        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<ConeXYZColorScore> route);
 
         /**
          * @brief Create a track limits msg object from a given route.
