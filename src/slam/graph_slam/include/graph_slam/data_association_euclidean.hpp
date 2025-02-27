@@ -58,12 +58,10 @@ class DataAssociation{
             Eigen::Matrix4f transformation = icp.getFinalTransformation();
 
             for (Landmark& obs : observed_landmarks){
-                std::cout << "Before: " << obs.world_position_.transpose() << std::endl;
                 Eigen::Vector2d corrected_position;
                 corrected_position << transformation(0,0)*obs.world_position_.x() + transformation(0,1)*obs.world_position_.y() + transformation(0,3),
                                       transformation(1,0)*obs.world_position_.x() + transformation(1,1)*obs.world_position_.y() + transformation(1,3);
                 obs.world_position_ = corrected_position;
-                std::cout << "After: " << obs.world_position_.transpose() << std::endl;
             }
 
 
