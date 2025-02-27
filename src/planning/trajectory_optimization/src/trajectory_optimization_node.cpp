@@ -67,7 +67,7 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
         x(i) = track_xy[i].x;
         y(i) = track_xy[i].y;
     }
-    if(!(track_limit_left_.empty()) || control_simulation_true){
+    if(!(track_limit_left_.empty())){
         //Generate track width vectors
         MatrixXd original_s_k = TrajectoryOptimization::get_distance_and_curvature_values(x, y);
         VectorXd original_k = original_s_k.col(1); //This step won't be necessary when we receive k from the message
@@ -103,7 +103,7 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
 
 void TrajectoryOptimization::trajectory_callback_with_no_tracklimits(common_msgs::msg::Trajectory::SharedPtr track_limits_msg){
     std::vector<common_msgs::msg::PointXY> track_xy = track_limits_msg->points;
-    
+    if (control_simulation_true){
     //Convert points message to vectors
     int n = track_xy.size();
     VectorXd x(n), y(n);
@@ -141,6 +141,7 @@ void TrajectoryOptimization::trajectory_callback_with_no_tracklimits(common_msgs
     //Create and publish trajectory message
     common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(traj_x, traj_y, optimized_s, optimized_k, speed_profile, acc_profile);
     optimized_trajectory_pub_ -> publish(optimized_traj_msg);
+    }
 }
 
 /**

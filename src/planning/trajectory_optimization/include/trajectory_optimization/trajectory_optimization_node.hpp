@@ -64,7 +64,7 @@ class TrajectoryOptimization : public rclcpp::Node
         std::string kOptimizedTrajectoryTopic;
         std::string kTrackLimitsTopic;
 
-        bool control_simulation_true = true;
+        bool control_simulation_true = false;
 
         //Subscribers and publishers
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
