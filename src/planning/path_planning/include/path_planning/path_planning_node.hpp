@@ -25,7 +25,7 @@
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
-#include <common_msgs/msg/state.hpp>
+#include <common_msgs/msg/car_info.hpp>
 #include <common_msgs/msg/track_limits.hpp>
 #include "ConeXYZColorScore.h"
 
@@ -84,7 +84,7 @@ class PathPlanning : public rclcpp::Node
         // Suscribers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_sub_;
         rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
-        rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_info_sub_;
+        rclcpp::Subscription<common_msgs::msg::CarInfo>::SharedPtr car_info_sub_;
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimizer_sub_;
 
         // Publishers
@@ -96,6 +96,7 @@ class PathPlanning : public rclcpp::Node
         double x_=0;
         double y_=0;
         double yaw_;
+        double target_speed_ = 0;
         double vx_;
         double vy_;
         double v_;
@@ -136,11 +137,11 @@ class PathPlanning : public rclcpp::Node
         void lap_count_callback(std_msgs::msg::Int16::SharedPtr lap_msg);
 
         /**
-         * @brief Callback function for the car state topic.
+         * @brief Callback function for the car info topic.
          * Update the car state variables when a new message is received.
-         * @param state_msg Common_msgs message containing the car state. Only the x, y and yaw are used.
+         * @param state_msg Common_msgs message containing the car state.
          */
-        void car_state_callback(common_msgs::msg::State::SharedPtr state_msg);
+        void car_info_callback(common_msgs::msg::CarInfo::SharedPtr state_msg);
         
         /**
          * @brief Callback function for the optimizer topic.

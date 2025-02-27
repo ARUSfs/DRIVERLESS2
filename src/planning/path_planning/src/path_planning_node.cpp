@@ -74,8 +74,8 @@ PathPlanning::PathPlanning() : Node("path_planning")
         kMapTopic, 10, std::bind(&PathPlanning::map_callback, this, std::placeholders::_1));
     lap_count_sub_ = this->create_subscription<std_msgs::msg::Int16>(
         kLapCountTopic, 10, std::bind(&PathPlanning::lap_count_callback, this, std::placeholders::_1));
-    car_info_sub_ = this->create_subscription<common_msgs::msg::State>(
-        kCarInfoTopic, 10, std::bind(&PathPlanning::car_state_callback, this, std::placeholders::_1));
+    car_info_sub_ = this->create_subscription<common_msgs::msg::CarInfo>(
+        kCarInfoTopic, 10, std::bind(&PathPlanning::car_info_callback, this, std::placeholders::_1));
     optimizer_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kOptimizerTopic, 10, std::bind(&PathPlanning::optimizer_callback, this, std::placeholders::_1));
     
@@ -185,11 +185,12 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
 }
 
-void PathPlanning::car_state_callback(const common_msgs::msg::State::SharedPtr state_msg)
+void PathPlanning::car_info_callback(const common_msgs::msg::CarInfo::SharedPtr state_msg)
 {
     x_ = state_msg->x;
     y_ = state_msg->y;
     yaw_ = state_msg->yaw;
+    target_speed_ = state_msg->target_speed;
     vx_ = state_msg->vx;
     vy_ = state_msg->vy;
     v_ = hypot(vx_, vy_);
