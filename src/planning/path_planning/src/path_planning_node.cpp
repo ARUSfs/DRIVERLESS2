@@ -135,10 +135,11 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
     std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
 
-    // Get the straightest triangle from the origin
-    int straight_triangle_index;
-    double min_corrected_angle_diff = INFINITY;
+    // Get the best route from the trees
+    SimplexTree tree;
+    double min_cost = INFINITY;
     for (int i = 0; i<o_triangles.size(); i++){
+        // Calculate the centroid of the triangle and the angle difference with the car yaw
         CDT::V2d<double> centroid = compute_centroid(o_triangles[i], triangles_, vertices_);
         double angle_diff;
         if (lap_count_ == 0){
@@ -147,17 +148,18 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
             angle_diff = abs(atan2(centroid.y, centroid.x));
         }
         double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
-        if (corrected_angle_diff < min_corrected_angle_diff){
-            min_corrected_angle_diff = corrected_angle_diff;
-            straight_triangle_index=i;
+
+        // Create the tree if the angle difference is less than pi/3 degrees
+        if (corrected_angle_diff <  M_PI/2){
+            tree = SimplexTree(triangles_, o_triangles[i], orig_index, pcl_cloud_, yaw_,
+                             kAngleCoeff, kLenCoeff, kMaxCost);
+            if (tree.min_cost_ < min_cost){
+                min_cost = tree.min_cost_;
+                best_midpoint_route_ = tree.best_route_;
+                best_index_route_ = tree.best_index_route_;
+            }
         }
     }
-
-    // Create the tree and get the midpoint routes
-    SimplexTree tree(triangles_, o_triangles[straight_triangle_index], orig_index, pcl_cloud_, yaw_,
-                     kAngleCoeff, kLenCoeff, kMaxCost);
-    best_midpoint_route_ = tree.best_route_;
-    best_index_route_ = tree.best_index_route_;
 
     // Get the track limits in the second lap
     if (lap_count_ > 0 && x_>3 && !track_limits_sent_){
@@ -165,6 +167,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         track_limits_sent_ = true;
     }
 
+    // Get the final route using the buffer if selected in config file
     std::vector<ConeXYZColorScore> final_route;
 
     if (kUseBuffer){
@@ -362,12 +365,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<Con
         trajectory_msg.points.push_back(point);
         return trajectory_msg;
     }
-    std::string ori = "Orig: " + std::to_string(x_) + ", " + std::to_string(y_);
-    //std::string inicio = "Inicio: " + std::to_string(route[0].x) + ", " + std::to_string(route[0].y);
-    
-    for (int i = 0; i<route_size; i++){
-        std::cout << i << ": " << route[i].x << ", " << route[i].y << std::endl;
-    }
+
     // Perform laplacian smoothing previous to spline fitting
     std::vector<double> new_x, new_y;
     new_x.push_back(route[0].x);
@@ -381,8 +379,8 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<Con
 
     Eigen::MatrixXd control_points(2, route_size);
     for (int i = 0; i<route_size; i++){
-        control_points(0, i) = new_x[i]; // route[i].x;
-        control_points(1, i) = new_y[i]; // route[i].y;
+        control_points(0, i) = new_x[i];
+        control_points(1, i) = new_y[i];
     }
 
     Eigen::Spline<double, 2> b_spline = Eigen::SplineFitting<Eigen::Spline<double, 2>>::Interpolate(
