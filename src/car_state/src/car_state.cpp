@@ -261,7 +261,9 @@ void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg
         RCLCPP_ERROR(this->get_logger(), "Extensometer dt: %f", dt);
     }
     
+    delta_prev_ = delta_;
     delta_ = msg->data;
+    delta_der_ = (delta_ - delta_prev_) / dt;
 
     if (kSafeMode && (delta_ < -21 || delta_ > 21)) {
         plausability_ += kErrorWeightExtensometer;
@@ -356,7 +358,7 @@ void CarState::inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg)
         RCLCPP_ERROR(this->get_logger(), "Inv speed dt: %f", dt);
     }
 
-    inv_ = msg->data;
+    inv_speeed_ = msg->data;
 
     if (kSafeMode && (vx_ > kMaxVx || vx_ < -0.5)) {
         plausability_ += kErrorWeightInvSpeed;
@@ -437,12 +439,15 @@ void CarState::on_timer()
        
     // Estimate vx
     if(kSimulation){
-        VectorXd u(2), z(2), x_est(2);
+        MatrixXd M(2,2);
+        M << MatrixXd::Zero(2,2); M(1,0) = lr_ / L_ * delta_der_;
+        v_filter_.update_model_matrix(M);
 
-        
+        VectorXd u(2), z(2), x_est(2);
         u << ax_, ax_*delta_;
+
         if(!kSimulation && std::abs(vx_) < 5) {
-            z << inv_, lr_ / L_ * std::tan(delta_) * vx_; 
+            z << inv_speeed_, lr_ / L_ * std::tan(delta_) * vx_; 
         } else {
             z << (v_front_right_ + v_front_left_ + v_rear_right_ + v_rear_left_)/4, lr_ / L_ * std::tan(delta_) * vx_;
         }
@@ -452,8 +457,6 @@ void CarState::on_timer()
         x_est = v_filter_.get_estimated_state();
         vx_ = x_est(0);
         vy_ = x_est(1);
-
-        std::cout << "vx_est: " << vx_ << ", vy_est: " << vy_ << std::endl;
     }
 
     // Publish state message
@@ -567,17 +570,17 @@ void CarState::initialize_v_filter(){
 
     // Set process matrices
     MatrixXd M(n, n), B(n, m), Q(n, n);
-    VectorXd dQ(n);
-    M << MatrixXd::Identity(n,n);
+    VectorXd diagQ(n);
+    M << MatrixXd::Zero(n,n);
     B << MatrixXd::Zero(n,m); B(0,0) = 1; B(1,1) = lr_ / L_;
-    dQ << 0.15, 0.1; Q = dQ.asDiagonal();
+    diagQ << 0.15, 0.1; Q = diagQ.asDiagonal();
     v_filter_.set_process_matrices(M, B, Q);
 
     // Set measurement matrices
     MatrixXd H(p, n), R(p, p);
-    VectorXd dR(p);
+    VectorXd diagR(p);
     H << MatrixXd::Identity(n,n);
-    dR << 0.2, 0.2; R = dR.asDiagonal(); 
+    diagR << 0.2, 0.15; R = diagR.asDiagonal(); 
     v_filter_.set_measurement_matrices(H, M);
 }
 

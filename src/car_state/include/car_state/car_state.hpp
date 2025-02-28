@@ -70,9 +70,12 @@ private:
 
     // Car variables
     double L_ = 1.5333;
-    double mass_distr = 0.55;
-    double lf_ = mass_distr * L_;
-    double lr_ = (1-mass_distr) * L_;
+    double mass_distr_R = 0.55;
+    double lf_ = mass_distr_R * L_;
+    double lr_ = (1-mass_distr_R) * L_;
+    
+    double delta_prev_ = 0;
+    double delta_der_ = 0;
 
     // Private attributes to store received data
     double x_=0;
@@ -88,7 +91,7 @@ private:
     double ax_ = 0;
     double ay_ = 0;
     double delta_ = 0;
-    double inv_ = 0;
+    double inv_speeed_ = 0;
 
     int as_status_ = 0;
     int ami_ = 0;

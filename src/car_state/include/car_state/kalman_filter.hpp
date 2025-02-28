@@ -44,12 +44,6 @@ class KalmanFilter
         MatrixXd H_;        // Observation matrix (p x n)
         MatrixXd R_;        // Measurement covariance matrix (p x p)
 
-        // Car variables
-        double L_ = 1.5333;
-        double mass_distr_R_ = 0.55;
-        double lf_ = mass_distr_R_ * L_;
-        double lr_ = (1-mass_distr_R_) * L_;
-
     public:
         /**
          * @brief Construct a new KalmanFilter object
@@ -162,6 +156,21 @@ class KalmanFilter
         }
 
         /**
+         * @brief Model matrix updater
+         * Updates model matrix M for this iteration.
+         * 
+         * @param M Model matrix
+         */
+        void update_model_matrix(MatrixXd M){
+            if(M.cols() != n_ || M.rows() != n_) {
+                std::cerr << "Model matrix dimensions are wrong!\nn = " << n_ << std::endl;
+            }
+            else {
+                M_ = M;
+            }
+        }
+
+        /**
          * @brief State estimator
          * Performs the Kalman filter process to estimate the current state and saves estimated data
          * for the next iteration.
@@ -181,14 +190,10 @@ class KalmanFilter
             
 
             // PREDICTION STAGE
-            // Update model matrices
+            // Transition matrix 
             std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
             double dt = std::chrono::duration_cast<std::chrono::nanoseconds>(now - t_).count() * pow(10, -9);
-            double dDelta = (u(1) - u_(1)) / dt;
 
-            M_ << MatrixXd::Zero(n_, n_); M_(1,0) = dDelta * lr_ / L_;
-
-            // Transition matrix 
             MatrixXd A(n_, n_);
             A = MatrixXd::Identity(n_, n_) + dt * M_; 
 
