@@ -51,6 +51,12 @@ class SimplexTree {
     std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
 
     /**
+     * @brief Construct a new Simplex Tree object with uninitialized values.
+     * 
+     */
+    SimplexTree() = default;
+
+    /**
      * @brief Construct a new generic tree object.
      * @param triangle_list triangulation.triangles object containing all the triangles.
      * @param origin index of the origin triangle.
@@ -100,13 +106,35 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int ori
     // Filter neighbors to find which of them are valid
     for (int i = 0; i<3; i++){
         if((neighbors[i]<=triangle_list.size()) && 
-                triangle_list[neighbors[i]].vertices[0] != orig_vertex &&
-                triangle_list[neighbors[i]].vertices[1] != orig_vertex &&
-                triangle_list[neighbors[i]].vertices[2] != orig_vertex){
+            triangle_list[neighbors[i]].vertices[0] != orig_vertex &&
+            triangle_list[neighbors[i]].vertices[1] != orig_vertex &&
+            triangle_list[neighbors[i]].vertices[2] != orig_vertex){
+
+            // Add first edge to the mid_route array
+            std::vector<ConeXYZColorScore> edge = {};
+            for (auto v: triangle_list[neighbors[i]].vertices){
+                if (in(v, origin.vertices)){
+                    edge.push_back(cones_cloud_.points[v]);
+                }
+            }
+
+            mid_route.push_back(ConeXYZColorScore((edge[0].x+edge[1].x)/2,
+                                                  (edge[0].y+edge[1].y)/2, 0, UNCOLORED, 1));            
+            
+            // Calculate cost of the first edge
+            double route_cost = 0;
+            double angle = atan2(mid_route[1].y-mid_route[0].y, mid_route[1].x-mid_route[0].x);
+            double angle_diff = abs(angle-yaw);
+            double corr_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
+            double len = distance(mid_route[1], mid_route[0]);
+            if (corr_angle_diff > M_PI/6){
+                route_cost += angle_coeff_*(3*pow(corr_angle_diff-M_PI/6, 2)+1);
+            }
+            route_cost -= len_coeff_*len;
 
             visited.push_back(neighbors[i]); // Add the valid neighbors to the visited array
             root_.left = SimplexTree::create_tree_aux(triangle_list, neighbors[i], visited, passed_vertices,
-                                                      mid_route, 0, yaw);
+                                                      mid_route, route_cost, angle);
             break;
         }
     }
@@ -120,7 +148,7 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
                                           double prev_angle){
 
     SimplexNode* node = new SimplexNode(index);
-    if (midpoint_routes_.size() > 2 and route_cost > std::max(max_cost_, min_cost_)){
+    if (midpoint_routes_.size() > 3 and route_cost > std::max(max_cost_, min_cost_)){
         return node;
     }
     CDT::Triangle triangle = triangle_list[index];     // Get the triangle from the index
