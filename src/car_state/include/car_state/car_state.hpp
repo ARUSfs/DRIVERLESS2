@@ -63,12 +63,14 @@ private:
     // Functions
     void on_timer();
     void get_tf_position();
-    void initialize_v_filter();
+    void initialize_v_filter_kin();
+    void initialize_v_filter_dyn();
 
     // Estimation filters
-    KalmanFilter v_filter_;
+    KalmanFilter v_filter_kin_;
+    KalmanFilter v_filter_dyn_;
 
-    // Car variables
+    // Bicycle model variables
     double L_ = 1.5333;
     double mass_distr_R = 0.55;
     double lf_ = mass_distr_R * L_;
@@ -76,6 +78,14 @@ private:
     
     double delta_prev_ = 0;
     double delta_der_ = 0;
+
+    double vx_blend_min_ = 4;
+    double vx_blend_max_= 8;
+
+    double B_lat_ = 9.0;
+    double C_lat_ = 1.54;
+    double D_lat_ = -1.537;
+    double m_ = 270.0;
 
     // Private attributes to store received data
     double x_=0;
