@@ -9,6 +9,8 @@
  */
 
 #include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <pcl_conversions/pcl_conversions.h>
 
 /**
  * @class NewPerception
@@ -26,4 +28,20 @@ class NewPerception : public rclcpp::Node
          * set up the algorithm.
          */
         NewPerception();
+
+    private:
+        // Subscriber
+        std::string kLidarTopic;
+        rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_sub_;
+
+        // Publishers
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
+
+        /**
+         * @brief Callback function for the lidar topic.
+         * When the lidar topic recieves a message, this function is called and performs
+         * all the necessary steps to generate the suitable point cloud.
+         * @param lidar_msg The point cloud message received from the lidar.
+         */
+        void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
 };

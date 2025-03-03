@@ -9,6 +9,9 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(PCL REQUIRED)
+find_package(pcl_conversions REQUIRED)
 
 include_directories(
   include
@@ -17,7 +20,10 @@ include_directories(
 add_executable(new_perception_exec src/new_perception_node.cpp)
 
 ament_target_dependencies(new_perception_exec rclcpp 
-                            std_msgs)
+                            std_msgs
+                            sensor_msgs
+                            PCL
+                            pcl_conversions)
   
 install(TARGETS
   new_perception_exec
