@@ -41,7 +41,6 @@ PathPlanning::PathPlanning() : Node("path_planning")
 
     // Route
     this->declare_parameter<double>("angle_coeff", 1.0);
-    this->declare_parameter<double>("max_cost", 50.0);
     this->declare_parameter<double>("len_coeff", 1.0);
     this->declare_parameter<double>("smooth_coeff", 1.2);
     this->declare_parameter<double>("prev_route_bias", 0.75);
@@ -51,7 +50,6 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<bool>("stop_after_closing", false);
 
     this->get_parameter("angle_coeff", kAngleCoeff);
-    this->get_parameter("max_cost", kMaxCost);
     this->get_parameter("len_coeff", kLenCoeff);
     this->get_parameter("smooth_coeff", kSmoothCoeff);
     this->get_parameter("prev_route_bias", kPrevRouteBias);
@@ -152,7 +150,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         // Create the tree if the angle difference is less than pi/3 degrees
         if (corrected_angle_diff <  M_PI/2){
             tree = SimplexTree(triangles_, o_triangles[i], orig_index, pcl_cloud_, yaw_,
-                             kAngleCoeff, kLenCoeff, kMaxCost);
+                             kAngleCoeff, kLenCoeff);
             if (tree.min_cost_ < min_cost){
                 min_cost = tree.min_cost_;
                 best_midpoint_route_ = tree.best_route_;

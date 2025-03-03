@@ -62,10 +62,13 @@ class SimplexTree {
      * @param origin index of the origin triangle.
      * @param orig_vertex index of the origin vertex.
      * @param cones_cloud pcl::PointCloud object containing the cones in the map.
+     * @param yaw yaw of the car.
+     * @param angle_coeff coefficient for the angle cost.
+     * @param len_coeff coefficient for the length cost.
      */
     SimplexTree(CDT::TriangleVec triangle_list, int origin, int orig_vertex, 
                 pcl::PointCloud<ConeXYZColorScore> cones_cloud, double yaw, double angle_coeff,
-                double len_coeff, double max_cost);
+                double len_coeff);
 
     /**
      * @brief Recursive function to create the tree structure.
@@ -88,11 +91,10 @@ class SimplexTree {
 
 SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int orig_vertex,
                          pcl::PointCloud<ConeXYZColorScore> cones_cloud, double yaw, double angle_coeff, 
-                         double len_coeff, double max_cost) {
+                         double len_coeff) {
     cones_cloud_ = cones_cloud;
     angle_coeff_ = angle_coeff;
     len_coeff_ = len_coeff;
-    max_cost_ = max_cost;
     CDT::Triangle origin = triangle_list[origin_ind]; // Get triangle from index
     CDT::NeighborsArr3 neighbors = origin.neighbors;  // Get neighbors of the triangle
 
@@ -148,7 +150,8 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
                                           double prev_angle){
 
     SimplexNode* node = new SimplexNode(index);
-    if (midpoint_routes_.size() > 3 and route_cost > std::max(max_cost_, min_cost_)){
+    if (midpoint_routes_.size() > 3 and route_cost > (min_cost_+600*len_coeff_)){ 
+        // Best route cost will never be higher than 500 m times the length coeff plus the min cost
         return node;
     }
     CDT::Triangle triangle = triangle_list[index];     // Get the triangle from the index

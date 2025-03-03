@@ -67,7 +67,6 @@ class PathPlanning : public rclcpp::Node
 
         // Route parameters
         double kAngleCoeff;
-        double kMaxCost;
         double kLenCoeff;
         double kSmoothCoeff;
         double kPrevRouteBias;
