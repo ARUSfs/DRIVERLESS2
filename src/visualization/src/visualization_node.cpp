@@ -198,7 +198,7 @@ void Visualization::optimized_trajectory_callback(const common_msgs::msg::Trajec
     visualization_msgs::msg::Marker marker = this->create_trajectory_marker(msg, true, 1.0, 0.5, 0.0, kAlpha);
     optimized_trajectory_visualization_pub_->publish(marker);
 
-    visualization_msgs::msg::Marker marker_colored = this->create_trajectory_3D_marker(msg, true, 1.0, 0.5, 0.0, kAlpha);
+    visualization_msgs::msg::Marker marker_colored = this->create_trajectory_3D_marker(msg, true, 0.2588, 0.7098, 0.988, kAlpha);
     optimized_colored_trajectory_visualization_pub_->publish(marker_colored);
 }
 
