@@ -90,31 +90,37 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
     }
 
     // Initialize final straight section
-    for (int i = 0; i <= 5 / spacing; ++i) {
+    for (int i = 0; i <= 8 / spacing; ++i) {
         template_.emplace_back(spacing * i, 0);
         speed_profile_.push_back(first_lap_speed);
     }
-    for (int i = 0; i <= 15 / spacing; ++i) {
-        template_.emplace_back(5 + spacing * i, 0);
+    for (int i = 0; i <= 12 / spacing; ++i) {
+        template_.emplace_back(8 + spacing * i, 0);
         speed_profile_.push_back(0.0);
     }
-    // Initialize speed profile
-    speed_profile_[0]=0.1;
+
+
     // Compute speed profile
-    for (int i = 0; i <= 20 / spacing; ++i) {
-        if(speed_profile_[i-1]<first_lap_speed){
-            speed_profile_[i] = min(first_lap_speed, sqrt(pow(speed_profile_[i-1],2)+2*ax1*spacing));
-        }
-    }
+    // Smooth deccelerations
     for(int i = 0; i< speed_profile_.size(); i++){
         if(speed_profile_[i-1]>speed_profile_[i]){
-            speed_profile_[i] = max(speed_profile_[i], sqrt(pow(speed_profile_[i-1],2)-2*ax1*spacing));
+            speed_profile_[i] = max(speed_profile_[i], sqrt(pow(speed_profile_[i-1],2)-2*ax2*spacing));
         }
     }
-
+    // Smooth accelerations
     for(int i = speed_profile_.size()-1; i>0; i--){
         if(speed_profile_[i] < speed_profile_[i+1]){
-            speed_profile_[i] = max(speed_profile_[i], sqrt(pow(speed_profile_[i+1],2)-2*ax2*spacing));
+            speed_profile_[i] = max(speed_profile_[i], sqrt(pow(speed_profile_[i+1],2)-2*ax1*spacing));
+        }
+    }
+    // Smooth start
+    for (int i = 0; i <= 4/spacing; ++i) {
+        speed_profile_[i] = 1.0;
+        
+    }
+    for (int i = 4/spacing; i <= 20/spacing; ++i) {
+        if(speed_profile_[i-1]<first_lap_speed){
+            speed_profile_[i] = min(first_lap_speed, sqrt(pow(speed_profile_[i-1],2)+ax1*spacing));
         }
     }
 

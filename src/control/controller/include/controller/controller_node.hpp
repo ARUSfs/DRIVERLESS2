@@ -84,6 +84,7 @@ private:
     // Parameters
     std::string kControllerType;
     std::string kStateTopic;
+    bool kUseOptimizedTrajectory;
     std::string kTrajectoryTopic;
     std::string kCmdTopic;
     std::string kPursuitPointTopic;
