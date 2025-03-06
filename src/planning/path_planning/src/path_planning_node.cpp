@@ -233,8 +233,7 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
         bc = CDT::V2d<double>::make(c.x-b.x, c.y-b.y);
         ca = CDT::V2d<double>::make(a.x-c.x, a.y-c.y);
 
-        // Delete triangles with long edges or big angles (except the ones with the origin vertex)
-        // and triangles with the same color
+        // Delete triangles with long edges and all vertices with the same color
         if (lap_count_==0 && ((a.x == origin_.x and a.y == origin_.y) or     // Check if the origin vertex is
                                 (b.x == origin_.x and b.y == origin_.y) or    // in the triangle and skip it
                                 (c.x == origin_.x and c.y == origin_.y))){     // (origin vertex is the car position)
