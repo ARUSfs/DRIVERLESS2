@@ -17,3 +17,4 @@ visualization:
     arussim_trajectory_visualization_topic: '/visualization/arussim_fixed_trajectory'
     trajectory_visualization_topic: '/visualization/trajectory'
     track_limits_visualization_topic: '/visualization/track_limits'
+    optimized_trajectory_3d_visualization_topic: '/visualization/optimized_trajectory_3d'
