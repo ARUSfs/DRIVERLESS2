@@ -32,11 +32,8 @@ PathPlanning::PathPlanning() : Node("path_planning")
 
     // Triangulation
     this->declare_parameter<double>("max_tri_len", 7);
-    this->declare_parameter<double>("max_tri_angle", 2.9);
     
     this->get_parameter("max_tri_len", kMaxTriLen);
-    this->get_parameter("max_tri_angle", kMaxTriAngle);
-
 
     // Route
     this->declare_parameter<double>("angle_coeff", 1.0);
@@ -235,9 +232,6 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
         ab = CDT::V2d<double>::make(b.x-a.x, b.y-a.y);
         bc = CDT::V2d<double>::make(c.x-b.x, c.y-b.y);
         ca = CDT::V2d<double>::make(a.x-c.x, a.y-c.y);
-        a_angle = acos((ab.x*ca.x+ab.y*ca.y)/(norm(ab)*norm(ca)));
-        b_angle = acos((bc.x*ab.x+bc.y*ab.y)/(norm(bc)*norm(ab)));
-        c_angle = acos((ca.x*bc.x+ca.y*bc.y)/(norm(ca)*norm(bc)));
 
         // Delete triangles with long edges or big angles (except the ones with the origin vertex)
         // and triangles with the same color
@@ -250,8 +244,6 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
         if (a.color != UNCOLORED and a.color == b.color and b.color == c.color){
             deleted_tri.insert(i);
         } else if (distance(a,b) > kMaxTriLen or distance(b,c) > kMaxTriLen or distance(c,a) > kMaxTriLen){
-            deleted_tri.insert(i);
-        } else if (a_angle > kMaxTriAngle or b_angle > kMaxTriAngle or c_angle > kMaxTriAngle){
             deleted_tri.insert(i);
         }
     }

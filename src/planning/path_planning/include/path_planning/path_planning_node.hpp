@@ -62,7 +62,6 @@ class PathPlanning : public rclcpp::Node
 
         // Triangulation parameters
         double kMaxTriLen;
-        double kMaxTriAngle;
 
         // Route parameters
         double kAngleCoeff;
