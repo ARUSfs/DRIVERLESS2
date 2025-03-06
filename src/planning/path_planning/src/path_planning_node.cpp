@@ -33,11 +33,10 @@ PathPlanning::PathPlanning() : Node("path_planning")
     // Triangulation
     this->declare_parameter<double>("max_tri_len", 7);
     this->declare_parameter<double>("max_tri_angle", 2.9);
-    this->declare_parameter<bool>("color", false);
     
     this->get_parameter("max_tri_len", kMaxTriLen);
     this->get_parameter("max_tri_angle", kMaxTriAngle);
-    this->get_parameter("color", kColor);
+
 
     // Route
     this->declare_parameter<double>("angle_coeff", 1.0);
