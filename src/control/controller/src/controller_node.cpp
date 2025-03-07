@@ -25,6 +25,7 @@ Controller::Controller() : Node("controller"),
     this->declare_parameter<std::string>("optimized_steer_control", "PP");
     this->declare_parameter<double>("speed_timer_frequency", 100.0);
     this->declare_parameter<double>("steer_timer_frequency", 100.0);
+    this->declare_parameter<bool>("use_optimized_trajectory", false);
     this->get_parameter("first_lap_steer_control", kFirstLapSteerControl);
     this->get_parameter("optimized_steer_control", kOptimizedSteerControl);
     this->get_parameter("speed_timer_frequency", kSpeedTimerFreq);
@@ -232,6 +233,7 @@ void Controller::optimized_trajectory_callback(const common_msgs::msg::Trajector
     if (!kUseOptimizedTrajectory){
         return;
     }
+
     trajectory_callback(msg);
     new_trajectory_ = true;
     optimized_ = true;

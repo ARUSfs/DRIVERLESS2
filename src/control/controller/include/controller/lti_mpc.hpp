@@ -113,8 +113,8 @@ private:
     std::vector<Point> global_reference_trajectory_;
     std::vector<float> s_;
 
-    double kCorneringStiffnessF = -24276;//-26010; //-24153;
-    double kCorneringStiffnessR = -20332;//-21883; //-13728;
+    double kCorneringStiffnessF = -24276;
+    double kCorneringStiffnessR = -20332;
 
     double kWheelbase = 1.533;
     double kLf = kWheelbase*0.5073;
