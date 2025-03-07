@@ -22,7 +22,7 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 
-#include "car_state/kalman_filter.hpp"
+#include "car_state/speed_estimator.hpp"
 
 /**
  * @class CarState
@@ -63,10 +63,9 @@ private:
     // Functions
     void on_timer();
     void get_tf_position();
-    void initialize_vx_filter();
 
-    // Estimation filters
-    KalmanFilter vx_filter_;
+    // Speed estimator
+    SpeedEstimator speed_estimator_;
 
     // Private attributes to store received data
     double x_=0;
@@ -82,6 +81,8 @@ private:
     double ax_ = 0;
     double ay_ = 0;
     double delta_ = 0;
+    double delta_der_ = 0;
+    double inv_speed_ = 0;
 
     int as_status_ = 0;
     int ami_ = 0;
