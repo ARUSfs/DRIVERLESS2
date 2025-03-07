@@ -190,9 +190,8 @@ CarState::CarState(): Node("car_state")
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
 
-    // Initialize kalman filters
-    CarState::initialize_v_filter_kin();
-    CarState::initialize_v_filter_dyn();
+    // Initialize speed estimator
+    speed_estimator_.initialize_speed_estimator();
 
     // Start simulation in Driving mode
     if(kSimulation){
@@ -262,9 +261,8 @@ void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg
         RCLCPP_ERROR(this->get_logger(), "Extensometer dt: %f", dt);
     }
     
-    delta_prev_ = delta_;
+    delta_der_ = (msg->data - delta_) / dt;
     delta_ = msg->data;
-    delta_der_ = (delta_ - delta_prev_) / dt;
 
     if (kSafeMode && (delta_ < -21 || delta_ > 21)) {
         plausability_ += kErrorWeightExtensometer;
@@ -359,7 +357,7 @@ void CarState::inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg)
         RCLCPP_ERROR(this->get_logger(), "Inv speed dt: %f", dt);
     }
 
-    inv_speeed_ = msg->data;
+    inv_speed_ = msg->data;
 
     if (kSafeMode && (vx_ > kMaxVx || vx_ < -0.5)) {
         plausability_ += kErrorWeightInvSpeed;
@@ -440,65 +438,10 @@ void CarState::on_timer()
        
     // Estimate vx, vy
     if(kSimulation){
-        // Kinematic bicycle
-        MatrixXd M_kin(2,2), P_kin(2,2);
-        M_kin << 0, 0,
-                 lr_ / L_ * delta_der_, 0;
-        v_filter_kin_.update_model_matrix(M_kin);
-
-        VectorXd u_kin(2), z_kin(2), x_kin(2);
-        u_kin << ax_, ax_*delta_;
-
-        if(!kSimulation && std::abs(vx_) < 5) {
-            z_kin << inv_speeed_, lr_ / L_ * std::tan(delta_) * vx_; 
-        } else {
-            z_kin << (v_front_right_ + v_front_left_ + v_rear_right_ + v_rear_left_)/4, lr_ / L_ * std::tan(delta_) * vx_;
-        }
-
-        v_filter_kin_.estimate_state(u_kin, z_kin);
-        x_kin = v_filter_kin_.get_estimated_state();
-        P_kin = v_filter_kin_.get_estimated_covariance();
-
-        // Dynamic bicycle
-        MatrixXd M_dyn(2,2), B_dyn(2,3), P_dyn(2,2);
-        M_dyn << 0, r_,
-                 -r_, 0;
-        v_filter_dyn_.update_model_matrix(M_dyn);
-        B_dyn << 1, -std::sin(delta_), 0,
-                 0, std::cos(delta_), 1;
-        v_filter_dyn_.update_control_matrix(B_dyn);
-
-        VectorXd u_dyn(3), z_dyn(2), x_dyn(2);
-        double a_f = std::atan2(vy_ + lf_ * r_, vx_) - delta_;
-        double a_r = std::atan2(vy_ - lr_ * r_, vx_) - delta_;
-        double F_fy = D_lat_ * std::sin(C_lat_ * std::atan(B_lat_ * a_f));
-        double F_ry = D_lat_ * std::sin(C_lat_ * std::atan(B_lat_ * a_r));
-        u_dyn << ax_, F_fy / m_, F_ry / m_;
-        // u_dyn << ax_, 0.5 * ay_, 0.5 * ay_;
-
-        if(!kSimulation && std::abs(vx_) < 5) {     // LA MEDIDA DE VY PUEDE QUE ESTÉ MAAAAL
-            z_dyn << inv_speeed_, lr_ / L_ * std::tan(delta_) * vx_; 
-        } else {
-            z_dyn << (v_front_right_ + v_front_left_ + v_rear_right_ + v_rear_left_)/4, lr_ / L_ * std::tan(delta_) * vx_;
-        }
-
-        v_filter_dyn_.estimate_state(u_dyn, z_dyn);
-        x_dyn = v_filter_dyn_.get_estimated_state();
-        P_dyn = v_filter_dyn_.get_estimated_covariance();
-
-        // Estimated state
-        double lambda = std::clamp((vx_ - vx_blend_min_) / (vx_blend_max_ - vx_blend_min_), 0., 1.);
-        VectorXd x_est = (1 - lambda) * x_kin + lambda * x_dyn;
+        Vector2d x_est = speed_estimator_.estimate_speed(ax_, r_, delta_, delta_der_, 
+            v_front_left_, v_front_right_, v_rear_left_, v_rear_right_, inv_speed_, kSimulation);
         vx_ = x_est(0);
-        vy_ = x_est(1);
-
-        // Update estimated state and covariance
-        v_filter_kin_.update_state(x_est);
-        v_filter_dyn_.update_state(x_est);
-
-        MatrixXd P_est = (1 - lambda) * P_kin + lambda * P_dyn;
-        v_filter_kin_.update_covariance(P_est);
-        v_filter_dyn_.update_covariance(P_est);        
+        vy_ = x_est(1); 
     }
 
     // Publish state message
@@ -592,73 +535,6 @@ void CarState::get_tf_position()
     } catch (tf2::TransformException &ex) {
         // RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
     }
-}
-
-void CarState::initialize_v_filter_kin(){
-    // Set problem size
-    int n = 2;
-    int m = 2;
-    int p = 2;
-    v_filter_kin_.set_problem_size(n, m, p);
-    
-    // Set initial state and covariance
-    VectorXd x_initial(n);
-    x_initial << vx_, vy_;
-    MatrixXd P_initial(n, n); 
-    P_initial << 0.1 * MatrixXd::Identity(n,n);
-    VectorXd u_initial(m);
-    u_initial << ax_, ax_*delta_;
-    v_filter_kin_.set_initial_data(x_initial, P_initial, u_initial);
-
-    // Set process matrices
-    MatrixXd M(n, n), B(n, m), Q(n, n);
-    VectorXd diagQ(n);
-    M << MatrixXd::Zero(n,n);
-    B << 1, 0,
-         0, lr_ / L_;
-    diagQ << 0.15, 0.1; Q = diagQ.asDiagonal();
-    v_filter_kin_.set_process_matrices(M, B, Q);
-
-    // Set measurement matrices
-    MatrixXd H(p, n), R(p, p);
-    VectorXd diagR(p);
-    H << MatrixXd::Identity(n,n);
-    diagR << 0.2, 0.15; R = diagR.asDiagonal(); 
-    v_filter_kin_.set_measurement_matrices(H, M);
-}
-
-void CarState::initialize_v_filter_dyn(){
-    // Set problem size
-    int n = 2;
-    int m = 3;
-    int p = 2;
-    v_filter_dyn_.set_problem_size(n, m, p);
-    
-    // Set initial state and covariance
-    VectorXd x_initial(n);
-    x_initial << vx_, vy_;
-    MatrixXd P_initial(n, n); 
-    P_initial << 0.1 * MatrixXd::Identity(n,n);
-    VectorXd u_initial(m);
-    u_initial << ax_, 0, 0;
-    v_filter_dyn_.set_initial_data(x_initial, P_initial, u_initial);
-
-    // Set process matrices
-    MatrixXd M(n, n), B(n, m), Q(n, n);
-    VectorXd diagQ(n);
-    M << 0, r_,
-         -r_, 0;
-    B << 1, -std::sin(delta_), 0,
-         0, std::cos(delta_), 1;
-    diagQ << 0.15, 0.1; Q = diagQ.asDiagonal();
-    v_filter_dyn_.set_process_matrices(M, B, Q);
-
-    // Set measurement matrices
-    MatrixXd H(p, n), R(p, p);
-    VectorXd diagR(p);
-    H << MatrixXd::Identity(n,n);
-    diagR << 0.125, 0.2; R = diagR.asDiagonal(); 
-    v_filter_dyn_.set_measurement_matrices(H, M);
 }
 
 int main(int argc, char * argv[])
