@@ -17,13 +17,18 @@
  */
 Controller::Controller() : Node("controller"),  
     speed_control_(),
-    pure_pursuit_()
+    pure_pursuit_(),
+    lti_mpc_()
 {
-    this->declare_parameter<std::string>("controller_type", "pure_pursuit");
-    this->declare_parameter<double>("timer_frequency", 100.0);
-    this->declare_parameter<bool>("use_optimized_trajectory", false);
-    this->get_parameter("controller_type", kControllerType);
-    this->get_parameter("timer_frequency", kTimerFreq);
+
+    this->declare_parameter<std::string>("first_lap_steer_control", "PP");
+    this->declare_parameter<std::string>("optimized_steer_control", "PP");
+    this->declare_parameter<double>("speed_timer_frequency", 100.0);
+    this->declare_parameter<double>("steer_timer_frequency", 100.0);
+    this->get_parameter("first_lap_steer_control", kFirstLapSteerControl);
+    this->get_parameter("optimized_steer_control", kOptimizedSteerControl);
+    this->get_parameter("speed_timer_frequency", kSpeedTimerFreq);
+    this->get_parameter("steer_timer_frequency", kSteerTimerFreq);
     this->get_parameter("use_optimized_trajectory", kUseOptimizedTrajectory);
 
     // Topic
@@ -52,6 +57,14 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("KI", KI);
     this->get_parameter("KD", KD);
 
+    // MPC
+    this->declare_parameter<double>("cost_lateral_error", 10);
+    this->declare_parameter<double>("cost_angular_error", 5);
+    this->declare_parameter<double>("cost_steering_delta", 1000); 
+    this->get_parameter("cost_lateral_error", kCostLateralDeviation);
+    this->get_parameter("cost_angular_error", kCostAngularDeviation);
+    this->get_parameter("cost_steering_delta", kCostSteeringDelta);   
+
     // Cmd limits
     this->declare_parameter<double>("min_cmd", 0.0);
     this->declare_parameter<double>("max_cmd", 0.1);
@@ -61,13 +74,18 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("max_steer", kMaxSteer);
 
     speed_control_.pid_.set_params(KP,KI,KD);
+    lti_mpc_.set_params(kCostLateralDeviation,kCostAngularDeviation,kCostSteeringDelta);
 
     previous_time_ = this->get_clock()->now();
 
-    // Timer
-    timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(static_cast<int>(1000.0 / kTimerFreq)),
-        std::bind(&Controller::on_timer, this));
+    // Timers
+    speed_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(static_cast<int>(1000.0 / kSpeedTimerFreq)),
+        std::bind(&Controller::on_speed_timer, this));
+
+    steer_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(static_cast<int>(1000.0 / kSteerTimerFreq)),
+        std::bind(&Controller::on_steer_timer, this));
 
     // Subscribers
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
@@ -91,7 +109,7 @@ Controller::Controller() : Node("controller"),
  * 
  * @details Implement the control algorithm with calls to the controller libraries. 
  */  
-void Controller::on_timer()
+void Controller::on_speed_timer()
 {
     if(!(pointsXY_.empty()) && run_check_){
         get_global_index();
@@ -108,29 +126,50 @@ void Controller::on_timer()
         if(!(acc_profile_.empty())){
             target_acc = acc_profile_.at(index_global_);
         }
+        
 
+        double dt = (this->now() - previous_time_).seconds();
+        acc_cmd_ = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
+        previous_time_ = this->now();
+
+        common_msgs::msg::Cmd cmd;       
+        cmd.acc = std::clamp(acc_cmd_, kMinCmd, kMaxCmd);
+        cmd.delta = std::clamp(delta_cmd_, -kMaxSteer*M_PI/180, kMaxSteer*M_PI/180);;
+        cmd_pub_ -> publish(cmd); 
+    }
+}
+
+
+void Controller::on_steer_timer()
+{
+    if ((!optimized_ && kFirstLapSteerControl=="PP") || (optimized_ && kOptimizedSteerControl=="PP")){
         pure_pursuit_.set_path(pointsXY_);
         Point position;
         position.x = x_;
         position.y = y_;
         pure_pursuit_.set_position(position, yaw_);
 
-        auto [delta, pursuit_point] = pure_pursuit_.get_steering_angle(index_global_, kLAD);
+        pure_pursuit_.get_steering_angle(index_global_, kLAD);
+        delta_cmd_ = pure_pursuit_.delta_cmd_;
+        Point pursuit_point = pure_pursuit_.pursuit_point_;
+
         common_msgs::msg::PointXY pursuit_point_msg;
         pursuit_point_msg.x = pursuit_point.x;
         pursuit_point_msg.y = pursuit_point.y;
         pursuit_point_pub_ -> publish(pursuit_point_msg);
 
-        double dt = (this->now() - previous_time_).seconds();
-        double acc = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
-        previous_time_ = this->now();
-
-        common_msgs::msg::Cmd cmd;       
-        cmd.acc = std::clamp(acc, kMinCmd, kMaxCmd);
-        cmd.delta = std::clamp(delta, -kMaxSteer*M_PI/180, kMaxSteer*M_PI/180);;
-        cmd_pub_ -> publish(cmd); 
+    } else if ((!optimized_ && kFirstLapSteerControl=="MPC") || (optimized_ && kOptimizedSteerControl=="MPC"))
+    {
+        Point position;
+        position.x = x_;
+        position.y = y_;
+        if (!(s_.empty())){
+            lti_mpc_.set_reference_trajectory(pointsXY_, s_, position, yaw_, vx_, index_global_);
+            delta_cmd_ = lti_mpc_.calculate_control(delta_, v_delta_, vy_, r_);
+        }
     }
 }
+
 
 /**
  * @brief get global index of the vehicle in the trajectory
@@ -182,6 +221,9 @@ void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg
     ax_ = msg -> ax;
     ay_ = msg -> ay;
     delta_ = msg -> delta;
+
+    v_delta_ = 0.7*v_delta_ + 0.3*(delta_ - prev_delta_)/0.01;
+    prev_delta_ = delta_;
 
 }
 
