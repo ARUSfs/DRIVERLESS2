@@ -11,6 +11,7 @@
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/point_xy.hpp>
 #include <common_msgs/msg/track_limits.hpp>
+#include <std_msgs/msg/float32.hpp>
 
 /**
  * @class Visualization
@@ -40,6 +41,7 @@ class Visualization : public rclcpp::Node
         //Publishers
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr triangulation_visualization_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr optimized_trajectory_visualization_pub_;
+        rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr optimized_colored_trajectory_visualization_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr arussim_trajectory_visualization_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr trajectory_visualization_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pursuit_point_visualization_pub_;
@@ -66,6 +68,17 @@ class Visualization : public rclcpp::Node
 
         double kAlpha;
 
+        /**
+         * @brief Creates a 3D trajectory marker.
+         * @param msg Trajectory message.
+         * @param global If true, sets the frame_id to "arussim/world", otherwise "arussim/vehicle_cog".
+         * @return visualization_msgs::msg::Marker 3D trajectory marker.
+         */
+        visualization_msgs::msg::Marker create_trajectory_3D_marker(
+            const common_msgs::msg::Trajectory::SharedPtr msg, bool global=true,
+            double red=1.0, double green=0.0, double blue=0.0, double alpha=1.0);
+            
+
         // Topics to subscribe
         std::string kTriangulationTopic;
         std::string kOptimizedTrajectoryTopic;
@@ -83,5 +96,5 @@ class Visualization : public rclcpp::Node
         std::string kTrajectoryVisualizationTopic;
         std::string kPursuitPointVisualizationTopic;
         std::string kTrackLimitsVisualizationTopic;
-
+        std::string kOptimizedTrajectory3DVisualizationTopic;
 };

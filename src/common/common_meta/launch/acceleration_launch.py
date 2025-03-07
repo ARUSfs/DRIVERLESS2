@@ -42,6 +42,7 @@ def generate_launch_description():
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
                     'mission': 'acceleration'}]),
+        create_node(pkg='visualization'),
         rosbag_record
     ])
 

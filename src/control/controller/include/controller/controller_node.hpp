@@ -95,6 +95,7 @@ private:
     std::string kFirstLapSteerControl;
     std::string kOptimizedSteerControl;
     std::string kStateTopic;
+    bool kUseOptimizedTrajectory;
     std::string kTrajectoryTopic;
     std::string kCmdTopic;
     std::string kPursuitPointTopic;

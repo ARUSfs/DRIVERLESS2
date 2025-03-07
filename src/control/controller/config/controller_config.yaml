@@ -4,6 +4,8 @@ controller:
     optimized_steer_control: "MPC"   # PP, MPC
     speed_timer_frequency: 100.0    # speed timer frecuency in Hz
     steer_timer_frequency: 50.0    # steer timer frecuency in Hz
+    
+    use_optimized_trajectory: False # use optimized trajectory
 
     # Topics
     state: "/car_state/state"

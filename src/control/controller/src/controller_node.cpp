@@ -20,6 +20,7 @@ Controller::Controller() : Node("controller"),
     pure_pursuit_(),
     lti_mpc_()
 {
+
     this->declare_parameter<std::string>("first_lap_steer_control", "PP");
     this->declare_parameter<std::string>("optimized_steer_control", "PP");
     this->declare_parameter<double>("speed_timer_frequency", 100.0);
@@ -28,6 +29,7 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("optimized_steer_control", kOptimizedSteerControl);
     this->get_parameter("speed_timer_frequency", kSpeedTimerFreq);
     this->get_parameter("steer_timer_frequency", kSteerTimerFreq);
+    this->get_parameter("use_optimized_trajectory", kUseOptimizedTrajectory);
 
     // Topic
     this->declare_parameter<std::string>("state", "/car_state/state");
@@ -226,33 +228,40 @@ void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg
 }
 
 void Controller::optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
-{
+{   
+    if (!kUseOptimizedTrajectory){
+        return;
+    }
+    trajectory_callback(msg);
     new_trajectory_ = true;
     optimized_ = true;
-    trajectory_callback(msg);
 }
 
 void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
+    if (optimized_){
+        return;
+    }
+
     // Check if the trajectory is the same
     if(msg->points.size() != pointsXY_.size()
        || msg->points[msg->points.size()-1].x != pointsXY_[pointsXY_.size()-1].x){
         new_trajectory_ = true;
-    }
 
-    pointsXY_.clear();
-
-    std::vector<common_msgs::msg::PointXY> points_common = msg -> points;
-    for (const auto &pointXY : points_common) {
-        Point point;
-        point.x = pointXY.x;
-        point.y = pointXY.y;
-        pointsXY_.push_back(point);
+        pointsXY_.clear();
+    
+        std::vector<common_msgs::msg::PointXY> points_common = msg -> points;
+        for (const auto &pointXY : points_common) {
+            Point point;
+            point.x = pointXY.x;
+            point.y = pointXY.y;
+            pointsXY_.push_back(point);
+        }
+        s_= msg -> s;
+        k_ = msg -> k;
+        speed_profile_ = msg -> speed_profile;
+        acc_profile_ = msg -> acc_profile; 
     }
-    s_= msg -> s;
-    k_ = msg -> k;
-    speed_profile_ = msg -> speed_profile;
-    acc_profile_ = msg -> acc_profile; 
 }
 
 void Controller::run_check_callback(const std_msgs::msg::Bool::SharedPtr msg)

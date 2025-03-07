@@ -35,12 +35,14 @@ def generate_launch_description():
         create_node(pkg='controller',
                     params=[{'look_ahead_distance': 4.0,
                              'min_cmd': 0.0,
-                             'max_cmd': 0.15}]),
+                             'max_cmd': 0.15,
+                             'use_optimized_trajectory': False}]),
         create_node(pkg='graph_slam'),
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
                     'mission': 'trackdrive'}]),
         create_node(pkg='trajectory_optimization'),
+        create_node(pkg='visualization'),
         rosbag_record
     ])
 
