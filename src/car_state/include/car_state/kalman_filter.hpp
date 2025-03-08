@@ -156,6 +156,67 @@ class KalmanFilter
         }
 
         /**
+         * @brief Model matrix updater
+         * Updates model matrix M for this iteration.
+         * 
+         * @param M Model matrix
+         */
+        void update_model_matrix(MatrixXd M){
+            if(M.cols() != n_ || M.rows() != n_) {
+                std::cerr << "Model matrix dimensions are wrong!\nn = " << n_ << std::endl;
+            }
+            else {
+                M_ = M;
+            }
+        }
+
+        /**
+         * @brief Control matrix updater
+         * Updates control matrix B for this iteration.
+         * 
+         * @param B Control matrix
+         */
+        void update_control_matrix(MatrixXd B){
+            if(B.rows() != n_ || B.cols() != m_) {
+                std::cerr << "Control matrix dimensions are wrong!\nn = " << n_ << ", m = " << m_ << std::endl;
+            }
+            else {
+                B_ = B;
+            }
+        }
+
+        /**
+         * @brief State vector updater
+         * Updates state vector x for this iteration.
+         * 
+         * @param x State vector
+         */
+        void update_state(VectorXd x){
+             if(x.size() != n_) {
+                std::cerr << "State vector length is wrong!\nn = " << n_ << std::endl;
+            } 
+            else {
+                x_ = x;
+            }
+        }
+
+        /**
+         * @brief Covariance matrix updater
+         * Updates covariance matrix P for this iteration.
+         * 
+         * @param P Covariance matrix
+         */
+        void update_covariance(MatrixXd P){
+            if(P.cols() != n_ || P.rows() != n_) {
+                std::cerr << "Covariance matrix dimensions are wrong!\nn = " << n_ << std::endl;
+
+            }
+            else {
+                P_ = P;
+            }
+        }
+
+        /**
          * @brief State estimator
          * Performs the Kalman filter process to estimate the current state and saves estimated data
          * for the next iteration.
@@ -172,16 +233,18 @@ class KalmanFilter
             if(z.size() != p_) {
                 std::cerr << "Measurement vector length is wrong!\np= " << p_ << std::endl;
             }
+            
 
             // PREDICTION STAGE
             // Transition matrix 
-            MatrixXd A(n_, n_);
             std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
             double dt = std::chrono::duration_cast<std::chrono::nanoseconds>(now - t_).count() * pow(10, -9);
-            A = MatrixXd::Identity(n_, n_) + dt*M_; 
+
+            MatrixXd A(n_, n_);
+            A = MatrixXd::Identity(n_, n_) + dt * M_; 
 
             // State prediction
-            VectorXd x_pred = A * x_ + dt*B_ * u_;
+            VectorXd x_pred = A * x_ + dt * B_ * u_;
             
             // Covariance prediction
             MatrixXd P_pred = A * P_ * A.transpose() + Q_;
