@@ -1,2 +1,4 @@
-perception:
+new_perception:
   ros__parameters:
+    # Topic
+    lidar_topic: "/rslidar_points"

@@ -11,6 +11,10 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl/filters/project_inliers.h>
+#include <pcl/filters/crop_box.h>
+#include <pcl/point_types.h>
+#include <pcl/kdtree/kdtree_flann.h>
 
 /**
  * @class NewPerception
