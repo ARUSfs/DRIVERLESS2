@@ -67,6 +67,7 @@ private:
 
     double v_delta_;
     double prev_delta_;
+    double target_speed_;
 
     double acc_cmd_;
     double delta_cmd_;

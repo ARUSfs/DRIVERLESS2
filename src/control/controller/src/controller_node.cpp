@@ -115,12 +115,13 @@ void Controller::on_speed_timer()
     if(!(pointsXY_.empty()) && run_check_){
         get_global_index();
 
-        double target_speed = kTargetSpeed;
         if(!(speed_profile_.empty())){
-            target_speed = speed_profile_.at(index_global_);
+            target_speed_ = speed_profile_.at(index_global_);
+        }else{
+            target_speed_ = kTargetSpeed;
         }
         std_msgs::msg::Float32 target_speed_msg;
-        target_speed_msg.data = target_speed;
+        target_speed_msg.data = target_speed_;
         target_speed_pub_->publish(target_speed_msg);
 
         double target_acc = 0.0;
@@ -130,7 +131,7 @@ void Controller::on_speed_timer()
         
 
         double dt = (this->now() - previous_time_).seconds();
-        acc_cmd_ = speed_control_.get_acc_command(target_speed, target_acc, vx_, dt);
+        acc_cmd_ = speed_control_.get_acc_command(target_speed_, target_acc, vx_, dt);
         previous_time_ = this->now();
 
         common_msgs::msg::Cmd cmd;       
@@ -241,7 +242,7 @@ void Controller::optimized_trajectory_callback(const common_msgs::msg::Trajector
 
 void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
 {
-    if (optimized_){
+    if (optimized_ || msg->points.size() < 3){
         return;
     }
 
