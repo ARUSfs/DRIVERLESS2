@@ -2,5 +2,5 @@ camera_perception:
   ros__parameters:
     camera_topic: "/camera/image_raw"
     camera_period: 500  # ms
-
+    show_image: true
     
