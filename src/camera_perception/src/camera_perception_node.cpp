@@ -36,10 +36,12 @@ void CameraPerception::camera_callback(){
     }
     sensor_msgs::msg::Image::SharedPtr msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frame).toImageMsg();
     image_pub_->publish(*msg);
-    if (kShowImage){
+    
+    if (kShowImage) {
         imshow("Camera", frame);
-        cv::waitKey();
-    }
+        cv::waitKey(5);
+        }
+    
         
 }
 
