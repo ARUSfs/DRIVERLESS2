@@ -42,7 +42,6 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("prev_route_bias", 0.75);
     this->declare_parameter<int>("route_back", 10);
     this->declare_parameter<bool>("use_buffer", false);
-    this->declare_parameter<bool>("use_closing_route", false);
     this->declare_parameter<bool>("stop_after_closing", false);
 
     this->get_parameter("angle_coeff", kAngleCoeff);
@@ -51,7 +50,6 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("prev_route_bias", kPrevRouteBias);
     this->get_parameter("route_back", kRouteBack);
     this->get_parameter("use_buffer", kUseBuffer);
-    this->get_parameter("use_closing_route", kUseClosingRoute);
     this->get_parameter("stop_after_closing", kStopAfterClosing);
     
     // Profile creation
@@ -132,6 +130,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     // Get the best route from the trees
     SimplexTree tree;
     double min_cost = INFINITY;
+    std::vector<ConeXYZColorScore> back_edge = {}; 
     for (int i = 0; i<o_triangles.size(); i++){
         // Calculate the centroid of the triangle and the angle difference with the car yaw
         CDT::V2d<double> centroid = compute_centroid(o_triangles[i], triangles_, vertices_);
@@ -146,12 +145,25 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         // Create the tree if the angle difference is less than pi/3 degrees
         if (corrected_angle_diff <  M_PI/2){
             tree = SimplexTree(triangles_, o_triangles[i], orig_index, pcl_cloud_, yaw_,
-                             kAngleCoeff, kLenCoeff);
+                               kAngleCoeff, kLenCoeff);
             if (tree.min_cost_ < min_cost){
                 min_cost = tree.min_cost_;
                 best_midpoint_route_ = tree.best_route_;
                 best_index_route_ = tree.best_index_route_;
             }
+        } else {
+            for (int j = 0; j<3; j++){
+                if (back_edge.size()==2 || triangles_[o_triangles[i]].vertices[j] == orig_index){
+                    continue;
+                    }
+                if (pcl_cloud_[triangles_[o_triangles[i]].vertices[j]].color != UNCOLORED){
+                    back_edge.push_back(pcl_cloud_[triangles_[o_triangles[i]].vertices[j]]);
+                    }
+                }
+            if (back_edge.size() != 2) back_edge.clear();
+            if (back_edge.size() == 2 && back_edge[0].color == back_edge[1].color){
+                back_edge.clear();
+                }
         }
     }
 
@@ -173,7 +185,14 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
     if (final_route.size() <3) return;
 
-    if ((kUseClosingRoute and tree.end_) || lap_count_ > 0){
+    if (back_edge.size() == 2) {
+        final_route.insert(final_route.begin(),
+                           ConeXYZColorScore((back_edge[0].x+back_edge[1].x)/2,
+                                             (back_edge[0].y+back_edge[1].y)/2, 0, UNCOLORED, 1));
+    }
+
+    // Use closing route if route is closed
+    if (tree.end_ || lap_count_ > 0) {
         closing_route_ = final_route;
     }
 
@@ -235,8 +254,8 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
 
         // Delete triangles with long edges and all vertices with the same color
         if (lap_count_==0 && ((a.x == origin_.x and a.y == origin_.y) or     // Check if the origin vertex is
-                                (b.x == origin_.x and b.y == origin_.y) or    // in the triangle and skip it
-                                (c.x == origin_.x and c.y == origin_.y))){     // (origin vertex is the car position)
+                              (b.x == origin_.x and b.y == origin_.y) or     // in the triangle and skip it
+                              (c.x == origin_.x and c.y == origin_.y))){     // (origin vertex is the car position)
             continue;
         }
 
@@ -469,16 +488,15 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
         for (int j = 0; j<3; j++){
             ConeXYZColorScore cone = pcl_cloud_.points[vertices[j]];
             int vertex = vertices[j];
+            if (in(vertex, left_limit) || in(vertex, right_limit)){
+                continue;
+            }
             switch (cone.color){
             case BLUE:
-                if (!in(vertex, left_limit)){
-                    left_limit.push_back(vertex);
-                }
+                left_limit.push_back(vertex);
                 break;
             case YELLOW:
-                if (!in(vertex, right_limit)){
-                    right_limit.push_back(vertex);
-                }
+                right_limit.push_back(vertex);
                 break;
             default:
                 break;

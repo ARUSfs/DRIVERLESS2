@@ -186,7 +186,6 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
             index_routes_.push_back(visited);
             mid_route.push_back(ConeXYZColorScore((next_edge[0].x+next_edge[1].x)/2,
                                                       (next_edge[0].y+next_edge[1].y)/2, 0, UNCOLORED, 1));
-            mid_route.push_back(cones_cloud_.points[passed_vertices[0]]);
             midpoint_routes_.push_back(mid_route);
             ending_routes_.push_back(mid_route);
             if (mid_route.size() > 0.95*cones_cloud_.size()){
