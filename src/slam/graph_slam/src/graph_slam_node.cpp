@@ -1,6 +1,5 @@
 #include "graph_slam/graph_slam_node.hpp"
 #include <g2o/core/robust_kernel_impl.h>
-// #include "data_association_euclidean.cpp"
 
 GraphSlam::GraphSlam() : Node("graph_slam")
 { 
@@ -208,27 +207,23 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
 }
 
 void GraphSlam::optimizer_callback(){
-    
     update_pose_predictions();
 
     fill_graph();
 
-    double t1 = this->now().seconds();
     optimizer_.initializeOptimization();
-    optimizer_.optimize(10);
 
+    double t0 = this->now().seconds();
+    optimizer_.optimize(10);
     if(kVerbose){
         RCLCPP_INFO(this->get_logger(), "---------------------------------");
         RCLCPP_INFO(this->get_logger(), "Number of vertices: %d", optimizer_.activeVertices().size());
         RCLCPP_INFO(this->get_logger(), "Number of edges: %d", optimizer_.activeEdges().size());
-        RCLCPP_INFO(this->get_logger(), "Optimization time: %f", this->now().seconds() - t1);
+        RCLCPP_INFO(this->get_logger(), "Optimization time: %f", this->now().seconds() - t0);
     }
-    
-    update_data_association_map();
 
-    if(kWriteCSV){
-        write_csv_log();
-    }
+    update_data_association_map();
+    
 }
 
 
@@ -241,8 +236,8 @@ void GraphSlam::optimizer_callback(){
 // Landmarks must be pointers to be updated
 void GraphSlam::update_data_association_map(){
     for (Landmark* landmark : DA.map_){
-        for (auto vertex : optimizer_.vertices()) {
-            g2o::VertexPointXY* landmark_vertex = dynamic_cast<g2o::VertexPointXY*>(vertex.second);
+        for (auto vertex : optimizer_.activeVertices()) {
+            g2o::VertexPointXY* landmark_vertex = dynamic_cast<g2o::VertexPointXY*>(vertex);
             if (landmark_vertex != nullptr && landmark_vertex->id() == landmark->id_) {
                 landmark->world_position_ = landmark_vertex->estimate();
             }
@@ -443,56 +438,6 @@ void GraphSlam::send_tf() {
 	transformSt.transform.rotation.w = q.w();
 
 	tf_broadcaster_->sendTransform(transformSt);
-}
-
-
-void GraphSlam::write_csv_log(){
-    
-    const char* homeDir = getenv("HOME"); 
-    if (!homeDir) {
-        return;
-    }
-
-    std::filesystem::path filePath = std::filesystem::path(homeDir) / "ARUS_logs/slam/graph_slam_log.csv";
-
-    std::ofstream graph_csv(filePath);
-
-    if (!graph_csv.is_open()) {
-        std::cerr << "Couldn't open file for writing." << std::endl;
-        return;
-    }
-
-    for (auto vertex : optimizer_.vertices()) {
-        g2o::VertexSE2* pose_vertex = dynamic_cast<g2o::VertexSE2*>(vertex.second);
-        if (pose_vertex != nullptr) {
-            graph_csv << "pose_vertex," << pose_vertex->id() << "," 
-                                << pose_vertex->estimate().translation().x() << "," 
-                                << pose_vertex->estimate().translation().y() << "," 
-                                << pose_vertex->estimate().rotation().angle() << "\n";
-        }
-        g2o::VertexPointXY* landmark_vertex = dynamic_cast<g2o::VertexPointXY*>(vertex.second);
-        if (landmark_vertex != nullptr) {
-            graph_csv << "landmark_vertex," << landmark_vertex->id() << "," 
-                                << landmark_vertex->estimate().x() << "," 
-                                << landmark_vertex->estimate().y() << "\n";
-        }
-    }
-
-    for(auto edge : optimizer_.edges()){
-        g2o::EdgeSE2PointXY* landmark_edge = dynamic_cast<g2o::EdgeSE2PointXY*>(edge);
-        if (landmark_edge != nullptr) {
-            auto* pose_vertex = dynamic_cast<g2o::VertexSE2*>(landmark_edge->vertices()[0]);
-            if (pose_vertex) {
-                graph_csv << "landmark_edge," << pose_vertex->estimate().translation().x() << "," 
-                                << pose_vertex->estimate().translation().y() << ",";
-            }
-            auto* landmark_vertex = dynamic_cast<g2o::VertexPointXY*>(landmark_edge->vertices()[1]);
-            if (landmark_vertex) {
-                graph_csv << landmark_vertex->estimate().x() << "," 
-                             << landmark_vertex->estimate().y() << "\n";
-            }
-        }
-    }
 }
 
 

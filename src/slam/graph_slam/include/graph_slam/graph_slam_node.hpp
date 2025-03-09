@@ -105,7 +105,6 @@ class GraphSlam : public rclcpp::Node
     void check_finish_line();
     void update_data_association_map();
     void update_pose_predictions();
-    void write_csv_log();
     Eigen::Vector2d local_to_global(const Eigen::Vector2d& local_pos);
     Eigen::Vector2d global_to_local(const Eigen::Vector2d& global_pos);
 
