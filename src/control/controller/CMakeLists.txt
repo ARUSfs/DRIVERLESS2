@@ -12,6 +12,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(common_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # Include directories for header files
 include_directories(include)
@@ -25,6 +26,8 @@ ament_target_dependencies(controller_exec
                             std_msgs 
                             geometry_msgs
                             common_msgs)
+
+target_link_libraries(controller_exec Eigen3::Eigen)
 
 # Install the node executable
 install(TARGETS controller_exec
