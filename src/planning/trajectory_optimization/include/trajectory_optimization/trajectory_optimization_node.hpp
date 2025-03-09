@@ -69,6 +69,7 @@ class TrajectoryOptimization : public rclcpp::Node
         //Subscribers and publishers
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Subscription<common_msgs::msg::TrackLimits>::SharedPtr track_limits_sub_;
+        rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr arussim_trajectory_sub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_pub_;
 
         /**
@@ -81,6 +82,7 @@ class TrajectoryOptimization : public rclcpp::Node
          * @param trajectory_msg 
          */
         void trajectory_callback(common_msgs::msg::TrackLimits::SharedPtr trajectory_msg);
+        void trajectory_callback_with_no_tracklimits(common_msgs::msg::Trajectory::SharedPtr track_limits_msg);
       
         /**
          * @brief Callback function for the car_state topic
