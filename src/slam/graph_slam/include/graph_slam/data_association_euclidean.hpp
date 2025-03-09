@@ -47,12 +47,12 @@ class DataAssociation{
 
             icp.setInputSource(obs_map);
             icp.setInputTarget(map);
-            icp.setMaximumIterations(5);
-            icp.setEuclideanFitnessEpsilon(0.005);
-            icp.setTransformationEpsilon(1e-5);
+            icp.setMaximumIterations(50);
+            icp.setEuclideanFitnessEpsilon(0.1); 
+            icp.setTransformationEpsilon(1e-4); 
+            icp.setMaxCorrespondenceDistance(2.0); 
  
             pcl::PointCloud<ConeXYZColorScore>::Ptr corrected_obs = pcl::PointCloud<ConeXYZColorScore>::Ptr(new pcl::PointCloud<ConeXYZColorScore>);
-            icp.setMaxCorrespondenceDistance (1.0);
             icp.align(*corrected_obs);
             Eigen::Matrix4f transformation = icp.getFinalTransformation();
  
