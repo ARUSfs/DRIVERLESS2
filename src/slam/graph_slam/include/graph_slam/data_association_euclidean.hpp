@@ -55,14 +55,20 @@ class DataAssociation{
             pcl::PointCloud<ConeXYZColorScore>::Ptr corrected_obs = pcl::PointCloud<ConeXYZColorScore>::Ptr(new pcl::PointCloud<ConeXYZColorScore>);
             icp.align(*corrected_obs);
             Eigen::Matrix4f transformation = icp.getFinalTransformation();
- 
-            for (Landmark& obs : observed_landmarks){
-                Eigen::Vector2d corrected_position;
-                corrected_position << transformation(0,0)*obs.world_position_.x() + transformation(0,1)*obs.world_position_.y() + transformation(0,3),
-                                      transformation(1,0)*obs.world_position_.x() + transformation(1,1)*obs.world_position_.y() + transformation(1,3);
-                obs.world_position_ = corrected_position;
-            }
 
+            
+            if (icp.hasConverged() && icp.getFitnessScore() < 5000000000000000000){
+                // std::cout << "ICP converged with score: " << icp.getFitnessScore() << std::endl;
+                for (Landmark& obs : observed_landmarks){
+                    Eigen::Vector2d corrected_position;
+                    corrected_position << transformation(0,0)*obs.world_position_.x() + transformation(0,1)*obs.world_position_.y() + transformation(0,3),
+                                        transformation(1,0)*obs.world_position_.x() + transformation(1,1)*obs.world_position_.y() + transformation(1,3);
+                    obs.world_position_ = corrected_position;
+                }
+            } else {
+                std::cout << "ICP did not converge. Score: " << icp.getFitnessScore() << std::endl;
+            }
+            // std::cout << "Transformation matrix: " << std::endl << transformation << std::endl;
 
             for(Landmark& obs : observed_landmarks){
                 double min_distance = std::numeric_limits<double>::max();

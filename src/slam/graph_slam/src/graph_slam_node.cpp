@@ -71,7 +71,7 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(kPerceptionTopic, 10,
                     std::bind(&GraphSlam::perception_callback, this, std::placeholders::_1), collector_options);           
     // TODO: run optimizer depending on the number of edges/itereations
-    optimizer_timer_ = this->create_wall_timer(std::chrono::milliseconds(1000),
+    optimizer_timer_ = this->create_wall_timer(std::chrono::milliseconds(300),
                     std::bind(&GraphSlam::optimizer_callback, this), optimizer_callback_group_);
 }
 
@@ -152,6 +152,10 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
 
         observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x+kPosLidarX, cone.y), vehicle_pose_));
     }
+
+    if (observed_landmarks.size() == 0) {
+        return;
+    }
     
     DA.match_observations(observed_landmarks, unmatched_landmarks);
     if(!map_fixed_){
@@ -211,7 +215,7 @@ void GraphSlam::optimizer_callback(){
 
     double t1 = this->now().seconds();
     optimizer_.initializeOptimization();
-    optimizer_.optimize(50);
+    optimizer_.optimize(10);
 
     if(kVerbose){
         RCLCPP_INFO(this->get_logger(), "---------------------------------");
