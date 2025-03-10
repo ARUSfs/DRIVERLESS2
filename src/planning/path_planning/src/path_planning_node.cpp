@@ -177,6 +177,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
                            ConeXYZColorScore((back_edge[0].x+back_edge[1].x)/2,
                                              (back_edge[0].y+back_edge[1].y)/2, 0, UNCOLORED, 1));
     }
+    final_route.erase(final_route.begin()+1); // To test with mpc (comment this line to test)
 
     // Use closing route if route is closed
     if (tree.end_ || lap_count_ > 0) {
