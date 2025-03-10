@@ -83,6 +83,8 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     if (kStopAfterClosing && (closing_route_.size() > 0)){
         // Publish the closing route
         trajectory_pub_ -> publish(this->create_trajectory_msg(closing_route_));
+        // track_limits_pub_ -> publish(this->create_track_limits_msg(best_index_route_));
+        // rclcpp::shutdown();
         if (lap_count_ == 0) return;
     }
 
@@ -95,13 +97,8 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         return;
     }
 
-    if (lap_count_ == 0){
-        // In the first lap add current car position as the origin of the tree
-        pcl_cloud_.push_back(origin_);
-    } else {
-        // In the second lap add the origin (0,0) as the origin of the tree
-        pcl_cloud_.push_back(ConeXYZColorScore(0, 0, 0, UNCOLORED, 1));
-    }
+    // Add current car position as the origin of the tree
+    pcl_cloud_.push_back(origin_);
     
     // Create the triangulation
     CDT::Triangulation<double> triangulation;
@@ -119,12 +116,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     triangles_ = triangulation.triangles;
 
     // Construct the tree from the triangulation. Initializing it from each of the origin triangles
-    int orig_index;
-    if (lap_count_ == 0){
-        orig_index = this->get_vertex_index(CDT::V2d<double>::make(x_,y_));
-    } else {
-        orig_index = this->get_vertex_index(CDT::V2d<double>::make(0,0));
-    }
+    int orig_index = this->get_vertex_index(CDT::V2d<double>::make(x_,y_));
     std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index);
 
     // Get the best route from the trees
@@ -134,12 +126,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     for (int i = 0; i<o_triangles.size(); i++){
         // Calculate the centroid of the triangle and the angle difference with the car yaw
         CDT::V2d<double> centroid = compute_centroid(o_triangles[i], triangles_, vertices_);
-        double angle_diff;
-        if (lap_count_ == 0){
-            angle_diff = abs(atan2(centroid.y-y_, centroid.x-x_)-yaw_);
-        } else {
-            angle_diff = abs(atan2(centroid.y, centroid.x));
-        }
+        double angle_diff = abs(atan2(centroid.y-y_, centroid.x-x_)-yaw_);
         double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
 
         // Create the tree if the angle difference is less than pi/3 degrees
