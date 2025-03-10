@@ -20,8 +20,8 @@ private:
     double lf_ = mass_distr_R * L_;
     double lr_ = (1-mass_distr_R) * L_;
 
-    double vx_blend_min_ = 5.5;
-    double vx_blend_max_= 9.5;
+    double vx_blend_min_ = 5;
+    double vx_blend_max_= 8.5;
 
     double B_lat_ = 9.0;
     double C_lat_ = 1.54;
@@ -97,8 +97,7 @@ public:
      * Estimates car's longitudinal and lateral velocities combining kinematic and dynamic
      * bicycle models based on car's current speed.
      */
-    Vector2d estimate_speed(double ax, double r, double delta, double delta_der, 
-        double wFL, double wFR, double wRL, double wRR, double inv_speed, bool kSimulation){
+    Vector2d estimate_speed(double ax, double r, double delta, double delta_der, double wheelspeed_mean){
         // Kinematic bicycle
         VectorXd u_kin(m_kin_), z_kin(p_), x_kin(n_);
         MatrixXd P_kin(n_,n_);
@@ -107,12 +106,7 @@ public:
         v_filter_kin_.update_model_matrix(M_kin_);
 
         u_kin << ax, ax*delta;
-
-        if(!kSimulation && std::abs(vx_) < 5) {
-            z_kin << inv_speed, lr_ / L_ * std::tan(delta) * vx_; 
-        } else {
-            z_kin << (wFL + wFR + wRL + wRR)/4, lr_ / L_ * std::tan(delta) * vx_;
-        }
+        z_kin << wheelspeed_mean, lr_ / L_ * std::tan(delta) * vx_;
 
         v_filter_kin_.estimate_state(u_kin, z_kin);
         x_kin = v_filter_kin_.get_estimated_state();
@@ -136,13 +130,8 @@ public:
         double F_ry = D_lat_ * std::sin(C_lat_ * std::atan(B_lat_ * a_r));
         u_dyn << ax, F_fy / m_, F_ry / m_;
 
-        if(!kSimulation && std::abs(vx_) < 5) {     
-            z_dyn << inv_speed, 
-                     (vx_ * (lf_*cf_ + lr_*cr_)) / (m_*vx_*vx_ + cf_*lf_*lf_ + cr_*lr_*lr_) * delta; 
-        } else {
-            z_dyn << (wFL + wFR + wRL + wRR)/4, 
-                     (vx_ * (lf_*cf_ + lr_*cr_)) / (m_*vx_*vx_ + cf_*lf_*lf_ + cr_*lr_*lr_) * delta;
-        }
+        z_dyn << wheelspeed_mean, 
+                     0.25 * (vx_ * (lf_*cf_ + lr_*cr_)) / (m_*vx_*vx_ + cf_*lf_*lf_ + cr_*lr_*lr_) * delta;
 
         v_filter_dyn_.estimate_state(u_dyn, z_dyn);
         x_dyn = v_filter_dyn_.get_estimated_state();

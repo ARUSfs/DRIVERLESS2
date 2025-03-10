@@ -437,15 +437,16 @@ void CarState::on_timer()
     }
        
     // Estimate vx, vy
+    double wheelspeed_mean;
     if(kSimulation){
-        Vector2d x_est = speed_estimator_.estimate_speed(ax_, r_, delta_, delta_der_, 
-            v_front_left_, v_front_right_, v_rear_left_, v_rear_right_, inv_speed_, kSimulation);
-        vx_ = x_est(0);
-        vy_ = x_est(1); 
+        wheelspeed_mean = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
     } else {
-        vx_ = inv_speed_;
-        vy_ = 0;
+        wheelspeed_mean = inv_speed_;
     }
+
+    Vector2d x_est = speed_estimator_.estimate_speed(ax_, r_, delta_, delta_der_, wheelspeed_mean);
+    vx_ = x_est(0);
+    vy_ = x_est(1); 
 
     // Publish state message
     auto state_msg = common_msgs::msg::State();
