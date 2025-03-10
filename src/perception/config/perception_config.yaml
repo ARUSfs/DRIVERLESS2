@@ -17,12 +17,6 @@ perception:
     angle_threshold: 35.0
     minimum_ransac_points: 30
 
-    # Parameters of accumulation
-    accumulation_clouds: false
-    accumulation_clusters: false #TODO: fix core dumped
-    buffer_size: 5
-    accumulation_threshold: 0.01
-
     #Parameters of clustering
     radius: 0.15
 
