@@ -43,7 +43,6 @@ class GraphSlam : public rclcpp::Node
     double kFinishLineOffset;
     double kTrackWidth;
     double kMinLapDistance;
-    bool kWriteCSV;
     int kMaxPoseEdges;
     int kMaxLandmarkEdges;
     bool kVerbose;

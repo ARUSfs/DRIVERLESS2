@@ -6,7 +6,6 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->declare_parameter("finish_line_offset", 0.0);
     this->declare_parameter("track_width", 3.0);
     this->declare_parameter("min_lap_distance", 30.0);
-    this->declare_parameter("write_csv", false);
     this->declare_parameter("max_pose_edges", 10000);
     this->declare_parameter("max_landmark_edges", 10000);
     this->declare_parameter("verbose", false);
@@ -15,7 +14,6 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->get_parameter("finish_line_offset", kFinishLineOffset);
     this->get_parameter("track_width", kTrackWidth);
     this->get_parameter("min_lap_distance", kMinLapDistance);
-    this->get_parameter("write_csv", kWriteCSV);
     this->get_parameter("max_pose_edges", kMaxPoseEdges);
     this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
     this->get_parameter("verbose", kVerbose);
@@ -154,7 +152,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     if (observed_landmarks.size() == 0) {
         return;
     }
-    
+
     
     DA.match_observations(observed_landmarks, unmatched_landmarks);
     if(!map_fixed_){
