@@ -39,8 +39,26 @@ target_link_libraries(perception_exec
   OpenMP::OpenMP_CXX
 )
 
+add_executable(perceptionacc_exec src/perceptionacc_node.cpp)
+
+ament_target_dependencies(perceptionacc_exec 
+  rclcpp 
+  std_msgs 
+  geometry_msgs
+  sensor_msgs 
+  PCL 
+  pcl_conversions
+  common_msgs
+)
+
+target_link_libraries(perceptionacc_exec
+  ${PCL_LIBRARIES}
+  OpenMP::OpenMP_CXX
+)
+
 install(TARGETS
   perception_exec
+  perceptionacc_exec
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch
