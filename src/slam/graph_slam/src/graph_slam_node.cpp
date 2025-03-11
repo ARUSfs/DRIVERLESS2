@@ -1,5 +1,4 @@
 #include "graph_slam/graph_slam_node.hpp"
-#include <g2o/core/robust_kernel_impl.h>
 
 GraphSlam::GraphSlam() : Node("graph_slam")
 { 
@@ -155,6 +154,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     if (observed_landmarks.size() == 0) {
         return;
     }
+    
     
     DA.match_observations(observed_landmarks, unmatched_landmarks);
     if(!map_fixed_){

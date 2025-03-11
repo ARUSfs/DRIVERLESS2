@@ -6,6 +6,8 @@
 #include "graph_slam/landmark.hpp"
 #include "ConeXYZColorScore.h"
 #include <pcl/registration/icp.h>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 #include <pcl/registration/correspondence_estimation.h>
 
 
@@ -16,60 +18,41 @@ class DataAssociation{
         DataAssociation()
         {
             map_.clear();
+
+            icp_.setMaximumIterations(50);
+            icp_.setEuclideanFitnessEpsilon(0.1); 
+            icp_.setTransformationEpsilon(1e-4); 
+            icp_.setMaxCorrespondenceDistance(2.0);
         }
 
         void match_observations(std::vector<Landmark>& observed_landmarks, std::vector<Landmark>& unmatched_landmarks)
         {
-            pcl::IterativeClosestPoint<ConeXYZColorScore, ConeXYZColorScore> icp;
-            pcl::PointCloud<ConeXYZColorScore>::Ptr obs_map = pcl::PointCloud<ConeXYZColorScore>::Ptr(new pcl::PointCloud<ConeXYZColorScore>);
-
+            // Perform ICP to match observed landmarks to map
+            pcl::PointCloud<pcl::PointXYZ>::Ptr obs_pcl = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::PointCloud<pcl::PointXYZ>::Ptr map_pcl = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
             for (Landmark& obs : observed_landmarks){
-                ConeXYZColorScore point;
-                point.x = obs.world_position_.x();
-                point.y = obs.world_position_.y();
-                point.z = 0;
-                point.color = 0;
-                point.score = 1;
-                obs_map->push_back(point);
+                obs_pcl->push_back(pcl::PointXYZ(obs.world_position_.x(), obs.world_position_.y(), 0));
             }
-
-            pcl::PointCloud<ConeXYZColorScore>::Ptr map = pcl::PointCloud<ConeXYZColorScore>::Ptr(new pcl::PointCloud<ConeXYZColorScore>);
- 
             for (Landmark* landmark : map_){
-                ConeXYZColorScore point;
-                point.x = landmark->world_position_.x();
-                point.y = landmark->world_position_.y();
-                point.z = 0;
-                point.color = 0;
-                point.score = 1;
-                map->push_back(point);
+                map_pcl->push_back(pcl::PointXYZ(landmark->world_position_.x(), landmark->world_position_.y(), 0));
             }
 
-            icp.setInputSource(obs_map);
-            icp.setInputTarget(map);
-            icp.setMaximumIterations(50);
-            icp.setEuclideanFitnessEpsilon(0.1); 
-            icp.setTransformationEpsilon(1e-4); 
-            icp.setMaxCorrespondenceDistance(2.0); 
- 
-            pcl::PointCloud<ConeXYZColorScore>::Ptr corrected_obs = pcl::PointCloud<ConeXYZColorScore>::Ptr(new pcl::PointCloud<ConeXYZColorScore>);
-            icp.align(*corrected_obs);
-            Eigen::Matrix4f transformation = icp.getFinalTransformation();
-
+            icp_.setInputSource(obs_pcl);
+            icp_.setInputTarget(map_pcl);
+            pcl::PointCloud<pcl::PointXYZ>::Ptr corrected_obs = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+            icp_.align(*corrected_obs);
             
-            if (icp.hasConverged() && icp.getFitnessScore() < 5000000000000000000){
-                // std::cout << "ICP converged with score: " << icp.getFitnessScore() << std::endl;
-                for (Landmark& obs : observed_landmarks){
-                    Eigen::Vector2d corrected_position;
-                    corrected_position << transformation(0,0)*obs.world_position_.x() + transformation(0,1)*obs.world_position_.y() + transformation(0,3),
-                                        transformation(1,0)*obs.world_position_.x() + transformation(1,1)*obs.world_position_.y() + transformation(1,3);
-                    obs.world_position_ = corrected_position;
+            if (icp_.hasConverged() && icp_.getFitnessScore() < 1){
+                for (int i = 0; i < observed_landmarks.size(); i++){
+                    Landmark& obs = observed_landmarks[i];
+                    obs.world_position_ = Eigen::Vector2d(corrected_obs->points[i].x, corrected_obs->points[i].y);
                 }
             } else {
-                std::cout << "ICP did not converge. Score: " << icp.getFitnessScore() << std::endl;
+                std::cout << "ICP did not converge. Score: " << icp_.getFitnessScore() << std::endl;
             }
-            // std::cout << "Transformation matrix: " << std::endl << transformation << std::endl;
 
+
+            // Get nearest neighbor for each observed landmark
             for(Landmark& obs : observed_landmarks){
                 double min_distance = std::numeric_limits<double>::max();
                 Landmark* closest_landmark = nullptr;
@@ -107,4 +90,5 @@ class DataAssociation{
 
     
     private:
+        pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp_;
 };

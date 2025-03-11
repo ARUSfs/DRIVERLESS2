@@ -10,6 +10,7 @@
 #include <g2o/core/block_solver.h>
 #include <g2o/core/sparse_optimizer.h>
 #include <g2o/solvers/csparse/linear_solver_csparse.h>
+#include <g2o/core/robust_kernel_impl.h>
 
 #include "common_msgs/msg/state.hpp"
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -24,7 +25,7 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
-#include "graph_slam/data_association_euclidean.hpp"
+#include "graph_slam/data_association_ICP_NN.hpp"
 
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
