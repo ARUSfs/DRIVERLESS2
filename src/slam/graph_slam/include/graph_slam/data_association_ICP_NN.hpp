@@ -77,7 +77,7 @@ class DataAssociation{
 
             // Disable landmarks that might be false positives
             for (Landmark* landmark : map_){
-                if (time(0) - landmark->last_observation_time_ > 1.0 && landmark->num_observations_ < 10){
+                if (time(0) - landmark->last_observation_time_ > 1.0 && landmark->num_observations_ < 3){
                     landmark->disabled_ = true;
                 }
             }

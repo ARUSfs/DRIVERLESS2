@@ -23,9 +23,9 @@ def generate_launch_description():
                                         'launch', 'start.py')
 
     return LaunchDescription([
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(rslidar_launch)),
-        create_node(pkg='can_interface'),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(rslidar_launch)),
+        # create_node(pkg='can_interface'),
         create_node(pkg='epos_interface'),
         create_node(pkg='perception'),
         create_node(pkg='path_planning',
@@ -43,7 +43,7 @@ def generate_launch_description():
                     'mission': 'trackdrive'}]),
         create_node(pkg='trajectory_optimization'),
         create_node(pkg='visualization'),
-        rosbag_record
+        # rosbag_record
     ])
 
 
