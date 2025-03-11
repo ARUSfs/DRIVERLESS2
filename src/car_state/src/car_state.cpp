@@ -442,9 +442,6 @@ void CarState::on_timer()
             v_front_left_, v_front_right_, v_rear_left_, v_rear_right_, inv_speed_, kSimulation);
         vx_ = x_est(0);
         vy_ = x_est(1); 
-    } else {
-        vx_ = inv_speed_;
-        vy_ = 0.0;
     }
 
     // Publish state message
