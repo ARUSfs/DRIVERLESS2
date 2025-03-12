@@ -40,6 +40,8 @@ TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization
         kCarStateTopic, 1, std::bind(&TrajectoryOptimization::car_state_callback, this, std::placeholders::_1));
     track_limits_sub_ = this->create_subscription<common_msgs::msg::TrackLimits>(
         kTrackLimitsTopic, 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
+    arussim_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
+        "/arussim_interface/fixed_trajectory", 10, std::bind(&TrajectoryOptimization::trajectory_callback_with_no_tracklimits, this, std::placeholders::_1));
     optimized_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kOptimizedTrajectoryTopic, 10);
 }
 
@@ -65,7 +67,7 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
         x(i) = track_xy[i].x;
         y(i) = track_xy[i].y;
     }
-    if(!(track_limit_left_.empty()) || control_simulation_true){
+    if(!(track_limit_left_.empty())){
         //Generate track width vectors
         MatrixXd original_s_k = TrajectoryOptimization::get_distance_and_curvature_values(x, y);
         VectorXd original_k = original_s_k.col(1); //This step won't be necessary when we receive k from the message
@@ -93,10 +95,52 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
         VectorXd speed_profile = profile.col(0);
         VectorXd acc_profile = profile.col(1);    
 
-
         //Create and publish trajectory message
         common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(traj_x, traj_y, optimized_s, optimized_k, speed_profile, acc_profile);
         optimized_trajectory_pub_ -> publish(optimized_traj_msg);
+    }
+}
+
+void TrajectoryOptimization::trajectory_callback_with_no_tracklimits(common_msgs::msg::Trajectory::SharedPtr track_limits_msg){
+    std::vector<common_msgs::msg::PointXY> track_xy = track_limits_msg->points;
+    if (control_simulation_true){
+    //Convert points message to vectors
+    int n = track_xy.size();
+    VectorXd x(n), y(n);
+    for(int i = 0; i < n; i++){
+        x(i) = track_xy[i].x;
+        y(i) = track_xy[i].y;
+    }
+    //Generate track width vectors
+    MatrixXd original_s_k = TrajectoryOptimization::get_distance_and_curvature_values(x, y);
+    VectorXd original_k = original_s_k.col(1); //This step won't be necessary when we receive k from the message
+    VectorXd twr = TrajectoryOptimization::generate_track_width(x, y, track_limit_right_);
+    VectorXd twl = TrajectoryOptimization::generate_track_width(x, y, track_limit_left_);
+
+    //Get minimal curvature path
+    MatrixXd optimized_trajectory1 = MinCurvaturepath::get_min_curvature_path(x, y, twr, twl);
+    VectorXd traj_x1 = optimized_trajectory1.col(0);
+    VectorXd traj_y1 = optimized_trajectory1.col(1);
+
+    VectorXd twr2 = TrajectoryOptimization::generate_track_width(traj_x1, traj_y1, track_limit_right_);
+    VectorXd twl2 = TrajectoryOptimization::generate_track_width(traj_x1, traj_y1, track_limit_left_);
+    MatrixXd optimized_trajectory = MinCurvaturepath::get_min_curvature_path(traj_x1, traj_y1, twr2, twl2);
+    VectorXd traj_x = optimized_trajectory.col(0);
+    VectorXd traj_y = optimized_trajectory.col(1);
+
+    //Get accumulated distance and curvature at each point
+    MatrixXd optimized_s_k = TrajectoryOptimization::get_distance_and_curvature_values(traj_x, traj_y);
+    VectorXd optimized_s = optimized_s_k.col(0);
+    VectorXd optimized_k = optimized_s_k.col(1);
+
+    //Generate speed and acceletation profile
+    MatrixXd profile = TrajectoryOptimization::generate_speed_and_acc_profile(optimized_s, optimized_k);
+    VectorXd speed_profile = profile.col(0);
+    VectorXd acc_profile = profile.col(1);    
+
+    //Create and publish trajectory message
+    common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(traj_x, traj_y, optimized_s, optimized_k, speed_profile, acc_profile);
+    optimized_trajectory_pub_ -> publish(optimized_traj_msg);
     }
 }
 

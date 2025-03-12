@@ -28,8 +28,6 @@
 #include <deque>
 #include <omp.h>
 #include <iostream>
-#include <pcl/sample_consensus/ransac.h>
-#include <pcl/sample_consensus/sac_model_circle3d.h>
 
 
 /**

@@ -22,6 +22,7 @@
 #include "controller/speed_control.hpp"
 #include "controller/PID.hpp"
 #include "Point.h"
+#include "lti_mpc.hpp"
 
 /**
  * @brief The Controller class
@@ -39,13 +40,15 @@ private:
     // Instances
     SpeedControl speed_control_;
     Pure_pursuit pure_pursuit_;   
+    LtiMpc lti_mpc_;
 
     // Callbacks
     void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void run_check_callback(const std_msgs::msg::Bool::SharedPtr msg);
-    void on_timer();
+    void on_speed_timer();
+    void on_steer_timer();
     void get_global_index();
 
     bool run_check_ = false;
@@ -61,6 +64,13 @@ private:
     double ax_;
     double ay_;
     double delta_;
+
+    double v_delta_;
+    double prev_delta_;
+    double target_speed_;
+
+    double acc_cmd_;
+    double delta_cmd_;
 
     //Trajectory variable
     std::vector<Point> pointsXY_;  
@@ -78,11 +88,13 @@ private:
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr run_check_sub_;
 
     //Timers
-    rclcpp::TimerBase::SharedPtr timer_; 
+    rclcpp::TimerBase::SharedPtr speed_timer_;
+    rclcpp::TimerBase::SharedPtr steer_timer_;
     rclcpp::Time previous_time_ ;
     
     // Parameters
-    std::string kControllerType;
+    std::string kFirstLapSteerControl;
+    std::string kOptimizedSteerControl;
     std::string kStateTopic;
     bool kUseOptimizedTrajectory;
     std::string kTrajectoryTopic;
@@ -90,7 +102,8 @@ private:
     std::string kPursuitPointTopic;
     std::string kTargetSpeedTopic;
 
-    double kTimerFreq;
+    double kSpeedTimerFreq;
+    double kSteerTimerFreq;
     double kLAD;
     double kTargetSpeed;
     double KP;
@@ -99,6 +112,9 @@ private:
     double kMinCmd;
     double kMaxCmd;
     double kMaxSteer;
+    double kCostLateralDeviation;
+    double kCostAngularDeviation;
+    double kCostSteeringDelta;
 
     rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_pub_;
     rclcpp::Publisher<common_msgs::msg::PointXY>::SharedPtr pursuit_point_pub_;

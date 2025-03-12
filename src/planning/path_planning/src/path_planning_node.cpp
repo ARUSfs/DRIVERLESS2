@@ -342,7 +342,6 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<Con
     int degree = 2;
     common_msgs::msg::Trajectory trajectory_msg;
     double acum = 0.0;
-    trajectory_msg.s = {0.0};
 
     std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile;
 
@@ -395,6 +394,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<Con
         s.push_back(acum);
         speed_profile.push_back(0.0);
     }
+
     xp.push_back(xp.back());
     yp.push_back(yp.back());
 
