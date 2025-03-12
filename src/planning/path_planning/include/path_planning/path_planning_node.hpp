@@ -164,14 +164,6 @@ class PathPlanning : public rclcpp::Node
         common_msgs::msg::Triangulation create_triangulation_msg(CDT::Triangulation<double> triangulation);
 
         /**
-         * @brief Calculate the euclidean norm of a vector. 
-         * i.e.: if v=(x,y), norm(v) = (x^2 + y^2)^(1/2).
-         * @param v Vector to calculate the norm.
-         * @return double 
-         */
-        double norm(CDT::V2d<double> v);
-
-        /**
          * @brief Get the index of the origin vertex in the triangulation.
          * @return int index of the origin vertex.
          */

@@ -80,12 +80,11 @@ PathPlanning::PathPlanning() : Node("path_planning")
 
 void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {
+    // Publish the closing route if selected in config file and shutdown the node
     if (kStopAfterClosing && (closing_route_.size() > 0)){
-        // Publish the closing route
         trajectory_pub_ -> publish(this->create_trajectory_msg(closing_route_));
-        // track_limits_pub_ -> publish(this->create_track_limits_msg(best_index_route_));
-        // rclcpp::shutdown();
-        if (lap_count_ == 0) return;
+        track_limits_pub_ -> publish(this->create_track_limits_msg(best_index_route_));
+        rclcpp::shutdown();
     }
 
     // Save the point cloud as a pcl object from ROS2 msg
@@ -198,7 +197,7 @@ void PathPlanning::car_info_callback(const common_msgs::msg::CarInfo::SharedPtr 
     vx_ = state_msg->vx;
     vy_ = state_msg->vy;
     v_ = hypot(vx_, vy_);
-    origin_ = ConeXYZColorScore(x_, y_, 0, UNCOLORED, 1);
+    origin_ = ConeXYZColorScore(x_, y_, 0, UNCOLORED, -1);
 }
 
 void PathPlanning::lap_count_callback(const std_msgs::msg::Int16::SharedPtr lap_msg)
@@ -279,10 +278,6 @@ common_msgs::msg::Triangulation PathPlanning::create_triangulation_msg(CDT::Tria
         triangulation_msg.simplices.push_back(simplex);
     }
     return triangulation_msg;
-}
-
-double PathPlanning::norm(CDT::V2d<double> v){
-    return hypot(v.x, v.y);
 }
 
 int PathPlanning::get_vertex_index(CDT::V2d<double> vertex){
@@ -475,6 +470,9 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
         CDT::VerticesArr3 vertices = triangle.vertices;
         for (int j = 0; j<3; j++){
             ConeXYZColorScore cone = pcl_cloud_.points[vertices[j]];
+            if (cone.score == -1){
+                continue;
+            }
             int vertex = vertices[j];
             if (in(vertex, left_limit) || in(vertex, right_limit)){
                 continue;
@@ -486,7 +484,34 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
             case YELLOW:
                 right_limit.push_back(vertex);
                 break;
-            default:
+            case UNCOLORED:
+                if (i < triangles_route.size()-1) {
+                    std::vector<double> yaw_vector, cone_vector;
+                    CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triangles_, vertices_);
+                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[i+1], triangles_, vertices_);
+                    double route_angle = atan2(centroid_2.y-centroid_1.y, centroid_2.x-centroid_1.x);
+                    yaw_vector = {cos(route_angle), sin(route_angle)};
+                    cone_vector = {cone.x-centroid_1.x, cone.y-centroid_1.y};
+                    bool is_positive_angle = yaw_vector[0]*cone_vector[1]-yaw_vector[1]*cone_vector[0] > 0;
+                    if (is_positive_angle){
+                        left_limit.push_back(vertex);
+                    } else {
+                        right_limit.push_back(vertex);
+                    }
+                } else {
+                    std::vector<double> yaw_vector, cone_vector;
+                    CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triangles_, vertices_);
+                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[0], triangles_, vertices_);
+                    double route_angle = atan2(centroid_2.y-centroid_1.y, centroid_2.x-centroid_1.x);
+                    yaw_vector = {cos(route_angle), sin(route_angle)};
+                    cone_vector = {cone.x-centroid_1.x, cone.y-centroid_1.y};
+                    bool is_positive_angle = yaw_vector[0]*cone_vector[1]-yaw_vector[1]*cone_vector[0] > 0;
+                    if (is_positive_angle){
+                        left_limit.push_back(vertex);
+                    } else {
+                        right_limit.push_back(vertex);
+                    }
+                }
                 break;
             }
         }
