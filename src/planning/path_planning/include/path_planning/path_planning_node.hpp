@@ -190,7 +190,7 @@ class PathPlanning : public rclcpp::Node
          * @param route std::vector<CDT::V2d<double>> vector containing the route.
          * @return common_msgs::msg::Trajectory parsed trajectory message to ROS2 format.
          */
-        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<ConeXYZColorScore> route);
+        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<ConeXYZColorScore> route, bool smooth = true);
 
         /**
          * @brief Create a track limits msg object from a given route.

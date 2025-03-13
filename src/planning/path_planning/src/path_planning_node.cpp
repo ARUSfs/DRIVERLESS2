@@ -82,8 +82,10 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 {
     // Publish the closing route if selected in config file and shutdown the node
     if (kStopAfterClosing && (closing_route_.size() > 0)){
-        trajectory_pub_ -> publish(this->create_trajectory_msg(closing_route_));
-        track_limits_pub_ -> publish(this->create_track_limits_msg(best_index_route_));
+        common_msgs::msg::Trajectory trajectory_msg = this->create_trajectory_msg(closing_route_);
+        if (trajectory_msg.points.size()>0) trajectory_pub_->publish(trajectory_msg);
+        common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(best_index_route_);
+        if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
         rclcpp::shutdown();
     }
 
@@ -155,7 +157,8 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
     // Get the track limits in the second lap
     if (lap_count_ > 0 && x_>3 && !track_limits_sent_){
-        track_limits_pub_ -> publish(this->create_track_limits_msg(best_index_route_));
+        common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(best_index_route_);
+        if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
         track_limits_sent_ = true;
     }
 
@@ -345,7 +348,8 @@ std::vector<ConeXYZColorScore> PathPlanning::get_final_route(){
 
 
 
-common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<ConeXYZColorScore> route){
+common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
+            std::vector<ConeXYZColorScore> route, bool smooth){
     int route_size = route.size();
     int degree = 2;
     common_msgs::msg::Trajectory trajectory_msg;
@@ -353,13 +357,15 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(std::vector<Con
 
     std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile;
 
-    if (route_size == 0){
+    if (route_size <= 3){
         return trajectory_msg;
-    } else if (route_size < 3){
-        common_msgs::msg::PointXY point;
-        point.x = route[0].x;
-        point.y = route[0].y;
-        trajectory_msg.points.push_back(point);
+    } else if (!smooth){
+        for (int i = 0; i<route_size; i++){
+            common_msgs::msg::PointXY point;
+            point.x = route[i].x;
+            point.y = route[i].y;
+            trajectory_msg.points.push_back(point);
+        }
         return trajectory_msg;
     }
 
@@ -537,7 +543,7 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
         point.y = pcl_cloud_.points[right_limit[i]].y;
         track_limits_msg.right_limit.push_back(point);
     }
-    track_limits_msg.trajectory = this->create_trajectory_msg(best_midpoint_route_);
+    track_limits_msg.trajectory = this->create_trajectory_msg(best_midpoint_route_, false);
     
     return track_limits_msg;
 
