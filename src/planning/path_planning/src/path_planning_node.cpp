@@ -176,10 +176,18 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
                            ConeXYZColorScore((back_edge[0].x+back_edge[1].x)/2,
                                              (back_edge[0].y+back_edge[1].y)/2, 0, UNCOLORED, 1));
     }
+
+    
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+    // Esto es lo que tienes que cambiar Javi ;)
     final_route.erase(final_route.begin()+1); // To test with mpc (comment this line to test)
 
+    // Check conditions to be a closing route
+    bool route_closed = final_route.size() > 0.85*pcl_cloud_.size() &&
+                        distance(final_route.back(), origin_) < 3.0;
+
     // Use closing route if route is closed
-    if (tree.end_ || lap_count_ > 0) {
+    if (route_closed || lap_count_ > 0) {
         closing_route_ = final_route;
     }
 
