@@ -22,7 +22,7 @@ class CameraPerception : public rclcpp::Node
     private:
         std::string kImageTopic;
         int kCameraPeriod;
-        bool kShowImage;
+        int kCameraID;
         //rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
         rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_;
         rclcpp::TimerBase::SharedPtr camera_timer_;
