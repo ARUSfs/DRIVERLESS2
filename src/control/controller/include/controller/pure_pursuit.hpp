@@ -91,6 +91,49 @@ public:
     }
 
     /**
+     * @brief Get cross track error.
+     * @authors Lola Hernández (lolahercan@gmail.com)
+     * @param car_position
+     * @param path
+     * @param global index
+     * @details Calculates the cross track error, difference between car position and path
+     * @return ye, cross track error
+     */
+
+    double get_cross_track_error(const std::vector<Point> &trajectory, const Point &position)
+    {
+        if (trajectory.empty()) return 0.0;
+
+        double min_dist = std::numeric_limits<double>::max();
+        Point closest_point;
+
+        for (const auto& pt : trajectory){
+            double dist = std::hypot(pt.x - position.x, pt.y - position.y);
+            if(dist < min_dist){
+                min_dist = dist;
+                closest_point = pt;
+            }
+        }
+        return min_dist;
+    }
+
+    /**
+     * @brief Get look ahead distance.
+     * @authors Lola Hernández (lolahercan@gmail.com)
+     * @param cross track error
+     * @details Calculate the look ahead distance using formula and fixed parameters
+     * @return look ahead distance 
+     */
+
+     double calculate_look_ahead_distance(double cross_track_error) {
+        double delta_min_ = 1.0;  
+        double delta_max_ = 8.0; 
+        double gamma_ = 0.8;      
+
+        return (delta_max_ - delta_min_) * std::exp(-gamma_ * std::abs(cross_track_error)) + delta_min_;
+    }
+
+    /**
      * @brief Get steering angle.
      * @authors Team driverless ARUS
      * @param index_global
@@ -99,12 +142,15 @@ public:
      *          angle to send in the command.
      * @return Point to pursue.
      */
-    void get_steering_angle(int index_global, double look_ahead_distance)
+    void get_steering_angle(int index_global, double cross_track_error)
     {
         if (path_.size() <= 1)
         {
             return;
         }
+
+        double look_ahead_distance = calculate_look_ahead_distance(cross_track_error);
+        std::cout << "Look Ahead Distance: " << look_ahead_distance << std::endl;
 
         search_pursuit_point(index_global, look_ahead_distance);
 

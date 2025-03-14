@@ -151,7 +151,9 @@ void Controller::on_steer_timer()
         position.y = y_;
         pure_pursuit_.set_position(position, yaw_);
 
-        pure_pursuit_.get_steering_angle(index_global_, kLAD);
+        double cross_track_error_ = pure_pursuit_.get_cross_track_error(pointsXY_, position);
+
+        pure_pursuit_.get_steering_angle(index_global_, cross_track_error_);
         delta_cmd_ = pure_pursuit_.delta_cmd_;
         Point pursuit_point = pure_pursuit_.pursuit_point_;
 
