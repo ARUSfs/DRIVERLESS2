@@ -34,7 +34,7 @@ def generate_launch_description():
                              'ay_max': 3.0}]),
         create_node(pkg='controller',
                     params=[{'look_ahead_distance': 4.0,
-                             'min_cmd': 0.0,
+                             'min_cmd': -0.05,
                              'max_cmd': 0.15,
                              'use_optimized_trajectory': True}]),
         create_node(pkg='graph_slam'),
