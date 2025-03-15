@@ -21,7 +21,7 @@ public:
 
     PID pid_;
     double prev_acc_ = 0.0;
-    double alpha = 0.5; // smoothing factor
+    double alpha = 1.0; // smoothing factor
 
     const double rho = 1.225;
     const double Cd = 0.3;
@@ -49,7 +49,7 @@ public:
 
         double control = pid_.compute_control(vx, target_speed, dt, target_acc);
 
-        double feed_forward = target_acc + a_loss;
+        double feed_forward = target_acc;
         double acc = control + feed_forward;
 
         // Smooth the acceleration command using exponential moving average
