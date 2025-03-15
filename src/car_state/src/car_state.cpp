@@ -472,6 +472,7 @@ void CarState::on_timer()
     // Publish car info message
     auto car_info_msg = common_msgs::msg::CarInfo();
     
+    car_info_msg.header.stamp = this->now();
     car_info_msg.as_status = as_status_;
     car_info_msg.ami = ami_;
     car_info_msg.ebs_status = ebs_status_;
