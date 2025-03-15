@@ -24,8 +24,7 @@ public:
     double alpha = 1.0; // smoothing factor
 
     const double rho = 1.225;
-    const double Cd = 0.3;
-    const double A = 2.0;
+    const double CdA = 1.2;
     const double Crr = 0.01;
     const double mass = 230;
     const double g = 9.81;
@@ -43,14 +42,18 @@ public:
 
     double get_acc_command(double target_speed, double target_acc, double vx, double dt) {
 
-        double F_drag = 0.5 * rho * Cd * A * vx * vx;
+        double F_drag = 0.5 * rho * CdA * vx * vx;
         double F_roll = Crr * mass * g;
         double a_loss = (F_drag + F_roll) / mass;
 
         double control = pid_.compute_control(vx, target_speed, dt, target_acc);
 
-        double feed_forward = target_acc;
+        double feed_forward = target_acc + a_loss;
         double acc = control + feed_forward;
+
+        if (std::abs(acc) < 0.05) {
+            acc += 0.05;
+        } 
 
         // Smooth the acceleration command using exponential moving average
         double smoothed_acc = alpha * acc + (1.0 - alpha) * prev_acc_;
