@@ -21,7 +21,7 @@ public:
 
     PID pid_;
     double prev_acc_ = 0.0;
-    double alpha = 1.0; // smoothing factor
+    double alpha = 0.7; // smoothing factor
 
     const double rho = 1.225;
     const double CdA = 1.2;
@@ -50,10 +50,6 @@ public:
 
         double feed_forward = target_acc + a_loss;
         double acc = control + feed_forward;
-
-        if (std::abs(acc) < 0.05) {
-            acc += 0.05;
-        } 
 
         // Smooth the acceleration command using exponential moving average
         double smoothed_acc = alpha * acc + (1.0 - alpha) * prev_acc_;
