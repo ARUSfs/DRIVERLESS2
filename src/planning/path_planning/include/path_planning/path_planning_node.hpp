@@ -117,6 +117,7 @@ class PathPlanning : public rclcpp::Node
         std::vector<ConeXYZColorScore> closing_route_= {};
         std::vector<std::vector<ConeXYZColorScore>> previous_midpoint_routes_;
         int invalid_counter_=0;
+        std::vector<ConeXYZColorScore> back_route_ = {ConeXYZColorScore(0,0,0,UNCOLORED,-1)};
 
         /**
          * @brief Callback function for the perception topic.

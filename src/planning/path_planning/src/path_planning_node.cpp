@@ -9,6 +9,7 @@
  *
  */
 #include "path_planning/path_planning_node.hpp"
+#include <chrono>
 
 PathPlanning::PathPlanning() : Node("path_planning")
 {
@@ -130,7 +131,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         double angle_diff = abs(atan2(centroid.y-y_, centroid.x-x_)-yaw_);
         double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
 
-        // Create the tree if the angle difference is less than pi/3 degrees
+        // Create the tree if the angle difference is less than pi/2 degrees
         if (corrected_angle_diff <  M_PI/2){
             tree = SimplexTree(triangles_, o_triangles[i], orig_index, pcl_cloud_, yaw_,
                                kAngleCoeff, kLenCoeff);
@@ -151,7 +152,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
             if (back_edge.size() != 2) back_edge.clear();
             if (back_edge.size() == 2 && back_edge[0].color == back_edge[1].color){
                 back_edge.clear();
-                }
+            }
         }
     }
 
@@ -174,16 +175,17 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
     if (final_route.size() <3) return;
 
+    ConeXYZColorScore back_point;
     if (back_edge.size() == 2) {
-        final_route.insert(final_route.begin(),
-                           ConeXYZColorScore((back_edge[0].x+back_edge[1].x)/2,
-                                             (back_edge[0].y+back_edge[1].y)/2, 0, UNCOLORED, 1));
+        back_point = ConeXYZColorScore((back_edge[0].x+back_edge[1].x)/2,
+                                       (back_edge[0].y+back_edge[1].y)/2, 0, UNCOLORED, 1);
+        if (distance(back_point, back_route_.back()) > 1.0){
+            back_route_.push_back(back_point);
+        }
     }
 
-    
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-    // Esto es lo que tienes que cambiar Javi ;)
-    final_route.erase(final_route.begin()+1); // To test with mpc (comment this line to test)
+    std::vector<ConeXYZColorScore> full_route = back_route_;
+    full_route.insert(full_route.end(), final_route.begin(), final_route.end());
 
     // Check conditions to be a closing route
     bool route_closed = final_route.size() > 0.85*pcl_cloud_.size() &&
@@ -195,7 +197,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     // Publish the best trajectory
-    trajectory_pub_ -> publish(this->create_trajectory_msg(final_route));
+    trajectory_pub_ -> publish(this->create_trajectory_msg(full_route));
 
 }
 
