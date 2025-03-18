@@ -70,7 +70,7 @@ class PathPlanning : public rclcpp::Node
         double kPrevRouteBias;
         int kRouteBack;
         bool kUseBuffer;
-        bool kUseClosingRoute;
+        double kTimeToClose;
         bool kStopAfterClosing;
 
         // Profile creation parameters
@@ -102,6 +102,7 @@ class PathPlanning : public rclcpp::Node
         // Lap count and state of the algorithm
         int lap_count_ = 0;
         bool track_limits_sent_ = false;
+        rclcpp::Time last_unfinished_;
 
         // Point cloud
         pcl::PointCloud<ConeXYZColorScore> pcl_cloud_;

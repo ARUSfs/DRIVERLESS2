@@ -149,7 +149,7 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
                                           double prev_angle){
 
     SimplexNode* node = new SimplexNode(index);
-    if (midpoint_routes_.size() > 3 and route_cost > (min_cost_+600*len_coeff_)){ 
+    if (midpoint_routes_.size() > 3 and route_cost > 600*len_coeff_){ 
         // Best route cost will never be higher than 500 m times the length coeff plus the min cost
         return node;
     }

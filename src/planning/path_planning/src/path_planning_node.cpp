@@ -43,6 +43,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->declare_parameter<double>("prev_route_bias", 0.75);
     this->declare_parameter<int>("route_back", 10);
     this->declare_parameter<bool>("use_buffer", false);
+    this->declare_parameter<double>("time_to_close", 1.0);
     this->declare_parameter<bool>("stop_after_closing", false);
 
     this->get_parameter("angle_coeff", kAngleCoeff);
@@ -51,6 +52,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
     this->get_parameter("prev_route_bias", kPrevRouteBias);
     this->get_parameter("route_back", kRouteBack);
     this->get_parameter("use_buffer", kUseBuffer);
+    this->get_parameter("time_to_close", kTimeToClose);
     this->get_parameter("stop_after_closing", kStopAfterClosing);
     
     // Profile creation
@@ -193,9 +195,14 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
     // Use closing route if route is closed
     if (route_closed || lap_count_ > 0) {
+        if ((this->now() - last_unfinished_).seconds() > kTimeToClose){
         closing_route_ = final_route;
+        }
+        trajectory_pub_ -> publish(this->create_trajectory_msg(final_route));
+        return;
+    } else {
+        last_unfinished_ = this -> now();
     }
-
     // Publish the best trajectory
     trajectory_pub_ -> publish(this->create_trajectory_msg(full_route));
 
