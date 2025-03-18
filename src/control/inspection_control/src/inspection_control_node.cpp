@@ -32,7 +32,7 @@ InspectionControl::InspectionControl() : Node("inspection_control_node"){
             "/can_interface/AS_status", 10, std::bind(&InspectionControl::as_status_callback, this, std::placeholders::_1));
     
     timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(100), std::bind(&InspectionControl::on_timer, this));
+            std::chrono::milliseconds(10), std::bind(&InspectionControl::on_timer, this));
 }
 
 void InspectionControl::car_state_callback(const common_msgs::msg::State::SharedPtr msg)

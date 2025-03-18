@@ -451,6 +451,7 @@ void CarState::on_timer()
     // Publish state message
     auto state_msg = common_msgs::msg::State();
     
+    state_msg.header.stamp = this->now();
     state_msg.x = x_;      
     state_msg.y = y_;    
     state_msg.yaw = yaw_;  
@@ -471,6 +472,7 @@ void CarState::on_timer()
     // Publish car info message
     auto car_info_msg = common_msgs::msg::CarInfo();
     
+    car_info_msg.header.stamp = this->now();
     car_info_msg.as_status = as_status_;
     car_info_msg.ami = ami_;
     car_info_msg.ebs_status = ebs_status_;
