@@ -126,8 +126,8 @@ public:
      */
 
      double calculate_look_ahead_distance(double cross_track_error) {
-        double delta_min_ = 1.0;  
-        double delta_max_ = 8.0; 
+        double delta_min_ = 3.0;  
+        double delta_max_ = 10.0; 
         double gamma_ = 1.0;        
 
         return (delta_max_ - delta_min_) * std::exp(-gamma_ * std::abs(cross_track_error)) + delta_min_;
