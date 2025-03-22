@@ -1,11 +1,11 @@
 /**
- * @file perception_node.hpp
- * @author Alejandro Vallejo Mayo (alejandro.vm.1805@gmail.com)
- * @brief Header file for the Perception node.
+ * @file perceptionacc_node.hpp
+ * @author Álvaro Galisteo Bermúdez (galisbermo03@gmail.com)
+ * @brief Header file for the PerceptionAcc node.
  * Contains the class definition and the declaration of the methods 
  * used in the algorithm. 
  * @version 0.1
- * @date 3-11-2024
+ * @date 11-3-2025
  */
 
 #include <rclcpp/rclcpp.hpp>
@@ -20,6 +20,8 @@
 #include "scoring.h"
 #include "perception/accumulation.h"
 #include "PointXYZColorScore.h"
+#include "PointXYZIRingTime.h"
+#include "string_clustering.h"
 #include "color_estimation.h"
 #include <pcl/common/common.h>
 #include <Eigen/Dense>

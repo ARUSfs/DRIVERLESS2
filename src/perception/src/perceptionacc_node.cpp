@@ -1,11 +1,11 @@
 /**
- * @file perception_node.hpp
- * @author Alejandro Vallejo Mayo (alejandro.vm.1805@gmail.com) and Álvaro Galisteo (galisbermo03@gmail.com)
- * @brief Main file for the Perception node. 
+ * @file perceptionacc_node.hpp
+ * @author Álvaro Galisteo Bermúdez (galisbermo03@gmail.com)
+ * @brief Main file for the PerceptioAcc node. 
  * Contains the main function and the implementation of the methods to achieve a robust and reliable perception algorithm for the ARUS 
  * Team, which extracts the location of the cones on the track.
- * @version 0.2
- * @date 05-02-2025
+ * @version 0.1
+ * @date 11-3-2025
  */
 
 #include "perception/perceptionacc_node.hpp"
@@ -217,7 +217,6 @@ void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_m
     yaw_rate = state_msg->r;
 }
 
-
 /**
  * @brief Create callback function for the lidar topic.
  * @param lidar_msg The point cloud message received from the lidar topic.
@@ -231,137 +230,23 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
     
-
-    //Transform the message into a pcl point cloud
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
+    StringClustering clustering;
+    clustering.clusterPoints(cloud);
 
-    if (kCrop) {
-        //Crop the point cloud
-        Cropping::crop_filter_cropbox(cloud, kMaxXFov, kMaxYFov, kMaxZFov);
-        if (DEBUG) std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
-    }
+    std::cout << "Número de clusters detectados: " << clustering.clusters.size() << std::endl;
 
+    // Obtener la nube coloreada
+    auto clustered_cloud = clustering.getClusteredPointCloud();
 
-    //Apply the ground filter fuction
-    GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
-    if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
-    
+    // Convertir a mensaje ROS2 y publicar
+    sensor_msgs::msg::PointCloud2 output_msg;
+    pcl::toROSMsg(*clustered_cloud, output_msg);
+    output_msg.header.frame_id="/rslidar";
 
-    //Extract the clusters from the point cloud
-    std::vector<pcl::PointIndices> cluster_indices;
-    Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
-    if (DEBUG) std::cout << "Clustering time: " << this->now().seconds() - start_time << std::endl;
-
-
-    //Store the clusters centers in a new point cloud
-    std::vector<PointXYZColorScore> clusters_centers;
-    Perception::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers);
-    if (DEBUG) std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
-
-
-    //Recover ground points
-    Perception::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius);
-    if (DEBUG) std::cout << "Reconstruction time: " << this->now().seconds() - start_time << std::endl;
-
-
-    //Filter the clusters by size
-    Perception::filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
-    if (DEBUG) std::cout << "Filtering time: " << this->now().seconds() - start_time << std::endl;
-
-
-    // Convert the indices of the clusters to the points of the clusters
-    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points;
-    for (const auto& cluster : cluster_indices)
-    {
-        pcl::PointCloud<pcl::PointXYZI>::Ptr new_cluster(new pcl::PointCloud<pcl::PointXYZI>);
- 
-        for (const auto& idx : cluster.indices)
-        {
-            pcl::PointXYZI point = cloud_filtered->points[idx];
-            new_cluster->points.push_back(point);
-        } 
-        cluster_points.push_back(new_cluster);
-    }
-
-
-    pcl::PointCloud<pcl::PointXYZI>::Ptr clusters_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-    if (DEBUG) {
-        // Publish clusters cloud with different colors
-        int i = 0;
-        for (auto c : cluster_points)
-        {
-            for (auto &p : c->points)
-            {
-                pcl::PointXYZI q = p;
-                q.intensity = i;
-                clusters_cloud->push_back(q);
-            }
-            i++;
-        }
-    }
-    
-
-    //Score the clusters and keep the ones that will be consider cones
-    pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
-    Scoring::scoring_surface(final_map, cluster_points, clusters_centers, kThresholdScoring);
-
-
-    //Print the number of cones and the time of the scoring
-    if (DEBUG) std::cout << "Number of cones: " << final_map->size() << std::endl;
-    if (DEBUG) std::cout << "Scoring time: " << this->now().seconds() - start_time << std::endl;
-
-
-    //Estime the color of the closest cones
-    ColorEstimation::color_estimation(cluster_points, clusters_centers, kDistanceThreshold, kColoringThreshold);
-    if (DEBUG) std::cout << "Color estimation time: " << this->now().seconds() - start_time << std::endl;
-
-
-    //Update the colors of final map points
-    for (auto& point : final_map->points) 
-    {
-        for (const auto& center : clusters_centers) 
-        {
-            if (point.x == center.x && point.y == center.y && point.z == center.z) 
-            {
-                point.color = center.color;
-            }
-        }
-    }
-
-    // Motion correction
-    double dt = this->now().seconds() - start_time; // Estimate sdk delay
-    double theta = -yaw_rate*(dt);
-    for (auto& p : final_map->points)
-    {
-        // double point_delay = std::atan(p.y/p.x)/(2*M_PI)*0.1;
-        double dx = vx*dt, dy = vy*dt;
-        p.x = p.x*std::cos(theta) - p.y*std::sin(theta) - dx;
-        p.y = p.x*std::sin(theta) + p.y*std::cos(theta) - dy;
-    }
-
-    if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;
-
-    if (DEBUG){
-        //Publish the filtered cloud
-        sensor_msgs::msg::PointCloud2 filtered_msg;
-        pcl::toROSMsg(*cloud_filtered, filtered_msg);
-        filtered_msg.header.frame_id="/rslidar";
-        filtered_pub_->publish(filtered_msg);
-
-        // Publish the clusters cloud
-        sensor_msgs::msg::PointCloud2 clusters_msg;
-        pcl::toROSMsg(*clusters_cloud, clusters_msg);
-        clusters_msg.header.frame_id="/rslidar";
-        clusters_pub_->publish(clusters_msg);
-    }
-
-    //Publish the map cloud
-    sensor_msgs::msg::PointCloud2 map_msg;
-    pcl::toROSMsg(*final_map, map_msg);
-    map_msg.header.frame_id="/rslidar";
-    map_pub_->publish(map_msg);
+    clusters_pub_->publish(output_msg);
 }
 
 int main(int argc, char * argv[])

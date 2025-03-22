@@ -19,6 +19,7 @@ find_package(OpenMP REQUIRED)
 
 include_directories(
   include
+  include/perception
   ${PCL_INCLUDE_DIRS}  
 )
 
