@@ -125,12 +125,15 @@ public:
      * @return look ahead distance 
      */
 
-     double calculate_look_ahead_distance(double cross_track_error) {
-        double delta_min_ = 3.0;  
-        double delta_max_ = 10.0; 
-        double gamma_ = 1.0;        
+     double calculate_look_ahead_distance(double cross_track_error, double vx) {
+        double delta_min_ = 2.5;  
+        double delta_max_ = 9.0; 
+        double gamma_ = 0.8 ;        
+        
+        double vel_f = std::min(std::max(vx / 10.0, 0.5), 2.0);
 
-        return (delta_max_ - delta_min_) * std::exp(-gamma_ * std::abs(cross_track_error)) + delta_min_;
+        return vel_f * ((delta_max_ - delta_min_) * std::exp(-gamma_ * std::abs(cross_track_error)) + delta_min_);
+   
     }
 
     /**
@@ -142,20 +145,21 @@ public:
      *          angle to send in the command.
      * @return Point to pursue.
      */
-    void get_steering_angle(int index_global, double cross_track_error)
+    void get_steering_angle(int index_global, double cross_track_error, double vx)
     {
         if (path_.size() <= 1)
         {
             return;
         }
 
-        double look_ahead_distance = calculate_look_ahead_distance(cross_track_error);
+        double look_ahead_distance = calculate_look_ahead_distance(cross_track_error, vx);
         std::cout << "Look Ahead Distance: " << look_ahead_distance << std::endl;
 
         search_pursuit_point(index_global, look_ahead_distance);
 
         double alpha = std::atan2(pursuit_point_.y - car_position_.y, pursuit_point_.x - car_position_.x) - yaw_;
         delta_cmd_ = std::atan2(2.0 * wheel_base_ * std::sin(alpha) / look_ahead_distance, 1.0);
+        
     }
 
 private:

@@ -153,12 +153,7 @@ void Controller::on_steer_timer()
 
         double cross_track_error_ = pure_pursuit_.get_cross_track_error(pointsXY_, position);
 
-        if (!optimized_ && kOptimizedSteerControl == "PP"){
-            pure_pursuit_.get_steering_angle(index_global_, 5);
-        }
-        else {
-            pure_pursuit_.get_steering_angle(index_global_, cross_track_error_);
-        }
+        pure_pursuit_.get_steering_angle(index_global_, cross_track_error_, vx_);
 
         delta_cmd_ = pure_pursuit_.delta_cmd_;
         Point pursuit_point = pure_pursuit_.pursuit_point_;

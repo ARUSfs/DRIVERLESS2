@@ -9,7 +9,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_node(pkg='skidpad_planning',
-                    params=[{'target_first_lap': 5.0, 
+                    params=[{'target_first_lap': 8.0, 
                     'target_second_lap': 10.0,
                     'top_accx_forwards': 5.0,
                     'top_accx_backwards': 3.0,
