@@ -98,6 +98,7 @@ install_complex_dependencies(){
   cmake ..
   make 
   sudo make install
+  sudo ldconfig
   
   echo -e "${GREEN}g2o installed successfully.${NC}"
 }
