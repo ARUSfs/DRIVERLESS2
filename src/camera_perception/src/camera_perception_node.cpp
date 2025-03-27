@@ -22,8 +22,6 @@ CameraPerception::CameraPerception() : Node("camera_perception")
     kConfigFile = pkg_path + "/resources/darknet/cfg.cfg";
     kWeightsFile = pkg_path + "/resources/darknet/weights";
     kNamesFile = pkg_path + "/resources/darknet/names";
-
-    std::cout << kImageTopic << std::endl;
     
     rclcpp::QoS qos(20);
     qos.best_effort();
