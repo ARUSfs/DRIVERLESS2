@@ -1,6 +1,6 @@
 camera_perception:
   ros__parameters:
-    camera_topic: "/camera/image_raw"
+    image_topic: "/camera/color/image_raw"
     camera_period: 50  # ms
     camera_id: 3
     
