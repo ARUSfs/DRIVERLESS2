@@ -16,11 +16,14 @@ find_package(pcl_conversions REQUIRED)
 find_package(common_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_library(DARKHELP darkhelp)
+find_library(DARKNET darknet)
 
 include_directories(
   include
   ${Open_CV_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+
 )
 
 add_executable(camera_perception_exec src/camera_perception_node.cpp)
@@ -33,7 +36,10 @@ ament_target_dependencies(camera_perception_exec rclcpp
                             pcl_conversions
                             common_msgs
                             OpenCV
-                            cv_bridge)
+                            cv_bridge
+                            )
+
+target_link_libraries(camera_perception_exec ${DARKHELP} ${DARKNET})
 
   
 install(TARGETS
@@ -46,5 +52,7 @@ install(DIRECTORY launch
 install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME})
 
+install(DIRECTORY resources
+  DESTINATION share/${PROJECT_NAME})
 ament_package()
 
