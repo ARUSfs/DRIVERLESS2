@@ -98,6 +98,7 @@ install_complex_dependencies(){
   cmake ..
   make 
   sudo make install
+  sudo ldconfig
   
   echo -e "${GREEN}g2o installed successfully.${NC}"
 }
@@ -174,10 +175,10 @@ configure_commit_msg_hook
 # Process selected option
 case $option in
   1)
-    install_dependencies
+    install_ros2_humble
     ;;
   2)
-    install_ros2_humble
+    install_dependencies
     ;;
   *)
     echo -e "${RED}Invalid option.${NC}"
