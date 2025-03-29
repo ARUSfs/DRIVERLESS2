@@ -10,7 +10,7 @@
 
 #include "epos_interface/epos_interface_node.hpp"
 
-bool DEBUG = false;
+bool DEBUG = true;
 
 
 EPOS_interface::EPOS_interface() : Node("EPOS_interface"), 
@@ -32,6 +32,8 @@ EPOS_interface::EPOS_interface() : Node("EPOS_interface"),
     ext_time_ = this->now().seconds();
     epos_pos_ = 0.0;
     ext_pos_ = 0.0;
+    delta_cmd_ = 0.0;
+    steer_check_ = false;
 
 
     epos_info_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/epos_interface/epos_info", 10);
@@ -47,6 +49,10 @@ EPOS_interface::EPOS_interface() : Node("EPOS_interface"),
     extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         "/can_interface/extensometer", 1, 
         std::bind(&EPOS_interface::extensometer_callback, this, std::placeholders::_1));
+
+    timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(10), 
+        std::bind(&EPOS_interface::on_timer, this));
     
     RCLCPP_INFO(this->get_logger(), "EPOS_interface node initialized.");
 }
@@ -58,15 +64,19 @@ EPOS_interface::~EPOS_interface()
 
 void EPOS_interface::cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg)
 {
-    double angle = msg -> delta;
-    assert(angle <= M_PI/9.0 && angle >= -M_PI/9.0 && "Angle out of range");
+    delta_cmd_ = msg->delta;
+}
+
+void EPOS_interface::on_timer()
+{
+    assert(delta_cmd_ <= M_PI/9.0 && delta_cmd_ >= -M_PI/9.0 && "Angle out of range");
 
     // Check if the extensometer is working
     if (this->now().seconds() - ext_time_ < 0.2){
-        double diff = angle - ext_pos_;
+        double diff = delta_cmd_ - ext_pos_;
         if (DEBUG) std::cout << "Angle diff: " << diff << std::endl;
 
-        if (!is_shutdown_ && steer_check_ && std::abs(diff) > 0.1*M_PI/180.0){
+        if (!is_shutdown_ && steer_check_ && std::abs(diff) > 0.003){
             epos_.move_to(epos_pos_ + diff);
         }
     } 

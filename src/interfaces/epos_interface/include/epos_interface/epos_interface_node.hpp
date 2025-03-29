@@ -28,6 +28,7 @@ private:
     void cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg);
     void extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void steer_check_callback(const std_msgs::msg::Bool::SharedPtr msg);
+    void on_timer();
     void clean_and_close();
 
     int MAX_ACC_;
@@ -36,6 +37,7 @@ private:
     bool is_shutdown_;
     double epos_pos_;
     double ext_pos_;
+    double delta_cmd_;
     bool steer_check_;
     double ext_time_;
 
@@ -43,4 +45,5 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr extensometer_sub_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr steer_check_sub_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr epos_info_pub_;
+    rclcpp::TimerBase::SharedPtr timer_;
 };
