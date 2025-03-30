@@ -29,8 +29,6 @@ CameraPerception::CameraPerception() : Node("camera_perception")
                     std::bind(&CameraPerception::image_callback, this, std::placeholders::_1));
 
     image_pub_ = this->create_publisher<sensor_msgs::msg::Image>("image", 20);
-    // camera_timer_ = this->create_wall_timer(std::chrono::milliseconds(kCameraPeriod),
-    //                 std::bind(&CameraPerception::camera_callback, this)); 
     
     // Darknet
     nn_.init(kConfigFile, kWeightsFile, kNamesFile);
@@ -65,7 +63,11 @@ void CameraPerception::image_callback(const sensor_msgs::msg::Image::SharedPtr m
     cv::Mat image_resized;
     cv::resize(image, image_resized, cv::Size(1920, 1088));
     const auto result = nn_.predict(image_resized);
-    
+    if (result.size() == 0){
+        RCLCPP_INFO(this->get_logger(), "No predictions found in frame");
+        return;
+    }
+
     // Results visualization
     std::cout << result << std::endl;
     cv::Mat output = nn_.annotate();
