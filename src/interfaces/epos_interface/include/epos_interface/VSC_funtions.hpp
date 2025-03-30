@@ -152,7 +152,10 @@ public:
     void move_to(double wheel_angle) {
         uint32_t pErrorCode = 0;
 
-        int motor_position = static_cast<int>(2 * wheel_angle * (2048 * 5 * 66 / 360));
+        // 4096 incs = 2pi rad
+        // 5:1 steering ratio
+        // 66:1 motor reduction
+        int motor_position = static_cast<int>(wheel_angle*(4096 * 5 * 66)/(2*M_PI));
 
         if (_is_enable_) {
 
@@ -198,7 +201,7 @@ public:
             if (std::bitset<32>(pPosition).count() == 34) {
                 pPosition -= (1LL << 32);  // Adjust for overflow
             }
-            epos_info.push_back(pPosition * 360.0 / (2 * 2048 * 5 * 66));
+            epos_info.push_back((pPosition*2*M_PI)/(4096 * 5 * 66));
 
             // Get Target Position
             if (VCS_GetTargetPosition(keyhandle_, NodeID, &pTargetPosition, &pErrorCode) == 0) {
@@ -208,7 +211,7 @@ public:
             if (std::bitset<32>(pTargetPosition).count() == 34) {
                 pTargetPosition -= (1LL << 32);
             }
-            epos_info.push_back(pTargetPosition * 360.0 / (2 * 2048 * 5 * 66));
+            epos_info.push_back((pTargetPosition*2*M_PI)/(4096 * 5 * 66));
 
             // Get Velocity
             if (VCS_GetVelocityIs(keyhandle_, NodeID, &pVelocity, &pErrorCode) == 0) {
@@ -238,29 +241,7 @@ public:
         }
     }
 
-    void set_position_offset(double current_angle) {
-        uint32_t pErrorCode = 0;
-        float pPositionOffset = static_cast<float>(2 * current_angle * (2048 * 5 * 66 / 360));
-        uint32_t pBytesWritten = 0;
-
-        if (_is_enable_) {
-            if (VCS_SetObject(keyhandle_, NodeID, 0x60B0, 0x00, &pPositionOffset, sizeof(pPositionOffset), &pBytesWritten, &pErrorCode) == 0) {
-                std::cerr << "WARNING: SetPositionOffset error with code " << pErrorCode << ". Disabling controller." << std::endl;
-                disable();
-            }
-        } else {
-            std::cerr << "ERROR: Cannot set position offset with disabled controller :(" << std::endl;
-        }
-    }
-
-/*
-    void zero_position_protocol(){
-
-    }
-    void set_zero_position(){
-
-    }
-*/
+    
     
 private:
     //connect_to_device()
