@@ -27,6 +27,7 @@ include_directories(
 )
 
 add_executable(camera_perception_exec src/camera_perception_node.cpp)
+add_executable(camera_calibration_exec src/camera_calibration_node.cpp)
 
 ament_target_dependencies(camera_perception_exec rclcpp 
                             std_msgs 
@@ -38,12 +39,20 @@ ament_target_dependencies(camera_perception_exec rclcpp
                             OpenCV
                             cv_bridge
                             )
+ament_target_dependencies(camera_calibration_exec rclcpp 
+                            std_msgs 
+                            sensor_msgs 
+                            common_msgs
+                            OpenCV
+                            cv_bridge
+                            )
 
 target_link_libraries(camera_perception_exec ${DARKHELP} ${DARKNET})
 
   
 install(TARGETS
   camera_perception_exec
+  camera_calibration_exec
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch

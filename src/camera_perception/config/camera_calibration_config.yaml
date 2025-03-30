@@ -1,0 +1,4 @@
+camera_calibration:
+  ros__parameters:
+    image_topic: "/camera/color/image_raw"
+    debug: true
