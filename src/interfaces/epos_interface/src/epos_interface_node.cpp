@@ -19,9 +19,11 @@ EPOS_interface::EPOS_interface() : Node("EPOS_interface"),
     this->declare_parameter<int>("MAX_ACCELERATION", 6000);
     this->declare_parameter<int>("MAX_DECELERATION", 6000);
     this->declare_parameter<int>("PROFILE_VELOCITY", 6000);
+    this->declare_parameter<double>("KP", 1.0);
     this->get_parameter("MAX_ACCELERATION", MAX_ACC_);
     this->get_parameter("MAX_DECELERATION", MAX_DEC_);
     this->get_parameter("PROFILE_VELOCITY", PROFILE_VEL_);
+    this->get_parameter("KP", KP);
 
     epos_.set_params(MAX_ACC_, MAX_DEC_, PROFILE_VEL_);
     epos_.connect_to_device();
@@ -77,7 +79,7 @@ void EPOS_interface::on_timer()
         if (DEBUG) std::cout << "Angle diff: " << diff << std::endl;
 
         if (!is_shutdown_ && steer_check_ && std::abs(diff) > 0.003){
-            epos_.move_to(epos_pos_ + diff);
+            epos_.move_to(epos_pos_ + KP*diff);
         }
     } 
     
@@ -96,6 +98,12 @@ void EPOS_interface::extensometer_callback(const std_msgs::msg::Float32::SharedP
     // Smooth extensometer value
     ext_pos_ = 0.8*msg->data + 0.2*ext_pos_;
     ext_time_ = this->now().seconds();
+
+    if (std::abs(ext_pos_) > 22.0*M_PI/180.0){
+        RCLCPP_ERROR(this->get_logger(), "Extensometer value out of range: %f", msg->data);
+        rclcpp::shutdown();
+        return;
+    }
 }
 
 void EPOS_interface::steer_check_callback(const std_msgs::msg::Bool::SharedPtr msg){

@@ -34,6 +34,9 @@ private:
     int MAX_ACC_;
     int MAX_DEC_;
     int PROFILE_VEL_;
+
+    double KP;
+
     bool is_shutdown_;
     double epos_pos_;
     double ext_pos_;

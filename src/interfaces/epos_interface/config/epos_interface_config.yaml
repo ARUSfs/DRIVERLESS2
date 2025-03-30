@@ -3,3 +3,5 @@ epos_interface:
     MAX_ACCELERATION: 6000
     MAX_DECELERATION: 6000
     PROFILE_VELOCITY: 6000
+
+    KP: 1.0
