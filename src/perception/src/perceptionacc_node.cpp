@@ -226,27 +226,19 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     double start_time = this->now().seconds();
 
     //Define the variables for the ground filter
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-    
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud(new pcl::PointCloud<PointXYZIRingTime>);
+    //pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_ground(new pcl::PointCloud<PointXYZIRingTime>);
+    //pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filter(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
-    StringClustering clustering;
-    clustering.clusterPoints(cloud);
+    //GroundFiltering2::RemoveGroundByRings(cloud,cloud_ground,cloud_filter);
 
-    std::cout << "Número de clusters detectados: " << clustering.clusters.size() << std::endl;
+    auto updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, vx, vy, yaw_rate, dt);
 
-    // Obtener la nube coloreada
-    auto clustered_cloud = clustering.getClusteredPointCloud();
-
-    // Convertir a mensaje ROS2 y publicar
-    sensor_msgs::msg::PointCloud2 output_msg;
-    pcl::toROSMsg(*clustered_cloud, output_msg);
-    output_msg.header.frame_id="/rslidar";
-
-    clusters_pub_->publish(output_msg);
+    sensor_msgs::msg::PointCloud2 filtered_msg;
+    pcl::toROSMsg(*updated_cloud, filtered_msg);
+    filtered_msg.header.frame_id="/rslidar";
+    filtered_pub_->publish(filtered_msg);
 }
 
 int main(int argc, char * argv[])

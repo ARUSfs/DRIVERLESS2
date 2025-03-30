@@ -21,8 +21,7 @@
 #include "perception/accumulation.h"
 #include "PointXYZColorScore.h"
 #include "PointXYZIRingTime.h"
-#include "string_clustering.h"
-#include "color_estimation.h"
+#include "perception/color_estimation.h"
 #include <pcl/common/common.h>
 #include <Eigen/Dense>
 #include "common_msgs/msg/state.hpp"

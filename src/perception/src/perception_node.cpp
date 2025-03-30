@@ -254,8 +254,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 
     //Apply the ground filter fuction
-    //GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
-    GroundRemove::RemoveGround(*cloud,*cloud_filtered_ground,*cloud_filtered);
+    GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
     
 
@@ -294,10 +293,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         } 
         cluster_points.push_back(new_cluster);
     }
-
-    // Accumulate the clusters
-    std::tie(cluster_points, clusters_centers) =  Accumulation::accumulate_clusters_small_gicp(cluster_points, clusters_centers, 
-                                        kBufferSize, kAccumulationThreshold, vx, vy, yaw_rate, dt);
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr clusters_cloud(new pcl::PointCloud<pcl::PointXYZI>);
     if (DEBUG) {
