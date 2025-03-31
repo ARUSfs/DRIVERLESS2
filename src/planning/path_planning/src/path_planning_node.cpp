@@ -187,19 +187,29 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     std::vector<ConeXYZColorScore> full_route = back_route_;
-    full_route.insert(full_route.end(), final_route.begin(), final_route.end());
 
-    // Check conditions to be a closing route
-    bool route_closed = final_route.size() > 0.85*pcl_cloud_.size() &&
-                        distance(final_route.back(), origin_) < 3.0;
+    bool route_closed = false;
+    for (int i=0 ; i<final_route.size(); i++){
+        auto c = final_route[i];
+        if ( distance(c, ConeXYZColorScore(0.0, 0.0, 0, UNCOLORED, -1)) > 3.0
+            || back_route_.size()<10){
+            full_route.push_back(c);
+        } else {
+            if (full_route.size() > 0.5*pcl_cloud_.size()){
+                route_closed = true;
+            }
+            full_route.erase(full_route.begin());
+            full_route.push_back(full_route[0]);
+            break;
+        }
+    }
+
 
     // Use closing route if route is closed
     if (route_closed || lap_count_ > 0) {
         if ((this->now() - last_unfinished_).seconds() > kTimeToClose){
-        closing_route_ = final_route;
+            closing_route_ = full_route;
         }
-        trajectory_pub_ -> publish(this->create_trajectory_msg(final_route));
-        return;
     } else {
         last_unfinished_ = this -> now();
     }
@@ -552,7 +562,7 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
         point.y = pcl_cloud_.points[right_limit[i]].y;
         track_limits_msg.right_limit.push_back(point);
     }
-    track_limits_msg.trajectory = this->create_trajectory_msg(best_midpoint_route_, false);
+    track_limits_msg.trajectory = this->create_trajectory_msg(closing_route_, false);
     
     return track_limits_msg;
 
