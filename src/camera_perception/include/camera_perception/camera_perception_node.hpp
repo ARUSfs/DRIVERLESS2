@@ -30,6 +30,9 @@ class CameraPerception : public rclcpp::Node
         std::string kImageTopic;
         int kCameraPeriod;
         int kCameraID;
+
+        // Package path
+        std::string kPkgPath;
         
         // Darknet params
         std::string kConfigFile;
@@ -45,6 +48,11 @@ class CameraPerception : public rclcpp::Node
         
         // Camera
         cv::VideoCapture camera;
+        
+        cv::Mat camera_matrix_;
+        cv::Mat dist_coeffs_;
+        cv::Mat rvecs_;
+        cv::Mat tvecs_;
         
         // Callbacks
         void camera_callback();
