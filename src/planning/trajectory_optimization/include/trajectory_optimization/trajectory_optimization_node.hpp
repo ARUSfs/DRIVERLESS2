@@ -69,7 +69,6 @@ class TrajectoryOptimization : public rclcpp::Node
         //Subscribers and publishers
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Subscription<common_msgs::msg::TrackLimits>::SharedPtr track_limits_sub_;
-        rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr arussim_trajectory_sub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_pub_;
 
         /**
