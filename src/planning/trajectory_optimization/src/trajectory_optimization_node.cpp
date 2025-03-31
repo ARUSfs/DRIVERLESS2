@@ -31,21 +31,14 @@ TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization
     this->get_parameter("n_iter", kNIter);
     this->get_parameter("n_seg", kNSeg);
 
-    this->declare_parameter<std::string>("trajectory_topic", "/path_planning/midpoints_to_optimize");
-    this->declare_parameter<std::string>("car_state_topic", "/car_state/state");
     this->declare_parameter<std::string>("optimized_trajectory_topic", "/trajectory_optimization/trajectory");
     this->declare_parameter<std::string>("track_limits_topic","/path_planning/track_limits");
-    this->get_parameter("trajectory_topic", kTrajectoryTopic);
-    this->get_parameter("car_state_topic", kCarStateTopic);
     this->get_parameter("optimized_trajectory_topic", kOptimizedTrajectoryTopic);
     this->get_parameter("track_limits_topic", kTrackLimitsTopic);
 
-    car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
-        kCarStateTopic, 1, std::bind(&TrajectoryOptimization::car_state_callback, this, std::placeholders::_1));
     track_limits_sub_ = this->create_subscription<common_msgs::msg::TrackLimits>(
         kTrackLimitsTopic, 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
     optimized_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kOptimizedTrajectoryTopic, 10);
-    traj_limits_pub_ = this->create_publisher<common_msgs::msg::TrackLimits>("/trajectory_optimization/traj_limits", 10);
 }
 
 /**
@@ -62,6 +55,7 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
     track_limit_right_ = track_limits_msg->right_limit;
     track_limit_left_ = track_limits_msg->left_limit;
     common_msgs::msg::Trajectory trajectory = track_limits_msg-> trajectory;
+
     std::vector<common_msgs::msg::PointXY> track_xy = trajectory.points;
     
     //Convert trajectory message to vectors
@@ -85,8 +79,8 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
             x = optimized_trajectory.col(0);
             y = optimized_trajectory.col(1);
 
-            VectorXd twr = TrajectoryOptimization::generate_track_width(x, y, track_limit_right_);
-            VectorXd twl = TrajectoryOptimization::generate_track_width(x, y, track_limit_left_);
+            twr = TrajectoryOptimization::generate_track_width(x, y, track_limit_right_);
+            twl = TrajectoryOptimization::generate_track_width(x, y, track_limit_left_);
         }
 
         //Get accumulated distance and curvature at each point
@@ -103,48 +97,9 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
         common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(x, y, optimized_s, optimized_k, speed_profile, acc_profile);
         optimized_trajectory_pub_ -> publish(optimized_traj_msg);
 
-
-        // PARA DEBUGGEAR
-        VectorXd xin = optimized_trajectory.col(2);
-        VectorXd yin = optimized_trajectory.col(3);
-        VectorXd xout = optimized_trajectory.col(4);
-        VectorXd yout = optimized_trajectory.col(5);
-        common_msgs::msg::TrackLimits traj_limits_msg;
-        for(int i=0; i<xin.size(); i++){
-            common_msgs::msg::PointXY p;
-            p.x = xin(i);
-            p.y = yin(i);
-            traj_limits_msg.left_limit.push_back(p);
-            p.x = xout(i);
-            p.y = yout(i);
-            traj_limits_msg.right_limit.push_back(p);
-            p.x = x(i);
-            p.y = y(i);
-            traj_limits_msg.trajectory.points.push_back(p);
-            traj_limits_msg.trajectory.s.push_back(optimized_s(i));
-            traj_limits_msg.trajectory.k.push_back(optimized_k(i));
-            traj_limits_msg.trajectory.speed_profile.push_back(speed_profile(i));
-            traj_limits_msg.trajectory.acc_profile.push_back(acc_profile(i));
-        }
-        traj_limits_pub_ -> publish(traj_limits_msg);
-
     } else {
         std::cerr << "Track limits empty!" << std::endl;
     }
-}
-
-/**
- * @brief Callback function for the car_state topic
- * 
- * We extract vx, vy, ax, ay to calculate the car's current speed and acceleration
- * 
- * @param car_state_msg 
- */    
-void TrajectoryOptimization::car_state_callback(common_msgs::msg::State::SharedPtr car_state_msg){
-    vx_ = car_state_msg -> vx;
-    vy_ = car_state_msg -> vy;
-    ax_ = car_state_msg -> ax;
-    ay_ = car_state_msg -> ay;
 }
 
 /**
