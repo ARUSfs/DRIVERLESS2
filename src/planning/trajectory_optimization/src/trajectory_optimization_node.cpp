@@ -21,11 +21,15 @@ TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization
     this->declare_parameter<double>("mu_brake", 0.9);
     this->declare_parameter<double>("v_max", 8.);
     this->declare_parameter<double>("d_min", 1.2);
+    this->declare_parameter<int>("n_iter", 3);
+    this->declare_parameter<int>("n_seg", 3);
     this->get_parameter("mu_y", kMuY);
     this->get_parameter("mu_throttle", kMuXThrottle);
     this->get_parameter("mu_brake", kMuxBrake);
     this->get_parameter("v_max", kVMax);
     this->get_parameter("d_min", kMinDist);
+    this->get_parameter("n_iter", kNIter);
+    this->get_parameter("n_seg", kNSeg);
 
     this->declare_parameter<std::string>("trajectory_topic", "/path_planning/midpoints_to_optimize");
     this->declare_parameter<std::string>("car_state_topic", "/car_state/state");
@@ -41,6 +45,7 @@ TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization
     track_limits_sub_ = this->create_subscription<common_msgs::msg::TrackLimits>(
         kTrackLimitsTopic, 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
     optimized_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kOptimizedTrajectoryTopic, 10);
+    traj_limits_pub_ = this->create_publisher<common_msgs::msg::TrackLimits>("/trajectory_optimization/traj_limits", 10);
 }
 
 /**
@@ -53,39 +58,39 @@ TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization
  * @param trajectory_msg 
  */
 void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::SharedPtr track_limits_msg){
-    // Extract track limits from trajectory message
+    // Extract track limits and trajectory from trajectory message
     track_limit_right_ = track_limits_msg->right_limit;
     track_limit_left_ = track_limits_msg->left_limit;
     common_msgs::msg::Trajectory trajectory = track_limits_msg-> trajectory;
     std::vector<common_msgs::msg::PointXY> track_xy = trajectory.points;
     
-    //Convert points message to vectors
+    //Convert trajectory message to vectors
     int n = track_xy.size();
     VectorXd x(n), y(n);
     for(int i = 0; i < n; i++){
         x(i) = track_xy[i].x;
         y(i) = track_xy[i].y;
     }
+    
     if(!(track_limit_left_.empty())){
         //Generate track width vectors
-        MatrixXd original_s_k = TrajectoryOptimization::get_distance_and_curvature_values(x, y);
-        VectorXd original_k = original_s_k.col(1); //This step won't be necessary when we receive k from the message
         VectorXd twr = TrajectoryOptimization::generate_track_width(x, y, track_limit_right_);
         VectorXd twl = TrajectoryOptimization::generate_track_width(x, y, track_limit_left_);
 
-        //Get minimal curvature path
-        MatrixXd optimized_trajectory1 = MinCurvaturepath::get_min_curvature_path(x, y, twr, twl);
-        VectorXd traj_x1 = optimized_trajectory1.col(0);
-        VectorXd traj_y1 = optimized_trajectory1.col(1);
+        MatrixXd optimized_trajectory(n,2);
 
-        VectorXd twr2 = TrajectoryOptimization::generate_track_width(traj_x1, traj_y1, track_limit_right_);
-        VectorXd twl2 = TrajectoryOptimization::generate_track_width(traj_x1, traj_y1, track_limit_left_);
-        MatrixXd optimized_trajectory = MinCurvaturepath::get_min_curvature_path(traj_x1, traj_y1, twr2, twl2);
-        VectorXd traj_x = optimized_trajectory.col(0);
-        VectorXd traj_y = optimized_trajectory.col(1);
+        //Get minimal curvature path iteratively
+        for(int i=0; i<kNIter; i++){
+            optimized_trajectory = MinCurvaturepath::get_min_curvature_path(x, y, twr, twl, kNSeg);
+            x = optimized_trajectory.col(0);
+            y = optimized_trajectory.col(1);
+
+            VectorXd twr = TrajectoryOptimization::generate_track_width(x, y, track_limit_right_);
+            VectorXd twl = TrajectoryOptimization::generate_track_width(x, y, track_limit_left_);
+        }
 
         //Get accumulated distance and curvature at each point
-        MatrixXd optimized_s_k = TrajectoryOptimization::get_distance_and_curvature_values(traj_x, traj_y);
+        MatrixXd optimized_s_k = TrajectoryOptimization::get_distance_and_curvature_values(x, y);
         VectorXd optimized_s = optimized_s_k.col(0);
         VectorXd optimized_k = optimized_s_k.col(1);
 
@@ -95,8 +100,36 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
         VectorXd acc_profile = profile.col(1);    
 
         //Create and publish trajectory message
-        common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(traj_x, traj_y, optimized_s, optimized_k, speed_profile, acc_profile);
+        common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(x, y, optimized_s, optimized_k, speed_profile, acc_profile);
         optimized_trajectory_pub_ -> publish(optimized_traj_msg);
+
+
+        // PARA DEBUGGEAR
+        VectorXd xin = optimized_trajectory.col(2);
+        VectorXd yin = optimized_trajectory.col(3);
+        VectorXd xout = optimized_trajectory.col(4);
+        VectorXd yout = optimized_trajectory.col(5);
+        common_msgs::msg::TrackLimits traj_limits_msg;
+        for(int i=0; i<xin.size(); i++){
+            common_msgs::msg::PointXY p;
+            p.x = xin(i);
+            p.y = yin(i);
+            traj_limits_msg.left_limit.push_back(p);
+            p.x = xout(i);
+            p.y = yout(i);
+            traj_limits_msg.right_limit.push_back(p);
+            p.x = x(i);
+            p.y = y(i);
+            traj_limits_msg.trajectory.points.push_back(p);
+            traj_limits_msg.trajectory.s.push_back(optimized_s(i));
+            traj_limits_msg.trajectory.k.push_back(optimized_k(i));
+            traj_limits_msg.trajectory.speed_profile.push_back(speed_profile(i));
+            traj_limits_msg.trajectory.acc_profile.push_back(acc_profile(i));
+        }
+        traj_limits_pub_ -> publish(traj_limits_msg);
+
+    } else {
+        std::cerr << "Track limits empty!" << std::endl;
     }
 }
 
@@ -112,9 +145,6 @@ void TrajectoryOptimization::car_state_callback(common_msgs::msg::State::SharedP
     vy_ = car_state_msg -> vy;
     ax_ = car_state_msg -> ax;
     ay_ = car_state_msg -> ay;
-
-    speed_ = sqrt(vx_*vx_ + vy_*vy_);
-    acc_ = sqrt(ax_*ax_ + ay_*ay_);
 }
 
 /**
@@ -131,21 +161,17 @@ VectorXd TrajectoryOptimization::generate_track_width(VectorXd x, VectorXd y, st
     int m = track_limit.size();
     VectorXd dist = VectorXd::Zero(n);
 
-    if(!(track_limit.empty())){
-        for(int i = 0; i < n; i++){
-            double min_dist = 100;
-            for(int j = 0; j < m; j++){
-                double dx = x(i) - track_limit[j].x;
-                double dy = y(i) - track_limit[j].y;
-                double dist_iter = dx*dx+dy*dy;
-                if (dist_iter < min_dist){min_dist = dist_iter;}
-            }
-            dist(i) = std::sqrt(min_dist) - kMinDist;
+    for(int i = 0; i < n; i++){
+        double min_dist = 100;
+        for(int j = 0; j < m; j++){
+            double dx = x(i) - track_limit[j].x;
+            double dy = y(i) - track_limit[j].y;
+            double dist_iter = dx*dx + dy*dy;
+            if (dist_iter < min_dist){min_dist = dist_iter;}
         }
-    } else {
-        dist = 0.3*VectorXd::Ones(n);
+        dist(i) = std::max(std::sqrt(min_dist) - kMinDist, 0.);
     }
-    
+
     return dist;
 }
 

@@ -30,7 +30,7 @@ namespace MinCurvaturepath {
      * 
      * @return MatrixXd Matrix containing track data: [xt, yt, xin, yin, xout, yout]
      */
-    MatrixXd process_track_data(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl);
+    MatrixXd process_track_data(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg);
 
     /**
      * @brief Calculates the difference between each pair of consecutive elements of each column
@@ -86,11 +86,9 @@ namespace MinCurvaturepath {
      * 
      * @return MatrixXd Matrix containing optimal path: [traj_x, traj_y]
      */
-    MatrixXd get_min_curvature_path(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl){
-        int n = x.size();
-            
+    MatrixXd get_min_curvature_path(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg){          
         //First, we process track data 
-        MatrixXd track_data = process_track_data(x, y, twr, twl);
+        MatrixXd track_data = process_track_data(x, y, twr, twl, n_seg);
 
         //Then, we form the matrices which will define the quadratic optimization problem
         VectorXd xin = track_data.col(2);
@@ -117,18 +115,21 @@ namespace MinCurvaturepath {
             yresMCP(i) = yin(i) + resMCP(i)*dely(i);
         }
 
-        MatrixXd res(m,2);
-        res << xresMCP, yresMCP;
+        // MatrixXd res(m,2);
+        // res << xresMCP, yresMCP;
+
+        // PARA DEBUGGEAR
+        MatrixXd res(m,6);
+        res << xresMCP, yresMCP, xin, yin, xout, yout;
 
         return res;       
     }
 
     //Implementation of auxiliar methods
-    MatrixXd process_track_data(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl){
+    MatrixXd process_track_data(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg){
         //Interpolate data to get finer curve with equal distances between each segment
         //Higher number of segments causes trajectory to follow the reference line
         int n = x.size();
-        const int n_seg = 1000; 
 
         MatrixXd path_x_y(n,2); path_x_y << x, y;
 

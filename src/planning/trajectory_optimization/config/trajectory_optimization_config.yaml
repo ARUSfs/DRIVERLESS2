@@ -5,6 +5,8 @@ trajectory_optimization:
     mu_y: 0.2
     mu_throttle: 0.3
     mu_brake: 0.3
+    n_iter: 5
+    n_seg: 1000
 
     #Topic
     trajectory_topic: "/path_planning/midpoints_to_optimize"

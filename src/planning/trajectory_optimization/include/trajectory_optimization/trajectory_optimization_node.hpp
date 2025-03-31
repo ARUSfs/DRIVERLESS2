@@ -39,10 +39,8 @@ class TrajectoryOptimization : public rclcpp::Node
         //Car state variables
         double vx_;
         double vy_;
-        double speed_;
         double ax_;
         double ay_;
-        double acc_;
 
         //Parameters
         double kVMax;
@@ -54,6 +52,8 @@ class TrajectoryOptimization : public rclcpp::Node
         double kCLift = 0.5*1.2*3.5;
         double kCDrag = 0.5*1.2*1.2;
         double kMass = 270; 
+        int kNIter;
+        int kNSeg;
 
         // Tracklimits
         std::vector<common_msgs::msg::PointXY> track_limit_right_;
@@ -70,6 +70,8 @@ class TrajectoryOptimization : public rclcpp::Node
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Subscription<common_msgs::msg::TrackLimits>::SharedPtr track_limits_sub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_pub_;
+
+        rclcpp::Publisher<common_msgs::msg::TrackLimits>::SharedPtr traj_limits_pub_;
 
         /**
          * @brief Callback function for the trajectory topic

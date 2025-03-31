@@ -80,7 +80,7 @@ Visualization::Visualization() : Node("visualization")
     pursuit_point_sub_ = this->create_subscription<common_msgs::msg::PointXY>(
         kPursuitPointTopic, 10, std::bind(&Visualization::pursuit_point_callback, this, std::placeholders::_1));
     track_limits_sub_ = this->create_subscription<common_msgs::msg::TrackLimits>(
-        kTrackLimitsTopic, 10, std::bind(&Visualization::track_limits_callback, this, std::placeholders::_1));
+        "/trajectory_optimization/traj_limits", 10, std::bind(&Visualization::track_limits_callback, this, std::placeholders::_1));
 }
 
 void Visualization::triangulation_callback(const common_msgs::msg::Triangulation::SharedPtr msg)
