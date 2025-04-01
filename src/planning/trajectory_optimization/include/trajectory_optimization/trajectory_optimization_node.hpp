@@ -75,11 +75,12 @@ class TrajectoryOptimization : public rclcpp::Node
         //Auxiliar methods
 
         /**
-         * @brief Generate track width limits on each point based on the trajectory's 
-         * curvature to control the optimized trajectory's boundaries
+         * @brief Generate optimized trajectory track width limits on each point based on the points' 
+         * distance to the track limits
          * 
-         * @param  k Curvature of the given trajectory
-         * @param  dmax Maximum track width
+         * @param x Trajectory points' x coordenates vector
+         * @param y Trajectory points' y coordenates vector
+         * @param track_limit Track limits points XY vector
          * 
          * @return VectorXd Vector of track width allowed at each point (both left and rigth)
          */
@@ -107,7 +108,7 @@ class TrajectoryOptimization : public rclcpp::Node
          * @param  traj_x x coordinates of the given trajectory points
          * @param  traj_y y coordinates of the given trajectory points
          * 
-         * @return MatrixXd Matrix containing s and k: [s, k]
+         * @return MatrixXd [s, k]
          */
         MatrixXd get_distance_and_curvature_values(VectorXd traj_x, VectorXd traj_y);
 

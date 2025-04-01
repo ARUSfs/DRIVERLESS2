@@ -115,12 +115,8 @@ namespace MinCurvaturepath {
             yresMCP(i) = yin(i) + resMCP(i)*dely(i);
         }
 
-        // MatrixXd res(m,2);
-        // res << xresMCP, yresMCP;
-
-        // PARA DEBUGGEAR
-        MatrixXd res(m,6);
-        res << xresMCP, yresMCP, xin, yin, xout, yout;
+        MatrixXd res(m,2);
+        res << xresMCP, yresMCP;
 
         return res;       
     }

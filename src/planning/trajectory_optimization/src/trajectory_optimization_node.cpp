@@ -54,8 +54,8 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
     // Extract track limits and trajectory from trajectory message
     track_limit_right_ = track_limits_msg->right_limit;
     track_limit_left_ = track_limits_msg->left_limit;
-    common_msgs::msg::Trajectory trajectory = track_limits_msg-> trajectory;
 
+    common_msgs::msg::Trajectory trajectory = track_limits_msg-> trajectory;
     std::vector<common_msgs::msg::PointXY> track_xy = trajectory.points;
     
     //Convert trajectory message to vectors
@@ -71,9 +71,9 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
         VectorXd twr = TrajectoryOptimization::generate_track_width(x, y, track_limit_right_);
         VectorXd twl = TrajectoryOptimization::generate_track_width(x, y, track_limit_left_);
 
+        //Get minimal curvature path iteratively        
         MatrixXd optimized_trajectory(n,2);
 
-        //Get minimal curvature path iteratively
         for(int i=0; i<kNIter; i++){
             optimized_trajectory = MinCurvaturepath::get_min_curvature_path(x, y, twr, twl, kNSeg);
             x = optimized_trajectory.col(0);
@@ -103,20 +103,22 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
 }
 
 /**
- * @brief Generate track width limits on each point based on the trajectory's 
- * curvature to control the optimized trajectory's boundaries
+ * @brief Generate optimized trajectory track width limits on each point based on the points' 
+ * distance to the track limits
  * 
- * @param  k Curvature of the given trajectory
- * @param  dmax Maximum track width
+ * @param x Trajectory points' x coordenates vector
+ * @param y Trajectory points' y coordenates vector
+ * @param track_limit Track limits points XY vector
  * 
  * @return VectorXd Vector of track width allowed at each point (both left and rigth)
  */
 VectorXd TrajectoryOptimization::generate_track_width(VectorXd x, VectorXd y, std::vector<common_msgs::msg::PointXY> track_limit){
     int n = x.size();
     int m = track_limit.size();
-    VectorXd dist = VectorXd::Zero(n);
+    VectorXd track_width = VectorXd::Zero(n);
 
     for(int i = 0; i < n; i++){
+        // Calculate point's distance² to track limits
         double min_dist = 100;
         for(int j = 0; j < m; j++){
             double dx = x(i) - track_limit[j].x;
@@ -124,10 +126,11 @@ VectorXd TrajectoryOptimization::generate_track_width(VectorXd x, VectorXd y, st
             double dist_iter = dx*dx + dy*dy;
             if (dist_iter < min_dist){min_dist = dist_iter;}
         }
-        dist(i) = std::max(std::sqrt(min_dist) - kMinDist, 0.);
+        // Ensure minimal distance
+        track_width(i) = std::max(std::sqrt(min_dist) - kMinDist, 0.);
     }
 
-    return dist;
+    return track_width;
 }
 
 /**
@@ -168,7 +171,7 @@ common_msgs::msg::Trajectory TrajectoryOptimization::create_trajectory_msg(Vecto
  * @param  traj_x x coordinates of the given trajectory points
  * @param  traj_y y coordinates of the given trajectory points
  * 
- * @return MatrixXd Matrix containing s and k: [s, k]
+ * @return MatrixXd [s, k]
  */
 MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj_x, VectorXd traj_y){
     //First, we get the accumulated distance at each point of the trajectory (s)
@@ -184,8 +187,9 @@ MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj
         s(i+1) = acum;      
     }
 
-    xp(n-1) = xp(n-2);      // we ensure s, xp and yp have the same data size 
-    yp(n-1) = yp(n-2);      // by repeating the last X and Y differences
+    // We ensure s, xp and yp have the same data size by repeating the last X and Y differences
+    xp(n-1) = xp(n-2);       
+    yp(n-1) = yp(n-2);       
 
     //Then, we calculate the curvature at each point of the trajectory (k)
     VectorXd xpp(n), ypp(n), k(n);
@@ -227,12 +231,12 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
     int m = s.size();
 
     VectorXd speed_profile = VectorXd::Zero(m);
-    speed_profile(0) = kVMax;                                  // Current speed for first iteration
+    speed_profile(0) = kVMax;   // Initial max speed for first iteration
     VectorXd v_grip(m), ds(m);
     double v_max_braking;
 
     for(int i = 0; i < m; i++){
-        v_grip(i) = std::min(kVMax, calculate_apex(k(i)));      // Pure lateral grip && speed limit
+        v_grip(i) = std::min(kVMax, calculate_apex(k(i)));  // Pure lateral grip && speed limit
     }
 
     // Forwards loop. First iteration. Limit speed by combined ax and grip
@@ -244,9 +248,10 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
             speed_profile(i) = v_grip(i);                       
         }
     }
-
+    // Close loop
     speed_profile(0) = speed_profile(m-1);
 
+    // Forwards loop. Second iteration
     for(int i = 1; i < m; i++){
         ds(i) = s(i) - s(i-1);
         double ax_max = ggv_ax_throttle(speed_profile(i-1),k(i-1));
@@ -256,6 +261,7 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
         }
     }
 
+    // Backwards loop. First iteration. Limit speed by combined ax and max braking
     for(int j = m-1; j > 0; j--){
         double ax_max_braking = ggv_ax_brake(speed_profile(j),k(j));
         v_max_braking = sqrt(speed_profile(j)*speed_profile(j) + 2*ax_max_braking*ds(j-1));
@@ -263,9 +269,10 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
             speed_profile(j-1) = v_max_braking;
         }
     }
-
+    // Close loop
     speed_profile(m-1) = speed_profile(1);
 
+    // Backwards loop. Second iteration
     for(int j = m-1; j > 0; j--){
         double ax_max_braking = ggv_ax_brake(speed_profile(j),k(j));
         v_max_braking = sqrt(speed_profile(j)*speed_profile(j) + 2*ax_max_braking*ds(j-1));
@@ -280,7 +287,7 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
     for(int i = 1; i < m; i++){
         acc_profile(i) = (speed_profile(i)*speed_profile(i) - speed_profile(i-1)*speed_profile(i-1)) / (2*ds(i-1));
     }
-
+    // Close loop
     acc_profile(1) = acc_profile(m-1);
 
     MatrixXd res(m,2);
@@ -311,7 +318,6 @@ double TrajectoryOptimization::ggv_ax_brake(double v, double k){
 
     double ay = (std::abs(v*v*k) < ay_max_v) ? std::abs(v*v*k) : ay_max_v;
     double ax_max = ax_max_v - ax_max_v * ay / ay_max_v;
-    // double ax_max = ax_max_v * sqrt(1 - std::pow((ay / ay_max_v),2));
     return ax_max;
 }
 
