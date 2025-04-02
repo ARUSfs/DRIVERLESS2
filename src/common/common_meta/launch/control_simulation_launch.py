@@ -26,9 +26,7 @@ def generate_launch_description():
                     'fl_wheel_speed_topic': '/arussim/fl_wheel_speed',
                     'rr_wheel_speed_topic': '/arussim/rr_wheel_speed',
                     'rl_wheel_speed_topic': '/arussim/rl_wheel_speed',
-                    'get_arussim_ground_truth': True}]),
-        create_node(pkg='trajectory_optimization',
-                    params=[{'trajectory_topic':'/arussim_interface/fixed_trajectory'}])
+                    'get_arussim_ground_truth': True}])
     ])
 
 
