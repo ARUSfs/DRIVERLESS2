@@ -1,8 +1,8 @@
 controller:
   ros__parameters:
     use_optimized_trajectory: False # use optimized trajectory
-    first_lap_steer_control: "PP" # PP, MPC
-    optimized_steer_control: "PP"   # PP, MPC
+    first_lap_steer_control: "MPC" # PP, MPC
+    optimized_steer_control: "MPC"   # PP, MPC
     speed_timer_frequency: 100.0    # speed timer frecuency in Hz
     steer_timer_frequency: 50.0    # steer timer frecuency in Hz
     
@@ -29,6 +29,7 @@ controller:
     cost_lateral_error: 15.0
     cost_angular_error: 30.0
     cost_steering_delta: 1100.0
+    compensation_steps: 6
 
     # Cmd
     min_cmd: 0.0    # % inv

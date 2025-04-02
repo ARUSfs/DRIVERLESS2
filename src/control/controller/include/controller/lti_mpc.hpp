@@ -63,7 +63,11 @@ public:
 
         U = A_mpc.llt().solve(b_mpc);
 
-        double delta_target = delta_ + U(0,0) + U(1,0);
+        double delta_target = delta_ + U(0,0);
+
+        for (int i = 1; i < kCompensationSteps + 1; i++){
+            delta_target += U(i,0);
+        }
 
         return delta_target;
     }
@@ -100,10 +104,11 @@ public:
         }
     }
 
-    void set_params(double cost_lateral, double cost_angular, double cost_delta){
+    void set_params(double cost_lateral, double cost_angular, double cost_delta, int compensation_steps){
         kCostAngularDeviation = cost_angular;
         kCostLateralDeviation = cost_lateral;
         kCostSteeringDelta = cost_delta;
+        kCompensationSteps = compensation_steps;
     }
 
 private:
@@ -145,6 +150,7 @@ private:
     double kCostLateralDeviation;
     double kCostAngularDeviation;
     double kCostSteeringDelta;
+    int kCompensationSteps;
 
     double yaw_interp{0.0};
 
@@ -159,9 +165,9 @@ private:
         0, (kLf*kCorneringStiffnessF - kLr*kCorneringStiffnessR)/(kIzz*v_linearisation), 0, (std::pow(kLf,2)*kCorneringStiffnessF + std::pow(kLr,2)*kCorneringStiffnessR)/(kIzz*v_linearisation),
         -kLf*kCorneringStiffnessF/kIzz, 0, 0, 0, 0, 0,
         0, 1,
-        0, 0, 0, 0, -318.5, -26.24;
+        0, 0, 0, 0, -18, -4;
 
-        Bc << 0, 0, 0, 0, 0, 319.2;
+        Bc << 0, 0, 0, 0, 0, 18;
         
     }
 

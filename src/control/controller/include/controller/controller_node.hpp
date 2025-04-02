@@ -115,6 +115,7 @@ private:
     double kCostLateralDeviation;
     double kCostAngularDeviation;
     double kCostSteeringDelta;
+    int kCompensationSteps;
 
     rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_pub_;
     rclcpp::Publisher<common_msgs::msg::PointXY>::SharedPtr pursuit_point_pub_;
