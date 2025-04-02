@@ -1,14 +1,14 @@
 trajectory_optimization:
   ros__parameters:
-    v_max: 5.0
+    v_max: 15.0
     d_min: 1.3
-    mu_y: 0.2
-    mu_throttle: 0.3
-    mu_brake: 0.3
+    mu_y: 0.9
+    mu_throttle: 0.5
+    mu_brake: 0.5
+    n_iter: 3
+    n_seg: 1000
 
     #Topic
-    trajectory_topic: "/path_planning/midpoints_to_optimize"
-    car_state_topic: "/car_state/state"
     optimized_trajectory_topic: "/trajectory_optimization/trajectory"
     track_limits_topic: "/path_planning/track_limits"
     

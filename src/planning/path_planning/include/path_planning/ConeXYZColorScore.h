@@ -37,3 +37,21 @@ POINT_CLOUD_REGISTER_POINT_STRUCT (ConeXYZColorScore,
                                    (int, color, color)
                                    (float, score, score)
 )
+
+
+inline bool operator==(const ConeXYZColorScore& lhs, const ConeXYZColorScore& rhs) {
+    return std::abs(lhs.x-rhs.x)<0.1 &&
+            std::abs(lhs.y-rhs.y)<0.1 && 
+            lhs.color == rhs.color;
+}
+
+
+inline std::string to_string(const ConeXYZColorScore& cone) {
+    std::ostringstream oss;
+    oss << "ConeXYZColorScore(x: " << cone.x 
+        << ", y: " << cone.y 
+        << ", z: " << cone.z 
+        << ", color: " << cone.color 
+        << ", score: " << cone.score << ")";
+    return oss.str();
+}

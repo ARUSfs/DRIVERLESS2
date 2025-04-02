@@ -24,7 +24,7 @@
  * @return double distance between the cones
  */
 double distance(ConeXYZColorScore a, ConeXYZColorScore b){
-    return sqrt(pow(a.x-b.x, 2) + pow(a.y-b.y,2) + pow(a.z-b.z,2));
+    return sqrt(pow(a.x-b.x, 2) + pow(a.y-b.y,2));
 }
 
 /**
