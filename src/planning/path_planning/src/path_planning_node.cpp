@@ -152,10 +152,9 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         }
     }
 
-    // Get the best route from the possible trees
+    // Get the best route from back edge to next triangle
     SimplexTree tree;
     double min_cost = INFINITY;
-    std::cout << "****************" << std::endl;
     for (int tri: tri_candidates){
         tree = SimplexTree(triangles_, tri, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, yaw_,
             kAngleCoeff, kLenCoeff);
@@ -163,23 +162,13 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         auto c2 = tree.best_route_[2];
         double angle_diff = std::abs(atan2(c2.y-c0.y, c2.x-c0.x)-yaw_);
         std::min(angle_diff, 2*M_PI-angle_diff);
-        std::cout << "Angle diff: " << angle_diff << std::endl;
         if (tree.min_cost_ < min_cost && angle_diff < M_PI/2){
             min_cost = tree.min_cost_;
-            std::cout << "Best route cost: " << min_cost << std::endl;
             best_midpoint_route_ = tree.best_route_;
             best_index_route_ = tree.best_index_route_;
         }
     }
-
-    // tree = SimplexTree(triangles_, nearest_tri_candidate, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, yaw_,
-    //             kAngleCoeff, kLenCoeff);
-    //             min_cost = tree.min_cost_;
-    //             best_midpoint_route_ = tree.best_route_;
-    //             best_index_route_ = tree.best_index_route_;
             
-            
-       
     
     // Get the final route using the buffer if selected in config file
     std::vector<ConeXYZColorScore> final_route;
@@ -203,14 +192,12 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     std::vector<ConeXYZColorScore> full_route = back_route_;
-    // for (auto c : back_route_) std::cout << "Back cone: " << c.x << ", " << c.y << std::endl;
     bool route_closed = false;
     for (int i=0 ; i<final_route.size(); i++){
         auto c = final_route[i];
         if ( distance(c, ConeXYZColorScore(0.0, 0.0, 0, UNCOLORED, -1)) > 3.0 || back_route_.size()<10){
             if (distance(c,full_route.back())>0.1){ // Ensure no duplicates
                 full_route.push_back(c);
-                // std::cout << "Adding cone: " << c.x << ", " << c.y << std::endl;
             }
         } else {
             if (full_route.size() > 0.5*pcl_cloud_.size()){
