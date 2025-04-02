@@ -7,7 +7,7 @@
  * @version 0.1
  * @date 11-3-2025
  */
-
+#define PCL_NO_PRECOMPILE
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>
@@ -74,7 +74,9 @@ class Perception : public rclcpp::Node
         // Variables
         double vx;
         double vy;
-        double yaw_rate;
+        double x;
+        double y;
+        double yaw;
         double dt;
 
         //Subscriber

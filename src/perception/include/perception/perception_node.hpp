@@ -7,7 +7,7 @@
  * @version 0.1
  * @date 3-11-2024
  */
-
+#define PCL_NO_PRECOMPILE
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>

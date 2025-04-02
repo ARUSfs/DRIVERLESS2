@@ -48,7 +48,7 @@ Perception::Perception() : Node("Perception")
     // Initialize the variables
     vx = 0.0;
     vy = 0.0;
-    yaw_rate = 0.0;
+    yaw = 0.0;
     dt = 0.1;
 
     //Transform into radians
@@ -214,7 +214,9 @@ void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_m
 {
     vx = state_msg->vx;
     vy = state_msg->vy;
-    yaw_rate = state_msg->r;
+    x = state_msg->x;
+    y = state_msg->y;
+    yaw = state_msg->yaw;
 }
 
 /**
@@ -231,9 +233,18 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filter(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
+    pcl::VoxelGrid<PointXYZIRingTime> vg;
+    vg.setInputCloud(cloud);
+    vg.setLeafSize(0.2f, 0.2f, 0.2f);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
+    vg.filter(*filtered);
+
     //GroundFiltering2::RemoveGroundByRings(cloud,cloud_ground,cloud_filter);
 
-    auto updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, vx, vy, yaw_rate, dt);
+    auto updated_cloud = Accumulation::accumulate_global_cloud_ring(filtered, x, y, yaw, dt);
+
+    RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", updated_cloud->size());
+
 
     sensor_msgs::msg::PointCloud2 filtered_msg;
     pcl::toROSMsg(*updated_cloud, filtered_msg);
