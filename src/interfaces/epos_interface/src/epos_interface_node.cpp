@@ -78,7 +78,7 @@ void EPOS_interface::on_timer()
         double diff = delta_cmd_ - ext_pos_;
         if (DEBUG) std::cout << "Angle diff: " << diff << std::endl;
 
-        if (!is_shutdown_ && steer_check_ && std::abs(diff) > 0.003){
+        if (!is_shutdown_ && steer_check_ && std::abs(diff) > 0.01){
             epos_.move_to(epos_pos_ + KP*diff);
         }
     } 
