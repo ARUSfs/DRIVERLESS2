@@ -149,6 +149,8 @@ class PathPlanning : public rclcpp::Node
          */
         void optimizer_callback(common_msgs::msg::Trajectory::SharedPtr optimizer_msg);
 
+        std::vector<ConeXYZColorScore> get_back_edge();
+
         /**
          * @brief Create a triangulation object from a point cloud and erase super triangle.
          * 
@@ -169,14 +171,14 @@ class PathPlanning : public rclcpp::Node
          * @brief Get the index of the origin vertex in the triangulation.
          * @return int index of the origin vertex.
          */
-        int get_vertex_index(CDT::V2d<double> vertex);
+        int get_vertex_index(CDT::V2d<double> vertex, CDT::Triangulation<double> triangulation);
 
         /**
          * @brief Get the triangles adjacent to a vertex from its index.
          * @param vert_index int index of the vertex.
          * @return std::vector<int> vector of index of the triangles adjacent to the vertex.
          */
-        std::vector<int> get_triangles_from_vert(int vert_index);
+        std::vector<int> get_triangles_from_vert(int vert_index, CDT::Triangulation<double> triangulation);
 
         /**
          * @brief Get the final route after comparing with previous routes to avoid outliers.

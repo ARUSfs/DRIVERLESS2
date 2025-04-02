@@ -58,15 +58,15 @@ class SimplexTree {
     /**
      * @brief Construct a new generic tree object.
      * @param triangle_list triangulation.triangles object containing all the triangles.
-     * @param origin index of the origin triangle.
-     * @param orig_vertex index of the origin vertex.
+     * @param first_tri_ind triangle index from which to start.
+     * @param first_edge edge to start the route.
      * @param cones_cloud pcl::PointCloud object containing the cones in the map.
      * @param yaw yaw of the car.
      * @param angle_coeff coefficient for the angle cost.
      * @param len_coeff coefficient for the length cost.
      */
-    SimplexTree(CDT::TriangleVec triangle_list, int origin, int orig_vertex, 
-                pcl::PointCloud<ConeXYZColorScore> cones_cloud, double yaw, double angle_coeff,
+    SimplexTree(CDT::TriangleVec triangle_list, int first_tri_ind, std::vector<int> first_edge,
+                pcl::PointCloud<ConeXYZColorScore> cones_cloud, double initial_angle, double angle_coeff, 
                 double len_coeff);
 
     /**
@@ -88,57 +88,32 @@ class SimplexTree {
                                  double prev_angle);
 };
 
-SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int orig_vertex,
-                         pcl::PointCloud<ConeXYZColorScore> cones_cloud, double yaw, double angle_coeff, 
+
+SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int first_tri_ind, std::vector<int> first_edge,
+                         pcl::PointCloud<ConeXYZColorScore> cones_cloud, double initial_angle, double angle_coeff, 
                          double len_coeff) {
     cones_cloud_ = cones_cloud;
     angle_coeff_ = angle_coeff;
     len_coeff_ = len_coeff;
-    CDT::Triangle origin = triangle_list[origin_ind]; // Get triangle from index
-    CDT::NeighborsArr3 neighbors = origin.neighbors;  // Get neighbors of the triangle
+    CDT::Triangle first_tri = triangle_list[first_tri_ind]; // Get triangle from index
+    
+    CDT::NeighborsArr3 neighbors = first_tri.neighbors;  // Get neighbors of the triangle
 
-    std::vector<int> visited = {origin_ind}; // Initialize visited array with the origin index
-    std::vector<int> passed_vertices = {orig_vertex}; // Initialize visited array with the origin index
+    std::vector<int> visited = {first_tri_ind}; // Initialize visited array with the origin index
+    std::vector<int> passed_vertices = {first_edge[0], first_edge[1]}; // Initialize visited array with the origin index
 
-    root_.index = origin_ind;                 // Set the root index to the origin index
+    root_.index = first_tri_ind;                 // Set the root index to the origin index
 
-    std::vector<ConeXYZColorScore> mid_route = {cones_cloud_.points[orig_vertex]}; // Start at the origin
+    ConeXYZColorScore v0 = cones_cloud_.points[first_edge[0]];
+    ConeXYZColorScore v1 = cones_cloud_.points[first_edge[1]];
 
-    // Filter neighbors to find which of them are valid
-    for (int i = 0; i<3; i++){
-        if((neighbors[i]<=triangle_list.size()) && 
-            triangle_list[neighbors[i]].vertices[0] != orig_vertex &&
-            triangle_list[neighbors[i]].vertices[1] != orig_vertex &&
-            triangle_list[neighbors[i]].vertices[2] != orig_vertex){
+    std::vector<ConeXYZColorScore> mid_route = {ConeXYZColorScore((v0.x+v1.x)/2,
+                                        (v0.y+v1.y)/2, 0, UNCOLORED, 1)}; // Start at the origin
 
-            // Add first edge to the mid_route array
-            std::vector<ConeXYZColorScore> edge = {};
-            for (auto v: triangle_list[neighbors[i]].vertices){
-                if (in(v, origin.vertices)){
-                    edge.push_back(cones_cloud_.points[v]);
-                }
-            }
+    double prev_angle = atan2(mid_route[0].y, mid_route[0].x); // Save the previous angle for the next iteration
 
-            mid_route.push_back(ConeXYZColorScore((edge[0].x+edge[1].x)/2,
-                                                  (edge[0].y+edge[1].y)/2, 0, UNCOLORED, 1));            
-            
-            // Calculate cost of the first edge
-            double route_cost = 0;
-            double angle = atan2(mid_route[1].y-mid_route[0].y, mid_route[1].x-mid_route[0].x);
-            double angle_diff = abs(angle-yaw);
-            double corr_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
-            double len = distance(mid_route[1], mid_route[0]);
-            if (corr_angle_diff > M_PI/6){
-                route_cost += angle_coeff_*(3*pow(corr_angle_diff-M_PI/6, 2)+1);
-            }
-            route_cost -= len_coeff_*len;
-
-            visited.push_back(neighbors[i]); // Add the valid neighbors to the visited array
-            root_.left = SimplexTree::create_tree_aux(triangle_list, neighbors[i], visited, passed_vertices,
-                                                      mid_route, route_cost, angle);
-            break;
-        }
-    }
+    root_.left = SimplexTree::create_tree_aux(triangle_list, first_tri_ind, visited, passed_vertices,
+        mid_route, 0.0, initial_angle);
 
 } 
 

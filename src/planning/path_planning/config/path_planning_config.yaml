@@ -21,7 +21,7 @@ path_planning:
     smooth_coeff: 1.2            # Laplacian smoothing coefficient [1.0, 3.0]
     use_buffer: true
     time_to_close: 2.0
-    stop_after_closing: true     # Stop generating new routes after getting one that closes the loop
+    stop_after_closing: false     # Stop generating new routes after getting one that closes the loop
 
     # Profile creation parameters
     v_max: 2.0
