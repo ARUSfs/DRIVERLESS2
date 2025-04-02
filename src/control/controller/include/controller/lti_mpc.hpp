@@ -18,8 +18,9 @@ public:
         delta_v_ = delta_v;
 
         x_0_.resize(6,1);
-
         x_0_ << 0, vy, 0, r, delta_, delta_v_;
+
+        // Linearize and discretize model
 
         A = Eigen::MatrixXd::Zero(6,6);
         B = Eigen::MatrixXd::Zero(6,1);
@@ -28,9 +29,13 @@ public:
 
         discretize_model(A, B, kTsMPC, Ad, Bd);
 
+        // Define cost matrices
+
         Q.resize(C.rows(),C.rows());
         Q << kCostLateralDeviation, 0, 0, kCostAngularDeviation;
         R = kCostSteeringDelta * Eigen::MatrixXd::Identity(kPredictionHorizon, kPredictionHorizon);
+
+        // MPC matrices construction 
 
         Eigen::MatrixXd PSI = Eigen::MatrixXd::Zero(C.rows() * kPredictionHorizon, Ad.cols());
         Eigen::MatrixXd YPS = Eigen::MatrixXd::Zero(C.rows() * kPredictionHorizon, Bd.cols());
@@ -72,15 +77,8 @@ public:
         return delta_target;
     }
 
-    void set_reference_trajectory(const std::vector<Point> &new_path, const std::vector<float> &s, 
+    void set_reference_trajectory(const std::vector<Point> &global_reference_trajectory, const std::vector<float> &s, 
         const Point &position, double &yaw, double &vx, size_t index_global){
-
-        global_reference_trajectory_.clear();
-
-        s_.clear();
-        global_reference_trajectory_ = new_path;
-        s_ = s;
-        double s_predicted = s_[index_global];
 
         if (vx >= 2.0){
             v_linearisation = vx;
@@ -88,19 +86,21 @@ public:
             v_linearisation = 2.0;
         }
 
+        double s_predicted = s[index_global];
         double ds = v_linearisation * kTsMPC;
 
         target_trajectory_.resize(2*kPredictionHorizon);
 
         for (int i = 0; i < kPredictionHorizon; i++){
            
-            Point xy_interp = interpolate_data(global_reference_trajectory_, s_, s_predicted);
+            Point xy_interp = interpolate_data(global_reference_trajectory, s, s_predicted);
 
             target_trajectory_(2*i) = - (xy_interp.x - position.x) * std::sin(yaw) + (xy_interp.y - position.y) * std::cos(yaw);
             target_trajectory_(2*i+1) = (std::abs(yaw_interp - yaw)<1) ? yaw_interp - yaw : 0.0;
 
             s_predicted += ds;
-            if (s_predicted >= s_[s_.size()-1]) {s_predicted -= s_[s_.size()-1];}
+            
+            if (s_predicted >= s[s.size()-1]) {s_predicted -= s[s.size()-1];}
         }
     }
 
@@ -114,9 +114,6 @@ public:
 private:
     int kPredictionHorizon = 65;
     double kTsMPC = 0.02;
-
-    std::vector<Point> global_reference_trajectory_;
-    std::vector<float> s_;
 
     double kCorneringStiffnessF = -24276;
     double kCorneringStiffnessR = -20332;
@@ -160,11 +157,12 @@ private:
         Bc.resize(6, 1);
 
         Ac << 0, 1, v_linearisation, 0, 0, 0,
-        0, (kCorneringStiffnessF+kCorneringStiffnessR)/(kMass*v_linearisation),0, (kLf*kCorneringStiffnessF - kLr*kCorneringStiffnessR)/(kMass*v_linearisation) - v_linearisation, -kCorneringStiffnessF/kMass, 0,
+        0, (kCorneringStiffnessF+kCorneringStiffnessR)/(kMass*v_linearisation), 0, 
+        (kLf*kCorneringStiffnessF - kLr*kCorneringStiffnessR)/(kMass*v_linearisation) - v_linearisation, -kCorneringStiffnessF/kMass, 0, 
         0, 0, 0, 1, 0, 0,
-        0, (kLf*kCorneringStiffnessF - kLr*kCorneringStiffnessR)/(kIzz*v_linearisation), 0, (std::pow(kLf,2)*kCorneringStiffnessF + std::pow(kLr,2)*kCorneringStiffnessR)/(kIzz*v_linearisation),
-        -kLf*kCorneringStiffnessF/kIzz, 0, 0, 0, 0, 0,
-        0, 1,
+        0, (kLf*kCorneringStiffnessF - kLr*kCorneringStiffnessR)/(kIzz*v_linearisation), 0, 
+        (std::pow(kLf,2)*kCorneringStiffnessF + std::pow(kLr,2)*kCorneringStiffnessR)/(kIzz*v_linearisation), -kLf*kCorneringStiffnessF/kIzz, 0, 
+        0, 0, 0, 0, 0, 1,
         0, 0, 0, 0, -18, -4;
 
         Bc << 0, 0, 0, 0, 0, 18;
@@ -190,9 +188,6 @@ private:
     }
 
     Point interpolate_data(const std::vector<Point> &XYdata, const std::vector<float> &s, const double &s0) {
-        if (s.empty() || XYdata.empty() || s.size() != XYdata.size()) {
-            throw std::invalid_argument("Vectors s and XYdata must have the same non-zero size.");
-        }
 
         if (s0 <= s.front()) return XYdata.front();
         if (s0 >= s.back()) return XYdata.back();
