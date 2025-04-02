@@ -29,6 +29,7 @@ controller:
     cost_lateral_error: 15.0
     cost_angular_error: 30.0
     cost_steering_delta: 1100.0
+    compensation_steps: 6
 
     # Cmd
     min_cmd: 0.0    # % inv
