@@ -9,6 +9,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <opencv2/opencv.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_prefix.hpp>
 
 #include <sensor_msgs/msg/image.hpp>
 #include <std_msgs/msg/header.hpp>
@@ -22,12 +23,23 @@ class CameraCalibration : public rclcpp::Node
         CameraCalibration();
 
     private:
-        std::string kImageTopic;
+        // Config file
         bool kDebug;
-        
+        bool kIntrinsicCalibration;
+        bool kExtrinsicCalibration;
+        std::string kImageTopic;
+        double kCamX;
+        double kCamY;
+        double kCamZ;
+        double kLidarX;
+        double kLidarY;
+        double kLidarZ;
+
+        // ROS2 suscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
         rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_;
 
+        // Points for calibration
         std::vector<std::vector<cv::Point2f>> image_points_ = {};
         std::vector<std::vector<cv::Point3f>> object_points_ = {};
 

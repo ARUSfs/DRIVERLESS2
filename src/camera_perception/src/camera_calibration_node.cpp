@@ -4,17 +4,42 @@
 CameraCalibration::CameraCalibration() : Node("camera_calibration")
 {
     // Declare and get parameters
-    this->declare_parameter<std::string>("image_topic", "/camera/image_raw");
-    this->get_parameter("image_topic", kImageTopic);
-
     this->declare_parameter<bool>("debug", false);
     this->get_parameter("debug", kDebug);
 
-    kMatrixFile = ament_index_cpp::get_package_share_directory("camera_perception") + "/resources/calibration/camera_matrix.yaml";
-    kDistFile = ament_index_cpp::get_package_share_directory("camera_perception") + "/resources/calibration/dist_coeffs.yaml";
-    kRvecsFile = ament_index_cpp::get_package_share_directory("camera_perception") + "/resources/calibration/rvecs.yaml";
-    kTvecsFile = ament_index_cpp::get_package_share_directory("camera_perception") + "/resources/calibration/tvecs.yaml";
+    this->declare_parameter<bool>("intrinsic_calibration", true);
+    this->get_parameter("intrinsic_calibration", kIntrinsicCalibration);
+    this->declare_parameter<bool>("extrinsic_calibration", true);
+    this->get_parameter("extrinsic_calibration", kExtrinsicCalibration);
 
+    this->declare_parameter<std::string>("image_topic", "/camera/image_raw");
+    this->get_parameter("image_topic", kImageTopic);
+
+    this->declare_parameter<double>("cam_x", 0.0);
+    this->get_parameter("cam_x", kCamX);
+    this->declare_parameter<double>("cam_y", 0.0);
+    this->get_parameter("cam_y", kCamY);
+    this->declare_parameter<double>("cam_z", 0.0);
+    this->get_parameter("cam_z", kCamZ);
+
+    this->declare_parameter<double>("lidar_x", 0.0);
+    this->get_parameter("lidar_x", kLidarX);
+    this->declare_parameter<double>("lidar_y", 0.0);
+    this->get_parameter("lidar_y", kLidarY);
+    this->declare_parameter<double>("lidar_z", 0.0);
+    this->get_parameter("lidar_z", kLidarZ);
+
+
+    std::string src_pkg_path = ament_index_cpp::get_package_prefix("camera_perception");
+    int pos = src_pkg_path.find("install");
+    src_pkg_path.resize(pos);
+    src_pkg_path += "src/DRIVERLESS2/src/camera_perception";
+
+    kMatrixFile = src_pkg_path + "/resources/calibration/camera_matrix.yaml";
+    kDistFile = src_pkg_path + "/resources/calibration/dist_coeffs.yaml";
+    kRvecsFile = src_pkg_path + "/resources/calibration/rvecs.yaml";
+    kTvecsFile = src_pkg_path + "/resources/calibration/tvecs.yaml";
+    std::cout << "Matrix file: " << kMatrixFile << std::endl;
     // Suscriber options to match the camera's publisher
     rclcpp::QoS qos(10);
     qos.best_effort();
@@ -34,6 +59,7 @@ void CameraCalibration::camera_calibration_callback(const sensor_msgs::msg::Imag
 {
     cv::Mat image = cv_bridge::toCvCopy(msg, "bgr8")->image;
     if (image.empty()) return;
+    if (!kIntrinsicCalibration) return;
 
     // Check if we have enough images for calibration
     if (image_points_.size() >= 20) {
@@ -73,7 +99,6 @@ void CameraCalibration::camera_calibration_callback(const sensor_msgs::msg::Imag
         }
     }
 
-
     // Convert the image to grayscale
     cv::Mat gray_image;
     cv::cvtColor(image, gray_image, cv::COLOR_BGR2GRAY);
@@ -93,7 +118,6 @@ void CameraCalibration::camera_calibration_callback(const sensor_msgs::msg::Imag
             image_pub_->publish(*msg_out);
         }
     }
-    
 }
 
 int main(int argc, char * argv[])
