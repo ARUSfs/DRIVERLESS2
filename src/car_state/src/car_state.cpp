@@ -21,6 +21,7 @@ CarState::CarState(): Node("car_state")
 
 
     this->declare_parameter<bool>("safe_mode", true);
+    this->declare_parameter<bool>("use_wheelspeeds", false);
 
     this->declare_parameter<double>("dt_threshold_imu", 0.05);
     this->declare_parameter<double>("dt_threshold_extensometer", 0.05);
@@ -58,6 +59,7 @@ CarState::CarState(): Node("car_state")
     this->get_parameter("mission", kMission);
 
     this->get_parameter("safe_mode", kSafeMode);
+    this->get_parameter("use_wheelspeeds", kUseWheelspeeds);
 
     // Parameters for safe mode plausability checks
     this->get_parameter("dt_threshold_imu", kThresholdImu);
@@ -437,14 +439,16 @@ void CarState::on_timer()
     }
        
     // Estimate vx, vy
-    double wheelspeed_mean;
+    double avg_vx;
     if(kSimulation){
-        wheelspeed_mean = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
+        avg_vx = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
+    } else if (!kSimulation && kUseWheelspeeds && inv_speed_ > 3.0) {
+        avg_vx = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
     } else {
-        wheelspeed_mean = inv_speed_;
+        avg_vx = inv_speed_;
     }
 
-    Vector2d x_est = speed_estimator_.estimate_speed(ax_, r_, delta_, delta_der_, wheelspeed_mean);
+    Vector2d x_est = speed_estimator_.estimate_speed(ax_, r_, delta_, delta_der_, avg_vx);
     vx_ = x_est(0);
     vy_ = x_est(1); 
 
