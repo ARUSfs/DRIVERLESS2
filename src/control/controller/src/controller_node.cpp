@@ -50,10 +50,12 @@ Controller::Controller() : Node("controller"),
 
     // PID
     this->declare_parameter<double>("target", 8.0);
+    this->declare_parameter<double>("braking_decc", 3.0);
     this->declare_parameter<double>("KP", 43.87);
     this->declare_parameter<double>("KI", 1.29);
     this->declare_parameter<double>("KD", 0.0); 
     this->get_parameter("target", kTargetSpeed);
+    this->get_parameter("braking_decc", kBrakingDecc);
     this->get_parameter("KP", KP);
     this->get_parameter("KI", KI);
     this->get_parameter("KD", KD);
@@ -99,7 +101,8 @@ Controller::Controller() : Node("controller"),
         kTrajectoryTopic, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
     optimized_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         "/trajectory_optimization/trajectory", 1, std::bind(&Controller::optimized_trajectory_callback, this, std::placeholders::_1));
-
+    braking_procedure_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+        "/car_state/braking_procedure", 1, std::bind(&Controller::braking_procedure_callback, this, std::placeholders::_1));
 
     // Publishers
     cmd_pub_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
@@ -117,9 +120,11 @@ void Controller::on_speed_timer()
     if(!(pointsXY_.empty()) && run_check_){
         get_global_index();
 
-        if(!(speed_profile_.empty())){
+        if (braking_procedure_){
+            target_speed_ = std::max(0.0, std::sqrt(vx_*vx_ - 2*kBrakingDecc*target_speed_));
+        } else if(!(speed_profile_.empty())){
             target_speed_ = speed_profile_.at(index_global_);
-        }else{
+        } else{
             target_speed_ = kTargetSpeed;
         }
         std_msgs::msg::Float32 target_speed_msg;
@@ -271,7 +276,12 @@ void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedP
 
 void Controller::run_check_callback(const std_msgs::msg::Bool::SharedPtr msg)
 {
-    run_check_ = msg -> data;
+    run_check_ = msg->data;
+}
+
+void Controller::braking_procedure_callback(const std_msgs::msg::Bool::SharedPtr msg)
+{
+    braking_procedure_ = msg->data;
 }
 
 

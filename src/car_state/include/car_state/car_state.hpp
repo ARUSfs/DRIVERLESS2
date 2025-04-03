@@ -39,13 +39,11 @@ public:
 
 private:
     // Callback for the subscription
-    void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg);
     void extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void wheel_speeds_callback(const common_msgs::msg::FourWheelDrive::SharedPtr msg);
     void inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
     void as_status_callback(const std_msgs::msg::Float32::SharedPtr msg);
@@ -102,6 +100,7 @@ private:
 
     bool kSimulation;
     std::string kMission;
+    int kTrackdriveLaps;
 
     bool kSafeMode;
     bool kUseWheelspeeds;
@@ -169,6 +168,7 @@ private:
     rclcpp::Publisher<common_msgs::msg::CarInfo>::SharedPtr car_info_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr run_check_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steer_check_pub_;
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr braking_procedure_pub_;
 
     // Timer
     rclcpp::TimerBase::SharedPtr timer_;

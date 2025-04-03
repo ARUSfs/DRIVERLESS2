@@ -3,6 +3,7 @@ car_state:
     get_arussim_ground_truth: false
     simulation: false
     mission: "autocross"
+    trackdrive_laps: 10
 
     safe_mode: false
     use_wheelspeeds: false

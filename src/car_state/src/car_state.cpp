@@ -18,7 +18,7 @@ CarState::CarState(): Node("car_state")
     this->declare_parameter<bool>("get_arussim_ground_truth", false);
     this->declare_parameter<bool>("simulation", false);
     this->declare_parameter<std::string>("mission", "autocross");
-
+    this->declare_parameter<int>("trackdrive_laps", 10);
 
     this->declare_parameter<bool>("safe_mode", true);
     this->declare_parameter<bool>("use_wheelspeeds", false);
@@ -57,6 +57,7 @@ CarState::CarState(): Node("car_state")
     this->get_parameter("get_arussim_ground_truth", get_arussim_ground_truth);
     this->get_parameter("simulation", kSimulation);
     this->get_parameter("mission", kMission);
+    this->get_parameter("trackdrive_laps", kTrackdriveLaps);
 
     this->get_parameter("safe_mode", kSafeMode);
     this->get_parameter("use_wheelspeeds", kUseWheelspeeds);
@@ -102,6 +103,8 @@ CarState::CarState(): Node("car_state")
         "/car_state/run_check", 1);
     steer_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
         "/car_state/steer_check", 1);
+    braking_procedure_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+        "/car_state/braking_procedure", 1);
 
 
     ami_sub_ = this->create_subscription<std_msgs::msg::Float32>(
@@ -392,6 +395,12 @@ void CarState::target_delta_callback(const common_msgs::msg::Cmd msg)
 void CarState::lap_count_callback(const std_msgs::msg::Int16 msg)
 {
     lap_count_ = msg.data;
+    if (kMission == "autocross" && lap_count_ >= 1 ||
+            kMission == "trackdrive" && lap_count_ >= kTrackdriveLaps) {
+        std_msgs::msg::Bool msg;
+        msg.data = true;
+        braking_procedure_pub_->publish(msg);
+    }
 }
 
 void CarState::cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg)
