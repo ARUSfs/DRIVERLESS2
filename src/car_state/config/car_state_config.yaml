@@ -5,6 +5,7 @@ car_state:
     mission: "autocross"
 
     safe_mode: false
+    use_wheelspeeds: false
 
     # Following parameters only used in safe mode for plausability checks
     dt_threshold_imu: 0.05

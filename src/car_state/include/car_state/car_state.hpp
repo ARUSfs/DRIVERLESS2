@@ -104,6 +104,7 @@ private:
     std::string kMission;
 
     bool kSafeMode;
+    bool kUseWheelspeeds;
     double kThresholdImu;
     double kThresholdExtensometer;
     double kThresholdWheelSpeed;
