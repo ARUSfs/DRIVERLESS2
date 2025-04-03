@@ -47,6 +47,7 @@ private:
     void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
     void run_check_callback(const std_msgs::msg::Bool::SharedPtr msg);
+    void braking_procedure_callback(const std_msgs::msg::Bool::SharedPtr msg);
     void on_speed_timer();
     void on_steer_timer();
     void get_global_index();
@@ -79,18 +80,8 @@ private:
     std::vector<float> speed_profile_;               
     std::vector<float> acc_profile_;
     int index_global_ = 0;      
-    bool new_trajectory_ = false;         
-
-    //Subscribers
-    rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
-    rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trayectory_sub_;
-    rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_sub_;
-    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr run_check_sub_;
-
-    //Timers
-    rclcpp::TimerBase::SharedPtr speed_timer_;
-    rclcpp::TimerBase::SharedPtr steer_timer_;
-    rclcpp::Time previous_time_ ;
+    bool new_trajectory_ = false;  
+    bool braking_procedure_ = false;       
     
     // Parameters
     std::string kFirstLapSteerControl;
@@ -111,15 +102,29 @@ private:
     double KD;
     double kMinCmd;
     double kMaxCmd;
+    double kBrakingDecc;
     double kMaxSteer;
     double kCostLateralDeviation;
     double kCostAngularDeviation;
     double kCostSteeringDelta;
     int kCompensationSteps;
 
+    // Publishers
     rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_pub_;
     rclcpp::Publisher<common_msgs::msg::PointXY>::SharedPtr pursuit_point_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr target_speed_pub_;
+
+    //Subscribers
+    rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
+    rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr trayectory_sub_;
+    rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_sub_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr run_check_sub_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr braking_procedure_sub_;
+
+    //Timers
+    rclcpp::TimerBase::SharedPtr speed_timer_;
+    rclcpp::TimerBase::SharedPtr steer_timer_;
+    rclcpp::Time previous_time_ ;
 };
 
 #endif

@@ -21,7 +21,7 @@ def generate_launch_description():
         create_node(pkg='car_state', 
                     params=[{'simulation': True, 
                     'mission': 'trackdrive',
-                    'trackdrive_laps': 1000,
+                    'trackdrive_laps': 10,
                     'extensometer_topic': '/arussim/extensometer',
                     'imu_ax_topic': '/arussim/IMU/ax',
                     'imu_ay_topic': '/arussim/IMU/ay',
