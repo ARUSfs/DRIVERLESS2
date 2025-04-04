@@ -236,7 +236,10 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //GroundFiltering2::RemoveGroundByRings(cloud,cloud_ground,cloud_filter);
 
-    auto updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, x, y, yaw, dt);
+    bool global_acc = false;
+    pcl::PointCloud<PointXYZIRingTime>::Ptr updated_cloud;
+    if (global_acc) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, x, y, yaw, dt);
+    else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud, x, y, yaw, dt);
 
     RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", updated_cloud->size());
 

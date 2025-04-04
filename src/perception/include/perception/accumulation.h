@@ -24,6 +24,7 @@
 namespace Accumulation
 {
     static std::deque<pcl::PointCloud<PointXYZIRingTime>::Ptr> cloud_buffer;
+    static pcl::PointCloud<PointXYZIRingTime>::Ptr global_cloud(new pcl::PointCloud<PointXYZIRingTime>);
     static bool buffer_cloud_initialized = false;
 
     static std::deque<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>> cluster_buffer;
@@ -203,6 +204,62 @@ namespace Accumulation
         pcl::PointCloud<PointXYZIRingTime>::Ptr cloud,
         double x, double y, double yaw, double dt)
     {
+        // delta_x = x;
+        // delta_y = y;
+        // delta_theta = yaw_rate;
+    
+        // RCLCPP_INFO(rclcpp::get_logger("accumulation"), "delta_x: %f, delta_y: %f, delta_theta: %f", delta_x, delta_y, delta_theta);
+
+        // Transformation from LIDAR to CoG
+        Eigen::Affine3f transform_lidar_to_CoG = Eigen::Affine3f::Identity();
+        transform_lidar_to_CoG.translation() << -1.65, 0.0, 0.0;
+
+        // Motion transformation matrix (rotation + translation)
+        Eigen::Affine3f transform_motion = Eigen::Affine3f::Identity();
+        transform_motion.linear() << cos(yaw), -sin(yaw), 0,
+                                    sin(yaw), cos(yaw),  0,
+                                    0,               0,                1;
+        transform_motion.translation() << x, y, 0.0;
+
+        // Transformation from CoG back to LIDAR
+        Eigen::Affine3f transform_CoG_to_lidar = Eigen::Affine3f::Identity();
+        transform_CoG_to_lidar.translation() << 1.65, 0.0, 0.0;
+
+        // Compute final transformation matrix
+        Eigen::Affine3f final_transform = transform_lidar_to_CoG * transform_motion * transform_CoG_to_lidar;
+
+        pcl::PointCloud<PointXYZIRingTime>::Ptr transformed_cloud(new pcl::PointCloud<PointXYZIRingTime>);
+        pcl::transformPointCloud(*cloud, *transformed_cloud, final_transform.matrix());
+
+        // Accumulate transformed cloud
+
+        // for (int i = 0; i < cloud->size(); i++) {
+        //     double point_x = (cloud->points[i].x)*std::cos(yaw) - (cloud->points[i].y)*std::sin(yaw) + x;
+        //     double point_y = (cloud->points[i].x)*std::sin(yaw) + (cloud->points[i].y)*std::cos(yaw) + y;
+
+        //     cloud->points[i].x = point_x;
+        //     cloud->points[i].y = point_y;
+        // }
+
+        *global_cloud += *transformed_cloud;
+
+        // Apply voxel grid filter
+        pcl::VoxelGrid<PointXYZIRingTime> vg;
+        vg.setInputCloud(global_cloud);
+        vg.setLeafSize(0.1f, 0.1f, 0.1f);
+        pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
+        vg.filter(*filtered);
+
+        global_cloud = filtered;
+
+        return global_cloud;
+    }
+
+
+    pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_local_cloud_ring(
+        pcl::PointCloud<PointXYZIRingTime>::Ptr cloud,
+        double x, double y, double yaw, double dt)
+    {
         //Clean the buffer the first time
         if (!buffer_cloud_initialized) {
             cloud_buffer.clear();
@@ -210,7 +267,7 @@ namespace Accumulation
         }
 
         //Ensure buffer size limit
-        if (cloud_buffer.size() >= static_cast<size_t>(10)) 
+        if (cloud_buffer.size() >= static_cast<size_t>(5)) 
         {
             cloud_buffer.pop_front();
         }
@@ -223,7 +280,7 @@ namespace Accumulation
 
         // Transformation from LIDAR to CoG
         Eigen::Affine3f transform_lidar_to_CoG = Eigen::Affine3f::Identity();
-        transform_lidar_to_CoG.translation() << -1.5, 0.0, 0.0;
+        transform_lidar_to_CoG.translation() << -1.65, 0.0, 0.0;
 
         // Motion transformation matrix (rotation + translation)
         Eigen::Affine3f transform_motion = Eigen::Affine3f::Identity();
@@ -232,8 +289,12 @@ namespace Accumulation
                                     0,               0,                1;
         transform_motion.translation() << x, y, 0.0;
 
+        // Transformation from CoG back to LIDAR
+        Eigen::Affine3f transform_CoG_to_lidar = Eigen::Affine3f::Identity();
+        transform_CoG_to_lidar.translation() << 1.65, 0.0, 0.0;
+
         // Compute final transformation matrix
-        Eigen::Affine3f final_transform = transform_motion * transform_lidar_to_CoG;
+        Eigen::Affine3f final_transform = transform_lidar_to_CoG * transform_motion * transform_CoG_to_lidar;
 
         pcl::PointCloud<PointXYZIRingTime>::Ptr transformed_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         pcl::transformPointCloud(*cloud, *transformed_cloud, final_transform.matrix());
@@ -251,7 +312,7 @@ namespace Accumulation
         // Apply voxel grid filter
         pcl::VoxelGrid<PointXYZIRingTime> vg;
         vg.setInputCloud(transformed_cloud);
-        vg.setLeafSize(0.2f, 0.2f, 0.2f);
+        vg.setLeafSize(0.05f, 0.05f, 0.05f);
         pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
         vg.filter(*filtered);
 
@@ -264,6 +325,9 @@ namespace Accumulation
             *global_cloud += *cloud_buffer[i];
         }
 
-        return global_cloud;
+        // Revert to original position before returning
+        pcl::PointCloud<PointXYZIRingTime>::Ptr local_cloud(new pcl::PointCloud<PointXYZIRingTime>);
+        pcl::transformPointCloud(*global_cloud, *local_cloud, final_transform.inverse().matrix());
+        return local_cloud;
     }
 }
