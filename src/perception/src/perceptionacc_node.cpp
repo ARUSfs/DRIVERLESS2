@@ -233,15 +233,10 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filter(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
-    pcl::VoxelGrid<PointXYZIRingTime> vg;
-    vg.setInputCloud(cloud);
-    vg.setLeafSize(0.2f, 0.2f, 0.2f);
-    pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
-    vg.filter(*filtered);
 
     //GroundFiltering2::RemoveGroundByRings(cloud,cloud_ground,cloud_filter);
 
-    auto updated_cloud = Accumulation::accumulate_global_cloud_ring(filtered, x, y, yaw, dt);
+    auto updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, x, y, yaw, dt);
 
     RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", updated_cloud->size());
 

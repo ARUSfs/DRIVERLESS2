@@ -23,14 +23,12 @@
 
 namespace Accumulation
 {
-    static std::deque<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_buffer;
+    static std::deque<pcl::PointCloud<PointXYZIRingTime>::Ptr> cloud_buffer;
     static bool buffer_cloud_initialized = false;
 
     static std::deque<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>> cluster_buffer;
     static std::deque<std::vector<PointXYZColorScore>> center_buffer;
     static bool buffer_cluster_initialized = false;
-
-    static pcl::PointCloud<PointXYZIRingTime>::Ptr global_cloud(new pcl::PointCloud<PointXYZIRingTime>);
 
     double delta_x;
     double delta_y;
@@ -74,67 +72,70 @@ namespace Accumulation
         pcl::transformPointCloud(*cloud, *cloud, final_transform.matrix());
     }
 
+    // TO-DO : CAMBIAR DEFINICIÓN DE CLOUD_BUFFER
+
     /**
     * @brief Accumulate the clouds of the last frames.
     * @param cloud The clouds you want to store in the buffer.
     * @param kBufferSize The size of cloud buffers.
     */
-    pcl::PointCloud<pcl::PointXYZI>::Ptr accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int kBufferSize,
-            double vx, double vy, double yaw_rate, double dt)
-    {
-        //Clean the buffer the first time
-        if (!buffer_cloud_initialized) {
-            cloud_buffer.clear();
-            buffer_cloud_initialized = true;
-        }
+    // pcl::PointCloud<pcl::PointXYZI>::Ptr accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int kBufferSize,
+    //         double vx, double vy, double yaw_rate, double dt)
+    // {
+    //     //Clean the buffer the first time
+    //     if (!buffer_cloud_initialized) {
+    //         cloud_buffer.clear();
+    //         buffer_cloud_initialized = true;
+    //     }
 
-        //Ensure buffer size limit
-        if (cloud_buffer.size() >= static_cast<size_t>(kBufferSize)) 
-        {
-            cloud_buffer.pop_front();
-        }
+    //     //Ensure buffer size limit
+    //     if (cloud_buffer.size() >= static_cast<size_t>(kBufferSize)) 
+    //     {
+    //         cloud_buffer.pop_front();
+    //     }
 
-        //Add the latest frame
-        cloud_buffer.push_back(cloud);
+    //     //Add the latest frame
+    //     cloud_buffer.push_back(cloud);
 
-        if (cloud_buffer.size() < 2) return cloud;
+    //     if (cloud_buffer.size() < 2) return cloud;
 
-        rigidTransformation(cloud_buffer[cloud_buffer.size() - 2], vx, vy, yaw_rate, dt);
+    //     rigidTransformation(cloud_buffer[cloud_buffer.size() - 2], vx, vy, yaw_rate, dt);
 
-        pcl::IterativeClosestPoint<pcl::PointXYZI, pcl::PointXYZI> icp;
-        icp.setMaximumIterations(50);
-        icp.setInputSource(cloud_buffer[cloud_buffer.size() - 2]);
-        icp.setInputTarget(cloud);
-        icp.setEuclideanFitnessEpsilon(0.005);
-        icp.setTransformationEpsilon(1e-5);
-        icp.setMaxCorrespondenceDistance(0.05);
+    //     pcl::IterativeClosestPoint<pcl::PointXYZI, pcl::PointXYZI> icp;
+    //     icp.setMaximumIterations(50);
+    //     icp.setInputSource(cloud_buffer[cloud_buffer.size() - 2]);
+    //     icp.setInputTarget(cloud);
+    //     icp.setEuclideanFitnessEpsilon(0.005);
+    //     icp.setTransformationEpsilon(1e-5);
+    //     icp.setMaxCorrespondenceDistance(0.05);
 
-        Eigen::Matrix4f icp_transform = icp.getFinalTransformation();
+    //     Eigen::Matrix4f icp_transform = icp.getFinalTransformation();
 
-        // Create an accumulated cloud
-        pcl::PointCloud<pcl::PointXYZI>::Ptr accumulated_cloud(new pcl::PointCloud<pcl::PointXYZI>());
+    //     // Create an accumulated cloud
+    //     pcl::PointCloud<pcl::PointXYZI>::Ptr accumulated_cloud(new pcl::PointCloud<pcl::PointXYZI>());
 
-        //Iterate through stored frames (excluding the latest)
-        for (size_t i = 0; i < cloud_buffer.size() - 2; ++i) 
-        {
-            if (!cloud_buffer[i] || cloud_buffer[i]->empty()) 
-            {
-                continue;
-            }
-            //Apply the transformation
-            rigidTransformation(cloud_buffer[i], vx, vy, yaw_rate, dt);
-            pcl::transformPointCloud(*cloud_buffer[i], *cloud_buffer[i], icp_transform);
+    //     //Iterate through stored frames (excluding the latest)
+    //     for (size_t i = 0; i < cloud_buffer.size() - 2; ++i) 
+    //     {
+    //         if (!cloud_buffer[i] || cloud_buffer[i]->empty()) 
+    //         {
+    //             continue;
+    //         }
+    //         //Apply the transformation
+    //         rigidTransformation(cloud_buffer[i], vx, vy, yaw_rate, dt);
+    //         pcl::transformPointCloud(*cloud_buffer[i], *cloud_buffer[i], icp_transform);
 
-            //Merge into final accumulated cloud
-            *accumulated_cloud += *cloud_buffer[i];
-        }
-        // Add the latest frame (unmodified)
-        pcl::transformPointCloud(*cloud_buffer[cloud_buffer.size() - 2], *cloud_buffer[cloud_buffer.size() - 2], icp_transform);
-        *accumulated_cloud += *cloud_buffer[cloud_buffer.size() - 2];
-        *accumulated_cloud += *cloud_buffer.back();
+    //         //Merge into final accumulated cloud
+    //         *accumulated_cloud += *cloud_buffer[i];
+    //     }
+    //     // Add the latest frame (unmodified)
+    //     pcl::transformPointCloud(*cloud_buffer[cloud_buffer.size() - 2], *cloud_buffer[cloud_buffer.size() - 2], icp_transform);
+        
+    //     *accumulated_cloud += *cloud_buffer[cloud_buffer.size() - 2];
+    //     *accumulated_cloud += *cloud_buffer.back();
 
-        return accumulated_cloud;
-    }
+    //     return accumulated_cloud;
+    // }
 
 
 
@@ -202,6 +203,18 @@ namespace Accumulation
         pcl::PointCloud<PointXYZIRingTime>::Ptr cloud,
         double x, double y, double yaw, double dt)
     {
+        //Clean the buffer the first time
+        if (!buffer_cloud_initialized) {
+            cloud_buffer.clear();
+            buffer_cloud_initialized = true;
+        }
+
+        //Ensure buffer size limit
+        if (cloud_buffer.size() >= static_cast<size_t>(10)) 
+        {
+            cloud_buffer.pop_front();
+        }
+
         // delta_x = x;
         // delta_y = y;
         // delta_theta = yaw_rate;
@@ -235,15 +248,21 @@ namespace Accumulation
         //     cloud->points[i].y = point_y;
         // }
 
-        *global_cloud += *transformed_cloud;
-
         // Apply voxel grid filter
-        // pcl::VoxelGrid<PointXYZIRingTime> vg;
-        // vg.setInputCloud(global_cloud);
-        // vg.setLeafSize(0.2f, 0.2f, 0.2f);
-        // pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
-        // vg.filter(*filtered);
-        // global_cloud = filtered;
+        pcl::VoxelGrid<PointXYZIRingTime> vg;
+        vg.setInputCloud(transformed_cloud);
+        vg.setLeafSize(0.2f, 0.2f, 0.2f);
+        pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
+        vg.filter(*filtered);
+
+        //Add the latest frame
+        cloud_buffer.push_back(filtered);
+
+        pcl::PointCloud<PointXYZIRingTime>::Ptr global_cloud(new pcl::PointCloud<PointXYZIRingTime>);
+        for (int i = 0; i < cloud_buffer.size(); i++)
+        {
+            *global_cloud += *cloud_buffer[i];
+        }
 
         return global_cloud;
     }
