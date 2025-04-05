@@ -244,11 +244,11 @@ namespace Accumulation
         *global_cloud += *transformed_cloud;
 
         // Apply voxel grid filter
-        pcl::VoxelGrid<PointXYZIRingTime> vg;
-        vg.setInputCloud(global_cloud);
-        vg.setLeafSize(0.1f, 0.1f, 0.1f);
+        static pcl::VoxelGrid<PointXYZIRingTime> global_vg; 
+        global_vg.setInputCloud(global_cloud);
+        global_vg.setLeafSize(0.1f, 0.1f, 0.1f);
         pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
-        vg.filter(*filtered);
+        global_vg.filter(*filtered);
 
         global_cloud = filtered;
 
@@ -266,21 +266,23 @@ namespace Accumulation
             buffer_cloud_initialized = true;
         }
 
-        //Ensure buffer size limit
-        if (cloud_buffer.size() >= static_cast<size_t>(5)) 
-        {
-            cloud_buffer.pop_front();
+        if (!cloud || cloud->empty()) {
+            return cloud; // or create and return an empty cloud
         }
-
-        // delta_x = x;
-        // delta_y = y;
-        // delta_theta = yaw_rate;
     
-        // RCLCPP_INFO(rclcpp::get_logger("accumulation"), "delta_x: %f, delta_y: %f, delta_theta: %f", delta_x, delta_y, delta_theta);
+        bool found = false;
+        float distance_to_lidar = 0.0;
+        for (int i = 0; i < cloud->size(); i++) {
+            if (cloud->points[i].ring == 0 && cloud->points[i].y > -0.1 && cloud->points[i].y < 0.1 && !found) {
+                distance_to_lidar = cloud->points[i].x;
+                RCLCPP_INFO(rclcpp::get_logger("accumulation"), "Distance to ring 0: %f, timestamp: %f", cloud->points[i].x, cloud->points[i].timestamp);
+                found = true;
+            }
+        }
 
         // Transformation from LIDAR to CoG
         Eigen::Affine3f transform_lidar_to_CoG = Eigen::Affine3f::Identity();
-        transform_lidar_to_CoG.translation() << -1.65, 0.0, 0.0;
+        transform_lidar_to_CoG.translation() << -distance_to_lidar, 0.0, 0.0;
 
         // Motion transformation matrix (rotation + translation)
         Eigen::Affine3f transform_motion = Eigen::Affine3f::Identity();
@@ -291,7 +293,7 @@ namespace Accumulation
 
         // Transformation from CoG back to LIDAR
         Eigen::Affine3f transform_CoG_to_lidar = Eigen::Affine3f::Identity();
-        transform_CoG_to_lidar.translation() << 1.65, 0.0, 0.0;
+        transform_CoG_to_lidar.translation() << distance_to_lidar, 0.0, 0.0;
 
         // Compute final transformation matrix
         Eigen::Affine3f final_transform = transform_lidar_to_CoG * transform_motion * transform_CoG_to_lidar;
@@ -299,22 +301,19 @@ namespace Accumulation
         pcl::PointCloud<PointXYZIRingTime>::Ptr transformed_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         pcl::transformPointCloud(*cloud, *transformed_cloud, final_transform.matrix());
 
-        // Accumulate transformed cloud
-
-        // for (int i = 0; i < cloud->size(); i++) {
-        //     double point_x = (cloud->points[i].x)*std::cos(yaw) - (cloud->points[i].y)*std::sin(yaw) + x;
-        //     double point_y = (cloud->points[i].x)*std::sin(yaw) + (cloud->points[i].y)*std::cos(yaw) + y;
-
-        //     cloud->points[i].x = point_x;
-        //     cloud->points[i].y = point_y;
-        // }
-
         // Apply voxel grid filter
-        pcl::VoxelGrid<PointXYZIRingTime> vg;
-        vg.setInputCloud(transformed_cloud);
-        vg.setLeafSize(0.05f, 0.05f, 0.05f);
+        static pcl::VoxelGrid<PointXYZIRingTime> local_vg; 
+        local_vg.setInputCloud(transformed_cloud);
+        local_vg.setLeafSize(0.05f, 0.05f, 0.05f);
         pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
-        vg.filter(*filtered);
+        local_vg.filter(*filtered);
+
+
+        //Ensure buffer size limit
+        if (cloud_buffer.size() >= static_cast<size_t>(5)) 
+        {
+            cloud_buffer.pop_front();
+        }
 
         //Add the latest frame
         cloud_buffer.push_back(filtered);

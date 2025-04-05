@@ -225,16 +225,9 @@ void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_m
  */
 void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg)
 {   
-    double start_time = this->now().seconds();
-
     //Define the variables for the ground filter
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud(new pcl::PointCloud<PointXYZIRingTime>);
-    //pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_ground(new pcl::PointCloud<PointXYZIRingTime>);
-    //pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filter(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
-
-
-    //GroundFiltering2::RemoveGroundByRings(cloud,cloud_ground,cloud_filter);
 
     bool global_acc = false;
     pcl::PointCloud<PointXYZIRingTime>::Ptr updated_cloud;
@@ -246,7 +239,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     sensor_msgs::msg::PointCloud2 filtered_msg;
     pcl::toROSMsg(*updated_cloud, filtered_msg);
-    filtered_msg.header.frame_id="/rslidar";
+    filtered_msg.header.frame_id="/map";
     filtered_pub_->publish(filtered_msg);
 }
 
