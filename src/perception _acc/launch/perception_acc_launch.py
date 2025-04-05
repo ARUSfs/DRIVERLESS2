@@ -5,16 +5,16 @@ import os
 
 def generate_launch_description():
     config_file_path = os.path.join(
-        get_package_share_directory('perception'),  
+        get_package_share_directory('perception_acc'),  
         'config',
-        'perception_config.yaml'
+        'perception_acc_config.yaml'
     )
 
     return LaunchDescription([
         Node(
-            package='perception', 
-            executable='perceptionacc_exec',  
-            name='perception', 
+            package='perception_acc', 
+            executable='perception_acc_exec',  
+            name='perception_acc', 
             output='screen',
             parameters=[config_file_path]
         )

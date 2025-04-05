@@ -7,7 +7,6 @@
  * @version 0.1
  * @date 3-11-2024
  */
-#define PCL_NO_PRECOMPILE
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>
@@ -18,7 +17,6 @@
 #include "perception/clustering.h"
 #include "perception/cropping.h"
 #include "scoring.h"
-#include "perception/accumulation.h"
 #include "PointXYZColorScore.h"
 #include "color_estimation.h"
 #include <pcl/common/common.h>

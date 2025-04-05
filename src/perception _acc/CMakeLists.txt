@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
-project(perception)
+project(perception_acc)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -funroll-loops -ffast-math")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -funroll-loops -ffast-math -flto")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -19,12 +19,13 @@ find_package(OpenMP REQUIRED)
 
 include_directories(
   include
+  include/perception_acc
   ${PCL_INCLUDE_DIRS}  
 )
 
-add_executable(perception_exec src/perception_node.cpp)
+add_executable(perception_acc_exec src/perception_acc_node.cpp)
 
-ament_target_dependencies(perception_exec 
+ament_target_dependencies(perception_acc_exec 
   rclcpp 
   std_msgs 
   geometry_msgs
@@ -34,13 +35,13 @@ ament_target_dependencies(perception_exec
   common_msgs
 )
 
-target_link_libraries(perception_exec 
+target_link_libraries(perception_acc_exec
   ${PCL_LIBRARIES}
   OpenMP::OpenMP_CXX
 )
 
 install(TARGETS
-  perception_exec
+  perception_acc_exec
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch

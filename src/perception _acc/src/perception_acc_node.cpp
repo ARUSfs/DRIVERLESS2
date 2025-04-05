@@ -1,14 +1,14 @@
 /**
- * @file perceptionacc_node.hpp
+ * @file perception_acc_node.hpp
  * @author Álvaro Galisteo Bermúdez (galisbermo03@gmail.com)
- * @brief Main file for the PerceptioAcc node. 
+ * @brief Main file for the Perception Accumulation node. 
  * Contains the main function and the implementation of the methods to achieve a robust and reliable perception algorithm for the ARUS 
  * Team, which extracts the location of the cones on the track.
  * @version 0.1
  * @date 11-3-2025
  */
 
-#include "perception/perceptionacc_node.hpp"
+#include "perception_acc/perception_acc_node.hpp"
 bool DEBUG = false;
 
 Perception::Perception() : Node("Perception")

@@ -1,5 +1,5 @@
 /**
- * @file perceptionacc_node.hpp
+ * @file perception_acc_node.hpp
  * @author Álvaro Galisteo Bermúdez (galisbermo03@gmail.com)
  * @brief Header file for the PerceptionAcc node.
  * Contains the class definition and the declaration of the methods 
@@ -14,14 +14,14 @@
 #include <pcl/common/centroid.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include "perception/ground_filtering.h"
-#include "perception/clustering.h"
-#include "perception/cropping.h"
+#include "perception_acc/ground_filtering.h"
+#include "perception_acc/clustering.h"
+#include "perception_acc/cropping.h"
 #include "scoring.h"
-#include "perception/accumulation.h"
+#include "perception_acc/accumulation.h"
 #include "PointXYZColorScore.h"
 #include "PointXYZIRingTime.h"
-#include "perception/color_estimation.h"
+#include "perception_acc/color_estimation.h"
 #include <pcl/common/common.h>
 #include <Eigen/Dense>
 #include "common_msgs/msg/state.hpp"
