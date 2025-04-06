@@ -15,7 +15,6 @@ Perception::Perception() : Node("Perception")
 {
     //Declare the parameters
     this->declare_parameter<std::string>("lidar_topic", "/rslidar_points");
-    this->declare_parameter<std::string>("state_topic", "/car_state/state");
     this->declare_parameter<bool>("crop", true);
     this->declare_parameter<double>("max_x_fov", 25.0);
     this->declare_parameter<double>("max_y_fov", 20.0);
@@ -28,10 +27,10 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<double>("threshold_scoring", 0.7);
     this->declare_parameter<double>("distance_threshold", 0.4);
     this->declare_parameter<double>("coloring_threshold", 0.4);
+    this->declare_parameter<bool>("global_accumulation", true);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
-    this->get_parameter("state_topic", kStateTopic);
     this->get_parameter("crop", kCrop);
     this->get_parameter("max_x_fov", kMaxXFov);
     this->get_parameter("max_y_fov", kMaxYFov);
@@ -44,12 +43,7 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("threshold_scoring", kThresholdScoring);
     this->get_parameter("distance_threshold", kDistanceThreshold);
     this->get_parameter("coloring_threshold", kColoringThreshold);
-
-    // Initialize the variables
-    vx = 0.0;
-    vy = 0.0;
-    yaw = 0.0;
-    dt = 0.1;
+    this->get_parameter("global_accumulation", kGlobalAccumulation);
 
     //Transform into radians
     kHFov *= (M_PI/180);
@@ -57,9 +51,6 @@ Perception::Perception() : Node("Perception")
     //Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kLidarTopic, 10, std::bind(&Perception::lidar_callback, this, std::placeholders::_1));
-
-    state_sub_ = this->create_subscription<common_msgs::msg::State>(
-            kStateTopic, 10, std::bind(&Perception::state_callback, this, std::placeholders::_1));
     
     //Create the publishers
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
@@ -68,6 +59,10 @@ Perception::Perception() : Node("Perception")
         "/perception/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/map", 10);
+
+    // Inicializa el tf_buffer y tf_listener de manera que se suscriban al topic /tf
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
 /**
@@ -205,34 +200,21 @@ void Perception::filter_clusters(std::vector<pcl::PointIndices>& cluster_indices
     cluster_indices.resize(clusters_centers.size());
 }
 
-
-/**
-* @brief Create callback function for the car state topic.
-* @param state_msg The information received from the car state node.
-*/
-void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_msg)
-{
-    vx = state_msg->vx;
-    vy = state_msg->vy;
-    x = state_msg->x;
-    y = state_msg->y;
-    yaw = state_msg->yaw;
-}
-
 /**
  * @brief Create callback function for the lidar topic.
  * @param lidar_msg The point cloud message received from the lidar topic.
  */
 void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg)
 {   
+    this->get_tf_position();
+
     //Define the variables for the ground filter
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
-    bool global_acc = true;
     pcl::PointCloud<PointXYZIRingTime>::Ptr updated_cloud;
-    if (global_acc) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, x, y, yaw, dt);
-    else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud, x, y, yaw, dt);
+    if (kGlobalAccumulation) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, x_, y_, yaw_);
+    else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud, x_, y_, yaw_);
 
     RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", updated_cloud->size());
 
@@ -247,6 +229,36 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::toROSMsg(*cloud_filtered, filtered_msg);
     filtered_msg.header.frame_id="/rslidar";
     filtered_pub_->publish(filtered_msg);
+}
+
+/**
+ * @brief Get the position of the car in the world frame.
+ * * This function uses the tf2 library to get the transform between the car and the world frame.
+ * * It uses the tf_buffer_ to get the transform and then it extracts the position and orientation of the car.
+ * 
+ */
+void Perception::get_tf_position()
+{
+    geometry_msgs::msg::TransformStamped transform;
+    try {
+        // Graph slam tf
+        transform = tf_buffer_->lookupTransform("arussim/world", "slam/vehicle", tf2::TimePointZero);
+        tf2::Quaternion q(
+            transform.transform.rotation.x,
+            transform.transform.rotation.y,
+            transform.transform.rotation.z,
+            transform.transform.rotation.w
+        );
+        double roll, pitch, yaw;
+        tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+        x_ = transform.transform.translation.x;
+        y_ = transform.transform.translation.y;
+        yaw_ = yaw;
+        
+        RCLCPP_INFO(this->get_logger(), "Transform: x: %f, y: %f, yaw: %f", x_, y_, yaw_);
+    } catch (const tf2::TransformException &ex) {
+        RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
+    }
 }
 
 int main(int argc, char * argv[])

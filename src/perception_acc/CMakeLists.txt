@@ -16,7 +16,8 @@ find_package(PCL REQUIRED COMPONENTS common io filters segmentation search)
 find_package(pcl_conversions REQUIRED)
 find_package(common_msgs REQUIRED)
 find_package(OpenMP REQUIRED)
-
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 include_directories(
   include
   include/perception_acc
@@ -33,6 +34,8 @@ ament_target_dependencies(perception_acc_exec
   PCL 
   pcl_conversions
   common_msgs
+  tf2_ros
+  tf2
 )
 
 target_link_libraries(perception_acc_exec
