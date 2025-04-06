@@ -229,17 +229,23 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
-    bool global_acc = false;
+    bool global_acc = true;
     pcl::PointCloud<PointXYZIRingTime>::Ptr updated_cloud;
     if (global_acc) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, x, y, yaw, dt);
     else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud, x, y, yaw, dt);
 
     RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", updated_cloud->size());
 
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered_ground(new pcl::PointCloud<PointXYZIRingTime>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered(new pcl::PointCloud<PointXYZIRingTime>);
+    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+    
+    //GroundRemove::RemoveGround(*updated_cloud,*cloud_filtered_ground,*cloud_filtered); 
+    GroundFiltering::grid_ground_filter(updated_cloud, cloud_filtered, cloud_filtered_ground, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
 
     sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*updated_cloud, filtered_msg);
-    filtered_msg.header.frame_id="/map";
+    pcl::toROSMsg(*cloud_filtered, filtered_msg);
+    filtered_msg.header.frame_id="/rslidar";
     filtered_pub_->publish(filtered_msg);
 }
 

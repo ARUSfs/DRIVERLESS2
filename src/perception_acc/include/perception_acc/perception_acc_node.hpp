@@ -8,20 +8,15 @@
  * @date 11-3-2025
  */
 #define PCL_NO_PRECOMPILE
+
+#include "PointXYZColorScore.h"
+#include "PointXYZIRingTime.h"
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/centroid.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include "perception_acc/ground_filtering.h"
-#include "perception_acc/clustering.h"
-#include "perception_acc/cropping.h"
-#include "scoring.h"
-#include "perception_acc/accumulation.h"
-#include "PointXYZColorScore.h"
-#include "PointXYZIRingTime.h"
-#include "perception_acc/color_estimation.h"
 #include <pcl/common/common.h>
 #include <Eigen/Dense>
 #include "common_msgs/msg/state.hpp"
@@ -30,6 +25,13 @@
 #include <omp.h>
 #include <iostream>
 
+#include "perception_acc/ground_filtering.h"
+#include "perception_acc/clustering.h"
+#include "perception_acc/cropping.h"
+#include "perception_acc/scoring.h"
+#include "perception_acc/accumulation.h"
+#include "perception_acc/color_estimation.h"
+#include "perception_acc/ground_remove.h"
 
 /**
  * @class Perception

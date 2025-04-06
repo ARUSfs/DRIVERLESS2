@@ -30,11 +30,11 @@ namespace GroundFiltering
     * @param coefficients The coefficients of the planar ecuation.
     * @param threshold The threshold that will determine if the point belong to the ground.
     */
-    void ransac_ground_filter(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, 
-        pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold)
+    void ransac_ground_filter(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_filtered, 
+        pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold)
     {   
         //Define the parameters
-        pcl::SACSegmentation<pcl::PointXYZI> segmentation;
+        pcl::SACSegmentation<PointXYZIRingTime> segmentation;
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
         pcl::PointIndices::Ptr outliers(new pcl::PointIndices);
 
@@ -56,7 +56,7 @@ namespace GroundFiltering
         }
 
         //Extract the planar inliers from the input cloud
-        pcl::ExtractIndices<pcl::PointXYZI> extract;
+        pcl::ExtractIndices<PointXYZIRingTime> extract;
         extract.setInputCloud(cloud);
         extract.setIndices(inliers);
 
@@ -84,17 +84,17 @@ namespace GroundFiltering
     * @param normal The normal vector of the current plane, that will be recalculated.
     * @param angle_threshold The threshold that will determine if the potencial plane is discard as plane or not.
     */
-    void ransac_checking_normal_vectors(pcl::PointCloud<pcl::PointXYZI>::Ptr& grid_cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& temp_filtered, 
-        pcl::PointCloud<pcl::PointXYZI>::Ptr& temp_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, 
-        pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, Eigen::Vector3d& prev_normal, 
+    void ransac_checking_normal_vectors(pcl::PointCloud<PointXYZIRingTime>::Ptr& grid_cloud, pcl::PointCloud<PointXYZIRingTime>::Ptr& temp_filtered, 
+        pcl::PointCloud<PointXYZIRingTime>::Ptr& temp_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, 
+        pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_filtered, pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_plane, Eigen::Vector3d& prev_normal, 
         Eigen::Vector3d& normal, double angle_threshold, int minimum_ransac_points)
     {
         // Filter the squares with just a few points
         if (!(grid_cloud->size() < static_cast<std::size_t>(minimum_ransac_points)))
         {
             // Create new temporal clouds to store the ground and not ground points if neccesary
-            pcl::PointCloud<pcl::PointXYZI>::Ptr new_temp_filtered(new pcl::PointCloud<pcl::PointXYZI>);
-            pcl::PointCloud<pcl::PointXYZI>::Ptr new_temp_plane(new pcl::PointCloud<pcl::PointXYZI>);
+            pcl::PointCloud<PointXYZIRingTime>::Ptr new_temp_filtered(new pcl::PointCloud<PointXYZIRingTime>);
+            pcl::PointCloud<PointXYZIRingTime>::Ptr new_temp_plane(new pcl::PointCloud<PointXYZIRingTime>);
 
             // Apply ransac
             ransac_ground_filter(grid_cloud, temp_filtered, temp_plane, coefficients, threshold);
@@ -150,8 +150,8 @@ namespace GroundFiltering
     * @param My The lenght in the y axis.
     * @param Mz The lenght in the z axis.
     */
-    void grid_ground_filter(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, 
-        pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, double Mx, double My, double Mz,
+    void grid_ground_filter(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_filtered, 
+        pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, double Mx, double My, double Mz,
         int number_sections, double angle_threshold, int minimum_ransac_points)
     {
         // Initialize the variables
@@ -175,16 +175,16 @@ namespace GroundFiltering
                 Eigen::Vector4f max_pt(0 + (i + 1) * x_step, -My + (j + 1) * y_step, Mz, 1.0);
 
                 // Crop the input cloud to the square measures
-                pcl::PointCloud<pcl::PointXYZI>::Ptr grid_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-                pcl::CropBox<pcl::PointXYZI> crop_box_filter;
+                pcl::PointCloud<PointXYZIRingTime>::Ptr grid_cloud(new pcl::PointCloud<PointXYZIRingTime>);
+                pcl::CropBox<PointXYZIRingTime> crop_box_filter;
                 crop_box_filter.setInputCloud(cloud);
                 crop_box_filter.setMin(min_pt);
                 crop_box_filter.setMax(max_pt);
                 crop_box_filter.filter(*grid_cloud);
 
                 // Create temporal clouds to store the ground and not ground points
-                pcl::PointCloud<pcl::PointXYZI>::Ptr temp_filtered(new pcl::PointCloud<pcl::PointXYZI>);
-                pcl::PointCloud<pcl::PointXYZI>::Ptr temp_plane(new pcl::PointCloud<pcl::PointXYZI>);
+                pcl::PointCloud<PointXYZIRingTime>::Ptr temp_filtered(new pcl::PointCloud<PointXYZIRingTime>);
+                pcl::PointCloud<PointXYZIRingTime>::Ptr temp_plane(new pcl::PointCloud<PointXYZIRingTime>);
                 
                 // Apply ransac and check the normal vectors
                 ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, prev_normal, normal, angle_threshold, minimum_ransac_points);
