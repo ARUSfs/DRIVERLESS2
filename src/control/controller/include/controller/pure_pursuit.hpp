@@ -126,16 +126,16 @@ public:
      */
 
      double calculate_look_ahead_distance(double cross_track_error, double vx) {
-        double delta_min_ = 2.5;  
-        double delta_max_ = 9.0; 
-        double gamma_ = 0.8 ;        
+        double delta_min_ = 5.0;  
+        double delta_max_ = 12.0; 
+        double gamma_ = 1.0;        
         
         double vel_f = std::min(std::max(vx / 10.0, 0.5), 2.0);
 
         return vel_f * ((delta_max_ - delta_min_) * std::exp(-gamma_ * std::abs(cross_track_error)) + delta_min_);
    
     }
-
+    
     /**
      * @brief Get steering angle.
      * @authors Team driverless ARUS
