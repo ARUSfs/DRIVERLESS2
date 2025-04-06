@@ -2,7 +2,9 @@ perception_acc:
   ros__parameters:
     #Topic
     lidar_topic: "/rslidar_points"
-    state_topic: "/car_state/state"
+
+    #Accumulation
+    global_accumulation: false
 
     #Parameters of FOV
     crop: true

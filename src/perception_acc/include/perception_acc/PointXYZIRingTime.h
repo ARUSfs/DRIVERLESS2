@@ -18,14 +18,14 @@ struct PointXYZIRingTime
     PCL_ADD_POINT4D;
     float intensity;
     uint16_t ring;
-    float timestamp;
+    double timestamp;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     PointXYZIRingTime() : x(0), y(0), z(0), intensity(0), ring(0), timestamp(0)
     {
     }
-    PointXYZIRingTime(float x, float y, float z, float intensity, uint16_t ring, float timestamp)
+    PointXYZIRingTime(float x, float y, float z, float intensity, uint16_t ring, double timestamp)
     {
         this->x = x;
         this->y = y;
