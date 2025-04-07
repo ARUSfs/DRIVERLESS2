@@ -143,38 +143,37 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     triangulation_pub_ -> publish(triangulation_msg);
     
     
-    // Get the triangles containing the back edge
-    std::vector<int> tri_candidates = {};
-    int nearest_tri_candidate;
+    // Get the nearest triangle containing the back edge
+    int nearest_tri = -1;
     double min_distance = INFINITY;
     int edge_v0_ind = this->get_vertex_index(CDT::V2d<double>::make(back_edge[0].x,back_edge[0].y), triang);
     int edge_v1_ind = this->get_vertex_index(CDT::V2d<double>::make(back_edge[1].x,back_edge[1].y), triang);
     for (int i : this->get_triangles_from_vert(edge_v0_ind, triang)){
         if (in(i, this->get_triangles_from_vert(edge_v1_ind, triang))){
             CDT::V2d<double> centroid = compute_centroid(i, triang.triangles, triang.vertices);
-            tri_candidates.push_back(i);
-            if ((centroid.x-x_) * (centroid.x-x_) + (centroid.y-y_) * (centroid.y-y_) < min_distance){
-                min_distance = (centroid.x-x_) * (centroid.x-x_) + (centroid.y-y_) * (centroid.y-y_);
-                nearest_tri_candidate = i;
+            double d = (centroid.x-x_) * (centroid.x-x_) + (centroid.y-y_) * (centroid.y-y_);
+            if (d < min_distance){
+                min_distance = d;
+                nearest_tri = i;
             }
         }
     }
 
-    // Get the best route from back edge to next triangle
+    if (nearest_tri == -1){
+        return;
+    }
     SimplexTree tree;
-    double min_cost = INFINITY;
-    for (int tri: tri_candidates){
-        tree = SimplexTree(triangles_, tri, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, yaw_,
-            kAngleCoeff, kLenCoeff);
-        auto c0 = tree.best_route_[0];
-        auto c2 = tree.best_route_[2];
-        double angle_diff = std::abs(atan2(c2.y-c0.y, c2.x-c0.x)-yaw_);
-        std::min(angle_diff, 2*M_PI-angle_diff);
-        if (tree.min_cost_ < min_cost && angle_diff < M_PI/2){
-            min_cost = tree.min_cost_;
-            best_midpoint_route_ = tree.best_route_;
-            best_index_route_ = tree.best_index_route_;
-        }
+    tree = SimplexTree(triangles_, nearest_tri, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, yaw_,
+        kAngleCoeff, kLenCoeff);
+    auto c0 = tree.best_route_[0];
+    auto c2 = tree.best_route_[2];
+    double angle_diff = std::abs(atan2(c2.y-c0.y, c2.x-c0.x)-yaw_);
+    std::min(angle_diff, 2*M_PI-angle_diff);
+    if (angle_diff < M_PI/2){
+        best_midpoint_route_ = tree.best_route_;
+        best_index_route_ = tree.best_index_route_;
+    } else {
+        return;
     }
             
     
@@ -195,7 +194,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     if (back_edge.size() == 2) {
         back_point = ConeXYZColorScore((back_edge[0].x+back_edge[1].x)/2,
                                        (back_edge[0].y+back_edge[1].y)/2, 0, UNCOLORED, 1);
-        if (distance(back_point, back_route_.back()) > 1.0){
+        if (distance(back_point, back_route_.back()) > 1.0){ //check back edge separated from all back edges
             if (distance(back_point, back_route_[0]) > 3.0 || back_route_.size() < 10){
                 back_route_.push_back(back_point);
             } else {
