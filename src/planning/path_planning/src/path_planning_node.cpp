@@ -83,14 +83,6 @@ PathPlanning::PathPlanning() : Node("path_planning")
 
 void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {
-    // Publish the closing route if selected in config file and shutdown the node
-    if (kStopAfterClosing && (closing_route_.size() > 0)){
-        common_msgs::msg::Trajectory trajectory_msg = this->create_trajectory_msg(closing_route_);
-        if (trajectory_msg.points.size()>0) trajectory_pub_->publish(trajectory_msg);
-        common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(best_index_route_);
-        if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
-        rclcpp::shutdown();
-    }
 
     // Get the track limits in the second lap
     if (lap_count_ > 0 && x_>3 && !track_limits_sent_){
@@ -98,6 +90,22 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
         track_limits_sent_ = true;
     }
+
+
+    // Publish the closing route if selected in config file and shutdown the node
+    if ((closing_route_.size() > 0)){
+        common_msgs::msg::Trajectory trajectory_msg = this->create_trajectory_msg(closing_route_);
+        if (trajectory_msg.points.size()>0) trajectory_pub_->publish(trajectory_msg);
+        
+        if (kStopAfterClosing){   
+            common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(best_index_route_);
+            if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
+            rclcpp::shutdown();
+        }
+        return;
+    }
+
+
 
     // Save the point cloud as a pcl object from ROS2 msg
     pcl::fromROSMsg(*per_msg, pcl_cloud_);
@@ -183,16 +191,20 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     if (final_route.size() <3) return;
 
     ConeXYZColorScore back_point;
+    bool route_closed = false;
     if (back_edge.size() == 2) {
         back_point = ConeXYZColorScore((back_edge[0].x+back_edge[1].x)/2,
                                        (back_edge[0].y+back_edge[1].y)/2, 0, UNCOLORED, 1);
         if (distance(back_point, back_route_.back()) > 1.0){
-            back_route_.push_back(back_point);
+            if (distance(back_point, back_route_[0]) > 3.0 || back_route_.size() < 10){
+                back_route_.push_back(back_point);
+            } else {
+                route_closed = true;
+            }
         }
     }
 
     std::vector<ConeXYZColorScore> full_route = back_route_;
-    bool route_closed = false;
     for (int i=0 ; i<final_route.size(); i++){
         auto c = final_route[i];
         if ( distance(c, ConeXYZColorScore(0.0, 0.0, 0, UNCOLORED, -1)) > 3.0 || back_route_.size()<10){
