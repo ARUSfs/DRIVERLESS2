@@ -191,23 +191,40 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
     ConeXYZColorScore back_point;
     bool route_closed = false;
+    bool append_point = true;
     if (back_edge.size() == 2) {
         back_point = ConeXYZColorScore((back_edge[0].x+back_edge[1].x)/2,
                                        (back_edge[0].y+back_edge[1].y)/2, 0, UNCOLORED, 1);
-        if (distance(back_point, back_route_.back()) > 1.0){ //check back edge separated from all back edges
-            if (distance(back_point, back_route_[0]) > 3.0 || back_route_.size() < 10){
-                back_route_.push_back(back_point);
-            } else {
-                route_closed = true;
+
+        for (auto p: back_route_){
+            if (distance(back_point, p) < 0.5){
+                append_point = false;
+                break;
             }
+        }
+
+        if (append_point) {
+            back_route_.push_back(back_point);
+        } else if (back_route_.size() > 10 && distance(back_point, back_route_[0]) < 3.0){
+            route_closed = true;
         }
     }
 
     std::vector<ConeXYZColorScore> full_route = back_route_;
     for (int i=0 ; i<final_route.size(); i++){
         auto c = final_route[i];
-        if ( distance(c, ConeXYZColorScore(0.0, 0.0, 0, UNCOLORED, -1)) > 3.0 || back_route_.size()<10){
-            if (distance(c,full_route.back())>0.1){ // Ensure no duplicates
+        append_point = true;
+        if ( distance(c, ConeXYZColorScore()) > 3.0 || back_route_.size()<10){
+
+            // Check if the point is too close to the last 10 points in the route
+            for (int j=1; j<=10; j++){
+                if (distance(c, full_route[full_route.size()-j]) < 2.0){
+                    append_point = false;
+                    break;
+                }
+            }
+
+            if (append_point){ // Ensure no duplicates
                 full_route.push_back(c);
             }
         } else {
