@@ -42,13 +42,16 @@ ament_target_dependencies(camera_perception_exec rclcpp
 ament_target_dependencies(camera_calibration_exec rclcpp 
                             std_msgs 
                             sensor_msgs 
+                            geometry_msgs
+                            PCL
+                            pcl_conversions
                             common_msgs
                             OpenCV
                             cv_bridge
                             )
 
 target_link_libraries(camera_perception_exec ${DARKHELP} ${DARKNET})
-
+target_link_libraries(camera_calibration_exec ${DARKHELP} ${DARKNET})
   
 install(TARGETS
   camera_perception_exec

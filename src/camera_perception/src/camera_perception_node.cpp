@@ -26,6 +26,7 @@ CameraPerception::CameraPerception() : Node("camera_perception")
         std::bind(&CameraPerception::image_callback, this, std::placeholders::_1));
         
     image_pub_ = this->create_publisher<sensor_msgs::msg::Image>("image", 20);
+    perception_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/camera/map", 20);
 
     // Darknet params and initialization
     kConfigFile = kPkgPath + "/resources/darknet/cfg.cfg";
@@ -45,26 +46,19 @@ CameraPerception::CameraPerception() : Node("camera_perception")
     std::string dist_file_path = kPkgPath + "/resources/calibration/dist_coeffs.yaml";
     std::string rvecs_file_path = kPkgPath + "/resources/calibration/rvecs.yaml";
     std::string tvecs_file_path = kPkgPath + "/resources/calibration/tvecs.yaml";
-    cv::FileStorage mat_file(matrix_file_path, cv::FileStorage::READ);
-    cv::FileStorage dist_file(dist_file_path, cv::FileStorage::READ);
-    cv::FileStorage rvecs_file(rvecs_file_path, cv::FileStorage::READ);
-    cv::FileStorage tvecs_file(tvecs_file_path, cv::FileStorage::READ);
-    if (!mat_file.isOpened() || !dist_file.isOpened() || !rvecs_file.isOpened() || !tvecs_file.isOpened()){
+    std::string homography_file_path = kPkgPath + "/resources/calibration/homography.yaml";
+    camera_matrix_ = load_mat_from_file(matrix_file_path, "Camera matrix");
+    dist_coeffs_ = load_mat_from_file(dist_file_path, "Distorsion coefficients");
+    rot_mat_ = load_mat_from_file(homography_file_path, "Inverse rotation matrix");
+    tvec_ = load_mat_from_file(homography_file_path, "Translation vector");
+    if (camera_matrix_.empty() || dist_coeffs_.empty() || rot_mat_.empty() || tvec_.empty()){
         RCLCPP_ERROR(this->get_logger(), "Calibration files not found");
         return;
     }
-    mat_file["Camera matrix"] >> camera_matrix_;
-    dist_file["Distorsion coefficients"] >> dist_coeffs_;
-    rvecs_file["Rvecs"] >> rvecs_;
-    tvecs_file["Tvecs"] >> tvecs_;
-    mat_file.release();
-    dist_file.release();
-    rvecs_file.release();
-    tvecs_file.release();
-    std::cout << "Camera matrix: " << camera_matrix_ << std::endl;
-    std::cout << "Distortion coefficients: " << dist_coeffs_ << std::endl;
-    std::cout << "Rvecs: " << rvecs_ << std::endl;
-    std::cout << "Tvecs: " << tvecs_ << std::endl;
+
+    // Calculate parameters to reproject the points of the image
+    left_side_ = rot_mat_ * camera_matrix_.inv();
+    right_side_ = rot_mat_ * tvec_;    
 }
 
 void CameraPerception::camera_callback(){
@@ -91,13 +85,13 @@ void CameraPerception::image_callback(const sensor_msgs::msg::Image::SharedPtr m
 
     // Process the image
     cv::Mat image_raw = cv_bridge::toCvCopy(msg, "bgr8")->image;
-    cv::Mat image_undistorted;
-    cv::Mat image_resized;
-    cv::undistort(image_raw, image_undistorted, camera_matrix_, dist_coeffs_);
-    cv::resize(image_undistorted, image_resized, cv::Size(1920, 1088));
+    if (image_raw.empty()) return;
+    cv::Mat image_resized, image;
+    cv::resize(image_raw, image, cv::Size(1920, 1088));
+    //cv::undistort(image_resized, image, camera_matrix_, dist_coeffs_);
     
     // Perform the prediction
-    const auto result = nn_.predict(image_resized);
+    const auto result = nn_.predict(image);
     if (result.size() == 0){
         RCLCPP_INFO(this->get_logger(), "No predictions found in frame");
         return;
@@ -109,9 +103,43 @@ void CameraPerception::image_callback(const sensor_msgs::msg::Image::SharedPtr m
     sensor_msgs::msg::Image::SharedPtr msg_out = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", output).toImageMsg();
     image_pub_->publish(*msg_out);
 
+    pcl::PointCloud<ConeXYZColorScore> perception_map;
+    for (const auto det : result){
+        int cone_color;
+        if (det.best_class == 0) {
+            cone_color = 1;
+        } else if (det.best_class == 1) {
+            cone_color = 0;
+        } else if (det.best_class == 2) {
+            cone_color = 2;
+        } else {
+            cone_color = 3;
+        }
+        cv::Mat vertex = (cv::Mat_<double>(3,1) <<  det.rect.x + det.rect.width / 2, det.rect.y, 1);
+
+        cv::Mat left_side = left_side_ * vertex;
+
+        double s = (0.32 + right_side_.at<double>(2,0))/left_side.at<double>(2,0);
+
+        cv::Mat cone_loc = s * left_side - right_side_;
+        ConeXYZColorScore cone(cone_loc.at<double>(0,0), cone_loc.at<double>(1,0), 0.32, cone_color, det.best_probability);
+        std::cout << "Cone: " << cone.x << ", " << cone.y << ", " << cone.z << std::endl;
+        perception_map.push_back(cone);
+    }
+
+    sensor_msgs::msg::PointCloud2 map_msg;
+    pcl::toROSMsg(perception_map, map_msg);
+    map_msg.header.frame_id = "rslidar";
+    perception_pub_->publish(map_msg);
 }
 
-
+cv::Mat CameraPerception::load_mat_from_file(std::string file_path, std::string matrix_name){
+    cv::Mat matrix;
+    cv::FileStorage mat_file(file_path, cv::FileStorage::READ);
+    mat_file[matrix_name] >> matrix;
+    mat_file.release();
+    return matrix;
+}
 
 int main(int argc, char * argv[])
 {
