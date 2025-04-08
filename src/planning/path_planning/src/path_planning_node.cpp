@@ -209,22 +209,28 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     std::vector<ConeXYZColorScore> full_route = back_route_;
+    double prev_angle = atan2(back_route_.back().y-back_route_[back_route_.size()-2].y,
+                              back_route_.back().x-back_route_[back_route_.size()-2].x);
     for (int i=0 ; i<final_route.size(); i++){
         auto c = final_route[i];
         append_point = true;
+        double angle_diff = std::abs(atan2(c.y-full_route.back().y, c.x-full_route.back().x)-prev_angle);
+        angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
+
         if ( distance(c, ConeXYZColorScore()) > 3.0 || back_route_.size()<10){
 
             // Check if the point is too close to the last 10 points in the route
             for (int j=1; j<=10; j++){
-                if (distance(c, full_route[full_route.size()-j]) < 2.0){
+                if (distance(c, full_route[full_route.size()-j]) < 0.5){
                     append_point = false;
                     break;
                 }
             }
 
-            if (append_point){ // Ensure no duplicates
+            if (append_point && angle_diff < M_PI/2){ // Ensure no duplicates
+                prev_angle = atan2(c.y-full_route.back().y, c.x-full_route.back().x);
                 full_route.push_back(c);
-            }
+            } 
         } else {
             if (full_route.size() > 0.5*pcl_cloud_.size()){
                 route_closed = true;
