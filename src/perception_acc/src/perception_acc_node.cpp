@@ -215,6 +215,23 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Define the variables for the ground filter
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
+    
+    float zmin = -1.0;   
+    float zmax = 0.2;    
+
+    pcl::PointCloud<PointXYZIRingTime>::Ptr filtered_cloud(new pcl::PointCloud<PointXYZIRingTime>);
+
+    for (const auto& point : cloud->points) {
+        if (point.z >= zmin && point.z <= zmax) {
+            filtered_cloud->points.push_back(point);
+        }
+    }
+
+    filtered_cloud->width = filtered_cloud->points.size();
+    filtered_cloud->height = 1;
+    filtered_cloud->is_dense = true;
+
+    cloud = filtered_cloud;
 
     pcl::PointCloud<PointXYZIRingTime>::Ptr updated_cloud;
     if (kGlobalAccumulation) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
@@ -226,8 +243,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
     
-    //GroundRemove::RemoveGround(*updated_cloud,*cloud_filtered_ground,*cloud_filtered); 
-    GroundFiltering::grid_ground_filter(updated_cloud, cloud_filtered, cloud_filtered_ground, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+    GroundRemove::RemoveGround(*updated_cloud,*cloud_filtered_ground,*cloud_filtered); 
+    //GroundFiltering::grid_ground_filter(updated_cloud, cloud_filtered, cloud_filtered_ground, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
 
     sensor_msgs::msg::PointCloud2 filtered_msg;
     pcl::toROSMsg(*cloud_filtered, filtered_msg);

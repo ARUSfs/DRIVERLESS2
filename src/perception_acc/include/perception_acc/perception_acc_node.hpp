@@ -21,6 +21,7 @@
 #include <Eigen/Dense>
 #include "common_msgs/msg/state.hpp"
 #include <pcl/common/transforms.h>
+#include <pcl/filters/crop_box.h>
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include <deque>
 #include <omp.h>
