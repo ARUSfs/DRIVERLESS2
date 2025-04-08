@@ -31,7 +31,7 @@ def generate_launch_description():
         create_node(pkg='perception'),
         create_node(pkg='acc_planning',
                     params=[{'target_speed': 3.0,
-                             'min_acc': 5.0,
+                             'max_acc': 5.0,
                              'max_dec': 5.0,
                              'track_length': 75.0}]),
         create_node(pkg='controller',

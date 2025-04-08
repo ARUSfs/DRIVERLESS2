@@ -67,7 +67,7 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                -circle_radius + circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(first_lap_speed, ay * circle_radius));
-        k_.push_back(1/circle_radius);
+        k_.push_back(-1/circle_radius);
     }
 
     // Initialize second circle section
@@ -75,7 +75,7 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                -circle_radius + circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(second_lap_speed, ay * circle_radius));
-        k_.push_back(1/circle_radius);
+        k_.push_back(-1/circle_radius);
     }
 
     // Initialize third circle section
@@ -83,7 +83,7 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                circle_radius - circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(first_lap_speed, ay * circle_radius));
-        k_.push_back(-1/circle_radius);
+        k_.push_back(1/circle_radius);
     }
 
     // Initialize fourth circle section
@@ -91,7 +91,7 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                circle_radius - circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(second_lap_speed, ay * circle_radius));
-        k_.push_back(-1/circle_radius);
+        k_.push_back(1/circle_radius);
     }
 
     // Initialize final straight section
