@@ -49,6 +49,8 @@ private:
     double radius = 9.125;
     bool trajectory_calculated_ = false;
     std::vector<Eigen::Vector2d> template_;
+    std::vector<double> s_;
+    std::vector<double> k_;
     std::vector<double> speed_profile_;
     std::vector<double> acc_profile_;
 
