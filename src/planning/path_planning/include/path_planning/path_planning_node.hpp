@@ -114,11 +114,14 @@ class PathPlanning : public rclcpp::Node
         // Routes
         std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
         std::vector<ConeXYZColorScore> best_midpoint_route_;
-        std::vector<int> best_index_route_;
         std::vector<ConeXYZColorScore> closing_route_= {};
         std::vector<std::vector<ConeXYZColorScore>> previous_midpoint_routes_;
         int invalid_counter_=0;
         std::vector<ConeXYZColorScore> back_route_ = {ConeXYZColorScore(0,0,0,UNCOLORED,-1)};
+        CDT::TriangleVec TL_triang_; 
+        std::vector<int> TL_tri_indices_;
+
+
 
         /**
          * @brief Callback function for the perception topic.
@@ -203,5 +206,6 @@ class PathPlanning : public rclcpp::Node
          * This route is suposed to be the final and closed route once the first lap is completed.
          * @return common_msgs::msg::TrackLimits the message to be published.
          */
-        common_msgs::msg::TrackLimits create_track_limits_msg(std::vector<int> triangle_route);
+        common_msgs::msg::TrackLimits create_track_limits_msg(CDT::TriangleVec triang, 
+                                                                std::vector<int> triangles_route);
 };

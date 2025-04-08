@@ -83,21 +83,28 @@ PathPlanning::PathPlanning() : Node("path_planning")
 
 void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {
-    // Publish the closing route if selected in config file and shutdown the node
-    if (kStopAfterClosing && (closing_route_.size() > 0)){
-        common_msgs::msg::Trajectory trajectory_msg = this->create_trajectory_msg(closing_route_);
-        if (trajectory_msg.points.size()>0) trajectory_pub_->publish(trajectory_msg);
-        common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(best_index_route_);
-        if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
-        rclcpp::shutdown();
-    }
-
     // Get the track limits in the second lap
     if (lap_count_ > 0 && x_>3 && !track_limits_sent_){
-        common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(best_index_route_);
+        common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(TL_triang_, TL_tri_indices_);
         if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
         track_limits_sent_ = true;
     }
+
+
+    // Publish the closing route if selected in config file and shutdown the node
+    if ((closing_route_.size() > 0)){
+        common_msgs::msg::Trajectory trajectory_msg = this->create_trajectory_msg(closing_route_);
+        if (trajectory_msg.points.size()>0) trajectory_pub_->publish(trajectory_msg);
+        
+        if (kStopAfterClosing){   
+            common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(TL_triang_, TL_tri_indices_);
+            if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
+            rclcpp::shutdown();
+        }
+        return;
+    }
+
+
 
     // Save the point cloud as a pcl object from ROS2 msg
     pcl::fromROSMsg(*per_msg, pcl_cloud_);
@@ -135,38 +142,36 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     triangulation_pub_ -> publish(triangulation_msg);
     
     
-    // Get the triangles containing the back edge
-    std::vector<int> tri_candidates = {};
-    int nearest_tri_candidate;
+    // Get the nearest triangle containing the back edge
+    int nearest_tri = -1;
     double min_distance = INFINITY;
     int edge_v0_ind = this->get_vertex_index(CDT::V2d<double>::make(back_edge[0].x,back_edge[0].y), triang);
     int edge_v1_ind = this->get_vertex_index(CDT::V2d<double>::make(back_edge[1].x,back_edge[1].y), triang);
     for (int i : this->get_triangles_from_vert(edge_v0_ind, triang)){
         if (in(i, this->get_triangles_from_vert(edge_v1_ind, triang))){
             CDT::V2d<double> centroid = compute_centroid(i, triang.triangles, triang.vertices);
-            tri_candidates.push_back(i);
-            if ((centroid.x-x_) * (centroid.x-x_) + (centroid.y-y_) * (centroid.y-y_) < min_distance){
-                min_distance = (centroid.x-x_) * (centroid.x-x_) + (centroid.y-y_) * (centroid.y-y_);
-                nearest_tri_candidate = i;
+            double d = (centroid.x-x_) * (centroid.x-x_) + (centroid.y-y_) * (centroid.y-y_);
+            if (d < min_distance){
+                min_distance = d;
+                nearest_tri = i;
             }
         }
     }
 
-    // Get the best route from back edge to next triangle
+    if (nearest_tri == -1){
+        return;
+    }
     SimplexTree tree;
-    double min_cost = INFINITY;
-    for (int tri: tri_candidates){
-        tree = SimplexTree(triangles_, tri, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, yaw_,
-            kAngleCoeff, kLenCoeff);
-        auto c0 = tree.best_route_[0];
-        auto c2 = tree.best_route_[2];
-        double angle_diff = std::abs(atan2(c2.y-c0.y, c2.x-c0.x)-yaw_);
-        std::min(angle_diff, 2*M_PI-angle_diff);
-        if (tree.min_cost_ < min_cost && angle_diff < M_PI/2){
-            min_cost = tree.min_cost_;
-            best_midpoint_route_ = tree.best_route_;
-            best_index_route_ = tree.best_index_route_;
-        }
+    tree = SimplexTree(triangles_, nearest_tri, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, yaw_,
+        kAngleCoeff, kLenCoeff);
+    auto c0 = tree.best_route_[0];
+    auto c2 = tree.best_route_[2];
+    double angle_diff = std::abs(atan2(c2.y-c0.y, c2.x-c0.x)-yaw_);
+    std::min(angle_diff, 2*M_PI-angle_diff);
+    if (angle_diff < M_PI/2){
+        best_midpoint_route_ = tree.best_route_;
+    } else {
+        return;
     }
             
     
@@ -183,22 +188,49 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     if (final_route.size() <3) return;
 
     ConeXYZColorScore back_point;
+    bool route_closed = false;
+    bool append_point = true;
     if (back_edge.size() == 2) {
         back_point = ConeXYZColorScore((back_edge[0].x+back_edge[1].x)/2,
                                        (back_edge[0].y+back_edge[1].y)/2, 0, UNCOLORED, 1);
-        if (distance(back_point, back_route_.back()) > 1.0){
+
+        for (auto p: back_route_){
+            if (distance(back_point, p) < 0.5){
+                append_point = false;
+                break;
+            }
+        }
+
+        if (append_point) {
             back_route_.push_back(back_point);
+        } else if (back_route_.size() > 10 && distance(back_point, back_route_[0]) < 3.0){
+            route_closed = true;
         }
     }
 
     std::vector<ConeXYZColorScore> full_route = back_route_;
-    bool route_closed = false;
+    double prev_angle = atan2(back_route_.back().y-back_route_[back_route_.size()-2].y,
+                              back_route_.back().x-back_route_[back_route_.size()-2].x);
     for (int i=0 ; i<final_route.size(); i++){
         auto c = final_route[i];
-        if ( distance(c, ConeXYZColorScore(0.0, 0.0, 0, UNCOLORED, -1)) > 3.0 || back_route_.size()<10){
-            if (distance(c,full_route.back())>0.1){ // Ensure no duplicates
-                full_route.push_back(c);
+        append_point = true;
+        double angle_diff = std::abs(atan2(c.y-full_route.back().y, c.x-full_route.back().x)-prev_angle);
+        angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
+
+        if ( distance(c, ConeXYZColorScore()) > 3.0 || back_route_.size()<10){
+
+            // Check if the point is too close to the last 10 points in the route
+            for (int j=1; j<=10; j++){
+                if (distance(c, full_route[full_route.size()-j]) < 0.5){
+                    append_point = false;
+                    break;
+                }
             }
+
+            if (append_point && angle_diff < M_PI/2){ // Ensure no duplicates
+                prev_angle = atan2(c.y-full_route.back().y, c.x-full_route.back().x);
+                full_route.push_back(c);
+            } 
         } else {
             if (full_route.size() > 0.5*pcl_cloud_.size()){
                 route_closed = true;
@@ -208,6 +240,11 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
             break;
         }
     }
+
+    if (tree.ending_routes_.size()>0 && route_closed) { 
+        TL_triang_ = triangles_;
+        TL_tri_indices_ = tree.best_index_route_;
+    } 
 
 
     // Use closing route if route is closed
@@ -337,7 +374,7 @@ common_msgs::msg::Triangulation PathPlanning::create_triangulation_msg(CDT::Tria
     common_msgs::msg::Triangulation triangulation_msg;
     CDT::Triangulation<double>::V2dVec points = triangulation.vertices;
     CDT::TriangleVec triangles = triangulation.triangles;
-    for (std::vector<CDT::Triangle>::size_type i = 0; i < triangles.size(); i++){
+    for (int i = 0; i < triangles.size(); i++){
         common_msgs::msg::Simplex simplex;
         common_msgs::msg::PointXY a, b, c;
         CDT::Triangle triangle = triangles[i];
@@ -437,6 +474,12 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
         return trajectory_msg;
     }
 
+    // Avoid division by zero
+    for (auto p : route){
+        if (std::abs(p.x)<0.001) p.x = 0.001;
+        if (std::abs(p.y)<0.001) p.y = 0.001;
+    }
+
     // Perform laplacian smoothing previous to spline fitting
     std::vector<double> new_x, new_y;
     new_x.push_back(route[0].x);
@@ -490,7 +533,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     for (int i = 0; i<xpp.size(); i++){
         double den = pow(pow(xp[i],2)+pow(yp[i],2), 1.5);
         double val;
-        if (den == 0){
+        if (std::abs(den) < 0.001){
             val = 0;
         } else{
             val = (xp[i]*ypp[i]-yp[i]*xpp[i])/den;
@@ -499,7 +542,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     }
 
     for (const auto &val : k){
-        double v = std::min(kMaxVel, sqrt(kMaxYAcc/std::max(abs(val), 0.0001)));
+        double v = std::min(kMaxVel, sqrt(kMaxYAcc/std::max(abs(val), 0.001)));
         v_grip.push_back(v);
     }
 
@@ -521,14 +564,20 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
         }
     }
 
+    acc_profile.push_back(0.0);
     for (int i = 0; i<speed_profile.size()-1; i++){
         double ds = s[i+1]-s[i];
-        if (ds != 0){
+        if (std::abs(ds) > 0.001){
             acc_profile.push_back((pow(speed_profile[i+1], 2)-pow(speed_profile[i], 2))/(2*ds));
+        } else {
+            acc_profile.push_back(0.0);
         }
     }
 
     for (int i = 0; i<s.size(); i++){
+        if (std::isnan(speed_profile[i])) speed_profile[i] = 0.0;
+        if (std::isnan(acc_profile[i])) acc_profile[i] = 0.0;
+
         trajectory_msg.k.push_back(k[i]);
         trajectory_msg.s.push_back(s[i]);
         trajectory_msg.speed_profile.push_back(speed_profile[i]);
@@ -538,17 +587,18 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     return trajectory_msg;
 }
 
-common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<int> triangles_route){
-    CDT::Triangle last_triangle = triangles_[triangles_route.back()];
+common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::TriangleVec triang, 
+                                                                std::vector<int> triangles_route){
+    CDT::Triangle last_triangle = triang[triangles_route.back()];
     CDT::NeighborsArr3 neighbors = last_triangle.neighbors;
     for (int i = 0; i<3; i++){
-        if (neighbors[i] < triangles_.size() && !in(neighbors[i], triangles_route)){
+        if (neighbors[i] < triang.size() && !in(neighbors[i], triangles_route)){
             triangles_route.push_back(neighbors[i]);
         }
     }
     std::vector<int> left_limit, right_limit;
     for (int i = 0; i<triangles_route.size(); i++){
-        CDT::Triangle triangle = triangles_[triangles_route[i]];
+        CDT::Triangle triangle = triang[triangles_route[i]];
         CDT::VerticesArr3 vertices = triangle.vertices;
         for (int j = 0; j<3; j++){
             ConeXYZColorScore cone = pcl_cloud_.points[vertices[j]];
@@ -569,8 +619,8 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
             case UNCOLORED:
                 if (i < triangles_route.size()-1) {
                     std::vector<double> yaw_vector, cone_vector;
-                    CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triangles_, vertices_);
-                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[i+1], triangles_, vertices_);
+                    CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triang, vertices_);
+                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[i+1], triang, vertices_);
                     double route_angle = atan2(centroid_2.y-centroid_1.y, centroid_2.x-centroid_1.x);
                     yaw_vector = {cos(route_angle), sin(route_angle)};
                     cone_vector = {cone.x-centroid_1.x, cone.y-centroid_1.y};
@@ -582,8 +632,8 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
                     }
                 } else {
                     std::vector<double> yaw_vector, cone_vector;
-                    CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triangles_, vertices_);
-                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[0], triangles_, vertices_);
+                    CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triang, vertices_);
+                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[0], triang, vertices_);
                     double route_angle = atan2(centroid_2.y-centroid_1.y, centroid_2.x-centroid_1.x);
                     yaw_vector = {cos(route_angle), sin(route_angle)};
                     cone_vector = {cone.x-centroid_1.x, cone.y-centroid_1.y};

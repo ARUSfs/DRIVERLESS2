@@ -18,7 +18,7 @@ struct ConeXYZColorScore {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     // Constructors
-    ConeXYZColorScore() : color(0), score(0) {}
+    ConeXYZColorScore() : x(0), y(0), z(0), color(0), score(0) {}
     ConeXYZColorScore(float x, float y, float z, int color, float score) {
         this->x = x;
         this->y = y;
