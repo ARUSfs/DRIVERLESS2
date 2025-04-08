@@ -564,18 +564,24 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
         }
     }
 
+    acc_profile.push_back(0.0);
     for (int i = 0; i<speed_profile.size()-1; i++){
         double ds = s[i+1]-s[i];
         if (std::abs(ds) > 0.001){
             acc_profile.push_back((pow(speed_profile[i+1], 2)-pow(speed_profile[i], 2))/(2*ds));
+        } else {
+            acc_profile.push_back(0.0);
         }
     }
 
     for (int i = 0; i<s.size(); i++){
+        if (std::isnan(speed_profile[i])) speed_profile[i] = 0.0;
+        if (std::isnan(acc_profile[i])) acc_profile[i] = 0.0;
+
         trajectory_msg.k.push_back(k[i]);
         trajectory_msg.s.push_back(s[i]);
-        trajectory_msg.speed_profile.push_back(std::min(speed_profile[i],100.0)); // Ensure no nan values
-        trajectory_msg.acc_profile.push_back(std::min(acc_profile[i], 100.0)); // Ensure no nan values
+        trajectory_msg.speed_profile.push_back(speed_profile[i]);
+        trajectory_msg.acc_profile.push_back(acc_profile[i]);
     }
 
     return trajectory_msg;
