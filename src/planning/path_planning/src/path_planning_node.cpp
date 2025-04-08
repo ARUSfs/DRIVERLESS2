@@ -83,10 +83,9 @@ PathPlanning::PathPlanning() : Node("path_planning")
 
 void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {
-
     // Get the track limits in the second lap
     if (lap_count_ > 0 && x_>3 && !track_limits_sent_){
-        common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(best_index_route_);
+        common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(TL_triang_, TL_tri_indices_);
         if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
         track_limits_sent_ = true;
     }
@@ -98,7 +97,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         if (trajectory_msg.points.size()>0) trajectory_pub_->publish(trajectory_msg);
         
         if (kStopAfterClosing){   
-            common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(best_index_route_);
+            common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(TL_triang_, TL_tri_indices_);
             if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
             rclcpp::shutdown();
         }
@@ -171,7 +170,6 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     std::min(angle_diff, 2*M_PI-angle_diff);
     if (angle_diff < M_PI/2){
         best_midpoint_route_ = tree.best_route_;
-        best_index_route_ = tree.best_index_route_;
     } else {
         return;
     }
@@ -236,6 +234,11 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
             break;
         }
     }
+
+    if (tree.ending_routes_.size()>0 && route_closed) { 
+        TL_triang_ = triangles_;
+        TL_tri_indices_ = tree.best_index_route_;
+    } 
 
 
     // Use closing route if route is closed
@@ -365,7 +368,7 @@ common_msgs::msg::Triangulation PathPlanning::create_triangulation_msg(CDT::Tria
     common_msgs::msg::Triangulation triangulation_msg;
     CDT::Triangulation<double>::V2dVec points = triangulation.vertices;
     CDT::TriangleVec triangles = triangulation.triangles;
-    for (std::vector<CDT::Triangle>::size_type i = 0; i < triangles.size(); i++){
+    for (int i = 0; i < triangles.size(); i++){
         common_msgs::msg::Simplex simplex;
         common_msgs::msg::PointXY a, b, c;
         CDT::Triangle triangle = triangles[i];
@@ -465,6 +468,12 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
         return trajectory_msg;
     }
 
+    // Avoid division by zero
+    for (auto p : route){
+        if (std::abs(p.x)<0.001) p.x = 0.001;
+        if (std::abs(p.y)<0.001) p.y = 0.001;
+    }
+
     // Perform laplacian smoothing previous to spline fitting
     std::vector<double> new_x, new_y;
     new_x.push_back(route[0].x);
@@ -518,7 +527,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     for (int i = 0; i<xpp.size(); i++){
         double den = pow(pow(xp[i],2)+pow(yp[i],2), 1.5);
         double val;
-        if (den == 0){
+        if (std::abs(den) < 0.001){
             val = 0;
         } else{
             val = (xp[i]*ypp[i]-yp[i]*xpp[i])/den;
@@ -527,7 +536,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     }
 
     for (const auto &val : k){
-        double v = std::min(kMaxVel, sqrt(kMaxYAcc/std::max(abs(val), 0.0001)));
+        double v = std::min(kMaxVel, sqrt(kMaxYAcc/std::max(abs(val), 0.001)));
         v_grip.push_back(v);
     }
 
@@ -551,7 +560,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
 
     for (int i = 0; i<speed_profile.size()-1; i++){
         double ds = s[i+1]-s[i];
-        if (ds != 0){
+        if (std::abs(ds) > 0.001){
             acc_profile.push_back((pow(speed_profile[i+1], 2)-pow(speed_profile[i], 2))/(2*ds));
         }
     }
@@ -559,24 +568,25 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     for (int i = 0; i<s.size(); i++){
         trajectory_msg.k.push_back(k[i]);
         trajectory_msg.s.push_back(s[i]);
-        trajectory_msg.speed_profile.push_back(speed_profile[i]);
-        trajectory_msg.acc_profile.push_back(acc_profile[i]);
+        trajectory_msg.speed_profile.push_back(std::min(speed_profile[i],100.0)); // Ensure no nan values
+        trajectory_msg.acc_profile.push_back(std::min(acc_profile[i], 100.0)); // Ensure no nan values
     }
 
     return trajectory_msg;
 }
 
-common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<int> triangles_route){
-    CDT::Triangle last_triangle = triangles_[triangles_route.back()];
+common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::TriangleVec triang, 
+                                                                std::vector<int> triangles_route){
+    CDT::Triangle last_triangle = triang[triangles_route.back()];
     CDT::NeighborsArr3 neighbors = last_triangle.neighbors;
     for (int i = 0; i<3; i++){
-        if (neighbors[i] < triangles_.size() && !in(neighbors[i], triangles_route)){
+        if (neighbors[i] < triang.size() && !in(neighbors[i], triangles_route)){
             triangles_route.push_back(neighbors[i]);
         }
     }
     std::vector<int> left_limit, right_limit;
     for (int i = 0; i<triangles_route.size(); i++){
-        CDT::Triangle triangle = triangles_[triangles_route[i]];
+        CDT::Triangle triangle = triang[triangles_route[i]];
         CDT::VerticesArr3 vertices = triangle.vertices;
         for (int j = 0; j<3; j++){
             ConeXYZColorScore cone = pcl_cloud_.points[vertices[j]];
@@ -597,8 +607,8 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
             case UNCOLORED:
                 if (i < triangles_route.size()-1) {
                     std::vector<double> yaw_vector, cone_vector;
-                    CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triangles_, vertices_);
-                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[i+1], triangles_, vertices_);
+                    CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triang, vertices_);
+                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[i+1], triang, vertices_);
                     double route_angle = atan2(centroid_2.y-centroid_1.y, centroid_2.x-centroid_1.x);
                     yaw_vector = {cos(route_angle), sin(route_angle)};
                     cone_vector = {cone.x-centroid_1.x, cone.y-centroid_1.y};
@@ -610,8 +620,8 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(std::vector<
                     }
                 } else {
                     std::vector<double> yaw_vector, cone_vector;
-                    CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triangles_, vertices_);
-                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[0], triangles_, vertices_);
+                    CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triang, vertices_);
+                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[0], triang, vertices_);
                     double route_angle = atan2(centroid_2.y-centroid_1.y, centroid_2.x-centroid_1.x);
                     yaw_vector = {cos(route_angle), sin(route_angle)};
                     cone_vector = {cone.x-centroid_1.x, cone.y-centroid_1.y};
