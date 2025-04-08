@@ -37,6 +37,7 @@
 #include "perception_acc/accumulation.h"
 #include "perception_acc/color_estimation.h"
 #include "perception_acc/ground_remove.h"
+#include "perception_acc/string_clustering.h"
 
 /**
  * @class Perception

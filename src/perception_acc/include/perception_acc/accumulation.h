@@ -241,7 +241,7 @@ namespace Accumulation
         pcl::transformPointCloud(*cloud, *transformed_cloud, final_transform.matrix());
 
         //Ensure buffer size limit
-        if (cloud_buffer.size() >= static_cast<size_t>(5)) 
+        if (cloud_buffer.size() >= static_cast<size_t>(20)) 
         {
             cloud_buffer.pop_front();
         }

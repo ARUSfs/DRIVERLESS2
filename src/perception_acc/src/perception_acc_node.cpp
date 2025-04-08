@@ -245,6 +245,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     
     GroundRemove::RemoveGround(*updated_cloud,*cloud_filtered_ground,*cloud_filtered); 
     //GroundFiltering::grid_ground_filter(updated_cloud, cloud_filtered, cloud_filtered_ground, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+    //GroundFiltering2::RemoveGroundByRings(updated_cloud, cloud_filtered_ground, cloud_filtered);
 
     sensor_msgs::msg::PointCloud2 filtered_msg;
     pcl::toROSMsg(*cloud_filtered, filtered_msg);
