@@ -173,26 +173,21 @@ namespace Accumulation
     }
 
 
-    Eigen::Isometry3d computeRigidTransformation(double vx, double vy, double yaw_rate, double dt) {
-        // Compute translation and rotation
-        double delta_x = -vx * dt;
-        double delta_y = -vy * dt;
-        double delta_theta = -yaw_rate * dt;
-
+    Eigen::Isometry3d computeRigidTransformation(double x, double y, double yaw, double kDistanceLidarToCoG) {
         // Transformation from LIDAR to CoG
         Eigen::Isometry3d transform_lidar_to_CoG = Eigen::Isometry3d::Identity();
-        transform_lidar_to_CoG.pretranslate(Eigen::Vector3d(-1.5, 0.0, 0.0));
+        transform_lidar_to_CoG.translation() << -kDistanceLidarToCoG, 0.0, 0.0;
 
         // Motion transformation matrix (rotation + translation)
         Eigen::Isometry3d transform_motion = Eigen::Isometry3d::Identity();
-        transform_motion.linear() << cos(delta_theta), -sin(delta_theta), 0,
-                                    sin(delta_theta),  cos(delta_theta), 0,
-                                    0,                0,                1;
-        transform_motion.pretranslate(Eigen::Vector3d(delta_x, delta_y, 0.0));
+        transform_motion.linear() << cos(yaw), -sin(yaw), 0,
+                                      sin(yaw),  cos(yaw), 0,
+                                      0,         0,        1;
+        transform_motion.translation() << x, y, 0.0;
 
         // Transformation from CoG back to LIDAR
         Eigen::Isometry3d transform_CoG_to_lidar = Eigen::Isometry3d::Identity();
-        transform_CoG_to_lidar.pretranslate(Eigen::Vector3d(1.5, 0.0, 0.0));
+        transform_CoG_to_lidar.translation() << kDistanceLidarToCoG, 0.0, 0.0;
 
         // Compute final transformation matrix
         Eigen::Isometry3d final_transform = transform_lidar_to_CoG * transform_motion * transform_CoG_to_lidar;
@@ -202,31 +197,9 @@ namespace Accumulation
 
     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_global_cloud_ring(
         pcl::PointCloud<PointXYZIRingTime>::Ptr cloud,
-        double x, double y, double yaw)
+        double x, double y, double yaw, double kDistanceLidarToCoG, float kDownsampleSize)
     {
-        // delta_x = x;
-        // delta_y = y;
-        // delta_theta = yaw_rate;
-    
-        // RCLCPP_INFO(rclcpp::get_logger("accumulation"), "delta_x: %f, delta_y: %f, delta_theta: %f", delta_x, delta_y, delta_theta);
-
-        // Transformation from LIDAR to CoG
-        Eigen::Affine3f transform_lidar_to_CoG = Eigen::Affine3f::Identity();
-        transform_lidar_to_CoG.translation() << -1.65, 0.0, 0.0;
-
-        // Motion transformation matrix (rotation + translation)
-        Eigen::Affine3f transform_motion = Eigen::Affine3f::Identity();
-        transform_motion.linear() << cos(yaw), -sin(yaw), 0,
-                                    sin(yaw), cos(yaw),  0,
-                                    0,       0,         1;
-        transform_motion.translation() << x, y, 0.0;
-
-        // Transformation from CoG back to LIDAR
-        Eigen::Affine3f transform_CoG_to_lidar = Eigen::Affine3f::Identity();
-        transform_CoG_to_lidar.translation() << 1.65, 0.0, 0.0;
-
-        // Compute final transformation matrix
-        Eigen::Affine3f final_transform = transform_lidar_to_CoG * transform_motion * transform_CoG_to_lidar;
+        auto final_transform = computeRigidTransformation(x, y, yaw, kDistanceLidarToCoG);
 
         pcl::PointCloud<PointXYZIRingTime>::Ptr transformed_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         pcl::transformPointCloud(*cloud, *transformed_cloud, final_transform.matrix());
@@ -234,7 +207,7 @@ namespace Accumulation
         // Apply voxel grid filter to limit the size of the global cloud
         static pcl::VoxelGrid<PointXYZIRingTime> global_vg; 
         global_vg.setInputCloud(global_cloud);
-        global_vg.setLeafSize(0.075f, 0.075f, 0.075f);
+        global_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize);
         pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
         global_vg.filter(*filtered);
 
@@ -250,7 +223,7 @@ namespace Accumulation
 
     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_local_cloud_ring(
         pcl::PointCloud<PointXYZIRingTime>::Ptr cloud,
-        double x, double y, double yaw)
+        double x, double y, double yaw, double kDistanceLidarToCoG, float kDownsampleSize)
     {
         //Clean the buffer the first time
         if (!buffer_cloud_initialized) {
@@ -262,23 +235,7 @@ namespace Accumulation
             return cloud; // or create and return an empty cloud
         }
     
-        // Transformation from LIDAR to CoG
-        Eigen::Affine3f transform_lidar_to_CoG = Eigen::Affine3f::Identity();
-        transform_lidar_to_CoG.translation() << -1.65, 0.0, 0.0;
-
-        // Motion transformation matrix (rotation + translation)
-        Eigen::Affine3f transform_motion = Eigen::Affine3f::Identity();
-        transform_motion.linear() << cos(yaw), -sin(yaw), 0,
-                                    sin(yaw), cos(yaw),  0,
-                                    0,       0,         1;
-        transform_motion.translation() << x, y, 0.0;
-
-        // Transformation from CoG back to LIDAR
-        Eigen::Affine3f transform_CoG_to_lidar = Eigen::Affine3f::Identity();
-        transform_CoG_to_lidar.translation() << 1.65, 0.0, 0.0;
-
-        // Compute final transformation matrix
-        Eigen::Affine3f final_transform = transform_lidar_to_CoG * transform_motion * transform_CoG_to_lidar;
+        auto final_transform = computeRigidTransformation(x, y, yaw, kDistanceLidarToCoG);
 
         pcl::PointCloud<PointXYZIRingTime>::Ptr transformed_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         pcl::transformPointCloud(*cloud, *transformed_cloud, final_transform.matrix());
@@ -305,7 +262,7 @@ namespace Accumulation
         // Apply voxel grid filter
         static pcl::VoxelGrid<PointXYZIRingTime> local_vg; 
         local_vg.setInputCloud(local_cloud);
-        local_vg.setLeafSize(0.05f, 0.05f, 0.05f);
+        local_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize);
         pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
         local_vg.filter(*filtered);
         

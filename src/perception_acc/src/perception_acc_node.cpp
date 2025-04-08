@@ -28,6 +28,8 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<double>("distance_threshold", 0.4);
     this->declare_parameter<double>("coloring_threshold", 0.4);
     this->declare_parameter<bool>("global_accumulation", true);
+    this->declare_parameter<double>("distance_lidar_to_CoG", 1.65);
+    this->declare_parameter<float>("downsample_size", 0.05);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
@@ -44,6 +46,8 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("distance_threshold", kDistanceThreshold);
     this->get_parameter("coloring_threshold", kColoringThreshold);
     this->get_parameter("global_accumulation", kGlobalAccumulation);
+    this->get_parameter("distance_lidar_to_CoG", kDistanceLidarToCoG);
+    this->get_parameter("downsample_size", kDownsampleSize);
 
     //Transform into radians
     kHFov *= (M_PI/180);
@@ -213,8 +217,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
     pcl::PointCloud<PointXYZIRingTime>::Ptr updated_cloud;
-    if (kGlobalAccumulation) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, x_, y_, yaw_);
-    else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud, x_, y_, yaw_);
+    if (kGlobalAccumulation) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
+    else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
 
     RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", updated_cloud->size());
 

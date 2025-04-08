@@ -77,6 +77,8 @@ class Perception : public rclcpp::Node
         bool kAccumulation_clouds;
         bool kAccumulation_clusters;
         bool kGlobalAccumulation;
+        double kDistanceLidarToCoG;
+        float kDownsampleSize;
 
         // Variables
         double x_;

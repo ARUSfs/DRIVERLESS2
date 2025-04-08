@@ -5,6 +5,8 @@ perception_acc:
 
     #Accumulation
     global_accumulation: false
+    distance_lidar_to_CoG: 1.65
+    downsample_size: 0.05
 
     #Parameters of FOV
     crop: true
