@@ -1,0 +1,21 @@
+camera_calibration:
+  ros__parameters:
+    # Debugging
+    debug: true
+
+    # Select calibration needed
+    extinsic_calibration: true
+    intrinsic_calibration: true
+
+    # Camera topic
+    image_topic: "/camera/color/image_raw"
+
+    # Camera location (m)
+    cam_x: 0.25
+    cam_y: 0.0
+    cam_z: 1.02
+
+    # LiDAR location (m)
+    lidar_x: 0.0
+    lidar_y: 0.0
+    lidar_z: 0.41
