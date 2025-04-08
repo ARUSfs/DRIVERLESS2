@@ -37,7 +37,6 @@ class SimplexTree {
     std::vector<ConeXYZColorScore> best_route_;
     std::vector<int> best_index_route_;
     std::vector<std::vector<ConeXYZColorScore>> ending_routes_;
-    bool end_ = false;
 
     /**
      * @brief Array of arrays containing all the posible routes through the tree.
@@ -51,15 +50,24 @@ class SimplexTree {
     std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
 
     /**
+     * @brief Construct a new Simplex Tree object with uninitialized values.
+     * 
+     */
+    SimplexTree() = default;
+
+    /**
      * @brief Construct a new generic tree object.
      * @param triangle_list triangulation.triangles object containing all the triangles.
-     * @param origin index of the origin triangle.
-     * @param orig_vertex index of the origin vertex.
+     * @param first_tri_ind triangle index from which to start.
+     * @param first_edge edge to start the route.
      * @param cones_cloud pcl::PointCloud object containing the cones in the map.
+     * @param yaw yaw of the car.
+     * @param angle_coeff coefficient for the angle cost.
+     * @param len_coeff coefficient for the length cost.
      */
-    SimplexTree(CDT::TriangleVec triangle_list, int origin, int orig_vertex, 
-                pcl::PointCloud<ConeXYZColorScore> cones_cloud, double yaw, double angle_coeff,
-                double len_coeff, double max_cost);
+    SimplexTree(CDT::TriangleVec triangle_list, int first_tri_ind, std::vector<int> first_edge,
+                pcl::PointCloud<ConeXYZColorScore> cones_cloud, double initial_angle, double angle_coeff, 
+                double len_coeff);
 
     /**
      * @brief Recursive function to create the tree structure.
@@ -80,36 +88,32 @@ class SimplexTree {
                                  double prev_angle);
 };
 
-SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int origin_ind, int orig_vertex,
-                         pcl::PointCloud<ConeXYZColorScore> cones_cloud, double yaw, double angle_coeff, 
-                         double len_coeff, double max_cost) {
+
+SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int first_tri_ind, std::vector<int> first_edge,
+                         pcl::PointCloud<ConeXYZColorScore> cones_cloud, double initial_angle, double angle_coeff, 
+                         double len_coeff) {
     cones_cloud_ = cones_cloud;
     angle_coeff_ = angle_coeff;
     len_coeff_ = len_coeff;
-    max_cost_ = max_cost;
-    CDT::Triangle origin = triangle_list[origin_ind]; // Get triangle from index
-    CDT::NeighborsArr3 neighbors = origin.neighbors;  // Get neighbors of the triangle
+    CDT::Triangle first_tri = triangle_list[first_tri_ind]; // Get triangle from index
+    
+    CDT::NeighborsArr3 neighbors = first_tri.neighbors;  // Get neighbors of the triangle
 
-    std::vector<int> visited = {origin_ind}; // Initialize visited array with the origin index
-    std::vector<int> passed_vertices = {orig_vertex}; // Initialize visited array with the origin index
+    std::vector<int> visited = {first_tri_ind}; // Initialize visited array with the origin index
+    std::vector<int> passed_vertices = {first_edge[0], first_edge[1]}; // Initialize visited array with the origin index
 
-    root_.index = origin_ind;                 // Set the root index to the origin index
+    root_.index = first_tri_ind;                 // Set the root index to the origin index
 
-    std::vector<ConeXYZColorScore> mid_route = {cones_cloud_.points[orig_vertex]}; // Start at the origin
+    ConeXYZColorScore v0 = cones_cloud_.points[first_edge[0]];
+    ConeXYZColorScore v1 = cones_cloud_.points[first_edge[1]];
 
-    // Filter neighbors to find which of them are valid
-    for (int i = 0; i<3; i++){
-        if((neighbors[i]<=triangle_list.size()) && 
-                triangle_list[neighbors[i]].vertices[0] != orig_vertex &&
-                triangle_list[neighbors[i]].vertices[1] != orig_vertex &&
-                triangle_list[neighbors[i]].vertices[2] != orig_vertex){
+    std::vector<ConeXYZColorScore> mid_route = {ConeXYZColorScore((v0.x+v1.x)/2,
+                                        (v0.y+v1.y)/2, 0, UNCOLORED, 1)}; // Start at the origin
 
-            visited.push_back(neighbors[i]); // Add the valid neighbors to the visited array
-            root_.left = SimplexTree::create_tree_aux(triangle_list, neighbors[i], visited, passed_vertices,
-                                                      mid_route, 0, yaw);
-            break;
-        }
-    }
+    double prev_angle = atan2(mid_route[0].y, mid_route[0].x); // Save the previous angle for the next iteration
+
+    root_.left = SimplexTree::create_tree_aux(triangle_list, first_tri_ind, visited, passed_vertices,
+        mid_route, 0.0, initial_angle);
 
 } 
 
@@ -120,7 +124,8 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
                                           double prev_angle){
 
     SimplexNode* node = new SimplexNode(index);
-    if (midpoint_routes_.size() > 2 and route_cost > std::max(max_cost_, min_cost_)){
+    if (midpoint_routes_.size() > 3 and route_cost > 600*len_coeff_){ 
+        // Best route cost will never be higher than 500 m times the length coeff plus the min cost
         return node;
     }
     CDT::Triangle triangle = triangle_list[index];     // Get the triangle from the index
@@ -155,14 +160,12 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
             index_routes_.push_back(visited);
             mid_route.push_back(ConeXYZColorScore((next_edge[0].x+next_edge[1].x)/2,
                                                       (next_edge[0].y+next_edge[1].y)/2, 0, UNCOLORED, 1));
-            mid_route.push_back(cones_cloud_.points[passed_vertices[0]]);
             midpoint_routes_.push_back(mid_route);
             ending_routes_.push_back(mid_route);
             if (mid_route.size() > 0.95*cones_cloud_.size()){
                 route_cost -= 100;
             } 
             if (route_cost < min_cost_){
-                end_ = true;
                 min_cost_ = route_cost;
                 best_route_ = mid_route;
                 best_index_route_ = visited;
@@ -282,7 +285,6 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
     index_routes_.push_back(visited);
     midpoint_routes_.push_back(mid_route);
     if (route_cost < min_cost_){
-        end_=false;
         min_cost_ = route_cost;
         best_route_ = mid_route;
         best_index_route_ = visited;

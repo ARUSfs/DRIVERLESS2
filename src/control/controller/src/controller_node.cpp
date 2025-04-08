@@ -50,10 +50,12 @@ Controller::Controller() : Node("controller"),
 
     // PID
     this->declare_parameter<double>("target", 8.0);
+    this->declare_parameter<double>("braking_decc", 3.0);
     this->declare_parameter<double>("KP", 43.87);
     this->declare_parameter<double>("KI", 1.29);
     this->declare_parameter<double>("KD", 0.0); 
     this->get_parameter("target", kTargetSpeed);
+    this->get_parameter("braking_decc", kBrakingDecc);
     this->get_parameter("KP", KP);
     this->get_parameter("KI", KI);
     this->get_parameter("KD", KD);
@@ -62,9 +64,11 @@ Controller::Controller() : Node("controller"),
     this->declare_parameter<double>("cost_lateral_error", 10);
     this->declare_parameter<double>("cost_angular_error", 5);
     this->declare_parameter<double>("cost_steering_delta", 1000); 
+    this->declare_parameter<int>("compensation_steps", 5); 
     this->get_parameter("cost_lateral_error", kCostLateralDeviation);
     this->get_parameter("cost_angular_error", kCostAngularDeviation);
     this->get_parameter("cost_steering_delta", kCostSteeringDelta);   
+    this->get_parameter("compensation_steps", kCompensationSteps);   
 
     // Cmd limits
     this->declare_parameter<double>("min_cmd", 0.0);
@@ -75,7 +79,7 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("max_steer", kMaxSteer);
 
     speed_control_.pid_.set_params(KP,KI,KD);
-    lti_mpc_.set_params(kCostLateralDeviation,kCostAngularDeviation,kCostSteeringDelta);
+    lti_mpc_.set_params(kCostLateralDeviation,kCostAngularDeviation,kCostSteeringDelta,kCompensationSteps);
 
     previous_time_ = this->get_clock()->now();
 
@@ -97,7 +101,8 @@ Controller::Controller() : Node("controller"),
         kTrajectoryTopic, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
     optimized_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         "/trajectory_optimization/trajectory", 1, std::bind(&Controller::optimized_trajectory_callback, this, std::placeholders::_1));
-
+    braking_procedure_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+        "/car_state/braking_procedure", 1, std::bind(&Controller::braking_procedure_callback, this, std::placeholders::_1));
 
     // Publishers
     cmd_pub_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
@@ -115,9 +120,11 @@ void Controller::on_speed_timer()
     if(!(pointsXY_.empty()) && run_check_){
         get_global_index();
 
-        if(!(speed_profile_.empty())){
+        if (braking_procedure_){
+            target_speed_ = std::max(0.0, std::sqrt(vx_*vx_ - 2*kBrakingDecc*target_speed_));
+        } else if(!(speed_profile_.empty())){
             target_speed_ = speed_profile_.at(index_global_);
-        }else{
+        } else{
             target_speed_ = kTargetSpeed;
         }
         std_msgs::msg::Float32 target_speed_msg;
@@ -272,7 +279,12 @@ void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedP
 
 void Controller::run_check_callback(const std_msgs::msg::Bool::SharedPtr msg)
 {
-    run_check_ = msg -> data;
+    run_check_ = msg->data;
+}
+
+void Controller::braking_procedure_callback(const std_msgs::msg::Bool::SharedPtr msg)
+{
+    braking_procedure_ = msg->data;
 }
 
 

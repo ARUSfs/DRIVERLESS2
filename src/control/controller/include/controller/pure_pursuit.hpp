@@ -126,7 +126,7 @@ public:
      */
 
      double calculate_look_ahead_distance(double cross_track_error, double vx) {
-        double delta_min_ = 5.0;  
+        double delta_min_ = 5.5;  
         double delta_max_ = 12.0; 
         double gamma_ = 1.0;        
         
