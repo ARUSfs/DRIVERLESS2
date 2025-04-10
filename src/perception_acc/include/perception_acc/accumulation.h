@@ -20,6 +20,8 @@
 #include <iostream>
 #include "PointXYZIRingTime.h"
 #include <pcl/filters/voxel_grid.h> 
+#include "perception_acc/clustering.h"
+#include <chrono>
 
 #include <small_gicp/pcl/pcl_point.hpp>
 #include <small_gicp/pcl/pcl_point_traits.hpp>
@@ -159,6 +161,12 @@ namespace Accumulation
         const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_in,
         const Eigen::Matrix<double, 6, 6>& H) 
     {
+        // Añadir comprobación para evitar nulo o vacío
+        if (!cloud_in || cloud_in->empty()) {
+             RCLCPP_ERROR(rclcpp::get_logger("Accumulation"),
+                          "transformPointCloudWithHessian: Input cloud is null or empty.");
+             return pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>());
+        }
 
         // Extract rotation (rx, ry, rz) and translation (tx, ty, tz)
         Eigen::Vector3d rotation_vec(H(0, 5), H(1, 5), H(2, 5));  // Rotation vector
@@ -179,7 +187,70 @@ namespace Accumulation
         return cloud_out;
     }
 
+    Eigen::Isometry3d compensator(std::vector<PointXYZColorScore> global_center_clusters, std::vector<PointXYZColorScore> center_clusters)
+    {
+        if(global_center_clusters.empty() || center_clusters.empty()){
+            return Eigen::Isometry3d::Identity();
+        }
+        
+        std::vector<std::tuple<PointXYZColorScore, PointXYZColorScore>> near_points;
+        
+        for (int i = 0; i < center_clusters.size(); i++) {
+            double min_dist = 0.2;
+            bool exists = false;
+            PointXYZColorScore nearest_global;
+            for (int j = 0; j < global_center_clusters.size(); j++) {
+                double distance = sqrt(pow(center_clusters[i].x - global_center_clusters[j].x, 2) +
+                                       pow(center_clusters[i].y - global_center_clusters[j].y, 2));
+                if (distance < min_dist) {
+                    exists = true;
+                    nearest_global = global_center_clusters[j];
+                    min_dist = distance;
+                }
+            }
+            if(exists) near_points.emplace_back(std::make_tuple(nearest_global, center_clusters[i]));
+        }
+        
+        if(near_points.empty()){
+            RCLCPP_WARN(rclcpp::get_logger("Accumulation"), 
+                        "No matching clusters found for compensation. Returning identity transformation.");
+            return Eigen::Isometry3d::Identity();
+        }
+        
+        double avg_x = 0.0;
+        double avg_y = 0.0;
+        for (int i = 0; i < near_points.size(); i++) {
+            PointXYZColorScore global_point = std::get<0>(near_points[i]);
+            PointXYZColorScore local_point = std::get<1>(near_points[i]);
+            avg_x += global_point.x - local_point.x;
+            avg_y += global_point.y - local_point.y;
+        }
+        
+        avg_x /= near_points.size();
+        avg_y /= near_points.size();
+        
+        Eigen::Isometry3d compensation = Eigen::Isometry3d::Identity();
+        compensation.translation() << avg_x, avg_y, 0.0;
+        compensation.linear() << 1.0, 0.0, 0.0,
+                                   0.0, 1.0, 0.0,
+                                   0.0, 0.0, 1.0;        
+        RCLCPP_INFO(rclcpp::get_logger("Accumulation"),
+            "Compensation (vector): [%f, %f, %f]",
+            compensation.translation()[0],
+            compensation.translation()[1],
+            compensation.translation()[2]);
+        
+        return compensation;
+    }
 
+    /**
+     * @brief Computes the rigid transformation matrix based on the given parameters.
+     * @param x Translation along X-axis
+     * @param y Translation along Y-axis
+     * @param yaw Rotation around Z-axis (yaw)
+     * @param kDistanceLidarToCoG Distance from LIDAR to CoG
+     * @return Rigid transformation matrix
+     */
     Eigen::Isometry3d computeRigidTransformation(double x, double y, double yaw, double kDistanceLidarToCoG) {
         // Transformation from LIDAR to CoG
         Eigen::Isometry3d transform_lidar_to_CoG = Eigen::Isometry3d::Identity();
@@ -203,7 +274,7 @@ namespace Accumulation
     }
 
     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_global_cloud_ring(
-        pcl::PointCloud<PointXYZIRingTime>::Ptr cloud,
+        pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, std::vector<PointXYZColorScore> clusters_centers,
         double x, double y, double yaw, double kDistanceLidarToCoG, float kDownsampleSize)
     {
         auto final_transform = computeRigidTransformation(x, y, yaw, kDistanceLidarToCoG);
@@ -214,7 +285,7 @@ namespace Accumulation
         // Apply voxel grid filter to limit the size of the global cloud
         static pcl::VoxelGrid<PointXYZIRingTime> global_vg; 
         global_vg.setInputCloud(global_cloud);
-        global_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize);
+        global_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize/10);
         pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
         global_vg.filter(*filtered);
 
@@ -229,7 +300,7 @@ namespace Accumulation
 
 
     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_local_cloud_ring(
-        pcl::PointCloud<PointXYZIRingTime>::Ptr cloud,
+        pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, std::vector<PointXYZColorScore> clusters_centers,
         double x, double y, double yaw, double kDistanceLidarToCoG, float kDownsampleSize)
     {
         //Clean the buffer the first time
@@ -269,7 +340,7 @@ namespace Accumulation
         // Apply voxel grid filter
         static pcl::VoxelGrid<PointXYZIRingTime> local_vg; 
         local_vg.setInputCloud(local_cloud);
-        local_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize);
+        local_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize/10);
         pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
         local_vg.filter(*filtered);
         
