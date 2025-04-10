@@ -19,7 +19,14 @@
 #include <deque>
 #include <iostream>
 #include "PointXYZIRingTime.h"
-#include <pcl/filters/voxel_grid.h>  
+#include <pcl/filters/voxel_grid.h> 
+
+#include <small_gicp/pcl/pcl_point.hpp>
+#include <small_gicp/pcl/pcl_point_traits.hpp>
+#include <small_gicp/pcl/pcl_registration.hpp>
+#include <small_gicp/registration/registration.hpp>
+#include <small_gicp/util/downsampling_omp.hpp>
+
 
 namespace Accumulation
 {
@@ -27,7 +34,7 @@ namespace Accumulation
     static pcl::PointCloud<PointXYZIRingTime>::Ptr global_cloud(new pcl::PointCloud<PointXYZIRingTime>);
     static bool buffer_cloud_initialized = false;
 
-    static std::deque<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>> cluster_buffer;
+    static std::deque<std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr>> cluster_buffer;
     static std::deque<std::vector<PointXYZColorScore>> center_buffer;
     static bool buffer_cluster_initialized = false;
 
@@ -43,7 +50,7 @@ namespace Accumulation
     * @param yaw_rate Yaw rate of the car.
     * @param dt Time interval.
     */
-    void rigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
+    void rigidTransformation(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, 
             double vx, double vy, double yaw_rate, double dt)
     {
         // Compute translation and rotation
@@ -80,7 +87,7 @@ namespace Accumulation
     * @param cloud The clouds you want to store in the buffer.
     * @param kBufferSize The size of cloud buffers.
     */
-    // pcl::PointCloud<pcl::PointXYZI>::Ptr accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int kBufferSize,
+    // pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_cloud(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, int kBufferSize,
     //         double vx, double vy, double yaw_rate, double dt)
     // {
     //     //Clean the buffer the first time
@@ -102,7 +109,7 @@ namespace Accumulation
 
     //     rigidTransformation(cloud_buffer[cloud_buffer.size() - 2], vx, vy, yaw_rate, dt);
 
-    //     pcl::IterativeClosestPoint<pcl::PointXYZI, pcl::PointXYZI> icp;
+    //     pcl::IterativeClosestPoint<PointXYZIRingTime, PointXYZIRingTime> icp;
     //     icp.setMaximumIterations(50);
     //     icp.setInputSource(cloud_buffer[cloud_buffer.size() - 2]);
     //     icp.setInputTarget(cloud);
@@ -113,7 +120,7 @@ namespace Accumulation
     //     Eigen::Matrix4f icp_transform = icp.getFinalTransformation();
 
     //     // Create an accumulated cloud
-    //     pcl::PointCloud<pcl::PointXYZI>::Ptr accumulated_cloud(new pcl::PointCloud<pcl::PointXYZI>());
+    //     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulated_cloud(new pcl::PointCloud<PointXYZIRingTime>());
 
     //     //Iterate through stored frames (excluding the latest)
     //     for (size_t i = 0; i < cloud_buffer.size() - 2; ++i) 
@@ -144,7 +151,7 @@ namespace Accumulation
 
     /**
      * @brief Transforms a PointCloud using a 6x6 Hessian matrix (rotation and translation).
-     * @param cloud_in Input point cloud (pcl::PointCloud<pcl::PointXYZI>)
+     * @param cloud_in Input point cloud (pcl::PointCloud<PointXYZIRingTime>)
      * @param H Hessian matrix (6x6), where [rx, ry, rz] are rotation and [tx, ty, tz] are translation
      * @return Transformed point cloud
      */
@@ -267,5 +274,74 @@ namespace Accumulation
         local_vg.filter(*filtered);
         
         return filtered;
+    }
+
+    pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_cloud_small_icp(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, int kBufferSize,
+            double vx, double vy, double yaw_rate, double dt)
+    {
+        //Clean the buffer the first time
+        if (!buffer_cloud_initialized) {
+            cloud_buffer.clear();
+            buffer_cloud_initialized = true;
+        }
+
+        //Ensure buffer size limit
+        if (cloud_buffer.size() >= static_cast<size_t>(kBufferSize)) 
+        {
+            cloud_buffer.pop_front();
+        }
+
+        //Add the latest frame
+        cloud_buffer.push_back(cloud);
+
+        if (cloud_buffer.size() < 2) return cloud;
+
+        // IMPLEMENTATION SMALL_GICP
+        pcl::PointCloud<pcl::PointCovariance>::Ptr target = small_gicp::voxelgrid_sampling_omp<pcl::PointCloud<PointXYZIRingTime>, pcl::PointCloud<pcl::PointCovariance>>(*cloud, 0.25);
+        pcl::PointCloud<pcl::PointCovariance>::Ptr source = small_gicp::voxelgrid_sampling_omp<pcl::PointCloud<PointXYZIRingTime>, pcl::PointCloud<pcl::PointCovariance>>(*cloud_buffer[cloud_buffer.size() - 2], 0.25);
+
+        // Estimate covariances of points.
+        const int num_threads = 64;
+        const int num_neighbors = 40;
+        small_gicp::estimate_covariances_omp(*target, num_neighbors, num_threads);
+        small_gicp::estimate_covariances_omp(*source, num_neighbors, num_threads);
+
+        // Create KdTree for target and source.
+        auto target_tree = std::make_shared<small_gicp::KdTree<pcl::PointCloud<pcl::PointCovariance>>>(target, small_gicp::KdTreeBuilderOMP(num_threads));
+        auto source_tree = std::make_shared<small_gicp::KdTree<pcl::PointCloud<pcl::PointCovariance>>>(source, small_gicp::KdTreeBuilderOMP(num_threads));
+
+        small_gicp::Registration<small_gicp::GICPFactor, small_gicp::ParallelReductionOMP> registration;
+        registration.reduction.num_threads = num_threads;
+        registration.rejector.max_dist_sq = 3.0;
+
+        // Align point clouds. Note that the input point clouds are pcl::PointCloud<pcl::PointCovariance>.
+        auto initial_guess = computeRigidTransformation(vx, vy, yaw_rate, dt);
+        auto result = registration.align(*target, *source, *target_tree, initial_guess);
+        
+        auto estimated_transformation = result.T_target_source;
+        Eigen::Matrix4f transform_matrix = estimated_transformation.matrix().cast<float>();
+
+        // Create an accumulated cloud
+        pcl::PointCloud<PointXYZIRingTime>::Ptr accumulated_cloud(new pcl::PointCloud<PointXYZIRingTime>());
+
+        //Iterate through stored frames (excluding the latest)
+        for (size_t i = 0; i < cloud_buffer.size() - 2; ++i) 
+        {
+            if (!cloud_buffer[i] || cloud_buffer[i]->empty()) 
+            {
+                continue;
+            }
+            //Apply the transformation
+            pcl::transformPointCloud(*cloud_buffer[i], *cloud_buffer[i], transform_matrix);
+
+            //Merge into final accumulated cloud
+            *accumulated_cloud += *cloud_buffer[i];
+        }
+        // Add the latest frame (unmodified)
+        pcl::transformPointCloud(*cloud_buffer[cloud_buffer.size() - 2], *cloud_buffer[cloud_buffer.size() - 2], transform_matrix);
+        *accumulated_cloud += *cloud_buffer[cloud_buffer.size() - 2];
+        *accumulated_cloud += *cloud_buffer.back();
+
+        return accumulated_cloud;
     }
 }
