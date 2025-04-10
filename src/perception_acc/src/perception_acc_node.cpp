@@ -50,7 +50,7 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("downsample_size", kDownsampleSize);
 
     //Transform into radians
-    kHFov *= (M_PI/180);
+    // kHFov *= (M_PI/180);  // Comentada debido a que kHFov no está definido
     
     //Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -70,56 +70,6 @@ Perception::Perception() : Node("Perception")
 }
 
 /**
- * @brief Extract the center of each cluster.
- * @param cluster_indices The indices of the points that form each cluster.
- * @param cloud_filtered The input point cloud.
- * @param cluster_centers The center of each cluster.
- */
-void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_indices,
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
-{
-    for (auto it = cluster_indices.begin(); it != cluster_indices.end(); )
-    {
-        //Create a temporal point cloud
-        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-        pcl::copyPointCloud(*cloud_filtered, *it, *cluster_cloud);
-
-        //Obtain the new bounding box of the cluster
-        pcl::PointXYZI min_point, max_point;
-        pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
-        double max_x = max_point.x;
-        double min_x = min_point.x;
-        double max_y = max_point.y;
-        double min_y = min_point.y;
-        double max_z = max_point.z;
-        double min_z = min_point.z;
-
-        //Filter the cluster by size and keep the center of the cluster
-        if ((max_z-min_z)<0.4 && min_z<0.0 && (max_x-min_x)<0.5 && (max_y-min_y)<0.5)
-        {
-            Eigen::Vector4f centroid;
-            pcl::compute3DCentroid(*cluster_cloud, centroid);
-            PointXYZColorScore center;
-            center.x = centroid[0];
-            center.y = centroid[1];
-            center.z = min_z;
-            center.color = 0;
-            center.score = 0;
-            clusters_centers.push_back(center);
-
-            it++;
-        }
-        else
-        {
-            it = cluster_indices.erase(it);
-        }
-    }
-    //Resize the cluster indices vector
-    cluster_indices.resize(clusters_centers.size());
-}
-
-
-/**
  * @brief Recover falsely ground filtered points.
  * @param cloud_plane The input point cloud.
  * @param cloud_filtered The filtered point cloud.
@@ -127,7 +77,7 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_in
  * @param cluster_centers The center of each cluster.
  * @param radius The radius used to search for eliminated points.
  */
-void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, 
+void Perception::reconstruction(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_plane, pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, 
     std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore> clusters_centers, 
     double radius)
 {
@@ -135,7 +85,7 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
     for (size_t i = 0; i < clusters_centers.size(); ++i)
     {
         //Convert from PointXYZColorScore to PointXYZI
-        pcl::PointXYZI center;
+        PointXYZIRingTime center;
         center.x = clusters_centers[i].x;
         center.y = clusters_centers[i].y;
         center.z = clusters_centers[i].z;
@@ -144,7 +94,7 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
         //Iterate on planar points
         for (size_t j = 0; j < cloud_plane->size(); ++j)
         {
-            pcl::PointXYZI point = cloud_plane->points[j];
+            PointXYZIRingTime point = cloud_plane->points[j];
 
             //Check if the point lies inside the cylinder
             double dx = point.x - center.x;
@@ -172,17 +122,17 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
  * @param cluster_centers The center of each cluster.
  */
 void Perception::filter_clusters(std::vector<pcl::PointIndices>& cluster_indices,
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
 {
     for (int i = cluster_indices.size() - 1; i >= 0; i--)
     {
         //Create a temporal point cloud
         pcl::PointIndices indices = cluster_indices[i];
-        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<PointXYZIRingTime>::Ptr cluster_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         pcl::copyPointCloud(*cloud_filtered, indices, *cluster_cloud);
 
         //Obtain the new bounding box of the cluster
-        pcl::PointXYZI min_point, max_point;
+        PointXYZIRingTime min_point, max_point;
         pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
         double max_x = max_point.x;
         double min_x = min_point.x;
@@ -233,22 +183,38 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     cloud = filtered_cloud;
 
-    pcl::PointCloud<PointXYZIRingTime>::Ptr updated_cloud;
-    if (kGlobalAccumulation) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
-    else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
-
-    RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", updated_cloud->size());
-
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered_ground(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-    
-    GroundRemove::RemoveGround(*updated_cloud,*cloud_filtered_ground,*cloud_filtered); 
-    //GroundFiltering::grid_ground_filter(updated_cloud, cloud_filtered, cloud_filtered_ground, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+
+// Remove ground
+    // GroundRemove::RemoveGround(*cloud,*cloud_filtered_ground,*cloud_filtered); 
+    GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_filtered_ground, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
     //GroundFiltering2::RemoveGroundByRings(updated_cloud, cloud_filtered_ground, cloud_filtered);
 
+// Clustering
+    std::vector<pcl::PointIndices> cluster_indices;
+    std::vector<PointXYZColorScore> clusters_centers;
+    Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
+    // filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
+    Clustering::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers);
+
+// Accumulation
+    pcl::PointCloud<PointXYZIRingTime>::Ptr updated_cloud;
+    if (kGlobalAccumulation) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud_filtered, clusters_centers, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
+    else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud_filtered, clusters_centers, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
+        
+    RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", updated_cloud->size());
+
+    // Verificar que updated_cloud no sea nulo para evitar fallos
+    if (!updated_cloud) {
+        RCLCPP_WARN(this->get_logger(), "Updated cloud is null.");
+        return;
+    }
+    
+// Publish
     sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*cloud_filtered, filtered_msg);
+    pcl::toROSMsg(*updated_cloud, filtered_msg);
     filtered_msg.header.frame_id="/rslidar";
     filtered_pub_->publish(filtered_msg);
 }
@@ -277,7 +243,7 @@ void Perception::get_tf_position()
         y_ = transform.transform.translation.y;
         yaw_ = yaw;
         
-        RCLCPP_INFO(this->get_logger(), "Transform: x: %f, y: %f, yaw: %f", x_, y_, yaw_);
+        // RCLCPP_INFO(this->get_logger(), "Transform: x: %f, y: %f, yaw: %f", x_, y_, yaw_);
     } catch (const tf2::TransformException &ex) {
         RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
     }

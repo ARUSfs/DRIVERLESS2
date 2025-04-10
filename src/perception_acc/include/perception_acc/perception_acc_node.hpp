@@ -31,7 +31,6 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include "perception_acc/ground_filtering.h"
-#include "perception_acc/clustering.h"
 #include "perception_acc/cropping.h"
 #include "perception_acc/scoring.h"
 #include "perception_acc/accumulation.h"
@@ -116,15 +115,6 @@ class Perception : public rclcpp::Node
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
 
-        /**
-         * @brief Auxiliar function for the call back function.
-         * Extract the center of each cluster and keep it in a new point cloud.
-         * @param cluster_indices Indices from cluster.
-         * @param cloud_filtered The point cloud after the ground filtering.
-         * @param cluster_centers The center of each cluster.
-         */
-        void get_clusters_centers(std::vector<pcl::PointIndices>& cluster_indices,
-            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& cluster_centers);
             
         /**
          * @brief Auxiliar function for the call back function.
@@ -135,7 +125,7 @@ class Perception : public rclcpp::Node
          * @param cluster_centers The center of each cluster.
          * @param radius The radius used to search for eliminated points.
          */
-        void reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, 
+        void reconstruction(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_plane, pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, 
             std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore> cluster_centers, 
             double radius);
 
@@ -147,10 +137,10 @@ class Perception : public rclcpp::Node
         * @param cluster_centers The center of each cluster.
         */
         void filter_clusters(std::vector<pcl::PointIndices>& cluster_indices,
-            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
+            pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
         
 
         void get_clusters_centers_ransac(std::vector<pcl::PointIndices>& cluster_indices,
-            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
+            pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
 
 };
