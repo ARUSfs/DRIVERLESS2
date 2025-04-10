@@ -15,6 +15,11 @@
 #include <pcl/filters/crop_box.h>
 #include <pcl/point_types.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/filters/extract_indices.h>
+#include <cmath>
+
+#include "new_perception/cropping.h"
 
 /**
  * @class NewPerception

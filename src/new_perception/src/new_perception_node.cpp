@@ -33,118 +33,59 @@ NewPerception::NewPerception() : Node("NewPerception")
  */
 void NewPerception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg)
 {
+    double start_time = this->now().seconds();
+
+
     // Transform the message into a pcl point cloud
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
-    // Definme the plane of the proeyction of the point cloud
-    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-    coefficients->values.resize(4);
-    coefficients->values[0] = 0.0;  
-    coefficients->values[1] = 0.0;  
-    coefficients->values[2] = 1.0;  
-    coefficients->values[3] = 0.0;  
 
-    // Define the proyection
-    pcl::ProjectInliers<pcl::PointXYZ> proj;
-    proj.setModelType(pcl::SACMODEL_PLANE);
-    proj.setInputCloud(cloud);
-    proj.setModelCoefficients(coefficients);
+    Cropping::crop_filter_cropbox(cloud, 25.0, 20.0, 0.0);
+    std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
 
-    // Flat the point cloud by proyecting it into the plane
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_flattened(new pcl::PointCloud<pcl::PointXYZ>);
-    proj.filter(*cloud_flattened);
 
-    // Filter those points with NaN values
-    std::vector<int> indices_not_NaN;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_flattened_not_NaN(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::removeNaNFromPointCloud(*cloud_flattened, *cloud_flattened_not_NaN, indices_not_NaN);
+    double radius = 0.25;  
 
-    // int number_sections = 50;
-    // int density_threshold = 15;
-    // double Mx = 30;
-    // double My = 15;
-    // double Mz = 0.5;
+    pcl::KdTreeFLANN<pcl::PointXYZI> kdtree;
+    kdtree.setInputCloud(cloud);
 
-    // pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
 
-    // double x_step = (Mx - 0) / number_sections;
-    // double y_step = (My - (-My)) / number_sections;
+    for (size_t i = 0; i < cloud->points.size(); ++i) 
+    {
+        pcl::PointXYZI p = cloud->points[i];
+        double distance = std::sqrt(p.x * p.x + p.y * p.y);
 
-    // int cont = 0;
+        int min_neighbors = std::max(485 * exp(-0.6 * distance), 10.0);
 
-    // for (int i = 0; i < number_sections; ++i)
-    // {
-    //     for (int j = 0; j < number_sections; ++j)
-    //     {
-    //         // Define the square
-    //         Eigen::Vector4f min_pt(0 + i * x_step, -My + j * y_step, -100.0, 1.0);
-    //         Eigen::Vector4f max_pt(0 + (i + 1) * x_step, -My + (j + 1) * y_step, Mz, 1.0);
+        std::vector<int> pointIdxRadiusSearch;
+        std::vector<float> pointRadiusSquaredDistance;
 
-    //         // Crop the input cloud to the square measures
-    //         pcl::PointCloud<pcl::PointXYZ>::Ptr grid_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    //         pcl::CropBox<pcl::PointXYZ> crop_box_filter;
-    //         crop_box_filter.setInputCloud(cloud_flattened_not_NaN);
-    //         crop_box_filter.setMin(min_pt);
-    //         crop_box_filter.setMax(max_pt);
-    //         crop_box_filter.filter(*grid_cloud);
+        if (kdtree.radiusSearch(cloud->points[i], radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) >= min_neighbors) 
+        {   
+            inliers->indices.push_back(i);
+        }
+    }
 
-    //         double k = (i * j * number_sections) % 256;
+    pcl::ExtractIndices<pcl::PointXYZI> extract;
+    extract.setInputCloud(cloud);
+    extract.setIndices(inliers);
+    extract.setNegative(false);
 
-    //         for (const auto& p : grid_cloud->points)
-    //         {
-    //             pcl::PointXYZI copy;
-    //             copy.x = p.x;
-    //             copy.y = p.y;
-    //             copy.z = p.z;
-    //             copy.intensity = k;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>());
+    extract.filter(*cloud_filtered);
 
-    //             cloud_filtered->points.push_back(copy);
-    //         }
+    std::cout << "Filtering time: " << this->now().seconds() - start_time << std::endl;
 
-    //         ++cont;
-
-    //         std::cout << "Number of points: " << grid_cloud->points.size() << std::endl;
-    //         std::cout << "Intensity: " << k << std::endl;
-    //     }
-    // }
-    // std::cout << "------------> Number of grids " << cont << " <------------" << std::endl;
-
-    // float bandwidth = 0.5;  
-    // int min_neighbors = 20;
-
-    // pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
-    // kdtree.setInputCloud(cloud_flattened_not_NaN);
-
-    // std::vector<float> densities(cloud_flattened_not_NaN->size(), 0);
-
-    // for (size_t i = 0; i < cloud_flattened_not_NaN->size(); ++i) 
-    // {
-    //     std::vector<int> pointIdxRadiusSearch;
-    //     std::vector<float> pointRadiusSquaredDistance;
-
-    //     if (kdtree.radiusSearch(cloud_flattened_not_NaN->points[i], bandwidth, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0) 
-    //     {
-    //         densities[i] = static_cast<float>(pointIdxRadiusSearch.size());
-    //     }
-    // }
-
-    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
-    // for (size_t i = 0; i < cloud_flattened_not_NaN->size(); ++i) 
-    // {
-    //     if (densities[i] >= min_neighbors) 
-    //     { 
-    //         cloud_filtered->push_back(cloud_flattened_not_NaN->points[i]);
-    //     }
-    // }
-
-    // std::cout << "Number of filtered points: " << cloud_filtered->size() << std::endl;
 
     // Publish the filtered cloud
     sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*cloud_flattened_not_NaN, filtered_msg);
+    pcl::toROSMsg(*cloud_filtered, filtered_msg);
     filtered_msg.header.frame_id="/rslidar";
     filtered_pub_->publish(filtered_msg);
+
+    std::cout << "//////////////////////////////////////" << std::endl;
 }
 
 int main(int argc, char * argv[])
