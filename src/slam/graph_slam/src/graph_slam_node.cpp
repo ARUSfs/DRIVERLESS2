@@ -422,21 +422,27 @@ Eigen::Vector2d GraphSlam::global_to_local(const Eigen::Vector2d& global_pos) {
 }
 
 void GraphSlam::send_tf() {
-	geometry_msgs::msg::TransformStamped transformSt;
-	transformSt.header.stamp = this->now();
-	transformSt.header.frame_id = "arussim/world";
-	transformSt.child_frame_id = "slam/vehicle";
-	tf2::Quaternion q;
-	transformSt.transform.translation.x = vehicle_pose_(0);
-	transformSt.transform.translation.y = vehicle_pose_(1);
-	q.setRPY(0, 0, vehicle_pose_(2));
-	transformSt.transform.rotation.x = q.x();
-	transformSt.transform.rotation.y = q.y();
-	transformSt.transform.rotation.z = q.z();
-	transformSt.transform.rotation.w = q.w();
+   
 
-	tf_broadcaster_->sendTransform(transformSt);
+    // Apply smoothing: 80% current smoothed pose, 20% new pose
+    smoothed_pose = 0.8 * smoothed_pose + 0.2 * vehicle_pose_;
+
+    geometry_msgs::msg::TransformStamped transformSt;
+    transformSt.header.stamp = this->now();
+    transformSt.header.frame_id = "arussim/world";
+    transformSt.child_frame_id = "slam/vehicle";
+    tf2::Quaternion q;
+    transformSt.transform.translation.x = smoothed_pose(0);
+    transformSt.transform.translation.y = smoothed_pose(1);
+    q.setRPY(0, 0, smoothed_pose(2));
+    transformSt.transform.rotation.x = q.x();
+    transformSt.transform.rotation.y = q.y();
+    transformSt.transform.rotation.z = q.z();
+    transformSt.transform.rotation.w = q.w();
+
+    tf_broadcaster_->sendTransform(transformSt);
 }
+
 
 
 

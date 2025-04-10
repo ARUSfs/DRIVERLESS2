@@ -53,6 +53,7 @@ class GraphSlam : public rclcpp::Node
     Eigen::Matrix2d R = Eigen::Matrix2d::Identity();
     Eigen::Matrix3d B = Eigen::Matrix3d::Identity();
     Eigen::Vector3d u = Eigen::Vector3d::Zero();
+    Eigen::Vector3d smoothed_pose ;
     double dt = 0.01;
     g2o::VertexSE2* last_optimized_pose_ = nullptr;
     std::vector<Eigen::Vector3d> odom_buffer_;
