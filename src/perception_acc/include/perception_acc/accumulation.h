@@ -278,7 +278,7 @@ namespace Accumulation
         // Apply voxel grid filter to limit the size of the global cloud
         static pcl::VoxelGrid<PointXYZIRingTime> global_vg; 
         global_vg.setInputCloud(global_cloud);
-        global_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize);
+        global_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize/10);
         pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
         global_vg.filter(*filtered);
 
@@ -308,49 +308,32 @@ namespace Accumulation
     
         auto final_transform = computeRigidTransformation(x, y, yaw, kDistanceLidarToCoG);
 
-        // Transform new cloud
         pcl::PointCloud<PointXYZIRingTime>::Ptr transformed_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         pcl::transformPointCloud(*cloud, *transformed_cloud, final_transform.matrix());
 
         //Ensure buffer size limit
-        if (cloud_buffer.size() >= static_cast<size_t>(10)) 
+        if (cloud_buffer.size() >= static_cast<size_t>(20)) 
         {
             cloud_buffer.pop_front();
         }
 
+        //Add the latest frame
+        cloud_buffer.push_back(transformed_cloud);
 
-        // Build a local global cloud from the buffer
-        pcl::PointCloud<PointXYZIRingTime>::Ptr pcl_buffer(new pcl::PointCloud<PointXYZIRingTime>);
+        pcl::PointCloud<PointXYZIRingTime>::Ptr global_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         for (int i = 0; i < cloud_buffer.size(); i++)
         {
-            *pcl_buffer += *cloud_buffer[i];
+            *global_cloud += *cloud_buffer[i];
         }
 
-        // Use local cloud for clustering instead of global_cloud
-        std::vector<pcl::PointIndices> cluster_local_indices;
-        std::vector<PointXYZColorScore> clusters_local_centers;
-        Clustering::euclidean_clustering(pcl_buffer, cluster_local_indices);
-        Clustering::get_clusters_centers(cluster_local_indices, pcl_buffer, clusters_local_centers);
-        
-        auto compensation = compensator(clusters_local_centers, clusters_centers);
-
-        pcl::PointCloud<PointXYZIRingTime>::Ptr retransformed_cloud(new pcl::PointCloud<PointXYZIRingTime>);
-        Eigen::Isometry3d final_compensation = final_transform * compensation;
-        pcl::transformPointCloud(*transformed_cloud, *retransformed_cloud, final_compensation.matrix());
-
-
-        //Add the latest frame
-        cloud_buffer.push_back(retransformed_cloud);
-
-
-        // Revert pcl_buffer to the original sensor frame
+        // Revert to original position before returning
         pcl::PointCloud<PointXYZIRingTime>::Ptr local_cloud(new pcl::PointCloud<PointXYZIRingTime>);
-        pcl::transformPointCloud(*pcl_buffer, *local_cloud, final_transform.inverse().matrix());
+        pcl::transformPointCloud(*global_cloud, *local_cloud, final_transform.inverse().matrix());
 
-        // Apply voxel grid
+        // Apply voxel grid filter
         static pcl::VoxelGrid<PointXYZIRingTime> local_vg; 
         local_vg.setInputCloud(local_cloud);
-        local_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize);
+        local_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize/10);
         pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
         local_vg.filter(*filtered);
         

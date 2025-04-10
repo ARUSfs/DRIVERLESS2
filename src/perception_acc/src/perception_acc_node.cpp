@@ -189,20 +189,20 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 // Remove ground
     // GroundRemove::RemoveGround(*cloud,*cloud_filtered_ground,*cloud_filtered); 
-    GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_filtered_ground, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+    // GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_filtered_ground, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
     //GroundFiltering2::RemoveGroundByRings(updated_cloud, cloud_filtered_ground, cloud_filtered);
 
 // Clustering
     std::vector<pcl::PointIndices> cluster_indices;
     std::vector<PointXYZColorScore> clusters_centers;
-    Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
-    // filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
-    Clustering::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers);
+    // Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
+    // // filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
+    // Clustering::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers);
 
 // Accumulation
     pcl::PointCloud<PointXYZIRingTime>::Ptr updated_cloud;
-    if (kGlobalAccumulation) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud_filtered, clusters_centers, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
-    else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud_filtered, clusters_centers, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
+    if (kGlobalAccumulation) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, clusters_centers, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
+    else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud, clusters_centers, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
         
     RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", updated_cloud->size());
 

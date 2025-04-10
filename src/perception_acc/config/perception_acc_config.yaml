@@ -4,7 +4,7 @@ perception_acc:
     lidar_topic: "/rslidar_points"
 
     #Accumulation
-    global_accumulation: true
+    global_accumulation: false
     distance_lidar_to_CoG: 1.75
     downsample_size: 0.1
 
