@@ -65,8 +65,12 @@ public:
         // Disable landmarks that might be false positives
         for (Landmark* landmark : map_) {
             if (time(0) - landmark->last_observation_time_ > 1.0 && landmark->num_observations_ < 3) {
+                std::cout << "Desactivando landmark " << landmark->id_ 
+                          << " por inactividad de " << (time(0) - landmark->last_observation_time_) 
+                          << " s y solo " << landmark->num_observations_ << " observaciones" << std::endl;
                 landmark->disabled_ = true;
             }
+            
         }
 
         // Remove unmatched landmarks from observed_landmarks
@@ -128,7 +132,9 @@ private:
 
         double mahalanobis_distance(const Eigen::Vector2d& obs, const Eigen::Vector2d& landmark) {
             Eigen::Vector2d diff = obs - landmark;
-            Eigen::Matrix2d covariance = Eigen::Matrix2d::Identity(); // Assuming identity covariance for simplicity
+            Eigen::Matrix2d covariance;
+            covariance << 0.1, 0.0,
+            0.0, 0.1;  // Assuming identity covariance for simplicity
             return diff.dot(covariance.inverse() * diff);
         }
 
