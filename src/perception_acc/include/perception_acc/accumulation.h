@@ -307,6 +307,8 @@ namespace Accumulation
         if (!buffer_cloud_initialized) {
             cloud_buffer.clear();
             buffer_cloud_initialized = true;
+            cloud_buffer.push_back(cloud);
+            return cloud;
         }
 
         if (!cloud || cloud->empty()) {
@@ -315,36 +317,57 @@ namespace Accumulation
     
         auto final_transform = computeRigidTransformation(x, y, yaw, kDistanceLidarToCoG);
 
-        pcl::PointCloud<PointXYZIRingTime>::Ptr transformed_cloud(new pcl::PointCloud<PointXYZIRingTime>);
-        pcl::transformPointCloud(*cloud, *transformed_cloud, final_transform.matrix());
-
         //Ensure buffer size limit
         if (cloud_buffer.size() >= static_cast<size_t>(20)) 
         {
             cloud_buffer.pop_front();
         }
 
-        //Add the latest frame
-        cloud_buffer.push_back(transformed_cloud);
-
         pcl::PointCloud<PointXYZIRingTime>::Ptr global_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         for (int i = 0; i < cloud_buffer.size(); i++)
         {
             *global_cloud += *cloud_buffer[i];
         }
+            // IMPLEMENTATION SMALL_GICP
+            pcl::PointCloud<pcl::PointCovariance>::Ptr target = small_gicp::voxelgrid_sampling_omp<pcl::PointCloud<PointXYZIRingTime>, pcl::PointCloud<pcl::PointCovariance>>(*global_cloud, 0.7);
+            pcl::PointCloud<pcl::PointCovariance>::Ptr source = small_gicp::voxelgrid_sampling_omp<pcl::PointCloud<PointXYZIRingTime>, pcl::PointCloud<pcl::PointCovariance>>(*cloud, 0.7);
+    
+            // Estimate covariances of points.
+            const int num_threads = 6;
+            const int num_neighbors = 10;
+            small_gicp::estimate_covariances_omp(*target, num_neighbors, num_threads);
+            small_gicp::estimate_covariances_omp(*source, num_neighbors, num_threads);
+    
+            // Create KdTree for target and source.
+            auto target_tree = std::make_shared<small_gicp::KdTree<pcl::PointCloud<pcl::PointCovariance>>>(target, small_gicp::KdTreeBuilderOMP(num_threads));
+            auto source_tree = std::make_shared<small_gicp::KdTree<pcl::PointCloud<pcl::PointCovariance>>>(source, small_gicp::KdTreeBuilderOMP(num_threads));
+    
+            small_gicp::Registration<small_gicp::GICPFactor, small_gicp::ParallelReductionOMP> registration;
+            registration.reduction.num_threads = num_threads;
+            registration.rejector.max_dist_sq = 3.0;
+    
+            // Align point clouds. Note that the input point clouds are pcl::PointCloud<pcl::PointCovariance>.
+            auto initial_guess = computeRigidTransformation(x, y, yaw, kDistanceLidarToCoG);
+            auto result = registration.align(*target, *source, *target_tree, initial_guess);
+            
+            auto estimated_transformation = result.T_target_source;
+            Eigen::Matrix4f transform_matrix = estimated_transformation.matrix().cast<float>();
+    
+            // Create an accumulated cloud
+            pcl::PointCloud<PointXYZIRingTime>::Ptr accumulated_cloud(new pcl::PointCloud<PointXYZIRingTime>());
+    
+            // Add the latest frame (unmodified)
+            pcl::transformPointCloud(*cloud, *cloud, transform_matrix);
+            *global_cloud += *cloud;
+
+        //Add the latest frame
+        cloud_buffer.push_back(cloud);
 
         // Revert to original position before returning
         pcl::PointCloud<PointXYZIRingTime>::Ptr local_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         pcl::transformPointCloud(*global_cloud, *local_cloud, final_transform.inverse().matrix());
-
-        // Apply voxel grid filter
-        static pcl::VoxelGrid<PointXYZIRingTime> local_vg; 
-        local_vg.setInputCloud(local_cloud);
-        local_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize/10);
-        pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
-        local_vg.filter(*filtered);
         
-        return filtered;
+        return local_cloud;
     }
 
     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_cloud_small_icp(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, int kBufferSize,
@@ -368,12 +391,12 @@ namespace Accumulation
         if (cloud_buffer.size() < 2) return cloud;
 
         // IMPLEMENTATION SMALL_GICP
-        pcl::PointCloud<pcl::PointCovariance>::Ptr target = small_gicp::voxelgrid_sampling_omp<pcl::PointCloud<PointXYZIRingTime>, pcl::PointCloud<pcl::PointCovariance>>(*cloud, 0.25);
-        pcl::PointCloud<pcl::PointCovariance>::Ptr source = small_gicp::voxelgrid_sampling_omp<pcl::PointCloud<PointXYZIRingTime>, pcl::PointCloud<pcl::PointCovariance>>(*cloud_buffer[cloud_buffer.size() - 2], 0.25);
+        pcl::PointCloud<pcl::PointCovariance>::Ptr target = small_gicp::voxelgrid_sampling_omp<pcl::PointCloud<PointXYZIRingTime>, pcl::PointCloud<pcl::PointCovariance>>(*cloud, 0.3);
+        pcl::PointCloud<pcl::PointCovariance>::Ptr source = small_gicp::voxelgrid_sampling_omp<pcl::PointCloud<PointXYZIRingTime>, pcl::PointCloud<pcl::PointCovariance>>(*cloud_buffer[cloud_buffer.size() - 1], 0.3);
 
         // Estimate covariances of points.
-        const int num_threads = 64;
-        const int num_neighbors = 40;
+        const int num_threads = 6;
+        const int num_neighbors = 10;
         small_gicp::estimate_covariances_omp(*target, num_neighbors, num_threads);
         small_gicp::estimate_covariances_omp(*source, num_neighbors, num_threads);
 
