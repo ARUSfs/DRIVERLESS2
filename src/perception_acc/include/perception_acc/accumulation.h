@@ -82,110 +82,7 @@ namespace Accumulation
         pcl::transformPointCloud(*cloud, *cloud, final_transform.matrix());
     }
 
-    // TO-DO : CAMBIAR DEFINICIÓN DE CLOUD_BUFFER
 
-    /**
-    * @brief Accumulate the clouds of the last frames.
-    * @param cloud The clouds you want to store in the buffer.
-    * @param kBufferSize The size of cloud buffers.
-    */
-    // pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_cloud(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, int kBufferSize,
-    //         double vx, double vy, double yaw_rate, double dt)
-    // {
-    //     //Clean the buffer the first time
-    //     if (!buffer_cloud_initialized) {
-    //         cloud_buffer.clear();
-    //         buffer_cloud_initialized = true;
-    //     }
-
-    //     //Ensure buffer size limit
-    //     if (cloud_buffer.size() >= static_cast<size_t>(kBufferSize)) 
-    //     {
-    //         cloud_buffer.pop_front();
-    //     }
-
-    //     //Add the latest frame
-    //     cloud_buffer.push_back(cloud);
-
-    //     if (cloud_buffer.size() < 2) return cloud;
-
-    //     rigidTransformation(cloud_buffer[cloud_buffer.size() - 2], vx, vy, yaw_rate, dt);
-
-    //     pcl::IterativeClosestPoint<PointXYZIRingTime, PointXYZIRingTime> icp;
-    //     icp.setMaximumIterations(50);
-    //     icp.setInputSource(cloud_buffer[cloud_buffer.size() - 2]);
-    //     icp.setInputTarget(cloud);
-    //     icp.setEuclideanFitnessEpsilon(0.005);
-    //     icp.setTransformationEpsilon(1e-5);
-    //     icp.setMaxCorrespondenceDistance(0.05);
-
-    //     Eigen::Matrix4f icp_transform = icp.getFinalTransformation();
-
-    //     // Create an accumulated cloud
-    //     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulated_cloud(new pcl::PointCloud<PointXYZIRingTime>());
-
-    //     //Iterate through stored frames (excluding the latest)
-    //     for (size_t i = 0; i < cloud_buffer.size() - 2; ++i) 
-    //     {
-    //         if (!cloud_buffer[i] || cloud_buffer[i]->empty()) 
-    //         {
-    //             continue;
-    //         }
-    //         //Apply the transformation
-    //         rigidTransformation(cloud_buffer[i], vx, vy, yaw_rate, dt);
-    //         pcl::transformPointCloud(*cloud_buffer[i], *cloud_buffer[i], icp_transform);
-
-    //         //Merge into final accumulated cloud
-    //         *accumulated_cloud += *cloud_buffer[i];
-    //     }
-    //     // Add the latest frame (unmodified)
-    //     pcl::transformPointCloud(*cloud_buffer[cloud_buffer.size() - 2], *cloud_buffer[cloud_buffer.size() - 2], icp_transform);
-        
-    //     *accumulated_cloud += *cloud_buffer[cloud_buffer.size() - 2];
-    //     *accumulated_cloud += *cloud_buffer.back();
-
-    //     return accumulated_cloud;
-    // }
-
-
-
-
-
-    /**
-     * @brief Transforms a PointCloud using a 6x6 Hessian matrix (rotation and translation).
-     * @param cloud_in Input point cloud (pcl::PointCloud<PointXYZIRingTime>)
-     * @param H Hessian matrix (6x6), where [rx, ry, rz] are rotation and [tx, ty, tz] are translation
-     * @return Transformed point cloud
-     */
-    pcl::PointCloud<pcl::PointXYZI>::Ptr transformPointCloudWithHessian(
-        const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_in,
-        const Eigen::Matrix<double, 6, 6>& H) 
-    {
-        // Añadir comprobación para evitar nulo o vacío
-        if (!cloud_in || cloud_in->empty()) {
-             RCLCPP_ERROR(rclcpp::get_logger("Accumulation"),
-                          "transformPointCloudWithHessian: Input cloud is null or empty.");
-             return pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>());
-        }
-
-        // Extract rotation (rx, ry, rz) and translation (tx, ty, tz)
-        Eigen::Vector3d rotation_vec(H(0, 5), H(1, 5), H(2, 5));  // Rotation vector
-        Eigen::Vector3d translation(H(3, 5), H(4, 5), H(5, 5));   // Translation vector
-
-        // Convert rotation vector to rotation matrix using SO(3) exponential map
-        Eigen::Matrix3d rotation_matrix = Eigen::AngleAxisd(rotation_vec.norm(), rotation_vec.normalized()).toRotationMatrix();
-
-        // Construct 4x4 transformation matrix
-        Eigen::Matrix4f transformation = Eigen::Matrix4f::Identity();
-        transformation.block<3, 3>(0, 0) = rotation_matrix.cast<float>();  // Rotation
-        transformation.block<3, 1>(0, 3) = translation.cast<float>();      // Translation
-
-        // Apply transformation to the point cloud
-        pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_out(new pcl::PointCloud<pcl::PointXYZI>());
-        pcl::transformPointCloud(*cloud_in, *cloud_out, transformation);
-
-        return cloud_out;
-    }
 
     Eigen::Isometry3d compensator(std::vector<PointXYZColorScore> global_center_clusters, std::vector<PointXYZColorScore> center_clusters)
     {
@@ -243,6 +140,8 @@ namespace Accumulation
         return compensation;
     }
 
+
+
     /**
      * @brief Computes the rigid transformation matrix based on the given parameters.
      * @param x Translation along X-axis
@@ -273,6 +172,8 @@ namespace Accumulation
         return final_transform;  // Return the transformation matrix
     }
 
+
+
     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_global_cloud_ring(
         pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, std::vector<PointXYZColorScore> clusters_centers,
         double x, double y, double yaw, double kDistanceLidarToCoG, float kDownsampleSize)
@@ -297,6 +198,7 @@ namespace Accumulation
 
         return global_cloud;
     }
+
 
 
     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_local_cloud_ring(
@@ -369,6 +271,8 @@ namespace Accumulation
         
         return local_cloud;
     }
+
+
 
     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulate_cloud_small_icp(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, int kBufferSize,
             double vx, double vy, double yaw_rate, double dt)
