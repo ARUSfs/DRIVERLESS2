@@ -1,6 +1,6 @@
 #include "graph_slam/graph_slam_node.hpp"
 
-GraphSlam::GraphSlam() : Node("graph_slam")
+GraphSlam::GraphSlam() : Node("graph_slam"), DA(5.991) // 5.991 es el valor del chi2_threshold
 { 
 
     this->declare_parameter("finish_line_offset", 0.0);
