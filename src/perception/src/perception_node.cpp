@@ -9,7 +9,7 @@
  */
 
 #include "perception/perception_node.hpp"
-bool DEBUG = false;
+bool DEBUG = true;
 
 Perception::Perception() : Node("Perception")
 {

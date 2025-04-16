@@ -19,9 +19,55 @@
 #include <pcl/point_types.h>
 #include <iostream>
 #include <pcl/filters/crop_box.h>
+#include <pcl/filters/passthrough.h>
 
 namespace GroundFiltering
 {
+    bool is_plane_still_valid(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::ModelCoefficients::Ptr& prev_coefficients, double threshold, double acceptance_ratio = 0.9)
+    {
+        if (cloud->empty() || prev_coefficients->values.size() < 4) return false;
+
+        int inlier_count = 0;
+        double A = prev_coefficients->values[0];
+        double B = prev_coefficients->values[1];
+        double C = prev_coefficients->values[2];
+        double D = prev_coefficients->values[3];
+
+        for (const auto& point : cloud->points)
+        {
+            double distance = std::abs(A * point.x + B * point.y + C * point.z + D) / std::sqrt(A * A + B * B + C * C);
+            if (distance < threshold)
+            {
+                inlier_count++;
+            }
+        }
+
+        double ratio = static_cast<double>(inlier_count) / cloud->points.size();
+        return ratio >= acceptance_ratio;
+    }
+
+    void segment_using_plane(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered,
+        pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold)
+    {
+        double A = coefficients->values[0];
+        double B = coefficients->values[1];
+        double C = coefficients->values[2];
+        double D = coefficients->values[3];
+
+        for (const auto& point : cloud->points)
+        {
+            double distance = std::abs(A * point.x + B * point.y + C * point.z + D) / std::sqrt(A * A + B * B + C * C);
+            if (distance < threshold)
+            {
+                cloud_plane->points.push_back(point);
+            }
+            else
+            {
+                cloud_filtered->points.push_back(point);
+            }
+        }
+    }
+
     /**
     * @brief Implements ground filtering using ransac segmentation.
     * @param cloud The raw point cloud that will be filtered.
@@ -154,16 +200,24 @@ namespace GroundFiltering
         pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, double Mx, double My, double Mz,
         int number_sections, double angle_threshold, int minimum_ransac_points)
     {
+        // Filter not candidates points
+        pcl::PassThrough<pcl::PointXYZI> pass;
+        pass.setInputCloud(cloud);
+        pass.setFilterFieldName("z");
+        pass.setFilterLimits(-10.0, 0.0);
+        pass.filter(*cloud);
+
         // Initialize the variables
         Eigen::Vector3d prev_normal(0, 0, 1);
         Eigen::Vector3d normal(0, 0, 1);
+        pcl::ModelCoefficients::Ptr prev_coefficients(new pcl::ModelCoefficients(*coefficients));
 
         // Transform the angle threshold from degree to radians
         angle_threshold *= (M_PI/180);
 
         // Define the measures if the grid
-        double x_step = (Mx - 0) / number_sections;
-        double y_step = (My - (-My)) / number_sections;
+        double x_step = Mx / number_sections;
+        double y_step = 2 * My / number_sections;
 
         // Iterate on each square
         for (int i = 0; i < number_sections; ++i)
@@ -171,8 +225,8 @@ namespace GroundFiltering
             for (int j = 0; j < number_sections; ++j)
             {
                 // Define the square
-                Eigen::Vector4f min_pt(0 + i * x_step, -My + j * y_step, -100.0, 1.0);
-                Eigen::Vector4f max_pt(0 + (i + 1) * x_step, -My + (j + 1) * y_step, Mz, 1.0);
+                Eigen::Vector4f min_pt(i * x_step, -My + j * y_step, -100.0, 1.0);
+                Eigen::Vector4f max_pt((i + 1) * x_step, -My + (j + 1) * y_step, Mz, 1.0);
 
                 // Crop the input cloud to the square measures
                 pcl::PointCloud<pcl::PointXYZI>::Ptr grid_cloud(new pcl::PointCloud<pcl::PointXYZI>);
@@ -185,9 +239,26 @@ namespace GroundFiltering
                 // Create temporal clouds to store the ground and not ground points
                 pcl::PointCloud<pcl::PointXYZI>::Ptr temp_filtered(new pcl::PointCloud<pcl::PointXYZI>);
                 pcl::PointCloud<pcl::PointXYZI>::Ptr temp_plane(new pcl::PointCloud<pcl::PointXYZI>);
-                
-                // Apply ransac and check the normal vectors
-                ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, prev_normal, normal, angle_threshold, minimum_ransac_points);
+
+                if (is_plane_still_valid(grid_cloud, prev_coefficients, threshold))
+                {
+                    segment_using_plane(grid_cloud, temp_filtered, temp_plane, prev_coefficients, threshold);
+
+                    *cloud_filtered += *temp_filtered;
+                    *cloud_plane += *temp_plane;
+
+                    double A = prev_coefficients->values[0];
+                    double B = prev_coefficients->values[1];
+                    double C = prev_coefficients->values[2];
+                    normal = Eigen::Vector3d(A, B, C).normalized();
+                }
+                else
+                {
+                    // Apply ransac and check the normal vectors
+                    ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, prev_normal, normal, angle_threshold, minimum_ransac_points);
+
+                    *prev_coefficients = *coefficients;
+                }
 
                 // Update the variables for the next iteration
                 prev_normal = normal;
