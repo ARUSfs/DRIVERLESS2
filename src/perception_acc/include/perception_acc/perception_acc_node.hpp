@@ -85,10 +85,15 @@ class Perception : public rclcpp::Node
         double x_;
         double y_;
         double yaw_;
+        double vx_;
+        double vy_;
+        double yaw_rate_;
+    
 
         //Subscriber
         std::string kLidarTopic;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_sub_;
+        rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
 
         //Publishers
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
@@ -114,6 +119,14 @@ class Perception : public rclcpp::Node
          * @param lidar_msg The point cloud message received from the lidar.
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
+
+        /**
+         * @brief Callback function for the car state topic.
+         * When the car state topic recieves a message, this function is called and updates
+         * the position and velocity of the car.
+         * @param state_msg The state message received from the car state topic.
+         */
+        void state_callback(const common_msgs::msg::State::SharedPtr state_msg);
 
             
         /**

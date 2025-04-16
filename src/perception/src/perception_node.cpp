@@ -9,14 +9,14 @@
  */
 
 #include "perception/perception_node.hpp"
-bool DEBUG = false;
+bool DEBUG = true;
 
 Perception::Perception() : Node("Perception")
 {
     //Declare the parameters
     this->declare_parameter<std::string>("lidar_topic", "/rslidar_points");
     this->declare_parameter<std::string>("state_topic", "/car_state/state");
-    this->declare_parameter<bool>("crop", true);
+    this->declare_parameter<bool>("crop", false);
     this->declare_parameter<double>("max_x_fov", 25.0);
     this->declare_parameter<double>("max_y_fov", 20.0);
     this->declare_parameter<double>("max_z_fov", 0.0);
@@ -68,6 +68,8 @@ Perception::Perception() : Node("Perception")
         "/perception/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/map", 10);
+
+    cloud_buffer = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
 }
 
 /**
@@ -223,7 +225,21 @@ void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_m
  * @param lidar_msg The point cloud message received from the lidar topic.
  */
 void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg)
-{   
+{
+    static double last_msg_time = 0.0;
+    double current_time = this->now().seconds();
+    if(last_msg_time == 0.0) {
+        last_msg_time = current_time;
+        RCLCPP_INFO(this->get_logger(), "First message received");
+        return;
+    }
+    if(current_time - last_msg_time < 5.0 && !started) {
+        RCLCPP_INFO(this->get_logger(), "Waiting 5 seconds...");
+        return;
+    }
+    last_msg_time = current_time;
+    started = true;
+
     double start_time = this->now().seconds();
 
     //Define the variables for the ground filter
@@ -243,9 +259,21 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         if (DEBUG) std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
     }
 
+    // Apply voxel grid filter
+    pcl::PointCloud<pcl::PointXYZI>::Ptr filtered(new pcl::PointCloud<pcl::PointXYZI>());
+    static pcl::VoxelGrid<pcl::PointXYZI> local_vg; 
+    local_vg.setInputCloud(cloud_buffer);
+    local_vg.setLeafSize(0.1, 0.1, 0.1/10);
+    local_vg.filter(*filtered);
+
+    *cloud_buffer = *filtered;
+
+    *cloud_buffer += *cloud;
+
+    RCLCPP_INFO(this->get_logger(), "Cloud size: %d", cloud_buffer->size());
 
     //Apply the ground filter fuction
-    GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+    GroundFiltering::grid_ground_filter(cloud_buffer, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
     
 
@@ -346,20 +374,20 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         //Publish the filtered cloud
         sensor_msgs::msg::PointCloud2 filtered_msg;
         pcl::toROSMsg(*cloud_filtered, filtered_msg);
-        filtered_msg.header.frame_id="/rslidar";
+        filtered_msg.header.frame_id="/map";
         filtered_pub_->publish(filtered_msg);
 
         // Publish the clusters cloud
         sensor_msgs::msg::PointCloud2 clusters_msg;
         pcl::toROSMsg(*clusters_cloud, clusters_msg);
-        clusters_msg.header.frame_id="/rslidar";
+        clusters_msg.header.frame_id="/map";
         clusters_pub_->publish(clusters_msg);
     }
 
     //Publish the map cloud
     sensor_msgs::msg::PointCloud2 map_msg;
     pcl::toROSMsg(*final_map, map_msg);
-    map_msg.header.frame_id="/rslidar";
+    map_msg.header.frame_id="/map";
     map_pub_->publish(map_msg);
 }
 

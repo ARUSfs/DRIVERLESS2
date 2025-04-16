@@ -14,6 +14,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include "perception/ground_filtering.h"
+#include "perception/ground_remove.h"
 #include "perception/clustering.h"
 #include "perception/cropping.h"
 #include "scoring.h"
@@ -26,6 +27,7 @@
 #include <deque>
 #include <omp.h>
 #include <iostream>
+#include <pcl/filters/voxel_grid.h> 
 
 
 /**
@@ -73,6 +75,11 @@ class Perception : public rclcpp::Node
         double vy;
         double yaw_rate;
         double dt;
+
+        bool started = false;
+        
+        //Buffer
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_buffer;
 
         //Subscriber
         std::string kLidarTopic;

@@ -55,6 +55,9 @@ Perception::Perception() : Node("Perception")
     //Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kLidarTopic, 10, std::bind(&Perception::lidar_callback, this, std::placeholders::_1));
+
+    car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
+        "/car_state/state", 10, std::bind(&Perception::state_callback, this, std::placeholders::_1));
     
     //Create the publishers
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
@@ -155,6 +158,18 @@ void Perception::filter_clusters(std::vector<pcl::PointIndices>& cluster_indices
 }
 
 /**
+ * @brief Callback function for the car state topic.
+ * @param state_msg The state message received from the car state topic.
+ */
+void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_msg)
+{
+    // Get the velocity of the car
+    double vx = state_msg->vx;
+    double vy = state_msg->vy;
+    double yaw_rate = state_msg->r;
+}
+
+/**
  * @brief Create callback function for the lidar topic.
  * @param lidar_msg The point cloud message received from the lidar topic.
  */
@@ -165,7 +180,17 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Define the variables for the ground filter
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
-    
+
+    // Apply voxel grid filter
+    static pcl::VoxelGrid<PointXYZIRingTime> local_vg; 
+    local_vg.setInputCloud(cloud);
+    local_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize/10);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
+    local_vg.filter(*filtered);
+
+    cloud = filtered;
+
+            
     float zmin = -1.0;   
     float zmax = 0.2;    
 

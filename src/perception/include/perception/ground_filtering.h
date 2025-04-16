@@ -162,7 +162,7 @@ namespace GroundFiltering
         angle_threshold *= (M_PI/180);
 
         // Define the measures if the grid
-        double x_step = (Mx - 0) / number_sections;
+        double x_step = (Mx - (-Mx)) / number_sections;
         double y_step = (My - (-My)) / number_sections;
 
         // Iterate on each square
@@ -171,8 +171,8 @@ namespace GroundFiltering
             for (int j = 0; j < number_sections; ++j)
             {
                 // Define the square
-                Eigen::Vector4f min_pt(0 + i * x_step, -My + j * y_step, -100.0, 1.0);
-                Eigen::Vector4f max_pt(0 + (i + 1) * x_step, -My + (j + 1) * y_step, Mz, 1.0);
+                Eigen::Vector4f min_pt(-Mx + i * x_step, -My + j * y_step, -100.0, 1.0);
+                Eigen::Vector4f max_pt(-Mx + (i + 1) * x_step, -My + (j + 1) * y_step, Mz, 1.0);
 
                 // Crop the input cloud to the square measures
                 pcl::PointCloud<pcl::PointXYZI>::Ptr grid_cloud(new pcl::PointCloud<pcl::PointXYZI>);
