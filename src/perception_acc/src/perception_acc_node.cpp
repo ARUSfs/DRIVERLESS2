@@ -33,10 +33,6 @@ Perception::Perception() : Node("Perception")
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
-    this->get_parameter("crop", kCrop);
-    this->get_parameter("max_x_fov", kMaxXFov);
-    this->get_parameter("max_y_fov", kMaxYFov);
-    this->get_parameter("max_z_fov", kMaxZFov);
     this->get_parameter("threshold_ground_filter", kThresholdGroundFilter);
     this->get_parameter("radius", kRadius);
     this->get_parameter("number_sections", kNumberSections);
@@ -48,9 +44,6 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("global_accumulation", kGlobalAccumulation);
     this->get_parameter("distance_lidar_to_CoG", kDistanceLidarToCoG);
     this->get_parameter("downsample_size", kDownsampleSize);
-
-    //Transform into radians
-    // kHFov *= (M_PI/180);  // Comentada debido a que kHFov no está definido
     
     //Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -188,8 +181,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
 // Remove ground
-    // GroundRemove::RemoveGround(*cloud,*cloud_filtered_ground,*cloud_filtered); 
-    // GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_filtered_ground, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+    //GroundRemove::RemoveGround(*cloud,*cloud_filtered_ground,*cloud_filtered);
     //GroundFiltering2::RemoveGroundByRings(updated_cloud, cloud_filtered_ground, cloud_filtered);
 
 // Clustering
@@ -205,7 +197,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud, clusters_centers, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
         
     RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", updated_cloud->size());
-
+    GroundRemove::RemoveGround(*updated_cloud,*cloud_filtered_ground,*cloud_filtered);
     // Verificar que updated_cloud no sea nulo para evitar fallos
     if (!updated_cloud) {
         RCLCPP_WARN(this->get_logger(), "Updated cloud is null.");
@@ -214,7 +206,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     
 // Publish
     sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*updated_cloud, filtered_msg);
+    pcl::toROSMsg(*cloud_filtered, filtered_msg);
     filtered_msg.header.frame_id="/rslidar";
     filtered_pub_->publish(filtered_msg);
 }
