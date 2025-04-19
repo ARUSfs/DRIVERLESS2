@@ -65,12 +65,11 @@ public:
         // Disable landmarks that might be false positives
         for (Landmark* landmark : map_) {
             if (time(0) - landmark->last_observation_time_ > 1.0 && landmark->num_observations_ < 3) {
-                std::cout << "Desactivando landmark " << landmark->id_ 
-                          << " por inactividad de " << (time(0) - landmark->last_observation_time_) 
-                          << " s y solo " << landmark->num_observations_ << " observaciones" << std::endl;
-                landmark->disabled_ = true;
+            std::cout << "Disabling landmark " << landmark->id_ 
+                  << " due to inactivity of " << (time(0) - landmark->last_observation_time_) 
+                  << " s and only " << landmark->num_observations_ << " observations" << std::endl;
+            landmark->disabled_ = true;
             }
-            
         }
 
         // Remove unmatched landmarks from observed_landmarks
