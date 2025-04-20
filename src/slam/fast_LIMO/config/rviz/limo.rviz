@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /Output1
+        - /Output1/Final1
         - /Debug1
         - /Map1
         - /PointCloud21
@@ -30,7 +31,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: Final
 Visualization Manager:
   Class: ""
   Displays:
@@ -54,7 +55,7 @@ Visualization Manager:
       Value: false
     - Class: rviz_common/Group
       Displays:
-        - Alpha: 0.20000000298023224
+        - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
             Max Value: 10
@@ -66,16 +67,16 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: Intensity
           Decay Time: 100
-          Enabled: false
+          Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 63
+          Max Intensity: 177
           Min Color: 0; 0; 0
-          Min Intensity: 0
+          Min Intensity: 1
           Name: Final
           Position Transformer: XYZ
           Selectable: true
-          Size (Pixels): 1.5
+          Size (Pixels): 2
           Size (m): 0.009999999776482582
           Style: Points
           Topic:
@@ -87,7 +88,7 @@ Visualization Manager:
             Value: /fast_limo/pointcloud
           Use Fixed Frame: true
           Use rainbow: true
-          Value: false
+          Value: true
         - Angle Tolerance: 0.10000000149011612
           Class: rviz_default_plugins/Odometry
           Covariance:
@@ -105,7 +106,7 @@ Visualization Manager:
               Scale: 1
               Value: true
             Value: true
-          Enabled: true
+          Enabled: false
           Keep: 100
           Name: State
           Position Tolerance: 0.10000000149011612
@@ -126,14 +127,14 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /fast_limo/state
-          Value: true
+          Value: false
         - Class: rviz_default_plugins/Axes
-          Enabled: true
+          Enabled: false
           Length: 0.75
           Name: BaseLink
           Radius: 0.25
           Reference Frame: base_link
-          Value: true
+          Value: false
       Enabled: false
       Name: Output
     - Class: rviz_common/Group
@@ -361,16 +362,16 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz_default_plugins/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: ""
+      Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 4096
+      Max Intensity: 104.9375
       Min Color: 0; 0; 0
-      Min Intensity: 0
+      Min Intensity: 1
       Name: PointCloud2
-      Position Transformer: ""
+      Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.009999999776482582
@@ -395,7 +396,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz_default_plugins/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: ""
+      Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -404,7 +405,7 @@ Visualization Manager:
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: PointCloud2
-      Position Transformer: ""
+      Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
       Size (m): 1
@@ -465,7 +466,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/ThirdPersonFollower
-      Distance: 31.277698516845703
+      Distance: 9.993046760559082
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -480,10 +481,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7397968173027039
+      Pitch: 0.2997971773147583
       Target Frame: base_link
       Value: ThirdPersonFollower (rviz_default_plugins)
-      Yaw: 3.040408134460449
+      Yaw: 3.0104072093963623
     Saved: ~
 Window Geometry:
   Displays:

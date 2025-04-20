@@ -30,6 +30,7 @@ namespace GroundRemove
 	int num_lpr_ = 20;
 	double th_seeds_ = 1.0;
 	double th_dist_ = 0.15;
+	int num_seg_ = 8;
 
 		
 	bool point_cmp(pcl::PointXYZI a, pcl::PointXYZI b) {
@@ -61,23 +62,32 @@ namespace GroundRemove
 	void estimate_plane_(
 			const pcl::PointCloud<pcl::PointXYZI>& g_ground_pc) {
 		// Create covarian matrix in single pass.
+		// TODO: compare the efficiency.
 		Eigen::Matrix3f cov;
 		Eigen::Vector4f pc_mean;
 
 		pcl::computeMeanAndCovarianceMatrix(g_ground_pc, cov, pc_mean);
 
+		//computeMeanAndCovarianceMatrix(g_ground_pc, conv, mean);
 		// Singular Value Decomposition: SVD
 		Eigen::JacobiSVD<Eigen::MatrixXf> svd(cov, Eigen::DecompositionOptions::ComputeFullU);
 		// use the least singular vector as normal
 		normal_ = Eigen::MatrixXf(3,1);
 		normal_.fill(0.0);
 		normal_ = (svd.matrixU().col(2));
+		// mean ground seeds value
+		//Eigen::Vector3f seeds_mean = pc_mean.head<3>();
+
+		// according to normal.T*[x,y,z] = -d
+		//float d_ = -(normal_.transpose()*seeds_mean)(0,0);
 
 		float d_ = -(normal_(0, 0) * pc_mean(0) + normal_(1, 0) * pc_mean(1)
 				+ normal_(2, 0) * pc_mean(2));
 
 		// set distance threhold to `th_dist - d`
 		th_dist_d_ = th_dist_ - d_;
+
+		// return the equation parameters
 	}
 
 	void RemoveGround_Thread(pcl::PointCloud<pcl::PointXYZI>& cloudIn,
@@ -108,13 +118,12 @@ namespace GroundRemove
 			float zd = normal_(2, 0);
 			for (auto p : cloudIn.points) {
 				float distance = p.x * xd + p.y * yd + p.z * zd;
-
-				float range = std::sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
-				float delta = 0.006 * range;
-				if (distance < th_dist_d_ - delta) {
-					cloudgc.points.push_back(p); // Ground
+				if (distance < th_dist_d_) {
+					//g_all_pc->points[r].label = 1u;// means ground
+					cloudgc.points.push_back(p);
 				} else {
-					cloudngc.points.push_back(p); // Cones
+					//g_all_pc->points[r].label = 0u;// means not ground and non clusterred
+					cloudngc.points.push_back(p);
 				}
 
 			}
@@ -134,71 +143,57 @@ namespace GroundRemove
 	}
 
 	void RemoveGround(pcl::PointCloud<pcl::PointXYZI>& cloudIn,
-					pcl::PointCloud<pcl::PointXYZI>& g_ground_pc,
-					pcl::PointCloud<pcl::PointXYZI>& g_not_ground_pc) {
-						
+			pcl::PointCloud<pcl::PointXYZI>& g_ground_pc,
+			pcl::PointCloud<pcl::PointXYZI>& g_not_ground_pc) {
+		pcl::PointCloud<pcl::PointXYZI>::Ptr g_seeds_region1(
+				new pcl::PointCloud<pcl::PointXYZI>());
+		pcl::PointCloud<pcl::PointXYZI>::Ptr g_seeds_region2(
+				new pcl::PointCloud<pcl::PointXYZI>());
+		pcl::PointCloud<pcl::PointXYZI>::Ptr g_seeds_region3(
+				new pcl::PointCloud<pcl::PointXYZI>());
 		pcl::PointCloud<pcl::PointXYZI>::Ptr g_ground_pc1(
 				new pcl::PointCloud<pcl::PointXYZI>());
 		pcl::PointCloud<pcl::PointXYZI>::Ptr g_not_ground_pc1(
 				new pcl::PointCloud<pcl::PointXYZI>());
 
-		const int num_sectors = 7; 
-		const int num_rings = 15;    
-
-		const float max_range = 70.0;
-		const float sector_angle = M_PI / float(num_sectors);
-		const float ring_step = max_range / float(num_rings);
-
-		std::vector<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>> grid(num_rings, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>(num_sectors));
-
-		// Create the grid
-		for (int r = 0; r < num_rings; ++r) {
-			for (int s = 0; s < num_sectors; ++s) {
-				grid[r][s] = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>());
-			}
-		}
-		std::vector<int> sector_count(num_sectors, 0);
-		// Assign points to the grid
-		for (auto& p : cloudIn.points) {
-			float d = std::sqrt(p.x * p.x + p.y * p.y);
-			if (d > max_range || d < 1.0) {
-				g_not_ground_pc.push_back(p);
-				continue;
-			}
-
-			float angle = std::atan2(p.y, p.x);
-			if (angle < 0) angle += M_PI;
-
-			int r_idx = std::min(int(d / ring_step), num_rings - 1);
-			int s_idx = std::min(int(angle / sector_angle), num_sectors - 1);
-
-			// Visual encoding
-            //p.intensity = 20.0f * s_idx / float(num_sectors);
-			grid[r_idx][s_idx]->push_back(p);
+		std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> pcregion(num_seg_);
+		for (int i = 0; i < num_seg_; ++i) {
+    		pcregion[i] = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
 		}
 
-		// Filter each grid
-		for (int s = 0; s < num_sectors; ++s) {
-			std::vector<std::thread> thread_vec(num_rings);
-
-			for (int r = 0; r < num_rings; ++r) {
-				thread_vec[r] = std::thread(&RemoveGround_Thread,
-				std::ref(*grid[r][s]), std::ref(*g_ground_pc1),
-				std::ref(*g_not_ground_pc1), std::ref(g_ground_pc),
-				std::ref(g_not_ground_pc));
+		float xmin = -35, xmax = 35, ymin = -30, ymax = 30, zmin = -1.0, zmax = 0.5;
+		float regionsize = (ymax - ymin) / static_cast<float>(num_seg_);
+		for (int i = 0; i < cloudIn.points.size(); ++i) {
+			if (cloudIn.points[i].z < 0.4) {
+				float y = cloudIn.points[i].y;
+				for (int r = 0; r < num_seg_; ++r) {
+					float upper = ymax - r * regionsize;
+					float lower = ymax - (r + 1) * regionsize;
+					if (y < upper && y > lower) {
+						pcregion[r]->points.push_back(cloudIn.points[i]);
+						break;
+					}
 				}
-
-			for (auto it = thread_vec.begin(); it != thread_vec.end(); ++it) {
-				it->join();
+			} else {
+				g_not_ground_pc.points.push_back(cloudIn.points[i]);
 			}
-	
 		}
-		g_ground_pc.width = g_ground_pc.points.size();
-		g_ground_pc.height = 1;
-		g_ground_pc.is_dense = true;
 
-		g_not_ground_pc.width = g_not_ground_pc.points.size();
-		g_not_ground_pc.height = 1;
-		g_not_ground_pc.is_dense = true;
+		// cloudIn.clear();
+
+		std::vector<std::thread> thread_vec(num_seg_);
+
+		for (int ri = 0; ri < num_seg_; ++ri) {
+
+			thread_vec[ri] = std::thread(&RemoveGround_Thread,
+					std::ref(*pcregion[ri]), std::ref(*g_ground_pc1),
+					std::ref(*g_not_ground_pc1), std::ref(g_ground_pc),
+					std::ref(g_not_ground_pc));
+
+		}
+
+		for (auto it = thread_vec.begin(); it != thread_vec.end(); ++it) {
+			it->join();
+		}
 	}
 }

@@ -6,9 +6,9 @@ perception:
 
     #Parameters of FOV
     crop: false
-    max_x_fov: 3000.0
+    max_x_fov: 1500.0
     max_y_fov: 1500.0
-    max_z_fov: 1.0
+    max_z_fov: 0.5
 
     #Parameters of ground filter
     threshold_ground_filter: 0.075

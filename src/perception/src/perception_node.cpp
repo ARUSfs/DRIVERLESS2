@@ -273,7 +273,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     RCLCPP_INFO(this->get_logger(), "Cloud size: %d", cloud_buffer->size());
 
     //Apply the ground filter fuction
-    GroundFiltering::grid_ground_filter(cloud_buffer, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered_ground(new pcl::PointCloud<pcl::PointXYZI>);
+    GroundRemove::RemoveGround(*cloud_buffer, *cloud_filtered_ground, *cloud_filtered); 
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
     
 
