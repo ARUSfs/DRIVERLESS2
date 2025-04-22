@@ -208,6 +208,41 @@ void Perception::filter_clusters(std::vector<pcl::PointIndices>& cluster_indices
 }
 
 
+void Perception::disinclinate_ground_in_place(pcl::PointCloud<pcl::PointXYZI>& cloud) {
+    // Estimar plano con RANSAC
+    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+    pcl::SACSegmentation<pcl::PointXYZI> seg;
+    seg.setOptimizeCoefficients(true);
+    seg.setModelType(pcl::SACMODEL_PLANE);
+    seg.setMethodType(pcl::SAC_RANSAC);
+    seg.setDistanceThreshold(0.02);
+    seg.setInputCloud(cloud.makeShared());
+    seg.segment(*inliers, *coefficients);
+
+    if (coefficients->values.size() != 4) {
+        std::cerr << "[Deskew] Could not estimate a plane." << std::endl;
+        return;
+    }
+
+    // Normal del plano
+    Eigen::Vector3f plane_normal(coefficients->values[0],
+                                 coefficients->values[1],
+                                 coefficients->values[2]);
+
+    // Rotación para alinear con eje Z
+    Eigen::Vector3f target_normal(0.0, 0.0, 1.0);
+    Eigen::Quaternionf rotation = Eigen::Quaternionf::FromTwoVectors(plane_normal, target_normal);
+    Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+    transform.block<3,3>(0,0) = rotation.toRotationMatrix();
+
+    // Transformar en el mismo objeto
+    pcl::transformPointCloud(cloud, cloud, transform);
+
+}
+
+
+
 /**
 * @brief Create callback function for the car state topic.
 * @param state_msg The information received from the car state node.
@@ -234,7 +269,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         return;
     }
     if(current_time - last_msg_time < 5.0 && !started) {
-        RCLCPP_INFO(this->get_logger(), "Waiting 5 seconds...");
+        RCLCPP_INFO(this->get_logger(), "Wait %f seconds...", 5.0 - (current_time - last_msg_time));
         return;
     }
     last_msg_time = current_time;
@@ -252,6 +287,9 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
+    // // Disinclinate the point cloud
+    // Perception::disinclinate_ground_in_place(*cloud);
+    // if (DEBUG) std::cout << "disinclinate Time: " << this->now().seconds() - start_time << std::endl;
 
     if (kCrop) {
         //Crop the point cloud

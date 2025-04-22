@@ -95,14 +95,17 @@ namespace GroundRemove
 			pcl::PointCloud<pcl::PointXYZI>& cloudngc,
 			pcl::PointCloud<pcl::PointXYZI>& g_ground_pc1,
 			pcl::PointCloud<pcl::PointXYZI>& g_not_ground_pc1) {
+		// skip if no points in this region
+		if (cloudIn.points.empty()) return;
 
-		std::lock_guard < std::mutex > lock(regionmutex);
 		pcl::PointCloud<pcl::PointXYZI>::Ptr g_seeds_pc(
 				new pcl::PointCloud<pcl::PointXYZI>());
 
 		std::sort(cloudIn.points.begin(), cloudIn.points.end(), point_cmp);
 
 		extract_initial_seeds_(cloudIn, *g_seeds_pc);
+		// skip if no seeds found
+		if (g_seeds_pc->points.empty()) return;
 
 		cloudgc = *g_seeds_pc;
 
@@ -130,70 +133,68 @@ namespace GroundRemove
 
 		}
 
-		for (int k = 0; k < cloudgc.points.size(); ++k) {
+		{
+			std::lock_guard<std::mutex> lock(regionmutex);
+			for (int k = 0; k < cloudgc.points.size(); ++k) {
 
-			g_ground_pc1.points.push_back(cloudgc.points[k]);
+				g_ground_pc1.points.push_back(cloudgc.points[k]);
+			}
+
+			for (int k = 0; k < cloudngc.points.size(); ++k) {
+
+				g_not_ground_pc1.points.push_back(cloudngc.points[k]);
+			}
 		}
-
-		for (int k = 0; k < cloudngc.points.size(); ++k) {
-
-			g_not_ground_pc1.points.push_back(cloudngc.points[k]);
-		}
-
 	}
 
 	void RemoveGround(pcl::PointCloud<pcl::PointXYZI>& cloudIn,
 			pcl::PointCloud<pcl::PointXYZI>& g_ground_pc,
 			pcl::PointCloud<pcl::PointXYZI>& g_not_ground_pc) {
-		pcl::PointCloud<pcl::PointXYZI>::Ptr g_seeds_region1(
-				new pcl::PointCloud<pcl::PointXYZI>());
-		pcl::PointCloud<pcl::PointXYZI>::Ptr g_seeds_region2(
-				new pcl::PointCloud<pcl::PointXYZI>());
-		pcl::PointCloud<pcl::PointXYZI>::Ptr g_seeds_region3(
-				new pcl::PointCloud<pcl::PointXYZI>());
-		pcl::PointCloud<pcl::PointXYZI>::Ptr g_ground_pc1(
-				new pcl::PointCloud<pcl::PointXYZI>());
-		pcl::PointCloud<pcl::PointXYZI>::Ptr g_not_ground_pc1(
-				new pcl::PointCloud<pcl::PointXYZI>());
+		// clear outputs
+		g_ground_pc.clear();
+		g_not_ground_pc.clear();
 
-		std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> pcregion(num_seg_);
-		for (int i = 0; i < num_seg_; ++i) {
-    		pcregion[i] = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
+		// 1) Dynamically calculate Y endpoints
+		float ymin = std::numeric_limits<float>::max();
+		float ymax = std::numeric_limits<float>::lowest();
+		for (const auto& p : cloudIn.points) {
+			ymin = std::min(ymin, p.y);
+			ymax = std::max(ymax, p.y);
 		}
-
-		float xmin = -35, xmax = 35, ymin = -30, ymax = 30, zmin = -1.0, zmax = 0.5;
 		float regionsize = (ymax - ymin) / static_cast<float>(num_seg_);
-		for (int i = 0; i < cloudIn.points.size(); ++i) {
-			if (cloudIn.points[i].z < 0.4) {
-				float y = cloudIn.points[i].y;
-				for (int r = 0; r < num_seg_; ++r) {
-					float upper = ymax - r * regionsize;
-					float lower = ymax - (r + 1) * regionsize;
-					if (y < upper && y > lower) {
-						pcregion[r]->points.push_back(cloudIn.points[i]);
-						break;
-					}
-				}
-			} else {
-				g_not_ground_pc.points.push_back(cloudIn.points[i]);
-			}
+
+		// 1b) Dynamically calculate X endpoints
+		float xmin = std::numeric_limits<float>::max();
+		float xmax = std::numeric_limits<float>::lowest();
+		for (const auto& p : cloudIn.points) {
+			xmin = std::min(xmin, p.x);
+			xmax = std::max(xmax, p.x);
+		}
+		float region_size_x = (xmax - xmin) / static_cast<float>(num_seg_);
+
+		// 2) Create subregions in X and Y
+		int num_regions = num_seg_ * num_seg_;
+		std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> pcregion(num_regions);
+		for (int i = 0; i < num_regions; ++i) {
+			pcregion[i] = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
 		}
 
-		// cloudIn.clear();
+		// 3) Distribute points according to X, Y and Z threshold
+		for (const auto& p : cloudIn.points) {
+			int idx_y = static_cast<int>(std::floor((p.y - ymin) / regionsize));
+			int idx_x = static_cast<int>(std::floor((p.x - xmin) / region_size_x));
+			idx_y = std::max(0, std::min(idx_y, num_seg_ - 1));
+			idx_x = std::max(0, std::min(idx_x, num_seg_ - 1));
+			int idx = idx_y * num_seg_ + idx_x;
+			pcregion[idx]->points.push_back(p);
+		 }
 
-		std::vector<std::thread> thread_vec(num_seg_);
-
-		for (int ri = 0; ri < num_seg_; ++ri) {
-
-			thread_vec[ri] = std::thread(&RemoveGround_Thread,
-					std::ref(*pcregion[ri]), std::ref(*g_ground_pc1),
-					std::ref(*g_not_ground_pc1), std::ref(g_ground_pc),
-					std::ref(g_not_ground_pc));
-
-		}
-
-		for (auto it = thread_vec.begin(); it != thread_vec.end(); ++it) {
-			it->join();
+		// Process each region sequentially, threads is not necessary!!!
+		for (int ri = 0; ri < num_regions; ++ri) {
+			pcl::PointCloud<pcl::PointXYZI> tmp_gc, tmp_ngc;
+			RemoveGround_Thread(*pcregion[ri],
+								tmp_gc, tmp_ngc,
+								g_ground_pc, g_not_ground_pc);
 		}
 	}
 }

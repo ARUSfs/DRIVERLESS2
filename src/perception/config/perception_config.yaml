@@ -5,10 +5,10 @@ perception:
     state_topic: "/car_state/state"
 
     #Parameters of FOV
-    crop: false
+    crop: true
     max_x_fov: 1500.0
     max_y_fov: 1500.0
-    max_z_fov: 0.5
+    max_z_fov: 5.0
 
     #Parameters of ground filter
     threshold_ground_filter: 0.075

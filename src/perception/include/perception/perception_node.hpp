@@ -28,6 +28,11 @@
 #include <omp.h>
 #include <iostream>
 #include <pcl/filters/voxel_grid.h> 
+#include <pcl/ModelCoefficients.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
 
 
 /**
@@ -99,6 +104,12 @@ class Perception : public rclcpp::Node
          * @param lidar_msg The point cloud message received from the lidar.
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
+
+        /**
+         * @brief Disinclinate the point cloud in place.
+         * @param cloud The point cloud that will be disinclinated.
+         */
+        void disinclinate_ground_in_place(pcl::PointCloud<pcl::PointXYZI>& cloud);
 
         /**
          * @brief Auxiliar function for the call back function.
