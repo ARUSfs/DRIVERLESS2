@@ -245,7 +245,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 
     //Apply the ground filter fuction
-    GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+    // GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+    GroundFiltering::parallel_ground_filter(cloud, cloud_filtered, cloud_plane, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold);
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
     
 
@@ -269,7 +270,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Filter the clusters by size
     Perception::filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
     if (DEBUG) std::cout << "Filtering time: " << this->now().seconds() - start_time << std::endl;
-
 
     // Convert the indices of the clusters to the points of the clusters
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points;

@@ -104,7 +104,7 @@ class Perception : public rclcpp::Node
          */
         void get_clusters_centers(std::vector<pcl::PointIndices>& cluster_indices,
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& cluster_centers);
-            
+    
         /**
          * @brief Auxiliar function for the call back function.
          * Recover points from the cones that were eliminated while ground filtering.
@@ -135,9 +135,4 @@ class Perception : public rclcpp::Node
         * @param state_msg The information received from the car state node.
         */
         void state_callback(common_msgs::msg::State::SharedPtr state_msg);
-
-
-        void get_clusters_centers_ransac(std::vector<pcl::PointIndices>& cluster_indices,
-            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
-
 };
