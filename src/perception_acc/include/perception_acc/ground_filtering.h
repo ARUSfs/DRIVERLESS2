@@ -210,7 +210,7 @@ namespace GroundFiltering
             {
                 min_z_map[std::make_pair(int(p.x), int(p.y))] = p.z;
                 cloud_plane->points.push_back(p);
-            } else if (p.z < min_z_map[std::make_pair(int(p.x), int(p.y))] + 0.02)
+            } else if (p.z < min_z_map[std::make_pair(int(p.x), int(p.y))] + 0.2)
             {
                 cloud_plane->points.push_back(p);
             }

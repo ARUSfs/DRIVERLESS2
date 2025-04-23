@@ -48,8 +48,8 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<std::string>("lidar_topic", "/rslidar_points");
     this->declare_parameter<std::string>("state_topic", "/car_state/state");
     this->declare_parameter<bool>("crop", true);
-    this->declare_parameter<double>("max_x_fov", 25.0);
-    this->declare_parameter<double>("max_y_fov", 20.0);
+    this->declare_parameter<double>("max_x_fov", 40.0);
+    this->declare_parameter<double>("max_y_fov", 40.0);
     this->declare_parameter<double>("max_z_fov", 0.0);
     this->declare_parameter<double>("threshold_ground_filter", 0.05);
     this->declare_parameter<double>("radius", 1.0);
@@ -86,8 +86,10 @@ Perception::Perception() : Node("Perception")
         kLidarTopic, 10, std::bind(&Perception::lidar_callback, this, std::placeholders::_1));
     
     //Create the publishers
-    filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+    acum_points_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception_acc/points", 10);
+    filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+        "/perception_acc/filtered", 10);
     clusters_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
@@ -203,6 +205,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     kiss_matcher::KISSMatcherConfig config = kiss_matcher::KISSMatcherConfig(resolution);
     config.use_quatro_ = true;
     config.use_ratio_test_ = false;
+    config.robin_mode_ = "None";
     kiss_matcher::KISSMatcher matcher(config);
 
     const auto& src_vec = convertCloudToVec(*src_pcl);
@@ -222,7 +225,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     std::cout <<  "KISS: " << this->get_clock()->now().seconds() - time << std::endl;
 
     //Ensure buffer size limit
-    if (cloud_buffer_.size() >= static_cast<size_t>(3)) 
+    if (cloud_buffer_.size() >= static_cast<size_t>(4)) 
     {
         cloud_buffer_.pop_front();
     }
@@ -252,10 +255,10 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     
 // Publish
-    sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*global_cloud, filtered_msg);
-    filtered_msg.header.frame_id="/rslidar";
-    filtered_pub_->publish(filtered_msg);
+    sensor_msgs::msg::PointCloud2 acum_msg;
+    pcl::toROSMsg(*global_cloud, acum_msg);
+    acum_msg.header.frame_id="/rslidar";
+    acum_points_pub_->publish(acum_msg);
 
     std::cout << "total: " <<  this->get_clock()->now().seconds() - time << std::endl;
 
@@ -287,7 +290,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 
 
-
+    Cropping::crop_filter_cropbox(global_cloud, kMaxXFov, kMaxYFov, kMaxZFov);
+    if (DEBUG) std::cout << "Cropping Time: " << this->now().seconds() - time << std::endl;
 
 
     //Define the variables for the ground filter
@@ -396,11 +400,11 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;
 
     if (DEBUG){
-        // //Publish the filtered cloud
-        // sensor_msgs::msg::PointCloud2 filtered_msg;
-        // pcl::toROSMsg(*cloud_filtered, filtered_msg);
-        // filtered_msg.header.frame_id="/rslidar";
-        // filtered_pub_->publish(filtered_msg);
+        //Publish the filtered cloud
+        sensor_msgs::msg::PointCloud2 filtered_msg;
+        pcl::toROSMsg(*cloud_filtered, filtered_msg);
+        filtered_msg.header.frame_id="/rslidar";
+        filtered_pub_->publish(filtered_msg);
 
         // Publish the clusters cloud
         sensor_msgs::msg::PointCloud2 clusters_msg;
