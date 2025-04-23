@@ -20,6 +20,7 @@
 #include <tf2_ros/buffer.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include "perception_acc/fast_euclidean_clustering.h"
 
 #include <pcl/filters/voxel_grid.h>
 
@@ -306,8 +307,24 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     
 
     //Extract the clusters from the point cloud
+    // std::vector<pcl::PointIndices> cluster_indices;
+    // Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
+
+
+    // FAST EUCLIDEAN CLUSTERING
+    pcl::search::KdTree<PointXYZIRingTime>::Ptr tree(new pcl::search::KdTree<PointXYZIRingTime>);
     std::vector<pcl::PointIndices> cluster_indices;
-    Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
+
+    FastEuclideanClustering<PointXYZIRingTime> fec;
+    fec.setInputCloud(cloud_filtered);
+    fec.setSearchMethod(tree);
+    fec.setClusterTolerance(0.5);
+    fec.setQuality(0.5);
+    fec.setMinClusterSize(4);     
+    fec.setMaxClusterSize(200);
+
+    fec.segment(cluster_indices);
+    
     if (DEBUG) std::cout << "Clustering time: " << this->now().seconds() - time << std::endl;
 
 
