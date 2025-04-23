@@ -28,7 +28,7 @@ namespace Scoring
     * @param cluster_centers The center of each cluster.
     * @param threshold The threshold that wll the determinate if the cluster is a cone or not.
     */
-    void scoring_surface(pcl::PointCloud<PointXYZColorScore>::Ptr& final_map, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points, 
+    void scoring_surface(pcl::PointCloud<PointXYZColorScore>::Ptr& final_map, std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr> cluster_points, 
         std::vector<PointXYZColorScore>& cluster_centers, double threshold)
     {
         //Define the cone

@@ -57,11 +57,11 @@ namespace Clustering
         for (auto it = cluster_indices.begin(); it != cluster_indices.end(); )
         {
             //Create a temporal point cloud
-            pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+            pcl::PointCloud<PointXYZIRingTime>::Ptr cluster_cloud(new pcl::PointCloud<PointXYZIRingTime>);
             pcl::copyPointCloud(*cloud_filtered, *it, *cluster_cloud);
 
             //Obtain the new bounding box of the cluster
-            pcl::PointXYZI min_point, max_point;
+            PointXYZIRingTime min_point, max_point;
             pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
             double max_x = max_point.x;
             double min_x = min_point.x;

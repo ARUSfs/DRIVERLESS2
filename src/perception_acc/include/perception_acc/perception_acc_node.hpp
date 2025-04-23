@@ -30,13 +30,14 @@
 #include <tf2_ros/buffer.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
-// #include "perception_acc/ground_filtering.h"
-// #include "perception_acc/cropping.h"
-// #include "perception_acc/scoring.h"
+#include "perception_acc/ground_filtering.h"
+#include "perception_acc/cropping.h"
+#include "perception_acc/clustering.h"
+#include "perception_acc/scoring.h"
 // #include "perception_acc/accumulation.h"
-// #include "perception_acc/color_estimation.h"
-// #include "perception_acc/ground_remove.h"
-// #include "perception_acc/string_clustering.h"
+#include "perception_acc/color_estimation.h"
+#include "perception_acc/ground_remove.h"
+#include "perception_acc/string_clustering.h"
 
 /**
  * @class Perception
@@ -93,6 +94,7 @@ class Perception : public rclcpp::Node
         //Subscriber
         std::string kLidarTopic;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_sub_;
+        std::string kStateTopic;
 
         //Publishers
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
@@ -124,4 +126,16 @@ class Perception : public rclcpp::Node
         void get_clusters_centers_ransac(std::vector<pcl::PointIndices>& cluster_indices,
             pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
 
+
+        void get_clusters_centers(std::vector<pcl::PointIndices>& cluster_indices,
+            pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& cluster_centers);
+            
+        
+        void reconstruction(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_plane, pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, 
+            std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore> cluster_centers, 
+            double radius);
+
+        void filter_clusters(std::vector<pcl::PointIndices>& cluster_indices,
+            pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
+            
 };

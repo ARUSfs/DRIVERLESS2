@@ -154,44 +154,76 @@ namespace GroundFiltering
         pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, double Mx, double My, double Mz,
         int number_sections, double angle_threshold, int minimum_ransac_points)
     {
-        // Initialize the variables
-        Eigen::Vector3d prev_normal(0, 0, 1);
-        Eigen::Vector3d normal(0, 0, 1);
+        // // Initialize the variables
+        // Eigen::Vector3d prev_normal(0, 0, 1);
+        // Eigen::Vector3d normal(0, 0, 1);
 
-        // Transform the angle threshold from degree to radians
-        angle_threshold *= (M_PI/180);
+        // // Transform the angle threshold from degree to radians
+        // angle_threshold *= (M_PI/180);
 
-        // Define the measures if the grid
-        double x_step = (Mx - 0) / number_sections;
-        double y_step = (My - (-My)) / number_sections;
+        // // Define the measures if the grid
+        // double x_step = (Mx - 0) / number_sections;
+        // double y_step = (My - (-My)) / number_sections;
 
-        // Iterate on each square
-        for (int i = 0; i < number_sections; ++i)
-        {
-            for (int j = 0; j < number_sections; ++j)
-            {
-                // Define the square
-                Eigen::Vector4f min_pt(0 + i * x_step, -My + j * y_step, -100.0, 1.0);
-                Eigen::Vector4f max_pt(0 + (i + 1) * x_step, -My + (j + 1) * y_step, Mz, 1.0);
+        // // Iterate on each square
+        // for (int i = 0; i < number_sections; ++i)
+        // {
+        //     for (int j = 0; j < number_sections; ++j)
+        //     {
+        //         // Define the square
+        //         Eigen::Vector4f min_pt(0 + i * x_step, -My + j * y_step, -100.0, 1.0);
+        //         Eigen::Vector4f max_pt(0 + (i + 1) * x_step, -My + (j + 1) * y_step, Mz, 1.0);
 
-                // Crop the input cloud to the square measures
-                pcl::PointCloud<PointXYZIRingTime>::Ptr grid_cloud(new pcl::PointCloud<PointXYZIRingTime>);
-                pcl::CropBox<PointXYZIRingTime> crop_box_filter;
-                crop_box_filter.setInputCloud(cloud);
-                crop_box_filter.setMin(min_pt);
-                crop_box_filter.setMax(max_pt);
-                crop_box_filter.filter(*grid_cloud);
+        //         // Crop the input cloud to the square measures
+        //         pcl::PointCloud<PointXYZIRingTime>::Ptr grid_cloud(new pcl::PointCloud<PointXYZIRingTime>);
+        //         pcl::CropBox<PointXYZIRingTime> crop_box_filter;
+        //         crop_box_filter.setInputCloud(cloud);
+        //         crop_box_filter.setMin(min_pt);
+        //         crop_box_filter.setMax(max_pt);
+        //         crop_box_filter.filter(*grid_cloud);
 
-                // Create temporal clouds to store the ground and not ground points
-                pcl::PointCloud<PointXYZIRingTime>::Ptr temp_filtered(new pcl::PointCloud<PointXYZIRingTime>);
-                pcl::PointCloud<PointXYZIRingTime>::Ptr temp_plane(new pcl::PointCloud<PointXYZIRingTime>);
+        //         // Create temporal clouds to store the ground and not ground points
+        //         pcl::PointCloud<PointXYZIRingTime>::Ptr temp_filtered(new pcl::PointCloud<PointXYZIRingTime>);
+        //         pcl::PointCloud<PointXYZIRingTime>::Ptr temp_plane(new pcl::PointCloud<PointXYZIRingTime>);
                 
-                // Apply ransac and check the normal vectors
-                ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, prev_normal, normal, angle_threshold, minimum_ransac_points);
+        //         // Apply ransac and check the normal vectors
+        //         ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, prev_normal, normal, angle_threshold, minimum_ransac_points);
 
-                // Update the variables for the next iteration
-                prev_normal = normal;
+        //         // Update the variables for the next iteration
+        //         prev_normal = normal;
+        //     }
+        // }
+
+
+        std::map<std::pair<int, int>, double> min_z_map;
+        for (int i = -100; i < 100; i++)
+        {
+            for (int j = -100; j < 100; j++)
+            {
+                min_z_map[std::make_pair(i, j)] = 10.0;
             }
         }
+
+        for (auto p: cloud->points)
+        {
+            if (p.z < min_z_map[std::make_pair(int(p.x), int(p.y))])
+            {
+                min_z_map[std::make_pair(int(p.x), int(p.y))] = p.z;
+                cloud_plane->points.push_back(p);
+            } else if (p.z < min_z_map[std::make_pair(int(p.x), int(p.y))] + 0.02)
+            {
+                cloud_plane->points.push_back(p);
+            }
+            else
+            {
+                cloud_filtered->points.push_back(p);
+            }
+        }
+
+        cloud_filtered->width = cloud_filtered->points.size();
+        cloud_filtered->height = 1;
+
+        cloud_plane->width = cloud_plane->points.size();
+        cloud_plane->height = 1;
     }
 } 
