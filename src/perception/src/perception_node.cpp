@@ -9,7 +9,7 @@
  */
 
 #include "perception/perception_node.hpp"
-bool DEBUG = false;
+bool DEBUG = true;
 
 Perception::Perception() : Node("Perception")
 {
@@ -67,7 +67,7 @@ Perception::Perception() : Node("Perception")
     clusters_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/map", 10);
+        "/perception/map2", 10);
 }
 
 /**

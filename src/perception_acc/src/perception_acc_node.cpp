@@ -90,7 +90,7 @@ Perception::Perception() : Node("Perception")
     
     //Create the publishers
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/filtered_cloud", 10);
+        "/perception_acc/points", 10);
     clusters_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
@@ -225,7 +225,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     std::cout <<  "KISS: " << this->get_clock()->now().seconds() - time << std::endl;
 
     //Ensure buffer size limit
-    if (cloud_buffer_.size() >= static_cast<size_t>(20)) 
+    if (cloud_buffer_.size() >= static_cast<size_t>(3)) 
     {
         cloud_buffer_.pop_front();
     }
@@ -242,6 +242,11 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     *global_cloud += *updated_cloud;
     new_buffer.push_back(*updated_cloud);
     cloud_buffer_ = new_buffer;
+
+    v.setInputCloud(global_cloud);
+    v.setLeafSize(0.05f, 0.05f, 0.05f);  // Set the voxel (leaf) size
+    v.filter(*global_cloud);
+
 
 
     pcl::transformPointCloud(*global_cloud, *global_cloud, transform_matrix.inverse());
