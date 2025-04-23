@@ -144,7 +144,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
      // Create the filtering object
      pcl::VoxelGrid<PointXYZIRingTime> sor;
      sor.setInputCloud(cloud);
-     sor.setLeafSize(0.5f, 0.5f, 0.5f);  // Set the voxel (leaf) size
+     sor.setLeafSize(0.2f, 0.2f, 0.2f);  // Set the voxel (leaf) size
      sor.filter(*filtered_cloud);
 
  
@@ -192,11 +192,11 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     pcl::VoxelGrid<PointXYZIRingTime> v;
     v.setInputCloud(src_pcl);
-    v.setLeafSize(0.5f, 0.5f, 0.5f);  // Set the voxel (leaf) size
+    v.setLeafSize(0.2f, 0.2f, 0.2f);  // Set the voxel (leaf) size
     v.filter(*src_pcl);
 
 
-    auto tgt_pcl = updated_cloud;
+    auto tgt_pcl = updated_filtered_cloud;
 
 
 
@@ -204,8 +204,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     const float resolution     = 0.3;
     kiss_matcher::KISSMatcherConfig config = kiss_matcher::KISSMatcherConfig(resolution);
-    config.use_quatro_ = false;
-    config.use_ratio_test_ = true;
+    config.use_quatro_ = true;
+    config.use_ratio_test_ = false;
     kiss_matcher::KISSMatcher matcher(config);
 
     const auto& src_vec = convertCloudToVec(*src_pcl);
@@ -225,7 +225,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     std::cout <<  "KISS: " << this->get_clock()->now().seconds() - time << std::endl;
 
     //Ensure buffer size limit
-    if (cloud_buffer_.size() >= static_cast<size_t>(10)) 
+    if (cloud_buffer_.size() >= static_cast<size_t>(20)) 
     {
         cloud_buffer_.pop_front();
     }
@@ -244,7 +244,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     cloud_buffer_ = new_buffer;
 
 
-    // pcl::transformPointCloud(*global_cloud, *global_cloud, transform_matrix.inverse());
+    pcl::transformPointCloud(*global_cloud, *global_cloud, transform_matrix.inverse());
 
 
 
