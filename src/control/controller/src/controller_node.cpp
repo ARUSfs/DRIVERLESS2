@@ -173,8 +173,12 @@ void Controller::on_steer_timer()
         position.x = x_;
         position.y = y_;
         if (!(s_.empty())){
+            double t0 = this->now().seconds();
+
             lti_mpc_.set_reference_trajectory(pointsXY_, s_, position, yaw_, vx_, index_global_);
             delta_cmd_ = lti_mpc_.calculate_control(delta_, v_delta_, vy_, r_);
+
+            RCLCPP_INFO(this->get_logger(), "MPC time: %f", this->now().seconds() - t0);
         }
     }
 }

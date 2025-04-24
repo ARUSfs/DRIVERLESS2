@@ -115,11 +115,11 @@ private:
     int kPredictionHorizon = 65;
     double kTsMPC = 0.02;
 
-    double kCorneringStiffnessF = -24276;
-    double kCorneringStiffnessR = -20332;
+    double kCorneringStiffnessF = -25440;
+    double kCorneringStiffnessR = -22560;
 
-    double kWheelbase = 1.533;
-    double kLf = kWheelbase*0.5073;
+    double kWheelbase = 1.535;
+    double kLf = kWheelbase*0.47;
     double kLr = kWheelbase-kLf;
 
     double kMass = 270;
@@ -163,9 +163,9 @@ private:
         0, (kLf*kCorneringStiffnessF - kLr*kCorneringStiffnessR)/(kIzz*v_linearisation), 0, 
         (std::pow(kLf,2)*kCorneringStiffnessF + std::pow(kLr,2)*kCorneringStiffnessR)/(kIzz*v_linearisation), -kLf*kCorneringStiffnessF/kIzz, 0, 
         0, 0, 0, 0, 0, 1,
-        0, 0, 0, 0, -18, -4;
+        0, 0, 0, 0, -306.3, -25.69;
 
-        Bc << 0, 0, 0, 0, 0, 18;
+        Bc << 0, 0, 0, 0, 0, 307;
         
     }
 
