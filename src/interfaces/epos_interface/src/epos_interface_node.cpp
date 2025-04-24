@@ -72,15 +72,11 @@ void EPOS_interface::cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg)
 void EPOS_interface::on_timer()
 {
     assert(delta_cmd_ <= M_PI/9.0 && delta_cmd_ >= -M_PI/9.0 && "Angle out of range");
+    double epos_cmd = delta_cmd_ - ext_pos_;
 
-    // Check if the extensometer is working
-    if (this->now().seconds() - ext_time_ < 0.2){
-        double diff = delta_cmd_ - ext_pos_;
-        if (DEBUG) std::cout << "Angle diff: " << diff << std::endl;
-
-        if (!is_shutdown_ && steer_check_ && std::abs(diff) > 0.01){
-            epos_.move_to(epos_pos_ + KP*diff);
-        }
+    if (!is_shutdown_ && steer_check_){
+        epos_.move_to(epos_cmd);
+        started_ = true;
     } 
     
 
@@ -89,13 +85,16 @@ void EPOS_interface::on_timer()
     for (const auto &value : epos_info) {
         info_msg.data.push_back(value);
     }
-    epos_pos_ = epos_info[1];
+    // epos_pos_ = epos_info[1];
     epos_info_pub_->publish(info_msg);
     
 }
 
+
 void EPOS_interface::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg){
     // Smooth extensometer value
+    if (started_) return;
+
     ext_pos_ = 0.8*msg->data + 0.2*ext_pos_;
     ext_time_ = this->now().seconds();
 

@@ -42,6 +42,7 @@ private:
     double ext_pos_;
     double delta_cmd_;
     bool steer_check_;
+    bool started_;
     double ext_time_;
 
     rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr cmd_sub_;
