@@ -5,7 +5,7 @@ ID,bitIn,bitFin,Signed,Power,Scale,Offset,Publisher
 0x185,1,1,yes,1,1,0,/can_interface/AMI
 0x182,2,2,yes,1,1,0,/can_interface/AS_status
 0x18b,6,6,yes,1,1,0,/can_interface/RES_range
-0x187,1,2,yes,1,-0.00031696134184,0.537982349355,/can_interface/extensometer
+0x187,1,2,yes,1,-0.000636546691761,1.50678752675,/can_interface/extensometer
 0x181,1,2,yes,1,-0.000859313311,0,/can_interface/inv_speed
 0x450,1,4,no,-1,7539822.36880004180,0,/can_interface/fl_wheel_speed
 0x451,1,4,no,-1,7539822.36880004180,0,/can_interface/fr_wheel_speed
