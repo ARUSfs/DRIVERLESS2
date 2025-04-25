@@ -1,5 +1,5 @@
 ID,bitIn,bitFin,Signed,Power,Scale,Offset,Publisher
-0x3801,0,1,yes,1,0.01,0,/can_interface/IMU/ax
+0x3801,0,1,yes,1,0.01,-0.3,/can_interface/IMU/ax
 0x3802,2,3,yes,1,0.01,0,/can_interface/IMU/ay
 0x382,4,5,yes,1,0.001,0,/can_interface/IMU/yaw_rate
 0x185,1,1,yes,1,1,0,/can_interface/AMI

@@ -45,8 +45,10 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("target_speed", kTargetSpeedTopic);
 
     // Pure-Pursuit
-    this->declare_parameter<double>("look_ahead_distance", 6.0);
+    this->declare_parameter<double>("look_ahead_distance", 4.0);
+    this->declare_parameter<double>("optimized_look_ahead_distance", 7.0);
     this->get_parameter("look_ahead_distance", kLAD);
+    this->get_parameter("optimized_look_ahead_distance", kOptLAD);
 
     // PID
     this->declare_parameter<double>("target", 8.0);
@@ -143,7 +145,7 @@ void Controller::on_speed_timer()
 
         common_msgs::msg::Cmd cmd;       
         cmd.acc = std::clamp(acc_cmd_, kMinCmd, kMaxCmd);
-        //if (vx_ < 3) cmd.acc = std::clamp(acc_cmd_, 0.0, kMaxCmd);
+        if (vx_ < 3) cmd.acc = std::clamp(acc_cmd_, 0.0, kMaxCmd);
         cmd.delta = std::clamp(delta_cmd_, -kMaxSteer*M_PI/180, kMaxSteer*M_PI/180);;
         cmd_pub_ -> publish(cmd); 
     }
@@ -159,7 +161,11 @@ void Controller::on_steer_timer()
         position.y = y_;
         pure_pursuit_.set_position(position, yaw_);
 
-        pure_pursuit_.get_steering_angle(index_global_, kLAD);
+        if (!optimized_) {
+            pure_pursuit_.get_steering_angle(index_global_, kLAD);
+        } else {
+            pure_pursuit_.get_steering_angle(index_global_, kOptLAD);
+        }
         delta_cmd_ = pure_pursuit_.delta_cmd_;
         Point pursuit_point = pure_pursuit_.pursuit_point_;
 
