@@ -10,7 +10,7 @@ path_planning:
     track_limits_topic: "/path_planning/track_limits"
 
     # Triangulation parameters
-    max_tri_len: 7.5
+    max_tri_len: 9.0
 
     # Route parameters
     len_coeff: 0.01

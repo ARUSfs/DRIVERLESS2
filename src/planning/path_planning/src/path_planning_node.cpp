@@ -209,8 +209,9 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     std::vector<ConeXYZColorScore> full_route = back_route_;
-    double prev_angle = atan2(back_route_.back().y-back_route_[back_route_.size()-2].y,
-                              back_route_.back().x-back_route_[back_route_.size()-2].x);
+    double prev_angle = 0.0;
+    if (back_route_.size()>=2) prev_angle = atan2(back_route_.back().y-back_route_[back_route_.size()-2].y,
+                                                  back_route_.back().x-back_route_[back_route_.size()-2].x);
     for (int i=0 ; i<final_route.size(); i++){
         auto c = final_route[i];
         append_point = true;
