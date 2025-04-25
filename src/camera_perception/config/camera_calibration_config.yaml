@@ -4,18 +4,25 @@ camera_calibration:
     debug: true
 
     # Select calibration needed
+    intrinsic_calibration: false
+
     extinsic_calibration: true
-    intrinsic_calibration: true
+    # Extrinsic calibration type
+    trapezoidal_layout: true
 
     # Camera topic
     image_topic: "/camera/color/image_raw"
+    lidar_topic: "/perception/map"
 
     # Camera location (m)
-    cam_x: 0.25
+    cam_x: 0.0
     cam_y: 0.0
     cam_z: 1.02
 
     # LiDAR location (m)
     lidar_x: 0.0
     lidar_y: 0.0
-    lidar_z: 0.41
+    lidar_z: 0.32
+
+    # Chessboard
+    square_size: 0.024 # m
