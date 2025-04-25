@@ -17,6 +17,24 @@ def generate_launch_description():
             executable="camera_calibration_exec",
             name="camera_calibration",
             output="screen",
-            parameters=[config_file]
-        )
+            parameters=[config_file]),
+        create_node("perception")
     ])
+
+def create_node(pkg, config=None, exec=None, params=[]): 
+
+    if config is None:
+        config = pkg + "_config.yaml"
+    if exec is None:
+        exec = pkg + "_exec"
+
+    package_share_directory = get_package_share_directory(pkg)
+    config_file = os.path.join(package_share_directory, "config", config)
+
+    return Node(
+        package=pkg,
+        executable=exec,
+        name=pkg,
+        output="screen",
+        parameters=[config_file]+params
+        )
