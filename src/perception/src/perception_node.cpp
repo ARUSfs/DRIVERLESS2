@@ -9,14 +9,14 @@
  */
 
 #include "perception/perception_node.hpp"
-bool DEBUG = true;
+bool DEBUG = false;
 
 Perception::Perception() : Node("Perception")
 {
     //Declare the parameters
     this->declare_parameter<std::string>("lidar_topic", "/rslidar_points");
     this->declare_parameter<std::string>("state_topic", "/car_state/state");
-    this->declare_parameter<bool>("crop", false);
+    this->declare_parameter<bool>("crop", true);
     this->declare_parameter<double>("max_x_fov", 25.0);
     this->declare_parameter<double>("max_y_fov", 20.0);
     this->declare_parameter<double>("max_z_fov", 0.0);
@@ -68,8 +68,6 @@ Perception::Perception() : Node("Perception")
         "/perception/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/map", 10);
-
-    cloud_buffer = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
 }
 
 /**
@@ -208,45 +206,10 @@ void Perception::filter_clusters(std::vector<pcl::PointIndices>& cluster_indices
 }
 
 
-void Perception::disinclinate_ground_in_place(pcl::PointCloud<pcl::PointXYZI>& cloud) {
-    // Estimar plano con RANSAC
-    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-    pcl::SACSegmentation<pcl::PointXYZI> seg;
-    seg.setOptimizeCoefficients(true);
-    seg.setModelType(pcl::SACMODEL_PLANE);
-    seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setDistanceThreshold(0.02);
-    seg.setInputCloud(cloud.makeShared());
-    seg.segment(*inliers, *coefficients);
-
-    if (coefficients->values.size() != 4) {
-        std::cerr << "[Deskew] Could not estimate a plane." << std::endl;
-        return;
-    }
-
-    // Normal del plano
-    Eigen::Vector3f plane_normal(coefficients->values[0],
-                                 coefficients->values[1],
-                                 coefficients->values[2]);
-
-    // Rotación para alinear con eje Z
-    Eigen::Vector3f target_normal(0.0, 0.0, 1.0);
-    Eigen::Quaternionf rotation = Eigen::Quaternionf::FromTwoVectors(plane_normal, target_normal);
-    Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
-    transform.block<3,3>(0,0) = rotation.toRotationMatrix();
-
-    // Transformar en el mismo objeto
-    pcl::transformPointCloud(cloud, cloud, transform);
-
-}
-
-
-
 /**
-* @brief Create callback function for the car state topic.
-* @param state_msg The information received from the car state node.
-*/
+ * @brief Create callback function for the car state topic.
+ * @param state_msg The information received from the car state node.
+ */
 void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_msg)
 {
     vx = state_msg->vx;
@@ -260,21 +223,7 @@ void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_m
  * @param lidar_msg The point cloud message received from the lidar topic.
  */
 void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg)
-{
-    static double last_msg_time = 0.0;
-    double current_time = this->now().seconds();
-    if(last_msg_time == 0.0) {
-        last_msg_time = current_time;
-        RCLCPP_INFO(this->get_logger(), "First message received");
-        return;
-    }
-    if(current_time - last_msg_time < 5.0 && !started) {
-        RCLCPP_INFO(this->get_logger(), "Wait %f seconds...", 5.0 - (current_time - last_msg_time));
-        return;
-    }
-    last_msg_time = current_time;
-    started = true;
-
+{   
     double start_time = this->now().seconds();
 
     //Define the variables for the ground filter
@@ -287,9 +236,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
-    // // Disinclinate the point cloud
-    // Perception::disinclinate_ground_in_place(*cloud);
-    // if (DEBUG) std::cout << "disinclinate Time: " << this->now().seconds() - start_time << std::endl;
 
     if (kCrop) {
         //Crop the point cloud
@@ -297,22 +243,9 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         if (DEBUG) std::cout << "Cropping Time: " << this->now().seconds() - start_time << std::endl;
     }
 
-    // Apply voxel grid filter
-    pcl::PointCloud<pcl::PointXYZI>::Ptr filtered(new pcl::PointCloud<pcl::PointXYZI>());
-    static pcl::VoxelGrid<pcl::PointXYZI> local_vg; 
-    local_vg.setInputCloud(cloud_buffer);
-    local_vg.setLeafSize(0.1, 0.1, 0.1/10);
-    local_vg.filter(*filtered);
-
-    *cloud_buffer = *filtered;
-
-    *cloud_buffer += *cloud;
-
-    RCLCPP_INFO(this->get_logger(), "Cloud size: %d", cloud_buffer->size());
 
     //Apply the ground filter fuction
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered_ground(new pcl::PointCloud<pcl::PointXYZI>);
-    GroundRemove::RemoveGround(*cloud_buffer, *cloud_filtered_ground, *cloud_filtered); 
+    GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - start_time << std::endl;
     
 
@@ -343,7 +276,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     for (const auto& cluster : cluster_indices)
     {
         pcl::PointCloud<pcl::PointXYZI>::Ptr new_cluster(new pcl::PointCloud<pcl::PointXYZI>);
- 
+
         for (const auto& idx : cluster.indices)
         {
             pcl::PointXYZI point = cloud_filtered->points[idx];
@@ -351,6 +284,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         } 
         cluster_points.push_back(new_cluster);
     }
+
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr clusters_cloud(new pcl::PointCloud<pcl::PointXYZI>);
     if (DEBUG) {
@@ -413,20 +347,20 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         //Publish the filtered cloud
         sensor_msgs::msg::PointCloud2 filtered_msg;
         pcl::toROSMsg(*cloud_filtered, filtered_msg);
-        filtered_msg.header.frame_id="/map";
+        filtered_msg.header.frame_id="/rslidar";
         filtered_pub_->publish(filtered_msg);
 
         // Publish the clusters cloud
         sensor_msgs::msg::PointCloud2 clusters_msg;
         pcl::toROSMsg(*clusters_cloud, clusters_msg);
-        clusters_msg.header.frame_id="/map";
+        clusters_msg.header.frame_id="/rslidar";
         clusters_pub_->publish(clusters_msg);
     }
 
     //Publish the map cloud
     sensor_msgs::msg::PointCloud2 map_msg;
     pcl::toROSMsg(*final_map, map_msg);
-    map_msg.header.frame_id="/map";
+    map_msg.header.frame_id="/rslidar";
     map_pub_->publish(map_msg);
 }
 

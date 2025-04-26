@@ -27,7 +27,7 @@ namespace Cropping
         //Configure the cropping filter
         pcl::CropBox<pcl::PointXYZI> crop_box_filter;
         crop_box_filter.setInputCloud(cloud);
-        crop_box_filter.setMin(Eigen::Vector4f(-Mx, -My, -Mz, 1.0));
+        crop_box_filter.setMin(Eigen::Vector4f(0, -My, -100.0, 1.0));
         crop_box_filter.setMax(Eigen::Vector4f(Mx, My, Mz, 1.0));
     
         //Store the cropped cloud

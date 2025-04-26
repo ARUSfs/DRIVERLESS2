@@ -7,6 +7,7 @@
  * @version 0.1
  * @date 3-11-2024
  */
+
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>
@@ -14,10 +15,10 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include "perception/ground_filtering.h"
-#include "perception/ground_remove.h"
 #include "perception/clustering.h"
 #include "perception/cropping.h"
 #include "scoring.h"
+#include "perception/accumulation.h"
 #include "PointXYZColorScore.h"
 #include "color_estimation.h"
 #include <pcl/common/common.h>
@@ -27,12 +28,6 @@
 #include <deque>
 #include <omp.h>
 #include <iostream>
-#include <pcl/filters/voxel_grid.h> 
-#include <pcl/ModelCoefficients.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
 
 
 /**
@@ -81,11 +76,6 @@ class Perception : public rclcpp::Node
         double yaw_rate;
         double dt;
 
-        bool started = false;
-        
-        //Buffer
-        pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_buffer;
-
         //Subscriber
         std::string kLidarTopic;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_sub_;
@@ -104,12 +94,6 @@ class Perception : public rclcpp::Node
          * @param lidar_msg The point cloud message received from the lidar.
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
-
-        /**
-         * @brief Disinclinate the point cloud in place.
-         * @param cloud The point cloud that will be disinclinated.
-         */
-        void disinclinate_ground_in_place(pcl::PointCloud<pcl::PointXYZI>& cloud);
 
         /**
          * @brief Auxiliar function for the call back function.
