@@ -56,7 +56,7 @@ namespace Accumulation
 
         // Transformation from CoG back to LIDAR
         Eigen::Isometry3d transform_CoG_to_lidar = Eigen::Isometry3d::Identity();
-        transform_CoG_to_lidar.translation() << kDistanceLidarToCoG, 0.0, 0.0;
+        transform_CoG_to_lidar.translation() << kDistanceLidarToCoG, 0.0, 2.0;
 
         // Compute final transformation matrix
         Eigen::Isometry3d final_transform = transform_lidar_to_CoG * transform_motion * transform_CoG_to_lidar;

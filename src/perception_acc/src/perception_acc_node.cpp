@@ -401,7 +401,7 @@ void Perception::get_tf_position()
     geometry_msgs::msg::TransformStamped transform;
     try {
         // Graph slam tf
-        transform = tf_buffer_->lookupTransform("arussim/world", "slam/vehicle", tf2::TimePointZero);
+        transform = tf_buffer_->lookupTransform("map", "base_link", tf2::TimePointZero);
         tf2::Quaternion q(
             transform.transform.rotation.x,
             transform.transform.rotation.y,
