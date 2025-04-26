@@ -1,0 +1,8 @@
+inspection_control:
+  ros__parameters:
+    KP: 43.87
+    KI: 0.0
+    KD: 0.0
+    AMPLITUDE: 20.0
+    FREQUENCY: 0.2
+    DURATION: 27.0

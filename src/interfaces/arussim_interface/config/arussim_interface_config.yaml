@@ -1,0 +1,15 @@
+arussim_interface:
+  ros__parameters:
+    # Simulator topics
+    sim_cmd_topic: '/arussim/cmd'
+    sim_cmd4wd_topic: '/arussim/cmd4wd'
+    sim_wheel_speeds_topic: '/arussim/wheel_speeds'
+    sim_trajectory_topic: '/arussim/fixed_trajectory'
+    sim_state_topic: '/arussim/state'
+
+    # Pipeline topics
+    pipeline_cmd_topic: '/controller/cmd'
+    pipeline_cmd4wd_topic: '/controller/cmd4wd'
+    pipeline_wheel_speeds_topic: '/arussim_interface/wheel_speeds'
+    pipeline_trajectory_topic: '/arussim_interface/fixed_trajectory'
+    pipeline_ground_truth_topic: '/arussim_interface/arussim_ground_truth'

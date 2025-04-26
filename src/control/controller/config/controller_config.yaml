@@ -1,0 +1,39 @@
+controller:
+  ros__parameters:
+    use_optimized_trajectory: False # use optimized trajectory
+    first_lap_steer_control: "PP" # PP, MPC
+    optimized_steer_control: "PP"   # PP, MPC
+    speed_timer_frequency: 100.0    # speed timer frecuency in Hz
+    steer_timer_frequency: 50.0    # steer timer frecuency in Hz
+    
+
+    # Topics
+    state: "/car_state/state"
+    as_status: "/can/AS_status"
+    as_check: "/car_state/AS_check"
+    trajectory: "/path_planning/trajectory"
+    cmd: "/controller/cmd"
+    pursuit_point: "/controller/pursuit_point"
+    target_speed: "/controller/target_speed"
+
+    # PP
+    look_ahead_distance: 4.0
+    optimized_look_ahead_distance: 7.0
+
+    # PID
+    target: 5.0
+    braking_decc: 3.0
+    KP: 10.0
+    KI: 0.55
+    KD: 0.01
+
+    # MPC
+    cost_lateral_error: 5.0
+    cost_angular_error: 10.0
+    cost_steering_delta: 3000.0
+    compensation_steps: 6
+
+    # Cmd
+    min_cmd: 0.0    # % inv
+    max_cmd: 0.1    # % inv
+    max_steer: 20.0 # degrees
