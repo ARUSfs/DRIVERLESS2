@@ -9,7 +9,7 @@
  */
 
 #include "perception_acc/perception_acc_node.hpp"
-bool DEBUG = false;
+bool DEBUG = true;
 
 Perception::Perception() : Node("Perception")
 {
@@ -65,7 +65,7 @@ Perception::Perception() : Node("Perception")
     clusters_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/map", 10);
+        "/perception/map_test", 10);
 
     // Inicializa el tf_buffer y tf_listener de manera que se suscriban al topic /tf
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
@@ -157,6 +157,49 @@ void Perception::filter_clusters(std::vector<pcl::PointIndices>& cluster_indices
     cluster_indices.resize(clusters_centers.size());
 }
 
+void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_indices,
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
+{
+    for (auto it = cluster_indices.begin(); it != cluster_indices.end(); )
+    {
+        //Create a temporal point cloud
+        pcl::PointCloud<PointXYZIRingTime>::Ptr cluster_cloud(new pcl::PointCloud<PointXYZIRingTime>);
+        pcl::copyPointCloud(*cloud_filtered, *it, *cluster_cloud);
+
+        //Obtain the new bounding box of the cluster
+        PointXYZIRingTime min_point, max_point;
+        pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
+        double max_x = max_point.x;
+        double min_x = min_point.x;
+        double max_y = max_point.y;
+        double min_y = min_point.y;
+        double max_z = max_point.z;
+        double min_z = min_point.z;
+
+        //Filter the cluster by size and keep the center of the cluster
+        if ((max_z-min_z)<0.4 && min_z<0.0 && (max_x-min_x)<0.5 && (max_y-min_y)<0.5)
+        {
+            Eigen::Vector4f centroid;
+            pcl::compute3DCentroid(*cluster_cloud, centroid);
+            PointXYZColorScore center;
+            center.x = centroid[0];
+            center.y = centroid[1];
+            center.z = min_z;
+            center.color = 0;
+            center.score = 0;
+            clusters_centers.push_back(center);
+
+            it++;
+        }
+        else
+        {
+            it = cluster_indices.erase(it);
+        }
+    }
+    //Resize the cluster indices vector
+    cluster_indices.resize(clusters_centers.size());
+}
+
 /**
  * @brief Callback function for the car state topic.
  * @param state_msg The state message received from the car state topic.
@@ -175,73 +218,176 @@ void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_m
  */
 void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg)
 {   
+    double time_start = this->now().seconds();
     this->get_tf_position();
 
     //Define the variables for the ground filter
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
-    // Apply voxel grid filter
-    static pcl::VoxelGrid<PointXYZIRingTime> local_vg; 
-    local_vg.setInputCloud(cloud);
-    local_vg.setLeafSize(kDownsampleSize, kDownsampleSize, kDownsampleSize/10);
-    pcl::PointCloud<PointXYZIRingTime>::Ptr filtered(new pcl::PointCloud<PointXYZIRingTime>());
-    local_vg.filter(*filtered);
+    // Accumulation
+    pcl::PointCloud<PointXYZIRingTime>::Ptr accumulated_cloud(new pcl::PointCloud<PointXYZIRingTime>);
+    Accumulation::accumulate(cloud, accumulated_cloud, x_, y_, yaw_, kDistanceLidarToCoG);
+        
+    RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", accumulated_cloud->size());
+    // RCLCPP_INFO(this->get_logger(), "p1-> x: %f, y: %f, z: %f", accumulated_cloud->points[0].x, accumulated_cloud->points[0].y, accumulated_cloud->points[0].z);
 
-    cloud = filtered;
+    // Cropping
+    Cropping::crop_filter_cropbox(accumulated_cloud, kMaxXFov, kMaxYFov, kMaxZFov);
+    if (DEBUG) std::cout << "Cropping Time: " << this->now().seconds() - time_start << std::endl;
 
-            
-    float zmin = -1.0;   
-    float zmax = 0.2;    
 
-    pcl::PointCloud<PointXYZIRingTime>::Ptr filtered_cloud(new pcl::PointCloud<PointXYZIRingTime>);
-
-    for (const auto& point : cloud->points) {
-        if (point.z >= zmin && point.z <= zmax) {
-            filtered_cloud->points.push_back(point);
-        }
-    }
-
-    filtered_cloud->width = filtered_cloud->points.size();
-    filtered_cloud->height = 1;
-    filtered_cloud->is_dense = true;
-
-    cloud = filtered_cloud;
-
-    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered_ground(new pcl::PointCloud<PointXYZIRingTime>);
+    //Define the variables for the ground filter
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered(new pcl::PointCloud<PointXYZIRingTime>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_plane(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
-// Remove ground
-    // GroundRemove::RemoveGround(*cloud,*cloud_filtered_ground,*cloud_filtered); 
-    // GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_filtered_ground, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
-    //GroundFiltering2::RemoveGroundByRings(updated_cloud, cloud_filtered_ground, cloud_filtered);
 
-// Clustering
-    std::vector<pcl::PointIndices> cluster_indices;
-    std::vector<PointXYZColorScore> clusters_centers;
+    //Apply the ground filter fuction
+    GroundFiltering::grid_ground_filter(accumulated_cloud, cloud_filtered, cloud_plane, coefficients,
+        kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+    if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - time_start << std::endl;
+    
+
+    //Extract the clusters from the point cloud
+    // std::vector<pcl::PointIndices> cluster_indices;
     // Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
-    // // filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
-    // Clustering::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers);
 
-// Accumulation
-    pcl::PointCloud<PointXYZIRingTime>::Ptr updated_cloud;
-    if (kGlobalAccumulation) updated_cloud = Accumulation::accumulate_global_cloud_ring(cloud, clusters_centers, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
-    else updated_cloud = Accumulation::accumulate_local_cloud_ring(cloud, clusters_centers, x_, y_, yaw_, kDistanceLidarToCoG, kDownsampleSize);
-        
-    RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", updated_cloud->size());
 
-    // Verificar que updated_cloud no sea nulo para evitar fallos
-    if (!updated_cloud) {
-        RCLCPP_WARN(this->get_logger(), "Updated cloud is null.");
-        return;
+    // FAST EUCLIDEAN CLUSTERING
+    pcl::search::KdTree<PointXYZIRingTime>::Ptr tree(new pcl::search::KdTree<PointXYZIRingTime>);
+    std::vector<pcl::PointIndices> cluster_indices;
+
+    FastEuclideanClustering<PointXYZIRingTime> fec;
+    fec.setInputCloud(cloud_filtered);
+    fec.setSearchMethod(tree);
+    fec.setClusterTolerance(0.5);
+    fec.setQuality(0.5);
+    fec.setMinClusterSize(4);     
+    fec.setMaxClusterSize(200);
+
+    fec.segment(cluster_indices);
+    
+    if (DEBUG) std::cout << "Clustering time: " << this->now().seconds() - time_start << std::endl;
+
+
+    //Store clusters centers
+    std::vector<PointXYZColorScore> clusters_centers;
+    this->get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers);
+    if (DEBUG) std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
+
+
+    //Recover ground points
+    Perception::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius);
+    if (DEBUG) std::cout << "Reconstruction time: " << this->now().seconds() - time_start << std::endl;
+
+
+    //Filter clusters by size
+    Perception::filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
+    if (DEBUG) std::cout << "Filtering time: " << this->now().seconds() - time_start << std::endl;
+
+
+    // Convert indices to cluster point clouds
+    std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr> cluster_points;
+    for (const auto& cluster : cluster_indices)
+    {
+        pcl::PointCloud<PointXYZIRingTime>::Ptr new_cluster(new pcl::PointCloud<PointXYZIRingTime>);
+        for (const auto& idx : cluster.indices)
+        {
+            new_cluster->points.push_back(cloud_filtered->points[idx]);
+        } 
+        cluster_points.push_back(new_cluster);
+    }
+
+
+    pcl::PointCloud<PointXYZIRingTime>::Ptr clusters_cloud(new pcl::PointCloud<PointXYZIRingTime>);
+    if (DEBUG) {
+        // Publish clusters cloud with different colors
+        int i = 0;
+        for (auto c : cluster_points)
+        {
+            for (auto &p : c->points)
+            {
+                PointXYZIRingTime q = p;
+                q.intensity = i;
+                clusters_cloud->push_back(q);
+            }
+            i++;
+        }
     }
     
-// Publish
-    sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*updated_cloud, filtered_msg);
-    filtered_msg.header.frame_id="/rslidar";
-    filtered_pub_->publish(filtered_msg);
+
+    // Convert cluster_points to type pcl::PointXYZI para scoring
+    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points_i;
+    for (auto &cluster : cluster_points) {
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_i(new pcl::PointCloud<pcl::PointXYZI>);
+        for (const auto &p : cluster->points) {
+            pcl::PointXYZI pt;
+            pt.x = p.x; pt.y = p.y; pt.z = p.z; pt.intensity = p.intensity;
+            cluster_i->push_back(pt);
+        }
+        cluster_points_i.push_back(cluster_i);
+    }
+
+    pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
+    Scoring::scoring_surface(final_map, cluster_points_i, clusters_centers, kThresholdScoring);
+    
+
+    //Print the number of cones and the time of the scoring
+    if (DEBUG) std::cout << "Number of cones: " << final_map->size() << std::endl;
+    if (DEBUG) std::cout << "Scoring time: " << this->now().seconds() - time_start << std::endl;
+
+
+    //Estime the color of the closest cones
+    // ColorEstimation::color_estimation(cluster_points, clusters_centers, kDistanceThreshold, kColoringThreshold);
+    // if (DEBUG) std::cout << "Color estimation time: " << this->now().seconds() - time << std::endl;
+
+
+    // //Update the colors of final map points
+    // for (auto& point : final_map->points) 
+    // {
+    //     for (const auto& center : clusters_centers) 
+    //     {
+    //         if (point.x == center.x && point.y == center.y && point.z == center.z) 
+    //         {
+    //             point.color = center.color;
+    //         }
+    //     }
+    // }
+
+    // // Motion correction
+    // double dt = this->now().seconds() - time; // Estimate sdk delay
+    // double theta = -yaw_rate*(dt);
+    // for (auto& p : final_map->points)
+    // {
+    //     // double point_delay = std::atan(p.y/p.x)/(2*M_PI)*0.1;
+    //     double dx = vx*dt, dy = vy*dt;
+    //     p.x = p.x*std::cos(theta) - p.y*std::sin(theta) - dx;
+    //     p.y = p.x*std::sin(theta) + p.y*std::cos(theta) - dy;
+    // }
+
+    if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;
+
+    if (DEBUG){
+        //Publish the filtered cloud
+        sensor_msgs::msg::PointCloud2 filtered_msg;
+        pcl::toROSMsg(*cloud_filtered, filtered_msg);
+        filtered_msg.header.frame_id="/map";
+        filtered_pub_->publish(filtered_msg);
+
+        // Publish the clusters cloud
+        sensor_msgs::msg::PointCloud2 clusters_msg;
+        pcl::toROSMsg(*clusters_cloud, clusters_msg);
+        clusters_msg.header.frame_id="/map";
+        clusters_pub_->publish(clusters_msg);
+    }
+
+    //Publish the map cloud
+    sensor_msgs::msg::PointCloud2 map_msg;
+    pcl::toROSMsg(*final_map, map_msg);
+    map_msg.header.frame_id="/map";
+    map_pub_->publish(map_msg);
+
 }
 
 /**

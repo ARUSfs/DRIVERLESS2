@@ -37,6 +37,7 @@
 #include "perception_acc/color_estimation.h"
 #include "perception_acc/ground_remove.h"
 #include "perception_acc/string_clustering.h"
+#include "perception_acc/fast_euclidean_clustering.h"
 
 /**
  * @class Perception
@@ -128,6 +129,15 @@ class Perception : public rclcpp::Node
          */
         void state_callback(const common_msgs::msg::State::SharedPtr state_msg);
 
+        /**
+         * @brief Auxiliar function for the call back function.
+         * Filter the clusters that are too small or too large to be considered cones.
+         * @param cluster_indices The indices of the points that form each cluster.
+         * @param cloud_filtered The input point cloud.
+         * @param cluster_centers The center of each cluster.
+         */
+        void get_clusters_centers(std::vector<pcl::PointIndices>& cluster_indices,
+            pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
             
         /**
          * @brief Auxiliar function for the call back function.
