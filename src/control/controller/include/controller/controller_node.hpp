@@ -96,6 +96,7 @@ private:
     double kSpeedTimerFreq;
     double kSteerTimerFreq;
     double kLAD;
+    double kOptLAD;
     double kTargetSpeed;
     double KP;
     double KI;
