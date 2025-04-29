@@ -464,7 +464,7 @@ void CarState::on_timer()
         double vx_rl_cog = v_rear_left_ + wr*r_;
         double vx_rr_cog = v_rear_right_ - wr*r_;
 
-        avg_vx = vx_rr_cog;
+        avg_vx = (vx_fl_cog+vx_fr_cog+vx_rl_cog+vx_rr_cog)/4;
     } else if (!kSimulation && kUseWheelspeeds && inv_speed_ > 3.0) {
         double lf = 0.84315;
         double wf = 0.5*1.22;
