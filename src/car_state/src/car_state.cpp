@@ -450,7 +450,21 @@ void CarState::on_timer()
     // Estimate vx, vy
     double avg_vx;
     if(kSimulation){
-        avg_vx = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
+        // avg_vx = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
+
+        double lf = 0.84315;
+        double wf = 0.5*1.22;
+        double wr = 0.5*1.22;
+
+        double sin = std::sin(delta_);
+        double cos = std::cos(delta_);
+
+        double vx_fl_cog = (v_front_left_ - sin*vy_ -(lf*sin - wf*cos)*r_) / cos;
+        double vx_fr_cog = (v_front_right_ - sin*vy_ -(lf*sin + wf*cos)*r_) / cos;
+        double vx_rl_cog = v_rear_left_ + wr*r_;
+        double vx_rr_cog = v_rear_right_ - wr*r_;
+
+        avg_vx = vx_rr_cog;
     } else if (!kSimulation && kUseWheelspeeds && inv_speed_ > 3.0) {
         double lf = 0.84315;
         double wf = 0.5*1.22;
