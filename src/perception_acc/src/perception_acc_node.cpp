@@ -1,13 +1,3 @@
-/**
- * @file perception_acc_node.hpp
- * @author Álvaro Galisteo Bermúdez (galisbermo03@gmail.com)
- * @brief Main file for the Perception Accumulation node. 
- * Contains the main function and the implementation of the methods to achieve a robust and reliable perception algorithm for the ARUS 
- * Team, which extracts the location of the cones on the track.
- * @version 0.1
- * @date 11-3-2025
- */
-
 #define PCL_NO_PRECOMPILE
 
 #include "perception_acc/perception_acc_node.hpp"
@@ -20,7 +10,7 @@
 #include <tf2_ros/buffer.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include "perception_acc/fast_euclidean_clustering.h"
+#include "external/fast_euclidean_clustering.h"
 
 #include <pcl/filters/voxel_grid.h>
 
@@ -30,24 +20,19 @@
 bool DEBUG = true;
 
 
-std::vector<Eigen::Vector3f> convertCloudToVec(const pcl::PointCloud<PointXYZIRingTime>& cloud) {
-    std::vector<Eigen::Vector3f> vec;
-    vec.reserve(cloud.size());
-    for (const auto& pt : cloud.points) {
-      if (!std::isfinite(pt.x) || !std::isfinite(pt.y) || !std::isfinite(pt.z)) continue;
-      vec.emplace_back(pt.x, pt.y, pt.z);
-    }
-    return vec;
-  }
 
 
 
 
-Perception::Perception() : Node("Perception")
+
+Perception::Perception() : Node("perception_acc")
 {
     //Declare the parameters
     this->declare_parameter<std::string>("lidar_topic", "/rslidar_points");
     this->declare_parameter<std::string>("state_topic", "/car_state/state");
+    this->declare_parameter<double>("voxel_size", 0.3);
+    this->declare_parameter<int>("clouds_matched", 1);
+    this->declare_parameter<int>("buffer_size", 4);
     this->declare_parameter<bool>("crop", true);
     this->declare_parameter<double>("max_x_fov", 40.0);
     this->declare_parameter<double>("max_y_fov", 40.0);
@@ -64,6 +49,9 @@ Perception::Perception() : Node("Perception")
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
     this->get_parameter("state_topic", kStateTopic);
+    this->get_parameter("voxel_size", kVoxelSize);
+    this->get_parameter("clouds_matched", kCloudsMatched);
+    this->get_parameter("buffer_size", kBufferSize);
     this->get_parameter("crop", kCrop);
     this->get_parameter("max_x_fov", kMaxXFov);
     this->get_parameter("max_y_fov", kMaxYFov);
@@ -77,10 +65,8 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("distance_threshold", kDistanceThreshold);
     this->get_parameter("coloring_threshold", kColoringThreshold);
 
+    prev_normal_ = std::make_shared<Eigen::Vector3f>(0.0, 0.0, 1.0);
 
-
-    //Transform into radians
-    // kHFov *= (M_PI/180);  // Comentada debido a que kHFov no está definido
     
     //Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -92,36 +78,21 @@ Perception::Perception() : Node("Perception")
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception_acc/filtered", 10);
     clusters_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/clusters", 10);
+        "/perception_acc/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/map2", 10);
+        "/perception_acc/map", 10);
 
-    // Inicializa el tf_buffer y tf_listener de manera que se suscriban al topic /tf
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
 
+
+
 }
 
 
 
 
-Eigen::Matrix4f tf2TransformToEigen(const tf2::Transform &tf)
-{
-    Eigen::Matrix4f mat = Eigen::Matrix4f::Identity();
-
-    // Rotación
-    for (int i = 0; i < 3; ++i)
-        for (int j = 0; j < 3; ++j)
-            mat(i, j) = tf.getBasis()[i][j];
-
-    // Traslación
-    mat(0, 3) = tf.getOrigin().x();
-    mat(1, 3) = tf.getOrigin().y();
-    mat(2, 3) = tf.getOrigin().z();
-
-    return mat;
-}
 
 
 /**
@@ -132,8 +103,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 {   
 
     double time = this->get_clock()->now().seconds();
-    this->get_tf_position();
-    rclcpp::Time t(lidar_msg->header.stamp);
 
     //Define the variables for the ground filter
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud(new pcl::PointCloud<PointXYZIRingTime>);
@@ -148,6 +117,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     try {
         std::string frame = "arussim/world";
         std::string world_frame = "slam/vehicle"; 
+        rclcpp::Time t(lidar_msg->header.stamp);
         tf_msg = tf_buffer_->lookupTransform(frame, world_frame, tf2::TimePoint(std::chrono::nanoseconds(t.nanoseconds())),
                                                 tf2::durationFromSec(0.1));
 
@@ -158,9 +128,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     tf2::Transform tf_transform;
     tf2::fromMsg(tf_msg.transform, tf_transform);
-
-
-    // Convertir a Eigen y aplicar a la nube
     Eigen::Matrix4f transform_matrix;
     transform_matrix = tf2TransformToEigen(tf_transform);
 
@@ -170,18 +137,14 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         return;
     } 
 
-    std::cout << "get tf: " << this->get_clock()->now().seconds() - time << std::endl;
-
-    pcl::PointCloud<PointXYZIRingTime>::Ptr updated_filtered_cloud(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::PointCloud<PointXYZIRingTime>::Ptr updated_cloud(new pcl::PointCloud<PointXYZIRingTime>);
-    // pcl::transformPointCloud(*filtered_cloud, *updated_filtered_cloud, transform_matrix);
     pcl::transformPointCloud(*cloud, *updated_cloud, transform_matrix);
 
-    std::cout << "apply tf: " <<  this->get_clock()->now().seconds() - time << std::endl;
+    if (DEBUG) std::cout << "TF transform time: " <<  this->get_clock()->now().seconds() - time << std::endl;
     pcl::PointCloud<PointXYZIRingTime>::Ptr src_pcl(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::PointCloud<PointXYZIRingTime>::Ptr tgt_pcl(new pcl::PointCloud<PointXYZIRingTime>);
 
-    for (int i = 0; i < std::min(1,int(cloud_buffer_.size())); i++)
+    for (int i = 0; i < std::min(kCloudsMatched,int(cloud_buffer_.size())); i++)
     {
         *src_pcl += cloud_buffer_[cloud_buffer_.size()-i-1];
     }
@@ -190,11 +153,12 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     *tgt_pcl = *updated_cloud;
 
 
-
+    Cropping::crop_filter_cropbox(src_pcl, 30.0, 30.0, 0.0);
+    Cropping::crop_filter_cropbox(tgt_pcl, 30.0, 30.0, 0.0);
 
 
     kiss_matcher::KISSMatcherConfig config = kiss_matcher::KISSMatcherConfig();
-    config.voxel_size_ = 0.3f;
+    config.voxel_size_ = kVoxelSize;
     config.use_quatro_ = true;
     config.use_ratio_test_ = false;
     config.robin_mode_ = "None";
@@ -209,15 +173,15 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     solution_eigen.block<3, 3>(0, 0)    = solution.rotation.cast<float>();
     solution_eigen.topRightCorner(3, 1) = solution.translation.cast<float>();
 
-    // std::cout << "KISSMatcher solution: " << std::endl;
-    // std::cout << solution_eigen << std::endl;
-    // matcher.print();
+
     
 
-    std::cout <<  "KISS: " << this->get_clock()->now().seconds() - time << std::endl;
+    if (DEBUG) {
+        std::cout <<  "KISS-matcher time: " << this->get_clock()->now().seconds() - time << std::endl;
+    } 
 
     //Ensure buffer size limit
-    if (cloud_buffer_.size() >= static_cast<size_t>(4)) 
+    if (cloud_buffer_.size() >= static_cast<size_t>(kBufferSize)) 
     {
         cloud_buffer_.pop_front();
     }
@@ -248,54 +212,31 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     
 // Publish
-    sensor_msgs::msg::PointCloud2 acum_msg;
-    pcl::toROSMsg(*global_cloud, acum_msg);
-    acum_msg.header.frame_id="/rslidar";
-    acum_points_pub_->publish(acum_msg);
+    if (DEBUG) {
+        sensor_msgs::msg::PointCloud2 acum_msg;
+        pcl::toROSMsg(*global_cloud, acum_msg);
+        acum_msg.header.frame_id="/rslidar";
+        acum_points_pub_->publish(acum_msg);
+    }
 
-    std::cout << "total: " <<  this->get_clock()->now().seconds() - time << std::endl;
-
-    avg_time_ = (N_it_*avg_time_+(this->get_clock()->now().seconds() - time))/(N_it_+1);
-    N_it_++;
-    std::cout << "avg time: " << avg_time_ << std::endl;
-
-    std::cout << "*********************************************" << std::endl;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    if (DEBUG) std::cout << "Accumulation time: " <<  this->get_clock()->now().seconds() - time << std::endl;
 
 
 
 
 
     Cropping::crop_filter_cropbox(global_cloud, kMaxXFov, kMaxYFov, kMaxZFov);
-    if (DEBUG) std::cout << "Cropping Time: " << this->now().seconds() - time << std::endl;
+    if (DEBUG) std::cout << "Cropping time: " << this->now().seconds() - time << std::endl;
 
 
     //Define the variables for the ground filter
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_plane(new pcl::PointCloud<PointXYZIRingTime>);
-    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-
 
     //Apply the ground filter fuction
-    GroundFiltering::grid_ground_filter(global_cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
-    if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - time << std::endl;
+    // GroundFiltering::ransac_ground_filter(global_cloud, cloud_filtered, cloud_plane, prev_normal_, kThresholdGroundFilter);
+    GroundFiltering::min_z_ground_filter(global_cloud, cloud_filtered, cloud_plane, kThresholdGroundFilter);
+    if (DEBUG) std::cout << "Ground filter time: " << this->now().seconds() - time << std::endl;
     
 
     //Extract the clusters from the point cloud
@@ -323,7 +264,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Store the clusters centers in a new point cloud
     std::vector<PointXYZColorScore> clusters_centers;
     Perception::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers);
-    if (DEBUG) std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
 
 
     //Recover ground points
@@ -333,7 +273,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Filter the clusters by size
     Perception::filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
-    if (DEBUG) std::cout << "Filtering time: " << this->now().seconds() - time << std::endl;
+    if (DEBUG) std::cout << "Cluster Filtering time: " << this->now().seconds() - time << std::endl;
 
 
     // Convert the indices of the clusters to the points of the clusters
@@ -406,6 +346,11 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //     p.y = p.x*std::sin(theta) + p.y*std::cos(theta) - dy;
     // }
 
+
+    avg_time_ = (N_it_*avg_time_+(this->get_clock()->now().seconds() - time))/(N_it_+1);
+    N_it_++;
+    std::cout << "Avg time: " << avg_time_ << std::endl;
+
     if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;
 
     if (DEBUG){
@@ -430,35 +375,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 }
 
-/**
- * @brief Get the position of the car in the world frame.
- * * This function uses the tf2 library to get the transform between the car and the world frame.
- * * It uses the tf_buffer_ to get the transform and then it extracts the position and orientation of the car.
- * 
- */
-void Perception::get_tf_position()
-{
-    geometry_msgs::msg::TransformStamped transform;
-    try {
-        // Graph slam tf
-        transform = tf_buffer_->lookupTransform("arussim/world", "slam/vehicle", tf2::TimePointZero);
-        tf2::Quaternion q(
-            transform.transform.rotation.x,
-            transform.transform.rotation.y,
-            transform.transform.rotation.z,
-            transform.transform.rotation.w
-        );
-        double roll, pitch, yaw;
-        tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
-        x_ = transform.transform.translation.x;
-        y_ = transform.transform.translation.y;
-        yaw_ = yaw;
-        
-        // RCLCPP_INFO(this->get_logger(), "Transform: x: %f, y: %f, yaw: %f", x_, y_, yaw_);
-    } catch (const tf2::TransformException &ex) {
-        RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
-    }
-}
 
 
 /**

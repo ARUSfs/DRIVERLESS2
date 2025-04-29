@@ -31,23 +31,32 @@ namespace GroundFiltering
     * @param threshold The threshold that will determine if the point belong to the ground.
     */
     void ransac_ground_filter(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_filtered, 
-        pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold)
+        pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_plane, std::shared_ptr<Eigen::Vector3f>& normal, double threshold)
     {   
         //Define the parameters
         pcl::SACSegmentation<PointXYZIRingTime> segmentation;
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
         pcl::PointIndices::Ptr outliers(new pcl::PointIndices);
+        pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
         //Configure the algorithm
         segmentation.setOptimizeCoefficients(true);
-        segmentation.setModelType(pcl::SACMODEL_PLANE);
+        segmentation.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
         segmentation.setMethodType(pcl::SAC_RANSAC);
-        segmentation.setMaxIterations(50);
+        segmentation.setAxis(*normal);
+        segmentation.setEpsAngle(20.0f * (M_PI / 180.0f));
+        segmentation.setMaxIterations(100);
         segmentation.setDistanceThreshold(threshold);
 
         //Aply the segmentation
         segmentation.setInputCloud(cloud);
         segmentation.segment(*inliers, *coefficients);
+
+        normal->x() = coefficients->values[0];
+        normal->y() = coefficients->values[1];
+        normal->z() = coefficients->values[2];
+
+        std::cout << "Normal vector: " << normal->x() << " " << normal->y() << " " << normal->z() << std::endl;
 
         //Verify the segmentation is not empty
         if (inliers->indices.size() == 0)
@@ -90,51 +99,51 @@ namespace GroundFiltering
         Eigen::Vector3d& normal, double angle_threshold, int minimum_ransac_points)
     {
         // Filter the squares with just a few points
-        if (!(grid_cloud->size() < static_cast<std::size_t>(minimum_ransac_points)))
-        {
-            // Create new temporal clouds to store the ground and not ground points if neccesary
-            pcl::PointCloud<PointXYZIRingTime>::Ptr new_temp_filtered(new pcl::PointCloud<PointXYZIRingTime>);
-            pcl::PointCloud<PointXYZIRingTime>::Ptr new_temp_plane(new pcl::PointCloud<PointXYZIRingTime>);
+        // if (!(grid_cloud->size() < static_cast<std::size_t>(minimum_ransac_points)))
+        // {
+        //     // Create new temporal clouds to store the ground and not ground points if neccesary
+        //     pcl::PointCloud<PointXYZIRingTime>::Ptr new_temp_filtered(new pcl::PointCloud<PointXYZIRingTime>);
+        //     pcl::PointCloud<PointXYZIRingTime>::Ptr new_temp_plane(new pcl::PointCloud<PointXYZIRingTime>);
 
-            // Apply ransac
-            ransac_ground_filter(grid_cloud, temp_filtered, temp_plane, coefficients, threshold);
+        //     // Apply ransac
+        //     ransac_ground_filter(grid_cloud, temp_filtered, temp_plane, coefficients, threshold);
 
-            // Extract the coefficients of the plane of ecuation Ax + By + Cz + D = 0
-            double A = coefficients->values[0];
-            double B = coefficients->values[1];
-            double C = coefficients->values[2];
+        //     // Extract the coefficients of the plane of ecuation Ax + By + Cz + D = 0
+        //     double A = coefficients->values[0];
+        //     double B = coefficients->values[1];
+        //     double C = coefficients->values[2];
 
-            // Calculate the normal vector of the plane and normalize it
-            normal = Eigen::Vector3d(A, B, C).normalized();
+        //     // Calculate the normal vector of the plane and normalize it
+        //     normal = Eigen::Vector3d(A, B, C).normalized();
 
-            // Calculate angle between the two vector using the dot product
-            double cos_angle = prev_normal.dot(normal);
-            double angle = std::acos(cos_angle);
+        //     // Calculate angle between the two vector using the dot product
+        //     double cos_angle = prev_normal.dot(normal);
+        //     double angle = std::acos(cos_angle);
             
-            // If the angle between the planes is too big, the plane is not ground
-            if (angle > angle_threshold)
-            {
-                // Store the points in cloud filtered as it is not ground
-                *cloud_plane += *temp_plane;
+        //     // If the angle between the planes is too big, the plane is not ground
+        //     if (angle > angle_threshold)
+        //     {
+        //         // Store the points in cloud filtered as it is not ground
+        //         *cloud_plane += *temp_plane;
 
-                // Call the function again until the ground is suitable
-                ransac_checking_normal_vectors(temp_filtered, new_temp_filtered, new_temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, 
-                    prev_normal, normal, angle_threshold, minimum_ransac_points);
-            }
+        //         // Call the function again until the ground is suitable
+        //         ransac_checking_normal_vectors(temp_filtered, new_temp_filtered, new_temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, 
+        //             prev_normal, normal, angle_threshold, minimum_ransac_points);
+        //     }
 
-            if (new_temp_filtered->points.empty())
-            {
-                // Store the ground and not ground points in the specified clouds
-                *cloud_filtered += *temp_filtered;
-                *cloud_plane += *temp_plane;
-            }
-            else
-            {
-                // Store the ground and not ground points in the specified clouds
-                *cloud_filtered += *new_temp_filtered;
-                *cloud_plane += *new_temp_plane;
-            }
-        }
+        //     if (new_temp_filtered->points.empty())
+        //     {
+        //         // Store the ground and not ground points in the specified clouds
+        //         *cloud_filtered += *temp_filtered;
+        //         *cloud_plane += *temp_plane;
+        //     }
+        //     else
+        //     {
+        //         // Store the ground and not ground points in the specified clouds
+        //         *cloud_filtered += *new_temp_filtered;
+        //         *cloud_plane += *new_temp_plane;
+        //     }
+        // }
     }
 
 
@@ -195,6 +204,12 @@ namespace GroundFiltering
         // }
 
 
+        
+    }
+
+    void min_z_ground_filter(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_filtered, 
+        pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_plane, double threshold)
+    {
         std::map<std::pair<int, int>, double> min_z_map;
         for (int i = -100; i < 100; i++)
         {

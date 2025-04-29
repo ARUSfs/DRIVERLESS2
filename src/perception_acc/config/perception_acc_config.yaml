@@ -4,9 +4,9 @@ perception_acc:
     lidar_topic: "/rslidar_points"
 
     #Accumulation
-    global_accumulation: false
-    distance_lidar_to_CoG: 1.75
-    downsample_size: 0.1
+    voxel_size: 0.3
+    clouds_matched: 1
+    buffer_size: 5
 
     #Parameters of FOV
     crop: true
@@ -15,7 +15,7 @@ perception_acc:
     max_z_fov: 0.5
 
     #Parameters of ground filter
-    threshold_ground_filter: 0.075
+    threshold_ground_filter: 0.2
 
     number_sections: 8
     angle_threshold: 35.0

@@ -1,12 +1,3 @@
-/**
- * @file perception_acc_node.hpp
- * @author Álvaro Galisteo Bermúdez (galisbermo03@gmail.com)
- * @brief Header file for the PerceptionAcc node.
- * Contains the class definition and the declaration of the methods 
- * used in the algorithm. 
- * @version 0.1
- * @date 11-3-2025
- */
 #define PCL_NO_PRECOMPILE
 
 #include "PointXYZColorScore.h"
@@ -34,10 +25,9 @@
 #include "perception_acc/cropping.h"
 #include "perception_acc/clustering.h"
 #include "perception_acc/scoring.h"
-// #include "perception_acc/accumulation.h"
 #include "perception_acc/color_estimation.h"
-#include "perception_acc/ground_remove.h"
-#include "perception_acc/string_clustering.h"
+#include "perception_acc/accumulation.h"
+#include "perception_acc/utils.h"
 
 /**
  * @class Perception
@@ -81,7 +71,11 @@ class Perception : public rclcpp::Node
         bool kGlobalAccumulation;
         double kDistanceLidarToCoG;
         float kDownsampleSize;
+        double kVoxelSize;
+        int kCloudsMatched;
         std::deque<pcl::PointCloud<PointXYZIRingTime>> cloud_buffer_;
+
+        std::shared_ptr<Eigen::Vector3f> prev_normal_;
 
         // Variables
         double x_;
