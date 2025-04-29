@@ -478,7 +478,7 @@ void CarState::on_timer()
         double vx_rl_cog = v_rear_left_ + wr*r_;
         double vx_rr_cog = v_rear_right_ - wr*r_;
 
-        avg_vx = (vx_fl_cog + vx_rl_cog)/2;
+        avg_vx = (vx_fr_cog + vx_rr_cog)/2;
     } else {
         avg_vx = inv_speed_;
     }
