@@ -1,19 +1,26 @@
+/**
+ * @file inspection_control_node.cpp
+ * @author Álvaro Landero (alplepe02@gmail.com)
+ * @brief Inspection control node for ARUS Team Driverless pipeline.
+ */
+
 #include "inspection/inspection_control_node.hpp"
+
 
 InspectionControl::InspectionControl() : Node("inspection_control_node"){ 
 
     this->declare_parameter("KP", 43.87);
     this->declare_parameter("KI", 0.0);
     this->declare_parameter("KD", 0.0);
-    this->declare_parameter("AMPLITUDE", 20.0);
-    this->declare_parameter("FREQUENCY", 0.2);
-    this->declare_parameter("DURATION", 27.0);
+    this->declare_parameter("amplitude", 20.0);
+    this->declare_parameter("frequency", 0.2);
+    this->declare_parameter("duration", 27.0);
     this->get_parameter("KP", KP);
     this->get_parameter("KI", KI);
     this->get_parameter("KD", KD);
-    this->get_parameter("AMPLITUDE", kAmplitude);
-    this->get_parameter("FREQUENCY", kFrequency);
-    this->get_parameter("DURATION", kDuration);
+    this->get_parameter("amplitude", kAmplitude);
+    this->get_parameter("frequency", kFrequency);
+    this->get_parameter("duration", kDuration);
       
 
     start_time_ = this->get_clock()->now();
@@ -49,7 +56,7 @@ void InspectionControl::on_timer()
         cmd_pub_->publish(cmd_msg);
 
     } else if (as_status_ == 3 && this->get_clock()->now().seconds() - start_time_.seconds() >= kDuration){
-        if (vx_ > 0.5){
+        if (vx_ > 0.5){ // When duration is over, stop accelerating until finish
             auto cmd_msg = common_msgs::msg::Cmd();
             cmd_msg.acc = 0.0;
             cmd_msg.delta = 0.0;
