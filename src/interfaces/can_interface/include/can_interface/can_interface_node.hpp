@@ -7,37 +7,35 @@
  * @version 0.1
  * @date 01-02-2025
  */
-#include <linux/can.h>
-#include <linux/can/raw.h>
-#include <linux/can/error.h>
-#include <net/if.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <cstring>
+
 #include <iostream>
-#include <cstdlib>
-#include <unistd.h>
-#include <rclcpp/rclcpp.hpp>
-#include <stdio.h>
-#include <thread>
-#include <thread>
-#include <std_msgs/msg/int16.hpp>
-#include <std_msgs/msg/float32.hpp>
-#include <std_msgs/msg/float32_multi_array.hpp>
-#include "std_msgs/msg/bool.hpp"
-#include "common_msgs/msg/car_info.hpp"
-#include <geometry_msgs/msg/vector3.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <map>
 #include <vector>
-#include <fcntl.h>
-#include <common_msgs/msg/cmd.hpp>
-#include <ament_index_cpp/get_package_share_directory.hpp>
-#include <stdexcept>  
+#include <thread>
+#include <fstream>
+#include <sstream>
+#include <cmath>
+#include <cstring>
+#include <functional>
+#include <chrono>
+#include <algorithm> 
+#include <cstdlib>
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/bool.hpp"
+#include "common_msgs/msg/car_info.hpp"
+#include "common_msgs/msg/cmd.hpp"
+#include "ament_index_cpp/get_package_share_directory.hpp"
+#include <linux/can.h>
+#include <linux/can/raw.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <cerrno>    
+
+
 
 using namespace std;
 
