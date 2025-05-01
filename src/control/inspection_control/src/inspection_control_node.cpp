@@ -1,6 +1,4 @@
 #include "inspection/inspection_control_node.hpp"
-#include <cmath>
-#include <limits>
 
 InspectionControl::InspectionControl() : Node("inspection_control_node"){ 
 
@@ -35,18 +33,6 @@ InspectionControl::InspectionControl() : Node("inspection_control_node"){
             std::chrono::milliseconds(10), std::bind(&InspectionControl::on_timer, this));
 }
 
-void InspectionControl::car_state_callback(const common_msgs::msg::State::SharedPtr msg)
-{
-    vx_ = msg->vx;
-}
-
-void InspectionControl::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
-{
-    if (msg->data == 3 && as_status_ != 3){ 
-        start_time_ = this->get_clock()->now();
-    }
-    as_status_ = msg->data;
-}
 
 void InspectionControl::on_timer()
 {   
@@ -75,6 +61,22 @@ void InspectionControl::on_timer()
         }
     }
 }
+
+
+void InspectionControl::car_state_callback(const common_msgs::msg::State::SharedPtr msg)
+{
+    vx_ = msg->vx;
+}
+
+
+void InspectionControl::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
+{
+    if (msg->data == 3 && as_status_ != 3){ 
+        start_time_ = this->get_clock()->now();
+    }
+    as_status_ = msg->data;
+}
+
 
 int main(int argc, char **argv)
 {
