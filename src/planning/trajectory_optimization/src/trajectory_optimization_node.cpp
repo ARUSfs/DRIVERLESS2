@@ -2,18 +2,11 @@
  * @file trajectory_optimization_node.cpp
  * @author José Manuel Landero Plaza (josemlandero05@gmail.com)
  * @brief Trajectory Optimization node implementation for ARUS Team Driverless pipeline
- * @date 6-11-2024
  */
 #include "trajectory_optimization/trajectory_optimization_node.hpp"
 #include "trajectory_optimization/min_curvature_path.hpp"
 
 
-/**
- * @brief Constructor for the TrajectoryOptimization class
- * 
- * It initializes the Trajectory Optimization node, declaring all necessary parameters  
- * and creating the subscribers and publishers
- */
 TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization")
 {   
     this->declare_parameter<double>("mu_y", 1.1);
@@ -41,15 +34,7 @@ TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization
     optimized_trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kOptimizedTrajectoryTopic, 10);
 }
 
-/**
- * @brief Callback function for the trajectory topic
- * 
- *  When a trajectory message is received, the callback extracts the track centerline 
- * (x,y) points from the message and executes all  necessary computations to get the 
- *  optimized trajectory full message 
- *  
- * @param trajectory_msg 
- */
+
 void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::SharedPtr track_limits_msg){
     // Extract track limits and trajectory from trajectory message
     track_limit_right_ = track_limits_msg->right_limit;
@@ -102,16 +87,7 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
     }
 }
 
-/**
- * @brief Generate optimized trajectory track width limits on each point based on the points' 
- * distance to the track limits
- * 
- * @param x Trajectory points' x coordenates vector
- * @param y Trajectory points' y coordenates vector
- * @param track_limit Track limits points XY vector
- * 
- * @return VectorXd Vector of track width allowed at each point (both left and rigth)
- */
+
 VectorXd TrajectoryOptimization::generate_track_width(VectorXd x, VectorXd y, std::vector<common_msgs::msg::PointXY> track_limit){
     int n = x.size();
     int m = track_limit.size();
@@ -133,18 +109,7 @@ VectorXd TrajectoryOptimization::generate_track_width(VectorXd x, VectorXd y, st
     return track_width;
 }
 
-/**
- * @brief Creates the trajectory message to publish
- * 
- * @param  traj_x x coordinates of the trajectory points
- * @param  traj_y y coordinates of the trajectory points
- * @param  s Accumulated distance at each point
- * @param  k Curvature at each point
- * @param  speed_profile Speed profile for the given trajectory
- * @param  acc_profile Acceleration profile for the given trajectory
- * 
- * @return common_msgs::msg::Trajectory 
- */
+
 common_msgs::msg::Trajectory TrajectoryOptimization::create_trajectory_msg(VectorXd traj_x, VectorXd traj_y, 
     VectorXd s, VectorXd k, VectorXd speed_profile, VectorXd acc_profile){
     
@@ -164,17 +129,9 @@ common_msgs::msg::Trajectory TrajectoryOptimization::create_trajectory_msg(Vecto
     return traj_msg;
 }
 
-/**
- * @brief Calculates the accumulated distance (s) and curvature (k) 
- * at each point of the given trajectory
- * 
- * @param  traj_x x coordinates of the given trajectory points
- * @param  traj_y y coordinates of the given trajectory points
- * 
- * @return MatrixXd [s, k]
- */
+
 MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj_x, VectorXd traj_y){
-    //First, we get the accumulated distance at each point of the trajectory (s)
+    // Get the accumulated distance at each point of the trajectory (s)
     double acum = 0;
     int n = traj_x.size();
     VectorXd s(n), xp(n), yp(n);
@@ -183,15 +140,15 @@ MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj
     for(int i = 0; i < n-1; i++){
         xp(i) = traj_x(i+1) - traj_x(i);    
         yp(i) = traj_y(i+1) - traj_y(i);    
-        acum += sqrt(xp(i)*xp(i) + yp(i)*yp(i));    // euclidean distance between consecutive points
+        acum += sqrt(xp(i)*xp(i) + yp(i)*yp(i));    
         s(i+1) = acum;      
     }
 
-    // We ensure s, xp and yp have the same data size by repeating the last X and Y differences
+    // Ensure s, xp and yp have the same size by repeating the last X and Y differences
     xp(n-1) = xp(n-2);       
     yp(n-1) = yp(n-2);       
 
-    //Then, we calculate the curvature at each point of the trajectory (k)
+    // Calculate the curvature at each point of the trajectory (k)
     VectorXd xpp(n), ypp(n), k(n);
 
     for(int i = 0; i < xp.size()-1; i++){
@@ -219,14 +176,7 @@ MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj
 }
 
 
-/**
- * @brief Generates speed and acceleration profiles for the trajectory
- * 
- * @param  s Accumulated distance at each point
- * @param  k Curvature at each point
- * 
- * @return MatrixXd [speed_profile, acc_profile]
- */
+
 MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, VectorXd k){
     int m = s.size();
 

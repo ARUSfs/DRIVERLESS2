@@ -2,89 +2,43 @@
  * @file min_curvature_path.hpp
  * @author José Manuel Landero Plaza (josemlandero05@gmail.com)
  * @brief Namespace for implementation of the optimized path generator and all the necessary auxiliar methods
- * @date 6-11-2024
  */
 #include <rclcpp/rclcpp.hpp>
 #include "common_msgs/msg/trajectory.hpp"
 #include "common_msgs/msg/point_xy.hpp"
 #include "libInterpolate/Interpolate.hpp"
 #include "qpmad/solver.h"
-#include <Eigen/Dense>
+#include "utils.hpp"
 #include <cmath>
 #include <iostream>
 using namespace std;
-using namespace Eigen;
 
 namespace MinCurvaturepath {
     
-    //Declaration of auxiliar methods
-
     /**
-     * @brief Smooths the given path increasing the number of points and 
-     * returns the smooth path in terms of centerline and path boundaries
-     * 
-     * @param  x X coordinates of the given path points
-     * @param  y Y coordinates of the given path points
-     * @param  twr Track width allowed to the right of each point
-     * @param  twl Track width allowed to the left of each point
-     * 
-     * @return MatrixXd Matrix containing track data: [xt, yt, xin, yin, xout, yout]
+     * @brief Interpolates the given path to increase the number of trajectory points 
+     * and returns the interpolated middle, inner and outer points.
      */
     MatrixXd process_track_data(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg);
 
     /**
-     * @brief Calculates the difference between each pair of consecutive elements of each column
-     * 
-     * @return MatrixXd 
-     */
-    MatrixXd diff_col(MatrixXd E);
-
-    /**
-     * @brief Calculates the cumulative sum of a vector
-     * 
-     * @return VectorXd 
-     */
-    VectorXd cumsum(VectorXd v);
-
-    /**
-     * @brief Calculates one-dimensional numerical gradient of vector f (∂f/∂x)
-     * 
-     * @return VectorXd 
-     */
-    VectorXd gradient(VectorXd f);
-
-    /**
-     * @brief Generates the H matrix of our quadratic problem
-     * 
-     * @return MatrixXd
+     * @brief Generates the H matrix of our quadratic optimization problem
      */
     MatrixXd matrixH(VectorXd delx, VectorXd dely);
 
     /**
-     * @brief Generates the B matrix of our quadratic problem
-     * 
-     * @return MatrixXd
+     * @brief Generates the B matrix of our quadratic optimization problem
      */
     VectorXd vectorB(VectorXd xin, VectorXd yin, VectorXd delx, VectorXd dely);
 
     /**
-     * @brief Solves the quadratic optimization problem using an external solver
-     * 
-     * @return VectorXd Parameter vector (aplha) that determines the resulting trajectory points 
-     * (traj_x = xin + aplha*delx, traj_y = yin + alpha*dely)
+     * @brief Solves the quadratic optimization problem using qpmad solver
      */
     VectorXd qpmad_solver(MatrixXd H, VectorXd B);
 
     /**
-     * @brief Main function that calculates the minimal curvature path 
-     * using several auxiliar methods
-     * 
-     * @param  x X coordinates of the given path points
-     * @param  y Y coordinates of the given path points
-     * @param  twr Track width allowed to the right of each point
-     * @param  twl Track width allowed to the left of each point
-     * 
-     * @return MatrixXd Matrix containing optimal path: [traj_x, traj_y]
+     * @brief Calculates an optimized path for the given midpoints and track width,
+     * minimizing curvature.
      */
     MatrixXd get_min_curvature_path(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg){          
         //First, we process track data 
@@ -121,10 +75,8 @@ namespace MinCurvaturepath {
         return res;       
     }
 
-    //Implementation of auxiliar methods
     MatrixXd process_track_data(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg){
-        //Interpolate data to get finer curve with equal distances between each segment
-        //Higher number of segments causes trajectory to follow the reference line
+        //Interpolate path to get finer curve with equidistant points
         int n = x.size();
 
         MatrixXd path_x_y(n,2); path_x_y << x, y;
@@ -156,7 +108,7 @@ namespace MinCurvaturepath {
         VectorXd xt = final_path_x_y.col(0);
         VectorXd yt = final_path_x_y.col(1);
 
-        
+        // Interpolate track widths too
         _1D::CubicSplineInterpolator<double> interp_c;
         interp_c.setData(cumulative_len, twr);
         VectorXd twrt(m);
@@ -170,14 +122,14 @@ namespace MinCurvaturepath {
             twlt(i) = interp_c(final_step_locks(i));
         }
 
-        //normal direction for each vertex
+        // Normal direction for each vertex
         VectorXd dx = gradient(xt); 
         auto dx_a = dx.array();
         VectorXd dy = gradient(yt); 
         auto dy_a = dy.array();
         VectorXd dL = (dx_a*dx_a + dy_a*dy_a).sqrt().matrix();
 
-        //Offset data
+        // Get inner and outer curves
         MatrixXd offset(m, 2);
         offset << -twrt, twlt;
         VectorXd xin = VectorXd::Zero(m); 
@@ -207,36 +159,6 @@ namespace MinCurvaturepath {
         track_data << xt, yt, xin, yin, xout, yout;
 
         return track_data;
-    }
-
-    MatrixXd diff_col(MatrixXd E) { 
-        MatrixXd E1 = E.block(0, 0, E.rows()-1, E.cols());
-        MatrixXd E2 = E.block(1, 0, E.rows()-1, E.cols());
-        return E2 - E1;
-    }
-
-    VectorXd cumsum(VectorXd v){
-        int n = v.size(); VectorXd res(n);
-
-        res(0) = v(0);
-        for(int i = 1; i < n; i++){
-            res(i) = v.head(i+1).sum();
-        }
-
-        return res;
-    }
-
-    VectorXd gradient(VectorXd f){
-        int n = f.size();
-        VectorXd grad(n);
-
-        grad(0) = f(1)-f(0);
-        for(int i = 1; i < n-1; i++){
-            grad(i) = (f(i+1)-f(i-1))/2;
-        }
-        grad(n-1) = f(n-1)-f(n-2);
-
-        return grad;
     }
 
     MatrixXd matrixH(VectorXd delx, VectorXd dely){
@@ -277,13 +199,13 @@ namespace MinCurvaturepath {
     }
 
     VectorXd qpmad_solver(MatrixXd H, VectorXd B){
-        //Define constraints
+        // Define lower and upper bounds
         int n = H.rows();
         VectorXd lb = VectorXd::Zero(n);
         VectorXd ub = VectorXd::Ones(n);
 
-        //If start and end points are the same. 
-        //Solver doesn't handle equality constraints, but we can implement it as two inequalities
+        // Define equality constraints (same first and last point with smooth transition)
+        // Solver doesn't handle equality constraints, but we can implement it as two inequalities:
         // beq <= Aeq*res <= beq
         MatrixXd Aeq = MatrixXd::Zero(4,n);
         Aeq(0,0) = 1;
@@ -297,15 +219,16 @@ namespace MinCurvaturepath {
         Alb << beq;
         Aub << beq;
 
-        //Solver
+        // Declare solution and solver
         VectorXd res;
         qpmad::Solver solver;
 
+        // Solve optimization problem
         H << 2*H;
         qpmad::Solver::ReturnStatus status = solver.solve(res, H, B, lb, ub, Aeq, Alb, Aub);
         if (status != qpmad::Solver::OK)
         {
-            cerr << "Error" << endl;
+            cerr << "Trajectory optimizer didn't find a solution!" << endl;
         }
 
         return res;
