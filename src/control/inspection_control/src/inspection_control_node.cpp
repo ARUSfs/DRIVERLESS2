@@ -7,8 +7,13 @@
 #include "inspection/inspection_control_node.hpp"
 
 
-InspectionControl::InspectionControl() : Node("inspection_control_node"){ 
+InspectionControl::InspectionControl() : Node("inspection_control_node")
+{ 
 
+    // Declare parameters
+    this->declare_parameter("car_state_topic", "/car_state/state");
+    this->declare_parameter("as_status_topic", "/can_interface/AS_status");
+    this->declare_parameter("cmd_topic", "/controller/cmd");
     this->declare_parameter("KP", 43.87);
     this->declare_parameter("KI", 0.0);
     this->declare_parameter("KD", 0.0);
@@ -16,6 +21,11 @@ InspectionControl::InspectionControl() : Node("inspection_control_node"){
     this->declare_parameter("frequency", 0.2);
     this->declare_parameter("duration", 27.0);
     this->declare_parameter("debug", true);
+
+    // Get parameters
+    this->get_parameter("car_state_topic", kCarStateTopic);
+    this->get_parameter("as_status_topic", kAsStatusTopic);
+    this->get_parameter("cmd_topic", kCmdTopic);
     this->get_parameter("KP", KP);
     this->get_parameter("KI", KI);
     this->get_parameter("KD", KD);
@@ -30,13 +40,13 @@ InspectionControl::InspectionControl() : Node("inspection_control_node"){
     pid_ = PID();    
     pid_.set_params(KP, KI, KD);
 
-    cmd_pub_ = this->create_publisher<common_msgs::msg::Cmd>("/controller/cmd", 10);
-    finish_pub_ = this->create_publisher<std_msgs::msg::Float32>("/can_interface/AS_status", 10);
+    cmd_pub_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
+    finish_pub_ = this->create_publisher<std_msgs::msg::Float32>(kAsStatusTopic, 10);
 
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
-            "/car_state/state", 10, std::bind(&InspectionControl::car_state_callback, this, std::placeholders::_1));
+            kCarStateTopic, 10, std::bind(&InspectionControl::car_state_callback, this, std::placeholders::_1));
     as_status_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/can_interface/AS_status", 10, std::bind(&InspectionControl::as_status_callback, this, std::placeholders::_1));
+            kAsStatusTopic, 10, std::bind(&InspectionControl::as_status_callback, this, std::placeholders::_1));
     
     timer_ = this->create_wall_timer(
             std::chrono::milliseconds(10), std::bind(&InspectionControl::on_timer, this));

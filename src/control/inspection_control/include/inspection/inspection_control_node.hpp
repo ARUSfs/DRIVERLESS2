@@ -33,6 +33,11 @@ private:
     double kFrequency;
     double kDuration;
     bool kDebug;
+
+    // Topics
+    std::string kCarStateTopic;
+    std::string kAsStatusTopic;
+    std::string kCmdTopic;
        
     //Timers
     rclcpp::TimerBase::SharedPtr timer_; 
