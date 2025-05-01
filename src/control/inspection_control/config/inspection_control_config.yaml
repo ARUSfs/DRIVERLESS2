@@ -3,6 +3,9 @@ inspection_control:
     KP: 43.87
     KI: 0.0
     KD: 0.0
+
     amplitude: 20.0
     frequency: 0.2
     duration: 27.0
+
+    debug: true

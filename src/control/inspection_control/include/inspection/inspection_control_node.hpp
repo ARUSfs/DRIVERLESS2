@@ -32,6 +32,7 @@ private:
     double kAmplitude;
     double kFrequency;
     double kDuration;
+    bool kDebug;
        
     //Timers
     rclcpp::TimerBase::SharedPtr timer_; 
