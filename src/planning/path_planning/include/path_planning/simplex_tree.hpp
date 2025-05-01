@@ -66,8 +66,8 @@ class SimplexTree {
      * @param len_coeff coefficient for the length cost.
      */
     SimplexTree(CDT::TriangleVec triangle_list, int first_tri_ind, std::vector<int> first_edge,
-                pcl::PointCloud<ConeXYZColorScore> cones_cloud, double initial_angle, double angle_coeff, 
-                double len_coeff);
+                pcl::PointCloud<ConeXYZColorScore> cones_cloud, std::vector<int> back_route_vertices, 
+                double initial_angle, double angle_coeff, double len_coeff);
 
     /**
      * @brief Recursive function to create the tree structure.
@@ -90,8 +90,8 @@ class SimplexTree {
 
 
 SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int first_tri_ind, std::vector<int> first_edge,
-                         pcl::PointCloud<ConeXYZColorScore> cones_cloud, double initial_angle, double angle_coeff, 
-                         double len_coeff) {
+                         pcl::PointCloud<ConeXYZColorScore> cones_cloud, std::vector<int> passed_vertices, 
+                         double initial_angle, double angle_coeff, double len_coeff) {
     cones_cloud_ = cones_cloud;
     angle_coeff_ = angle_coeff;
     len_coeff_ = len_coeff;
@@ -100,7 +100,8 @@ SimplexTree::SimplexTree(CDT::TriangleVec triangle_list, int first_tri_ind, std:
     CDT::NeighborsArr3 neighbors = first_tri.neighbors;  // Get neighbors of the triangle
 
     std::vector<int> visited = {first_tri_ind}; // Initialize visited array with the origin index
-    std::vector<int> passed_vertices = {first_edge[0], first_edge[1]}; // Initialize visited array with the origin index
+    passed_vertices.push_back(first_edge[0]); // Add the origin vertices to the passed vertices
+    passed_vertices.push_back(first_edge[1]); 
 
     root_.index = first_tri_ind;                 // Set the root index to the origin index
 

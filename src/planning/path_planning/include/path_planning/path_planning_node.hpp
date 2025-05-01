@@ -118,6 +118,7 @@ class PathPlanning : public rclcpp::Node
         std::vector<std::vector<ConeXYZColorScore>> previous_midpoint_routes_;
         int invalid_counter_=0;
         std::vector<ConeXYZColorScore> back_route_ = {ConeXYZColorScore(0,0,0,UNCOLORED,-1)};
+        std::vector<ConeXYZColorScore> back_points_;
         CDT::TriangleVec TL_triang_; 
         std::vector<int> TL_tri_indices_;
 
@@ -174,7 +175,7 @@ class PathPlanning : public rclcpp::Node
          * @brief Get the index of the origin vertex in the triangulation.
          * @return int index of the origin vertex.
          */
-        int get_vertex_index(CDT::V2d<double> vertex, CDT::Triangulation<double> triangulation);
+        int get_vertex_index(CDT::V2d<double> vertex, CDT::Triangulation<double> triangulation, double tolerance = 0.0);
 
         /**
          * @brief Get the triangles adjacent to a vertex from its index.

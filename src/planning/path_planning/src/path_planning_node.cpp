@@ -104,8 +104,6 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         return;
     }
 
-
-
     // Save the point cloud as a pcl object from ROS2 msg
     pcl::fromROSMsg(*per_msg, pcl_cloud_);
 
@@ -161,13 +159,22 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     if (nearest_tri == -1){
         return;
     }
+
+    // Get passed vertices from the back route
+    std::vector<int> passed_vertices;
+    for (auto p : back_points_){
+        int ind_1 = this->get_vertex_index(CDT::V2d<double>::make(p.x, p.y), triang, 0.25);
+        if (in(ind_1, passed_vertices)) continue;
+        passed_vertices.push_back(ind_1);
+    }
+
     SimplexTree tree;
-    tree = SimplexTree(triangles_, nearest_tri, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, yaw_,
+    tree = SimplexTree(triangles_, nearest_tri, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, passed_vertices, yaw_,
         kAngleCoeff, kLenCoeff);
     auto c0 = tree.best_route_[0];
     auto c2 = tree.best_route_[2];
     double angle_diff = std::abs(atan2(c2.y-c0.y, c2.x-c0.x)-yaw_);
-    std::min(angle_diff, 2*M_PI-angle_diff);
+    angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
     if (angle_diff < M_PI/2){
         best_midpoint_route_ = tree.best_route_;
     } else {
@@ -203,6 +210,8 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
         if (append_point) {
             back_route_.push_back(back_point);
+            back_points_.push_back(back_edge[0]);
+            back_points_.push_back(back_edge[1]);
         } else if (back_route_.size() > 10 && distance(back_point, back_route_[0]) < 3.0){
             route_closed = true;
         }
@@ -395,13 +404,22 @@ common_msgs::msg::Triangulation PathPlanning::create_triangulation_msg(CDT::Tria
     return triangulation_msg;
 }
 
-int PathPlanning::get_vertex_index(CDT::V2d<double> vertex, CDT::Triangulation<double> triangulation){
+int PathPlanning::get_vertex_index(CDT::V2d<double> vertex, CDT::Triangulation<double> triangulation, double tolerance){
     int o_ind;
     CDT::Triangulation<double>::V2dVec vertices = triangulation.vertices;
-    for (int i = 0; i<vertices.size(); i++){
-        if (vertices[i] == vertex){
-            o_ind = i;
-            return o_ind;
+    if (tolerance == 0.0){
+        for (int i = 0; i<vertices.size(); i++){
+            if (vertices[i] == vertex){
+                o_ind = i;
+                return o_ind;
+            }
+        }
+    } else {
+        for (int i = 0; i<vertices.size(); i++){
+            if (distance(vertices[i], vertex) < tolerance){
+                o_ind = i;
+                return o_ind;
+            }
         }
     }
     return 0;
