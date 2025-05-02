@@ -3,18 +3,23 @@
  * @author José Manuel Landero Plaza (josemlandero05@gmail.com)
  * @brief Namespace for implementation of the optimized path generator and all the necessary auxiliar methods
  */
-#include <rclcpp/rclcpp.hpp>
-#include "common_msgs/msg/trajectory.hpp"
-#include "common_msgs/msg/point_xy.hpp"
+
 #include "libInterpolate/Interpolate.hpp"
 #include "qpmad/solver.h"
 #include "utils.hpp"
-#include <cmath>
 #include <iostream>
 using namespace std;
 
 namespace MinCurvaturepath {
     
+    // Function declarations
+
+    /**
+     * @brief Calculates an optimized path for the given midpoints and track width,
+     * minimizing curvature.
+     */
+    MatrixXd get_min_curvature_path(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg);
+
     /**
      * @brief Interpolates the given path to increase the number of trajectory points 
      * and returns the interpolated middle, inner and outer points.
@@ -36,10 +41,10 @@ namespace MinCurvaturepath {
      */
     VectorXd qpmad_solver(MatrixXd H, VectorXd B);
 
-    /**
-     * @brief Calculates an optimized path for the given midpoints and track width,
-     * minimizing curvature.
-     */
+    
+
+    // Function implementations
+    
     MatrixXd get_min_curvature_path(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg){          
         //First, we process track data 
         MatrixXd track_data = process_track_data(x, y, twr, twl, n_seg);

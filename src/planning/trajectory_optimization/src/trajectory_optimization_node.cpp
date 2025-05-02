@@ -109,27 +109,6 @@ VectorXd TrajectoryOptimization::generate_track_width(VectorXd x, VectorXd y, st
     return track_width;
 }
 
-
-common_msgs::msg::Trajectory TrajectoryOptimization::create_trajectory_msg(VectorXd traj_x, VectorXd traj_y, 
-    VectorXd s, VectorXd k, VectorXd speed_profile, VectorXd acc_profile){
-    
-    common_msgs::msg::Trajectory traj_msg;
-
-    for(int i = 0; i < traj_x.size(); i++){
-        common_msgs::msg::PointXY p;
-        p.x = traj_x(i);
-        p.y = traj_y(i);
-        traj_msg.points.push_back(p);
-        traj_msg.s.push_back(s(i));
-        traj_msg.k.push_back(k(i));
-        traj_msg.speed_profile.push_back(speed_profile(i));
-        traj_msg.acc_profile.push_back(acc_profile(i));
-    }
-
-    return traj_msg;
-}
-
-
 MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj_x, VectorXd traj_y){
     // Get the accumulated distance at each point of the trajectory (s)
     double acum = 0;
@@ -176,7 +155,6 @@ MatrixXd TrajectoryOptimization::get_distance_and_curvature_values(VectorXd traj
 }
 
 
-
 MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, VectorXd k){
     int m = s.size();
 
@@ -186,10 +164,10 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
     double v_max_braking;
 
     for(int i = 0; i < m; i++){
-        v_grip(i) = std::min(kVMax, calculate_apex(k(i)));  // Pure lateral grip && speed limit
+        v_grip(i) = std::min(kVMax, calculate_apex(k(i)));  // Max speed to maintain grip
     }
 
-    // Forwards loop. First iteration. Limit speed by combined ax and grip
+    // Forwards loop. First iteration. Calculate speed profile and limit by grip
     for(int i = 1; i < m; i++){
         ds(i) = s(i) - s(i-1);
         double ax_max = ggv_ax_throttle(speed_profile(i-1),k(i-1));
@@ -211,7 +189,7 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
         }
     }
 
-    // Backwards loop. First iteration. Limit speed by combined ax and max braking
+    // Backwards loop. First iteration. Limit speed by max braking
     for(int j = m-1; j > 0; j--){
         double ax_max_braking = ggv_ax_brake(speed_profile(j),k(j));
         v_max_braking = sqrt(speed_profile(j)*speed_profile(j) + 2*ax_max_braking*ds(j-1));
@@ -246,12 +224,14 @@ MatrixXd TrajectoryOptimization::generate_speed_and_acc_profile(VectorXd s, Vect
     return res;
 }
 
+
 double TrajectoryOptimization::calculate_apex(double k){
 
     if (std::abs(k) < 0.01) {k = 0.01;}
     double v_grip = std::sqrt(kMuY * kG / (std::abs(k) - kMuY * kCLift / kMass));
     return v_grip;
 }
+
 
 double TrajectoryOptimization::ggv_ax_throttle(double v, double k){
     double ay_max_v = kMuY * (kG + kCLift/kMass * v*v);
@@ -262,6 +242,7 @@ double TrajectoryOptimization::ggv_ax_throttle(double v, double k){
     return ax_max;
 }
 
+
 double TrajectoryOptimization::ggv_ax_brake(double v, double k){
     double ay_max_v = kMuY * (kG + kCLift/kMass * v*v);
     double ax_max_v = kMuxBrake * kG + (kMuXThrottle * kCLift + kCDrag) / kMass *v*v;
@@ -270,6 +251,28 @@ double TrajectoryOptimization::ggv_ax_brake(double v, double k){
     double ax_max = ax_max_v - ax_max_v * ay / ay_max_v;
     return ax_max;
 }
+
+
+common_msgs::msg::Trajectory TrajectoryOptimization::create_trajectory_msg(VectorXd traj_x, VectorXd traj_y, 
+    VectorXd s, VectorXd k, VectorXd speed_profile, VectorXd acc_profile){
+    
+    common_msgs::msg::Trajectory traj_msg;
+
+    for(int i = 0; i < traj_x.size(); i++){
+        common_msgs::msg::PointXY p;
+        p.x = traj_x(i);
+        p.y = traj_y(i);
+        traj_msg.points.push_back(p);
+        traj_msg.s.push_back(s(i));
+        traj_msg.k.push_back(k(i));
+        traj_msg.speed_profile.push_back(speed_profile(i));
+        traj_msg.acc_profile.push_back(acc_profile(i));
+    }
+
+    return traj_msg;
+}
+
+
 
 int main(int argc, char * argv[])
 {

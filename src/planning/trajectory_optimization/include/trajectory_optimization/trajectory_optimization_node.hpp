@@ -9,7 +9,6 @@
 #include "common_msgs/msg/track_limits.hpp"
 #include "libInterpolate/Interpolate.hpp"
 #include <Eigen/Dense>
-#include <cmath>
 #include <iostream>
 using namespace std;
 using namespace Eigen;
@@ -31,7 +30,16 @@ class TrajectoryOptimization : public rclcpp::Node
         TrajectoryOptimization();
 
     private:
-        //Parameters
+        // Tracklimits variables
+        std::vector<common_msgs::msg::PointXY> track_limit_right_;
+        std::vector<common_msgs::msg::PointXY> track_limit_left_;
+
+        // Parameters
+        // Optimized trajectory parameters
+        int kNIter;
+        int kNSeg;
+
+        // Profile parameters
         double kVMax;
         double kMinDist;
         double kMuY;
@@ -41,39 +49,30 @@ class TrajectoryOptimization : public rclcpp::Node
         double kCLift = 0.5*1.2*3.5;
         double kCDrag = 0.5*1.2*1.2;
         double kMass = 270; 
-        int kNIter;
-        int kNSeg;
 
-        // Tracklimits
-        std::vector<common_msgs::msg::PointXY> track_limit_right_;
-        std::vector<common_msgs::msg::PointXY> track_limit_left_;
-
-        std::string kTrajectoryTopic;
-        std::string kCarStateTopic;
+        // Message topics
         std::string kOptimizedTrajectoryTopic;
         std::string kTrackLimitsTopic;
 
-        //Subscribers and publishers
+        // Subscribers
         rclcpp::Subscription<common_msgs::msg::TrackLimits>::SharedPtr track_limits_sub_;
+
+        // Publishers
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_pub_;
 
+        // Callbacks
         /**
          * @brief Callback function for the track limits topic. It receives the midpath and tracklimits 
          * and calculates an optimized trajectory, minimizing curvature.
          */
         void trajectory_callback(common_msgs::msg::TrackLimits::SharedPtr trajectory_msg);
 
+        // Auxiliar functions
         /**
          * @brief Generates optimized trajectory track width allowed at each midpoint based on the points' 
          * distance to the track limits.
          */
         VectorXd generate_track_width(VectorXd x, VectorXd y, std::vector<common_msgs::msg::PointXY> track_limit);
-
-        /**
-         * @brief Creates the trajectory message to publish.
-         */
-        common_msgs::msg::Trajectory create_trajectory_msg(VectorXd traj_x, VectorXd traj_y, 
-            VectorXd s, VectorXd k, VectorXd speed_profile, VectorXd acc_profile);
 
         /**
          * @brief Calculates the accumulated distance (s) and curvature (k) at each point of the given trajectory.
@@ -99,4 +98,10 @@ class TrajectoryOptimization : public rclcpp::Node
          * @brief Calculates maximum braking acceleration for given speed and curvature.
          */
         double ggv_ax_brake(double v, double k);
+
+        /**
+         * @brief Creates the trajectory message to publish.
+         */
+        common_msgs::msg::Trajectory create_trajectory_msg(VectorXd traj_x, VectorXd traj_y, 
+            VectorXd s, VectorXd k, VectorXd speed_profile, VectorXd acc_profile);
 };
