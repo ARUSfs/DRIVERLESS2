@@ -254,7 +254,7 @@ namespace GroundFiltering
     }
 
     void ransac_and_check(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& local_filtered, pcl::PointCloud<pcl::PointXYZI>::Ptr& local_plane, 
-        pcl::ModelCoefficients::Ptr& coefficients, double threshold, Eigen::Vector3d& ground_normal, double angle_threshold)
+        pcl::ModelCoefficients::Ptr& coefficients, double threshold, Eigen::Vector3d& ground_normal, Eigen::Vector3d& current_normal, double angle_threshold)
     {
         while (cloud->size() > 3)
         {
@@ -269,10 +269,9 @@ namespace GroundFiltering
             double A = coefficients->values[0];
             double B = coefficients->values[1];
             double C = coefficients->values[2];
-            Eigen::Vector3d normal(A, B, C);
-            normal.normalize();
+            current_normal = Eigen::Vector3d(A, B, C).normalized();
 
-            double cos_angle = ground_normal.dot(normal);
+            double cos_angle = ground_normal.dot(current_normal);
             double angle = std::acos(cos_angle);
 
             if (angle <= angle_threshold) break;
@@ -293,6 +292,9 @@ namespace GroundFiltering
         pass.filter(*cloud);
 
         Eigen::Vector3d ground_normal(0, 0, 1);
+        Eigen::Vector3d current_normal(0, 0, 1);
+        // Eigen::Vector3d sum(0, 0, 0); // Otra opción
+        // int count = 0;
 
         // Define the measures if the grid
         double x_step = Mx / number_sections;
@@ -323,13 +325,21 @@ namespace GroundFiltering
 
             if (grid_cloud->size() > 3)
             {
-                ransac_and_check(grid_cloud, local_filtered, local_plane, local_coefficients, threshold, ground_normal, angle_threshold);
+                ransac_and_check(grid_cloud, local_filtered, local_plane, local_coefficients, threshold, ground_normal, current_normal, angle_threshold);
             }
 
             #pragma omp critical
             {
                 *cloud_filtered += *local_filtered;
                 *cloud_plane += *local_plane;
+
+                ground_normal = (ground_normal + current_normal).normalized();
+                // sum += current_normal; // Otra opción
+                // count++;
+                // if (count > 0)
+                // {
+                //     ground_normal = (sum / count).normalized();
+                // }
             }
         }
     }
