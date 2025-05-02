@@ -4,4 +4,4 @@ epos_interface:
     MAX_DECELERATION: 10000
     PROFILE_VELOCITY: 7000
 
-    KP: 1.0
+    debug: true
