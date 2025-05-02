@@ -1,3 +1,9 @@
+/**
+ * @file graph_slam_node.hpp
+ * @author Álvaro Landero (alplepe02@gmail.com)
+ * @brief GraphSlam node header for ARUS Team Driverless pipeline
+ */
+
 #include <rclcpp/rclcpp.hpp>
 
 #include <g2o/types/slam2d/vertex_se2.h>

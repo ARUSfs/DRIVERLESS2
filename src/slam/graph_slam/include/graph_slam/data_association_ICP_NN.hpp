@@ -1,3 +1,9 @@
+/**
+ * @file data_association_ICP_NN.hpp
+ * @author Álvaro Landero (alplepe02@gmail.com)
+ * @brief Nearest Neighbor Data Association of Landmarks with ICP
+ */
+
 #pragma once
 #define PCL_NO_PRECOMPILE
 #include <iostream>

@@ -1,3 +1,9 @@
+/**
+ * @file landmark.hpp
+ * @author Álvaro Landero (alplepe02@gmail.com)
+ * @brief Landmark class for GraphSlam
+ */
+
 #pragma once
 
 #include <iostream>

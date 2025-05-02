@@ -1,3 +1,9 @@
+/**
+ * @file graph_slam_node.cpp
+ * @author Álvaro Landero (alplepe02@gmail.com)
+ * @brief GraphSlam node for ARUS Team Driverless pipeline
+ */
+
 #include "graph_slam/graph_slam_node.hpp"
 
 GraphSlam::GraphSlam() : Node("graph_slam")
