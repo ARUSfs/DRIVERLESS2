@@ -7,7 +7,7 @@ ID,bitIn,bitFin,Signed,Power,Scale,Offset,Publisher
 0x18b,6,6,yes,1,1,0,/can_interface/RES_range
 0x187,1,2,yes,1,-0.000636546691761,1.50678752675,/can_interface/extensometer
 0x181,1,2,yes,1,-0.00096672747,0,/can_interface/inv_speed
-0x450,1,4,no,-1,7539822.36880004180,0,/can_interface/fl_wheel_speed
-0x451,1,4,no,-1,7539822.36880004180,0,/can_interface/fr_wheel_speed
-0x452,1,4,no,-1,7539822.36880004180,0,/can_interface/rl_wheel_speed
-0x453,1,4,no,-1,7539822.36880004180,0,/can_interface/rr_wheel_speed
+0x450,1,4,no,-1,8482300.165,0,/can_interface/fl_wheel_speed
+0x451,1,4,no,-1,8482300.165,0,/can_interface/fr_wheel_speed
+0x452,1,4,no,-1,8482300.165,0,/can_interface/rl_wheel_speed
+0x453,1,4,no,-1,8482300.165,0,/can_interface/rr_wheel_speed
