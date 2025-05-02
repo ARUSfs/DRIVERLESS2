@@ -11,7 +11,7 @@ The `graph_slam` node is part of the DRIVERLESS2 project and is responsible for 
 ## Usage
 To run the `graph_slam` node, use the following command:
 ```bash
-ros2 launch graph_slam graph_slam.py
+ros2 launch graph_slam graph_slam_launch.py
 ```
 
 ## Connections
