@@ -1,24 +1,49 @@
+/**
+ * @file graph_slam_node.cpp
+ * @author Álvaro Landero (alplepe02@gmail.com)
+ * @brief GraphSlam node for ARUS Team Driverless pipeline
+ */
+
 #include "graph_slam/graph_slam_node.hpp"
 
 GraphSlam::GraphSlam() : Node("graph_slam")
 { 
-
+    // Declare parameters
+    this->declare_parameter("perception_topic", "/perception/map");
+    this->declare_parameter("car_state_topic", "/car_state/state");
+    this->declare_parameter("map_topic", "/slam/map");
+    this->declare_parameter("final_map_topic", "/slam/final_map");
+    this->declare_parameter("lap_count_topic", "/slam/lap_count");
+    this->declare_parameter("global_frame", "arussim/world");
+    this->declare_parameter("local_frame", "slam/vehicle");
+    this->declare_parameter("optimizer_freq", 3);
     this->declare_parameter("finish_line_offset", 0.0);
     this->declare_parameter("track_width", 3.0);
     this->declare_parameter("min_lap_distance", 30.0);
     this->declare_parameter("max_pose_edges", 10000);
     this->declare_parameter("max_landmark_edges", 10000);
-    this->declare_parameter("verbose", false);
+    this->declare_parameter("debug", true);
     this->declare_parameter("pos_lidar_x", 1.5);
-    this->declare_parameter("perception_topic", "/perception/map");
+
+    // Get parameters
+    this->get_parameter("perception_topic", kPerceptionTopic);
+    this->get_parameter("car_state_topic", kCarStateTopic);
+    this->get_parameter("map_topic", kMapTopic);
+    this->get_parameter("final_map_topic", kFinalMapTopic);
+    this->get_parameter("lap_count_topic", kLapCountTopic);
+    this->get_parameter("global_frame", kGlobalFrame);
+    this->get_parameter("local_frame", kLocalFrame);
+    this->get_parameter("optimizer_freq", kOptimizerFreq);
     this->get_parameter("finish_line_offset", kFinishLineOffset);
     this->get_parameter("track_width", kTrackWidth);
     this->get_parameter("min_lap_distance", kMinLapDistance);
     this->get_parameter("max_pose_edges", kMaxPoseEdges);
     this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
-    this->get_parameter("verbose", kVerbose);
+    this->get_parameter("debug", kDebug);
     this->get_parameter("pos_lidar_x", kPosLidarX);
-    this->get_parameter("perception_topic", kPerceptionTopic);
+
+    DA.logger_ = this->get_logger();
+    DA.debug_ = kDebug;
 
     // TODO: test other solvers
     using SlamBlockSolver  = g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>>;
@@ -57,17 +82,15 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     auto collector_options = rclcpp::SubscriptionOptions();
     collector_options.callback_group = collector_callback_group_;
 
-    marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/graph_slam/marker", 10);
-    map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/map", 10);
-    final_map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/final_map", 10);
-    lap_count_pub_ = this->create_publisher<std_msgs::msg::Int16>("/slam/lap_count", 10);
+    map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(kMapTopic, 10);
+    final_map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(kFinalMapTopic, 10);
+    lap_count_pub_ = this->create_publisher<std_msgs::msg::Int16>(kLapCountTopic, 10);
 
-    state_sub_ = this->create_subscription<common_msgs::msg::State>("/car_state/state", 10, 
+    state_sub_ = this->create_subscription<common_msgs::msg::State>(kCarStateTopic, 10, 
                     std::bind(&GraphSlam::state_callback, this, std::placeholders::_1), collector_options);
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(kPerceptionTopic, 10,
-                    std::bind(&GraphSlam::perception_callback, this, std::placeholders::_1), collector_options);           
-    // TODO: run optimizer depending on the number of edges/itereations
-    optimizer_timer_ = this->create_wall_timer(std::chrono::milliseconds(300),
+                    std::bind(&GraphSlam::perception_callback, this, std::placeholders::_1), collector_options);
+    optimizer_timer_ = this->create_wall_timer(std::chrono::milliseconds((int)(1000/kOptimizerFreq)),
                     std::bind(&GraphSlam::optimizer_callback, this), optimizer_callback_group_);
 }
 
@@ -132,7 +155,7 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
 void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {   
     if (pose_vertices_.size() == 0) {
-	return;
+	    return;
     }
 
     std::vector<Landmark> observed_landmarks;
@@ -154,7 +177,11 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     }
 
     
+    double t0 = this->now().seconds();
     DA.match_observations(observed_landmarks, unmatched_landmarks);
+    if (kDebug) RCLCPP_INFO(this->get_logger(), "Data Association time: %f", this->now().seconds() - t0);
+
+
     if(!map_fixed_){
         for (auto landmark : unmatched_landmarks) {
             landmark.id_ = 2*DA.map_.size(); // Use even ids for landmark vertices
@@ -213,8 +240,7 @@ void GraphSlam::optimizer_callback(){
 
     double t0 = this->now().seconds();
     optimizer_.optimize(10);
-    if(kVerbose){
-        RCLCPP_INFO(this->get_logger(), "---------------------------------");
+    if(kDebug){
         RCLCPP_INFO(this->get_logger(), "Number of vertices: %d", optimizer_.activeVertices().size());
         RCLCPP_INFO(this->get_logger(), "Number of edges: %d", optimizer_.activeEdges().size());
         RCLCPP_INFO(this->get_logger(), "Optimization time: %f", this->now().seconds() - t0);
@@ -230,8 +256,6 @@ void GraphSlam::optimizer_callback(){
 /////////////////////////////////////////////////////////////////////////
 
 
-// Update the world position of the landmarks in the data association map after optimization
-// Landmarks must be pointers to be updated
 void GraphSlam::update_data_association_map(){
     for (Landmark* landmark : DA.map_){
         for (auto vertex : optimizer_.activeVertices()) {
@@ -338,6 +362,7 @@ void GraphSlam::fix_map(){
     map_fixed_ = true;
 }
 
+
 void GraphSlam::publish_map(){
     pcl::PointCloud<ConeXYZColorScore> map;
     for (Landmark* landmark : DA.map_){
@@ -366,7 +391,7 @@ void GraphSlam::publish_map(){
     
     sensor_msgs::msg::PointCloud2 map_msg;
     pcl::toROSMsg(map, map_msg);
-    map_msg.header.frame_id = "arussim/world";
+    map_msg.header.frame_id = kGlobalFrame;
     map_pub_->publish(map_msg);
     if(map_fixed_){
         final_map_pub_->publish(map_msg);
@@ -400,7 +425,6 @@ void GraphSlam::check_finish_line(){
 /////////////////////////////////////////////////////////////////////////
 
 
-// Get the global position given the local position relative to the actual vehicle pose
 Eigen::Vector2d GraphSlam::local_to_global(const Eigen::Vector2d& local_pos) {
     const double phi = vehicle_pose_(2);
     const double sinphi = std::sin(phi);
@@ -411,7 +435,6 @@ Eigen::Vector2d GraphSlam::local_to_global(const Eigen::Vector2d& local_pos) {
 }
 
 
-// Get the local position relative to the actual vehicle pose given the global position
 Eigen::Vector2d GraphSlam::global_to_local(const Eigen::Vector2d& global_pos) {
     const double phi = -vehicle_pose_(2);
     const double sinphi = std::sin(phi);
@@ -421,11 +444,12 @@ Eigen::Vector2d GraphSlam::global_to_local(const Eigen::Vector2d& global_pos) {
     return R * (global_pos - vehicle_pose_.head(2));
 }
 
+
 void GraphSlam::send_tf() {
 	geometry_msgs::msg::TransformStamped transformSt;
 	transformSt.header.stamp = this->now();
-	transformSt.header.frame_id = "arussim/world";
-	transformSt.child_frame_id = "slam/vehicle";
+	transformSt.header.frame_id = kGlobalFrame;
+	transformSt.child_frame_id = kLocalFrame;
 	tf2::Quaternion q;
 	transformSt.transform.translation.x = vehicle_pose_(0);
 	transformSt.transform.translation.y = vehicle_pose_(1);

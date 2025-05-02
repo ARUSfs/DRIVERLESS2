@@ -1,9 +1,16 @@
+/**
+ * @file landmark.hpp
+ * @author Álvaro Landero (alplepe02@gmail.com)
+ * @brief Landmark class for GraphSlam
+ */
+
 #pragma once
 
 #include <iostream>
 #include <vector>
 #include <Eigen/Dense>
 
+// Landmark color definitions
 #define UNCOLORED -1
 #define BLUE 0
 #define YELLOW 1
@@ -16,15 +23,18 @@ class Landmark {
         constexpr static int UNINITIALIZED_ID = -1;
         constexpr static int UNMATCHED_ID     = -2;
 
-        int id_;
-        Eigen::Vector2d local_position_;
-        Eigen::Vector2d world_position_;
-        Eigen::Matrix2d covariance_;
-        int color_;
+        int id_;            
+        Eigen::Vector2d local_position_;    // Local position in the vehicle frame
+        Eigen::Vector2d world_position_;    // World position in the map frame
+        Eigen::Matrix2d covariance_;        // Covariance of the landmark position
+        int color_;                         // UNCOLORED, BLUE, YELLOW, ORANGE, ORANGE_BIG         
         int num_observations_;
         time_t last_observation_time_;
         bool disabled_;
 
+        /**
+         * @brief Default constructor for Landmark. Initialized as UNCOLORED at origin
+         */
         Landmark() {
             id_ = UNINITIALIZED_ID;
             local_position_ = Eigen::Vector2d::Zero();
@@ -35,6 +45,9 @@ class Landmark {
             last_observation_time_ = time(0);  
         }
 
+        /**
+         * @brief Constructor for Landmark with given world position
+         */
         Landmark(const Eigen::Vector2d& world_position) {
             id_ = UNMATCHED_ID;
             world_position_ = world_position;
@@ -45,6 +58,9 @@ class Landmark {
             last_observation_time_ = time(0);  
         }
 
+        /**
+         * @brief Constructor for Landmark with given local position and vehicle pose
+         */
         Landmark(const Eigen::Vector2d& local_position, const Eigen::Vector3d vehicle_pose) {
             id_ = UNMATCHED_ID;
             local_position_ = local_position;
@@ -57,6 +73,9 @@ class Landmark {
         }
 
     private:
+        /**
+         * @brief Get the world position of the landmark from the local position and vehicle pose
+         */
         void get_world_pos(const Eigen::Vector3d vehicle_pose) {
             const double phi = vehicle_pose(2);
             const double sinphi = std::sin(phi);

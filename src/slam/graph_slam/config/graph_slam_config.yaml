@@ -1,10 +1,19 @@
 graph_slam:
   ros__parameters:
-    finish_line_offset: 0.0
-    track_width: 3.0
-    min_lap_distance: 30.0
+    perception_topic: "/perception/map"
+    car_state_topic: "/car_state/state"
+    map_topic: "/slam/map"
+    final_map_topic: "/slam/final_map"
+    lap_count_topic: "/slam/lap_count"
+    global_frame: "arussim/world"
+    local_frame: "slam/vehicle"
+
+    optimizer_freq: 3           # Hz
+    finish_line_offset: 0.0     # m
+    track_width: 3.0            # m  
+    min_lap_distance: 30.0      # m
     max_pose_edges: 2500
     max_landmark_edges: 5000
-    verbose: true
-    pos_lidar_x: 1.5
-    perception_topic: "/perception/map"
+    pos_lidar_x: 1.5            # m
+
+    debug: true
