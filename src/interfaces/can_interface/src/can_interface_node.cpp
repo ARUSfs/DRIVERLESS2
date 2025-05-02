@@ -21,6 +21,13 @@ CanInterface::CanInterface() : Node("can_interface"){
     this->get_parameter("csv_aux_file", kCsvAuxFile);
     this->get_parameter("killer_script_file", kKillerScriptFile);
 
+    // Car parameters
+    this->declare_parameter<double>("car_mass", 250);
+    this->declare_parameter<double>("wheel_radius", 0.225);
+
+    this->get_parameter("car_mass", kCarMass);
+    this->get_parameter("wheel_radius", kWheelRadius);
+
     //  Debug
     this->declare_parameter<bool>("debug", true);
 
@@ -71,11 +78,13 @@ CanInterface::CanInterface() : Node("can_interface"){
 
     socket_can0_ = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (socket_can0_ < 0) {
-        RCLCPP_ERROR(
-            this->get_logger(),
-            "Error while opening can0 socket: %s",
-            strerror(errno)
-        );
+        if (kDebug) {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Error while opening can0 socket: %s",
+                strerror(errno)
+            );
+        }
         return;
     } else{
         RCLCPP_INFO(this->get_logger(), "can0 enabled for writing");
@@ -83,21 +92,25 @@ CanInterface::CanInterface() : Node("can_interface"){
 
     std::strncpy(ifr_.ifr_name, can_interface0, IFNAMSIZ - 1);
     if (ioctl(socket_can0_, SIOCGIFINDEX, &ifr_) < 0) {
-        RCLCPP_ERROR(
-            this->get_logger(),
-            "Error getting can0 interface index: %s",
-            strerror(errno)
-        );
+        if (kDebug) {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Error getting can0 interface index: %s",
+                strerror(errno)
+            );
+        }
         return;
     }
     addr_.can_family = AF_CAN;
     addr_.can_ifindex = ifr_.ifr_ifindex;
     if (bind(socket_can0_, (struct sockaddr *)&addr_, sizeof(addr_)) < 0) {
-        RCLCPP_ERROR(
-            this->get_logger(),
-            "Error in binding socket_can0_: %s",
-            strerror(errno)
-        );
+        if (kDebug) {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Error in binding socket_can0_: %s",
+                strerror(errno)
+            );
+        }
         return;
     }
 
@@ -107,33 +120,41 @@ CanInterface::CanInterface() : Node("can_interface"){
 
     socket_can1_ = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (socket_can1_ < 0) {
-        RCLCPP_ERROR(
-            this->get_logger(),
-            "Error while opening can1 socket: %s",
-            strerror(errno)
-        );
+        if (kDebug) {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Error while opening can1 socket: %s",
+                strerror(errno)
+            );
+        }
         return;
     } else{
-        RCLCPP_INFO(this->get_logger(), "can1 enabled for writing");
+        if (kDebug) {
+            RCLCPP_INFO(this->get_logger(), "can1 enabled for writing");
+        }
     }
 
     std::strncpy(ifr_.ifr_name, can_interface1, IFNAMSIZ - 1);
     if (ioctl(socket_can1_, SIOCGIFINDEX, &ifr_) < 0) {
-        RCLCPP_ERROR(
-            this->get_logger(),
-            "Error getting can1 interface index: %s",
-            strerror(errno)
-        );
+        if (kDebug) {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Error getting can1 interface index: %s",
+                strerror(errno)
+            );
+        }
         return ;
     }
     addr_.can_family = AF_CAN;
     addr_.can_ifindex = ifr_.ifr_ifindex;
     if (bind(socket_can1_, (struct sockaddr *)&addr_, sizeof(addr_)) < 0) {
-        RCLCPP_ERROR(
-            this->get_logger(),
-            "Error in binding socket_can1_: %s",
-            strerror(errno)
-        );
+        if (kDebug) {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Error in binding socket_can1_: %s",
+                strerror(errno)
+            );
+        }
         return;
     }
 
@@ -167,11 +188,13 @@ std::map<std::string, std::vector<std::string>> CanInterface::read_csv(const std
 
     std::ifstream file(filepath);
     if (!file.is_open()) {
-        RCLCPP_INFO(
-        this->get_logger(), 
-        "Error opening the CSV file: %s", 
-        filepath.c_str()
-        );
+        if (kDebug) {
+            RCLCPP_ERROR(
+                this->get_logger(), 
+                "Error opening the CSV file: %s", 
+                filepath.c_str()
+            );
+        }
         return localCsvData; // return an empty map if file opening fails
     }
 
@@ -227,13 +250,6 @@ void CanInterface::read_CAN(int socketCan)
         // Check if frame_id exists in csvdata_aux
         auto aux_iter = csvdata_aux_.find(frame_id);
         if (aux_iter == csvdata_aux_.end()) {
-            if (kDebug) {
-            RCLCPP_INFO(
-                this->get_logger(),
-                "No matching key in csvdata_aux_ for key: %s",
-                frame_id.c_str()
-            );
-            }
             continue;
         }
 
@@ -253,11 +269,6 @@ void CanInterface::read_CAN(int socketCan)
                 // Check for matching entry in csvdata_main
                 auto main_iter = csvdata_main_.find(dynamic_key);
                 if (main_iter == csvdata_main_.end()) {
-                    RCLCPP_INFO(
-                        this->get_logger(),
-                        "No matching key in csvdata_main_ for key: %s",
-                        dynamic_key.c_str()
-                    );
                     continue;
                 }
 
@@ -274,18 +285,6 @@ void CanInterface::read_CAN(int socketCan)
                     
                 // Call parse_msg with the populated CANParseConfig
                 parse_msg(frame, config);
-            
-                if (kDebug) {
-                std::stringstream ss;
-                ss << "Matched CAN frame ID: " << frame_id 
-                << " with dynamic key: " << dynamic_key 
-                << " Data:";
-                for (const auto &val : main_iter->second) {
-                    ss << " " << val;
-                }
-
-                RCLCPP_INFO(this->get_logger(), "%s", ss.str().c_str());
-                }
             }
         } else {
             continue;
@@ -350,7 +349,7 @@ void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig
              frame.data[config.startByte]);
         }   
     } 
-    else {
+    else if (kDebug) {
         RCLCPP_ERROR(
                 this->get_logger(),
                 "Unsupported byte range: %d bytes",
@@ -368,12 +367,8 @@ void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig
 
         pub_iter->second->publish(msg);
 
-        if (kDebug) {
-            RCLCPP_INFO(this->get_logger(), 
-                        "Published value: %.3f on topic associated with key: %s", 
-                        scaledValue, config.key.c_str());
         }
-    } else {
+    } else if (kDebug) {
         RCLCPP_ERROR(this->get_logger(), 
                     "No matching publisher in publishers_ for key: %s", 
                     config.key.c_str());
@@ -394,28 +389,20 @@ bool CanInterface::filter_subID(const struct can_frame& frame, const std::string
     }
 }
 
-void intToBytes(int16_t val, int8_t* bytes)
-{
-    std::memcpy(bytes, &val, sizeof(val));
-}           
-
 void CanInterface::control_callback(common_msgs::msg::Cmd msg)
 {   
     if(run_check_){
-        float acc = msg.acc;
-        int16_t intValue = static_cast<int16_t>(acc * (1<<15))-1;
-        this->motor_moment_target_ = intValue;
+        float torque = msg.acc * kCarMass * kWheelRadius * 11/45;
+        this->motor_moment_target_ = torque;
 
-        int8_t bytesCMD[2];
-        intToBytes(intValue, bytesCMD);
-        int8_t cabecera = 0x90;
+        int16_t clamped_torque_ = static_cast<int16_t>(std::clamp(static_cast<float>(torque), -32768.0f, 32767.0f));
 
         struct can_frame frame;
         frame.can_id = 0x201;             
         frame.can_dlc = 3;                
-        frame.data[0] = cabecera;
-        frame.data[1] = bytesCMD[0];
-        frame.data[2] = bytesCMD[1];
+        frame.data[0] = 0x90;
+        frame.data[1] = clamped_ax_ & 0xFF;       
+        frame.data[2] = (clamped_ax_ >> 8) & 0xFF; 
         write(socket_can1_, &frame, sizeof(struct can_frame));  
     }
 }

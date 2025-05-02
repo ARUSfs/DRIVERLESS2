@@ -10,5 +10,9 @@ can_interface:
     csv_aux_file: "/can_aux24.csv"
     killer_script_file: "/killer.sh"
 
+    # Car parameters
+    car_mass: 250
+    wheel_radius: 0.225
+
     # Debug
     debug: true
