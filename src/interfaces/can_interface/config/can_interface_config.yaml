@@ -1,0 +1,13 @@
+can_interface:
+  ros__parameters:
+    # Topics
+    cmd_topic: "/controller/cmd"
+    car_info_topic: "/car_state/car_info"
+    run_check_topic: "/car_state/run_check"
+
+    # CSV files
+    csv_main_file: "/can24.csv"
+    csv_aux_file: "/can_aux24.csv"
+
+    # Debug
+    debug: true
