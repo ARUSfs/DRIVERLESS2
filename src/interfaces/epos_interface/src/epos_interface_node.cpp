@@ -14,12 +14,22 @@ EPOS_interface::EPOS_interface() : Node("EPOS_interface"),
 {
 
     // Declare parameters
+    this->declare_parameter<std::string>("cmd_topic", "/controller/cmd");
+    this->declare_parameter<std::string>("extensometer_topic", "/can_interface/extensometer");
+    this->declare_parameter<std::string>("steer_check_topic", "/car_state/steer_check");
+    this->declare_parameter<std::string>("epos_info_topic", "/epos_interface/epos_info");
+    this->declare_parameter<int>("timer_freq", 100);
     this->declare_parameter<int>("MAX_ACCELERATION", 6000);
     this->declare_parameter<int>("MAX_DECELERATION", 6000);
     this->declare_parameter<int>("PROFILE_VELOCITY", 6000);
     this->declare_parameter<bool>("debug", true);
 
     // Get parameters
+    this->get_parameter("cmd_topic", kCmdTopic);
+    this->get_parameter("extensometer_topic", kExtTopic);
+    this->get_parameter("steer_check_topic", kSteerCheckTopic);
+    this->get_parameter("epos_info_topic", kEposInfoTopic);
+    this->get_parameter("timer_freq", kTimerFreq);
     this->get_parameter("MAX_ACCELERATION", kMaxAcc);
     this->get_parameter("MAX_DECELERATION", kMaxDec);
     this->get_parameter("PROFILE_VELOCITY", kProfileVel);
@@ -40,22 +50,22 @@ EPOS_interface::EPOS_interface() : Node("EPOS_interface"),
     steer_check_ = false;
 
 
-    epos_info_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/epos_interface/epos_info", 10);
+    epos_info_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(kEposInfoTopic, 10);
 
     cmd_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
-        "/controller/cmd", 1, 
+        kCmdTopic, 1, 
         std::bind(&EPOS_interface::cmd_callback, this, std::placeholders::_1));
 
     steer_check_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-        "/car_state/steer_check", 1, 
+        kSteerCheckTopic, 1, 
         std::bind(&EPOS_interface::steer_check_callback, this, std::placeholders::_1));
 
     extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-        "/can_interface/extensometer", 1, 
+        kExtTopic, 1, 
         std::bind(&EPOS_interface::extensometer_callback, this, std::placeholders::_1));
 
     timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(10), 
+        std::chrono::milliseconds((int)(1000/kTimerFreq)), 
         std::bind(&EPOS_interface::on_timer, this));
     
     if (kDebug) (this->get_logger(), "EPOS_interface node initialized.");

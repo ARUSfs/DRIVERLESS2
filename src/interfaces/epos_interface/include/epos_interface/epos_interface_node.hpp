@@ -30,8 +30,14 @@ public:
     ~EPOS_interface();
 
 private:
+    // Topics
+    std::string kCmdTopic;          // Command topic
+    std::string kExtTopic;          // Extensometer topic
+    std::string kSteerCheckTopic;   // Steer check topic
+    std::string kEposInfoTopic;     // EPOS info topic
 
     // Parameters
+    int kTimerFreq;   // Timer frequency
     int kMaxAcc;      // Maximum acceleration
     int kMaxDec;      // Maximum deceleration
     int kProfileVel;  // Profile velocity
