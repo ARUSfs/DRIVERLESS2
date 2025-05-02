@@ -46,35 +46,22 @@ class GraphSlam : public rclcpp::Node
 
   private:
 
-    double kFinishLineOffset;
-    double kTrackWidth;
-    double kMinLapDistance;
-    int kMaxPoseEdges;
-    int kMaxLandmarkEdges;
-    bool kVerbose;
-    double kPosLidarX;
-    std::string kPerceptionTopic;
-
+    // Odometry variables
     Eigen::Matrix3d Q = Eigen::Matrix3d::Identity();
     Eigen::Matrix2d R = Eigen::Matrix2d::Identity();
     Eigen::Matrix3d B = Eigen::Matrix3d::Identity();
     Eigen::Vector3d u = Eigen::Vector3d::Zero();
-    double dt = 0.01;
-    g2o::VertexSE2* last_optimized_pose_ = nullptr;
-    std::vector<Eigen::Vector3d> odom_buffer_;
-
-    DataAssociation DA;
-
-    rclcpp::CallbackGroup::SharedPtr collector_callback_group_;
-    rclcpp::CallbackGroup::SharedPtr optimizer_callback_group_;
-
     Eigen::Vector3d vehicle_pose_ = Eigen::Vector3d::Zero();
-    // TODO add configuration for noise
     double x_noise_ = 1.0E-5;
     double y_noise_ = 1.0E-5;
     double yaw_noise_ = 5.0E-7;
     double perception_noise_ = 1.0E-5;
+    double dt = 0.01;
+    g2o::VertexSE2* last_optimized_pose_ = nullptr;
+    std::vector<Eigen::Vector3d> odom_buffer_;
 
+    // Graph variables
+    DataAssociation DA;
     g2o::SparseOptimizer optimizer_;
     std::vector<g2o::VertexSE2*> pose_vertices_; // All pose vertices
     std::vector<g2o::VertexPointXY*> landmark_vertices_; // All landmark vertices
@@ -84,34 +71,107 @@ class GraphSlam : public rclcpp::Node
     std::vector<g2o::VertexPointXY*> landmark_vertices_to_add_; // Vertices to add to the optimizer
     std::vector<g2o::HyperGraph::Edge*> edges_to_add_; // Edges to add to the optimizer
 
-    std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-		rclcpp::Time prev_t_;
-
+    // Other variables
     double driven_distance_ = 0.0;
     int lap_count_ = 0;
     bool map_fixed_ = false;
     int pose_edges_deactivated_ = 0;
     int landmark_edges_deactivated_ = 0;
+		rclcpp::Time prev_t_;
 
+    // Parameters
+    std::string kMapTopic;
+    std::string kFinalMapTopic;
+    std::string kCarStateTopic;
+    std::string kLapCountTopic;
+    std::string kGlobalFrame;
+    std::string kLocalFrame;
+    std::string kMapFrame;
+    int kOptimizerFreq;
+    double kFinishLineOffset;
+    double kTrackWidth;
+    double kMinLapDistance;
+    int kMaxPoseEdges;
+    int kMaxLandmarkEdges;
+    bool kDebug;
+    double kPosLidarX;
+    std::string kPerceptionTopic;
+
+    rclcpp::CallbackGroup::SharedPtr collector_callback_group_;
+    rclcpp::CallbackGroup::SharedPtr optimizer_callback_group_;
+    std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+
+    // Timers
+    rclcpp::TimerBase::SharedPtr optimizer_timer_;
+
+    // Subscribers
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr state_sub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
-    rclcpp::TimerBase::SharedPtr optimizer_timer_;
-    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
+
+    // Publishers
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr final_map_pub_;
     rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr lap_count_pub_;
 
-    void state_callback(const common_msgs::msg::State::SharedPtr msg);
-    void perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+    /**
+     * @brief Callback function for the optimizer timer
+     */
     void optimizer_callback();
+
+    /**
+     * @brief Callback function for the state subscriber
+     */
+    void state_callback(const common_msgs::msg::State::SharedPtr msg);
+
+    /**
+     * @brief Callback function for the perception subscriber
+     */
+    void perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+
+    /**
+     * @brief Load vertices and edges to add to the optimizer
+     */
     void fill_graph();
+
+    /**
+     * @brief Fix all landmarks in the graph
+     */
     void fix_map();
+
+    /**
+     * @brief Send frame transform to tf2
+     */
     void send_tf();
+
+    /**
+     * @brief Publish the map as a PointCloud2 message
+     */
     void publish_map();
+
+    /**
+     * @brief Check if the vehicle has crossed the finish line
+     */
     void check_finish_line();
+
+    /**
+     * @brief Update the world position of the landmarks in the data association map after optimization
+     * Landmarks must be pointers to be updated
+     */
     void update_data_association_map();
+
+    /**
+     * @brief Update vehicle_pose after optimization
+     */
     void update_pose_predictions();
+
+    /**
+     * @brief Get the global position given the local position relative to the actual vehicle pose
+     */
     Eigen::Vector2d local_to_global(const Eigen::Vector2d& local_pos);
+
+    /**
+     * @brief Get the local position relative to the actual vehicle pose given the global position
+     */
     Eigen::Vector2d global_to_local(const Eigen::Vector2d& global_pos);
 
 };

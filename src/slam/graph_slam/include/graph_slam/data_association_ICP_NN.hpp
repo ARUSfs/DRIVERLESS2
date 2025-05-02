@@ -20,7 +20,12 @@
 class DataAssociation{
     public:
         std::vector<Landmark*> map_;
+        rclcpp::Logger logger_ = rclcpp::get_logger("DataAssociation");
+        bool debug_ = true;
         
+        /**
+         * @brief Default constructor for DataAssociation. Initializes the map and ICP parameters
+         */
         DataAssociation()
         {
             map_.clear();
@@ -31,6 +36,10 @@ class DataAssociation{
             icp_.setMaxCorrespondenceDistance(2.0);
         }
 
+        /**
+         * @brief Match given observations to the map using ICP and nearest neighbor search. 
+         * Unmatched landmarks are returned in the unmatched_landmarks vector.
+         */
         void match_observations(std::vector<Landmark>& observed_landmarks, std::vector<Landmark>& unmatched_landmarks)
         {
             // Perform ICP to match observed landmarks to map
@@ -54,7 +63,7 @@ class DataAssociation{
                     obs.world_position_ = Eigen::Vector2d(corrected_obs->points[i].x, corrected_obs->points[i].y);
                 }
             } else {
-                std::cout << "ICP did not converge. Score: " << icp_.getFitnessScore() << std::endl;
+                if (debug_) RCLCPP_WARN(this->logger_, "ICP did not converge. Score: %f", icp_.getFitnessScore());
             }
 
 
