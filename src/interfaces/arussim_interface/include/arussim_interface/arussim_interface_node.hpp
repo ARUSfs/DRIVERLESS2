@@ -1,5 +1,6 @@
 /**
  * @file arussim_interface_node.hpp
+ * @author Rafael Guil Valero (rafaguilvalero@gmail.com)
  * @brief ARUSSim Interface node header for ARUS Team Driverless pipeline
  */
 
@@ -31,27 +32,6 @@ class ARUSSimInterface : public rclcpp::Node
         ARUSSimInterface();
     
     private:
-        //Callbacks
-        void cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg);
-        void cmd4wd_callback(const common_msgs::msg::Cmd4WD::SharedPtr msg);
-        void sim_wheel_speeds_callback(const arussim_msgs::msg::FourWheelDrive::SharedPtr msg);
-        void sim_trajectory_callback(const arussim_msgs::msg::Trajectory::SharedPtr msg);
-        void sim_state_callback(const arussim_msgs::msg::State::SharedPtr msg);
-
-        // Publishers
-        rclcpp::Publisher<arussim_msgs::msg::Cmd>::SharedPtr cmd_pub_;
-        rclcpp::Publisher<arussim_msgs::msg::Cmd4WD>::SharedPtr cmd4wd_pub_;
-        rclcpp::Publisher<common_msgs::msg::FourWheelDrive>::SharedPtr wheel_speeds_pub_;
-        rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
-        rclcpp::Publisher<common_msgs::msg::State>::SharedPtr ground_truth_pub_;
-
-        // Subscribers
-        rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr cmd_sub_;
-        rclcpp::Subscription<common_msgs::msg::Cmd4WD>::SharedPtr cmd4wd_sub_;
-        rclcpp::Subscription<arussim_msgs::msg::FourWheelDrive>::SharedPtr sim_wheel_speeds_sub_;
-        rclcpp::Subscription<arussim_msgs::msg::Trajectory>::SharedPtr sim_trajectory_sub_;
-        rclcpp::Subscription<arussim_msgs::msg::State>::SharedPtr sim_state_sub_;
-
         // Topics names
         std::string kSimCmdTopic;
         std::string kSimCmd4WDTopic;
@@ -64,8 +44,30 @@ class ARUSSimInterface : public rclcpp::Node
         std::string kPipelineTrajectoryTopic;
         std::string kPipelineGroundTruthTopic;
 
+        // Subscribers
+        rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr cmd_sub_;
+        rclcpp::Subscription<common_msgs::msg::Cmd4WD>::SharedPtr cmd4wd_sub_;
+        rclcpp::Subscription<arussim_msgs::msg::FourWheelDrive>::SharedPtr sim_wheel_speeds_sub_;
+        rclcpp::Subscription<arussim_msgs::msg::Trajectory>::SharedPtr sim_trajectory_sub_;
+        rclcpp::Subscription<arussim_msgs::msg::State>::SharedPtr sim_state_sub_;
 
-         // Load parameters from the config file
+        // Publishers
+        rclcpp::Publisher<arussim_msgs::msg::Cmd>::SharedPtr cmd_pub_;
+        rclcpp::Publisher<arussim_msgs::msg::Cmd4WD>::SharedPtr cmd4wd_pub_;
+        rclcpp::Publisher<common_msgs::msg::FourWheelDrive>::SharedPtr wheel_speeds_pub_;
+        rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
+        rclcpp::Publisher<common_msgs::msg::State>::SharedPtr ground_truth_pub_;
+
+        //Callbacks
+        void cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg);
+        void cmd4wd_callback(const common_msgs::msg::Cmd4WD::SharedPtr msg);
+        void sim_wheel_speeds_callback(const arussim_msgs::msg::FourWheelDrive::SharedPtr msg);
+        void sim_trajectory_callback(const arussim_msgs::msg::Trajectory::SharedPtr msg);
+        void sim_state_callback(const arussim_msgs::msg::State::SharedPtr msg);
+
+        /**
+         * @brief Declarations of the parameters for the node.
+         */
         void get_config_parameters(){
             this->declare_parameter("sim_cmd_topic", "/arussim/cmd");
             this->declare_parameter("sim_cmd4wd_topic", "/arussim/cmd4wd");
