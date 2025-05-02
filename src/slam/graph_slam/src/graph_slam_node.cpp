@@ -155,7 +155,7 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
 void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {   
     if (pose_vertices_.size() == 0) {
-	return;
+	    return;
     }
 
     std::vector<Landmark> observed_landmarks;
@@ -177,7 +177,11 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     }
 
     
+    double t0 = this->now().seconds();
     DA.match_observations(observed_landmarks, unmatched_landmarks);
+    if (kDebug) RCLCPP_INFO(this->get_logger(), "Data Association time: %f", this->now().seconds() - t0);
+
+
     if(!map_fixed_){
         for (auto landmark : unmatched_landmarks) {
             landmark.id_ = 2*DA.map_.size(); // Use even ids for landmark vertices
