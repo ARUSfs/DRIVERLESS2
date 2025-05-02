@@ -17,7 +17,7 @@ ros2 launch epos_interface epos_interface_launch.py
 ### Subscribed Topics
 - `/controller/cmd` (type: `common_msgs/Cmd`): Receives commands from controller node.
 - `/car_state/steer_check` (type: `std_msgs/Bool`): Whether steering is allowed or not.
-- `/can_interface/extensometer` (type: `std_msgs/Float32`): Receives current AS status.
+- `/can_interface/extensometer` (type: `std_msgs/Float32MultiArray`): Receives current AS status.
 
 ### Published Topics
 - `/epos_interface/epos_info` (type: `std_msgs/Float32`): Publishes several EPOS4 information.
