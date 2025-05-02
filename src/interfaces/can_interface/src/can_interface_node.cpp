@@ -12,19 +12,21 @@ CanInterface::CanInterface() : Node("can_interface"){
     this->get_parameter("car_info_topic", kCarInfoTopic);
     this->get_parameter("run_check_topic", kRunCheckTopic);
 
-    //  CSV files
+    //  Files Path
     this->declare_parameter<std::string>("csv_main_file", "/can24.csv");
     this->declare_parameter<std::string>("csv_aux_file", "/can_aux24.csv");
+    this->declare_parameter<std::string>("killer_script_file", "/killer.sh");
 
     this->get_parameter("csv_main_file", kCsvMainFile);
     this->get_parameter("csv_aux_file", kCsvAuxFile);
+    this->get_parameter("killer_script_file", kKillerScriptFile);
 
     //  Debug
     this->declare_parameter<bool>("debug", true);
 
     this->get_parameter("debug", kDebug);
-    
-    
+
+
     // Read the csv files
     std::string package_share_directory = ament_index_cpp::get_package_share_directory("can_interface");
 
@@ -40,25 +42,28 @@ CanInterface::CanInterface() : Node("can_interface"){
         std::string topic = vector[6];
         publishers_[key] = this->create_publisher<std_msgs::msg::Float32>(topic, 10);
     }
-
     if (kDebug) {
-        std::cout << "Main CSV Data Loaded:\n";
+        std::stringstream ss;
+
+        ss << "Main CSV Data Loaded:\n";
         for (const auto &par : csvdata_main_) {
-            std::cout << "Key: " << par.first << "\nValues:";
+            ss << "Key: " << par.first << "\nValues:";
             for (const auto &valor : par.second) {
-                std::cout << " " << valor;
+                ss << " " << valor;
             }
-            std::cout << "\n\n";
+            ss << "\n\n";
         }
 
-        std::cout << "Aux CSV Data Loaded:\n";
+        ss << "Aux CSV Data Loaded:\n";
         for (const auto &par : csvdata_aux_) {
-            std::cout << "Key: " << par.first << "\nValues:";
+            ss << "Key: " << par.first << "\nValues:";
             for (const auto &valor : par.second) {
-                std::cout << " " << valor;
+                ss << " " << valor;
             }
-            std::cout << "\n\n";
+            ss << "\n\n";
         }
+
+        RCLCPP_INFO(this->get_logger(), "%s", ss.str().c_str());
     }
 
     // Configure socket_can0_ for the CAN bus 0.
@@ -271,13 +276,15 @@ void CanInterface::read_CAN(int socketCan)
                 parse_msg(frame, config);
             
                 if (kDebug) {
-                std::cout << "Matched CAN frame ID: " << frame_id 
-                        << " with dynamic key: " << dynamic_key 
-                        << " Data: ";
+                std::stringstream ss;
+                ss << "Matched CAN frame ID: " << frame_id 
+                << " with dynamic key: " << dynamic_key 
+                << " Data:";
                 for (const auto &val : main_iter->second) {
-                    std::cout << val << " ";
+                    ss << " " << val;
                 }
-                std::cout << std::endl;
+
+                RCLCPP_INFO(this->get_logger(), "%s", ss.str().c_str());
                 }
             }
         } else {
@@ -362,11 +369,14 @@ void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig
         pub_iter->second->publish(msg);
 
         if (kDebug) {
-            std::cout << "Published value: " << scaledValue << " on topic associated with key: " 
-                      << config.key << std::endl;
+            RCLCPP_INFO(this->get_logger(), 
+                        "Published value: %.3f on topic associated with key: %s", 
+                        scaledValue, config.key.c_str());
         }
     } else {
-            std::cerr << "No matching publisher in publishers_ for key: " << config.key << std::endl;
+        RCLCPP_ERROR(this->get_logger(), 
+                    "No matching publisher in publishers_ for key: %s", 
+                    config.key.c_str());
     }
 }
 
@@ -444,7 +454,9 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
 
         write(socket_can1_, &frame, sizeof(struct can_frame));  
 
-        std::string kill_command = "/home/arus/ws/src/DRIVERLESS2/src/common/common_meta/killer.sh";
+        // Define the killer command
+        std::string package_path = ament_index_cpp::get_package_share_directory("common_meta");
+        std::string kill_command = package_path + kKillerScriptFile;
         int ret1 = system(kill_command.c_str());
 
     }else if(as_status_ == 4){ // Emergency 
@@ -456,8 +468,10 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
         frame.data[2] = 0x04;
 
         write(socket_can1_, &frame, sizeof(struct can_frame));   
-
-        std::string kill_command = "/home/arus/ws/src/DRIVERLESS2/src/common/common_meta/killer.sh";
+        
+        // Define the killer command
+        std::string package_path = ament_index_cpp::get_package_share_directory("common_meta");
+        std::string kill_command = package_path + kKillerScriptFile;
         int ret2 = system(kill_command.c_str());
     }
 }

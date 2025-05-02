@@ -119,9 +119,10 @@ class CanInterface : public rclcpp::Node
         std::string kCarInfoTopic;
         std::string kRunCheckTopic;
 
-        // CSV files
+        // Files path
         std::string kCsvMainFile;
         std::string kCsvAuxFile;
+        std::string kKillerScriptFile;
 
         // Debug
         bool kDebug;

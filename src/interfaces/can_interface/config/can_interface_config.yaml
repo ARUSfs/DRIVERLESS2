@@ -5,9 +5,10 @@ can_interface:
     car_info_topic: "/car_state/car_info"
     run_check_topic: "/car_state/run_check"
 
-    # CSV files
+    # Files path
     csv_main_file: "/can24.csv"
     csv_aux_file: "/can_aux24.csv"
+    killer_script_file: "/killer.sh"
 
     # Debug
     debug: true
