@@ -18,12 +18,12 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-    - name: Checkout current PR branch of DRIVERLESS2
+    - name: Checkout DRIVERLESS2
       uses: actions/checkout@v4
       with:
         path: /workspace/src/DRIVERLESS2
 
-    - name: Clone ARUSSim and DRIVERLESS_TESTS
+    - name: Clone DRIVERLESS_TESTS
       run: |
         mkdir -p /workspace/src
         cd /workspace/src
@@ -36,7 +36,7 @@ jobs:
         cd /workspace
         colcon build --packages-ignore arussim_interface
 
-    - name: Source and run tests
+    - name: Run tests
       shell: bash
       run: |
         source /opt/ros/humble/setup.bash
