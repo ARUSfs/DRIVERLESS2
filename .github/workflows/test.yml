@@ -18,14 +18,16 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-    - name: Checkout DRIVERLESS2
+    - name: Checkout current PR branch of DRIVERLESS2
       uses: actions/checkout@v4
-      with:
-        path: /workspace/src/DRIVERLESS2
+
+    - name: Prepare workspace and move DRIVERLESS2
+      run: |
+        mkdir -p /workspace/src
+        mv $GITHUB_WORKSPACE /workspace/src/DRIVERLESS2
 
     - name: Clone DRIVERLESS_TESTS
       run: |
-        mkdir -p /workspace/src
         cd /workspace/src
         git clone https://github.com/ARUSfs/DRIVERLESS_TESTS.git
 
