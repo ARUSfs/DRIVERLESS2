@@ -17,8 +17,7 @@
  * @class Visualization
  * @brief Visualization class 
  * 
- * This class represents the pipeline topics through marker messages 
- * in rviz2
+ * This class represents the pipeline topics through marker messages in rviz2
  */
 class Visualization : public rclcpp::Node
 {
@@ -28,6 +27,28 @@ class Visualization : public rclcpp::Node
          */
         Visualization();
     private:
+        // Topics to subscribe
+        std::string kTriangulationTopic;
+        std::string kOptimizedTrajectoryTopic;
+        std::string kARUSSimTrajectoryTopic;
+        std::string kDelaunayTrajectoryTopic;
+        std::string kAccTrajectoryTopic;
+        std::string kSkidpadTrajectoryTopic;
+        std::string kPursuitPointTopic;
+        std::string kTrackLimitsTopic;
+
+        //Topics to publish
+        std::string kTriangulationVisualizationTopic;
+        std::string kOptimizedTrajectoryVisualizationTopic;
+        std::string kARUSSimTrajectoryVisualizationTopic;
+        std::string kTrajectoryVisualizationTopic;
+        std::string kPursuitPointVisualizationTopic;
+        std::string kTrackLimitsVisualizationTopic;
+        std::string kOptimizedTrajectory3DVisualizationTopic;
+
+        // Visualization parameters
+        double kAlpha;
+    
         //Subscribers
         rclcpp::Subscription<common_msgs::msg::Triangulation>::SharedPtr triangulation_sub_;
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimized_trajectory_sub_;
@@ -66,7 +87,6 @@ class Visualization : public rclcpp::Node
             const common_msgs::msg::Trajectory::SharedPtr msg, bool global=true,
             double red=1.0, double green=0.0, double blue=0.0, double alpha=1.0);
 
-        double kAlpha;
 
         /**
          * @brief Creates a 3D trajectory marker.
@@ -77,24 +97,5 @@ class Visualization : public rclcpp::Node
         visualization_msgs::msg::Marker create_trajectory_3D_marker(
             const common_msgs::msg::Trajectory::SharedPtr msg, bool global=true,
             double red=1.0, double green=0.0, double blue=0.0, double alpha=1.0);
-            
 
-        // Topics to subscribe
-        std::string kTriangulationTopic;
-        std::string kOptimizedTrajectoryTopic;
-        std::string kARUSSimTrajectoryTopic;
-        std::string kDelaunayTrajectoryTopic;
-        std::string kAccTrajectoryTopic;
-        std::string kSkidpadTrajectoryTopic;
-        std::string kPursuitPointTopic;
-        std::string kTrackLimitsTopic;
-
-        //Topics to publish
-        std::string kTriangulationVisualizationTopic;
-        std::string kOptimizedTrajectoryVisualizationTopic;
-        std::string kARUSSimTrajectoryVisualizationTopic;
-        std::string kTrajectoryVisualizationTopic;
-        std::string kPursuitPointVisualizationTopic;
-        std::string kTrackLimitsVisualizationTopic;
-        std::string kOptimizedTrajectory3DVisualizationTopic;
 };
