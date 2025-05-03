@@ -73,12 +73,22 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
         MatrixXd optimized_trajectory(n,2);
 
         for(int i=0; i<kNIter; i++){
-            optimized_trajectory = MinCurvaturepath::get_min_curvature_path(x, y, twr, twl, kNSeg);
-            x = optimized_trajectory.col(0);
-            y = optimized_trajectory.col(1);
+            auto opt_out = MinCurvaturepath::get_min_curvature_path(x, y, twr, twl, kNSeg);
+            optimized_trajectory = opt_out.first;
+            auto status = opt_out.second;
 
-            twr = TrajectoryOptimization::generate_track_width(x, y, track_limit_right_);
-            twl = TrajectoryOptimization::generate_track_width(x, y, track_limit_left_);
+            if(status != qpmad::Solver::OK){
+                if (kDebug) RCLCPP_ERROR(this->get_logger(), "qpmad solver didn't find a solution at iteration %d! \n", i+1);
+            } else {
+                x = optimized_trajectory.col(0);
+                y = optimized_trajectory.col(1);
+
+                twr = TrajectoryOptimization::generate_track_width(x, y, track_limit_right_);
+                twl = TrajectoryOptimization::generate_track_width(x, y, track_limit_left_);
+
+                if (kDebug) RCLCPP_INFO(this->get_logger(), "Trajectory correctly optimized at iteration %d. \n", i+1);
+            }
+            
         }
 
         //Get accumulated distance and curvature at each point
@@ -95,10 +105,10 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
         common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(x, y, optimized_s, optimized_k, speed_profile, acc_profile);
         optimized_trajectory_pub_ -> publish(optimized_traj_msg);
 
-        if (kDebug) RCLCPP_INFO(this->get_logger(), "Optimized trajectory published correctly.");
+        if (kDebug) RCLCPP_INFO(this->get_logger(), "Optimized trajectory correctly published. \n");
 
     } else {
-        if (kDebug) RCLCPP_ERROR(this->get_logger(), "Track limits empty!");
+        if (kDebug) RCLCPP_ERROR(this->get_logger(), "Track limits empty! \n");
     }
 }
 

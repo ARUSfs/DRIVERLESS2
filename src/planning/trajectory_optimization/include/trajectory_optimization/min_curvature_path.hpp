@@ -18,7 +18,7 @@ namespace MinCurvaturepath {
      * @brief Calculates an optimized path for the given midpoints and track width,
      * minimizing curvature.
      */
-    MatrixXd get_min_curvature_path(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg);
+    pair<MatrixXd,qpmad::Solver::ReturnStatus> get_min_curvature_path(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg);
 
     /**
      * @brief Interpolates the given path to increase the number of trajectory points 
@@ -39,13 +39,13 @@ namespace MinCurvaturepath {
     /**
      * @brief Solves the quadratic optimization problem using qpmad solver
      */
-    VectorXd qpmad_solver(MatrixXd H, VectorXd B);
+    pair<VectorXd,qpmad::Solver::ReturnStatus> qpmad_solver(MatrixXd H, VectorXd B);
 
     
 
     // Function implementations
     
-    MatrixXd get_min_curvature_path(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg){          
+    pair<MatrixXd,qpmad::Solver::ReturnStatus> get_min_curvature_path(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg){          
         //First, we process track data 
         MatrixXd track_data = process_track_data(x, y, twr, twl, n_seg);
 
@@ -62,22 +62,27 @@ namespace MinCurvaturepath {
         VectorXd  B = vectorB(xin, yin, delx, dely);
 
         //Solve the quadratic problem
-        VectorXd resMCP = qpmad_solver(H,B);
+        auto solver_out = qpmad_solver(H,B);
+        VectorXd resMCP = solver_out.first;
+        qpmad::Solver::ReturnStatus status = solver_out.second;
+
         int m = resMCP.size();
-
-        //Coordinates for the resultant curve
-        VectorXd xresMCP = VectorXd::Zero(m);   
-        VectorXd yresMCP = VectorXd::Zero(m);
-
-        for(int i = 0; i < m; i++){
-            xresMCP(i) = xin(i) + resMCP(i)*delx(i);
-            yresMCP(i) = yin(i) + resMCP(i)*dely(i);
-        }
-
         MatrixXd res(m,2);
-        res << xresMCP, yresMCP;
 
-        return res;       
+        if(status == qpmad::Solver::OK){
+            //Coordinates for the resultant curve
+            VectorXd xresMCP = VectorXd::Zero(m);   
+            VectorXd yresMCP = VectorXd::Zero(m);
+
+            for(int i = 0; i < m; i++){
+                xresMCP(i) = xin(i) + resMCP(i)*delx(i);
+                yresMCP(i) = yin(i) + resMCP(i)*dely(i);
+            }
+
+            res << xresMCP, yresMCP;
+        }
+        
+        return {res,status};       
     }
 
     MatrixXd process_track_data(VectorXd x, VectorXd y, VectorXd twr, VectorXd twl, int n_seg){
@@ -203,7 +208,7 @@ namespace MinCurvaturepath {
         return B;
     }
 
-    VectorXd qpmad_solver(MatrixXd H, VectorXd B){
+    pair<VectorXd,qpmad::Solver::ReturnStatus> qpmad_solver(MatrixXd H, VectorXd B){
         // Define lower and upper bounds
         int n = H.rows();
         VectorXd lb = VectorXd::Zero(n);
@@ -225,18 +230,14 @@ namespace MinCurvaturepath {
         Aub << beq;
 
         // Declare solution and solver
-        VectorXd res;
+        VectorXd res(n);
         qpmad::Solver solver;
 
         // Solve optimization problem
         H << 2*H;
         qpmad::Solver::ReturnStatus status = solver.solve(res, H, B, lb, ub, Aeq, Alb, Aub);
-        if (status != qpmad::Solver::OK)
-        {
-            cerr << "Trajectory optimizer didn't find a solution!" << endl;
-        }
 
-        return res;
+        return {res,status};
     }    
 };
 
