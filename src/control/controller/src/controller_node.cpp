@@ -5,13 +5,8 @@
  */
 
 #include "controller/controller_node.hpp"
-#include <limits>
 
-/**
- * @brief Constructor for the Controller class
- * @details This constructor declares all the necessary variables and
- *          instantiates all the controls required for the ART-25 to be autonomous.
- */
+
 Controller::Controller() : Node("controller"),  
     speed_control_(),
     pure_pursuit_(),
@@ -78,14 +73,34 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("compensation_steps", kCompensationSteps);   
 
     // Cmd limits
-    this->declare_parameter<double>("min_cmd", 0.0);
-    this->declare_parameter<double>("max_cmd", 0.1);
+    this->declare_parameter<double>("min_cmd", -3.0);
+    this->declare_parameter<double>("max_cmd", 5.0);
     this->declare_parameter<double>("max_steer", 20.0);
     this->get_parameter("min_cmd", kMinCmd);
     this->get_parameter("max_cmd", kMaxCmd);
     this->get_parameter("max_steer", kMaxSteer);
 
+    // Vehicle parameters
+    this->declare_parameter<double>("wheel_base", 1.535);
+    this->declare_parameter<double>("rho", 1.225);
+    this->declare_parameter<double>("CdA", 1.2);
+    this->declare_parameter<double>("Crr", 0.01);
+    this->declare_parameter<double>("mass", 230);
+    this->declare_parameter<double>("g", 9.81);
+    this->get_parameter("wheel_base", kWheelBase);
+    this->get_parameter("rho", kRho);
+    this->get_parameter("CdA", kCdA);
+    this->get_parameter("Crr", kCrr);
+    this->get_parameter("mass", kMass);
+    this->get_parameter("g", kG);
+
+    this->declare_parameter<bool>("debug", true);
+    this->get_parameter("debug", kDebug);
+    
+
+    speed_control_.set_params(kRho, kCdA, kCrr, kMass, kG);
     speed_control_.pid_.set_params(KP,KI,KD);
+    pure_pursuit_.wheel_base_ = kWheelBase;
     lti_mpc_.set_params(kCostLateralDeviation,kCostAngularDeviation,kCostSteeringDelta,kCompensationSteps);
 
     previous_time_ = this->get_clock()->now();
@@ -117,11 +132,7 @@ Controller::Controller() : Node("controller"),
     target_speed_pub_ = this->create_publisher<std_msgs::msg::Float32>(kTargetSpeedTopic, 10);
 }
 
-/**
- * @brief Callback function timer of controller
- * 
- * @details Implement the control algorithm with calls to the controller libraries. 
- */  
+
 void Controller::on_speed_timer()
 {
     if(!(pointsXY_.empty()) && run_check_){
@@ -161,10 +172,7 @@ void Controller::on_steer_timer()
 {
     if ((!optimized_ && kFirstLapSteerControl=="PP") || (optimized_ && kOptimizedSteerControl=="PP")){
         pure_pursuit_.set_path(pointsXY_);
-        Point position;
-        position.x = x_;
-        position.y = y_;
-        pure_pursuit_.set_position(position, yaw_);
+        pure_pursuit_.set_position(x_, y_, yaw_);
 
         if (!optimized_) {
             pure_pursuit_.get_steering_angle(index_global_, kLAD);
@@ -196,11 +204,74 @@ void Controller::on_steer_timer()
 }
 
 
-/**
- * @brief get global index of the vehicle in the trajectory
- * @details Use the global position to calculate the speed 
- * and acceleration profile at each moment. 
- */ 
+void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg)
+{
+    x_ = msg -> x;
+    y_ = msg -> y;
+    yaw_ = msg -> yaw;
+    vx_ = msg -> vx;
+    vy_ = msg -> vy;
+    r_ = msg -> r;
+    delta_ = msg -> delta;
+
+    v_delta_ = 0.7*v_delta_ + 0.3*(delta_ - prev_delta_)/0.01;
+    prev_delta_ = delta_;
+
+}
+
+
+void Controller::optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
+{   
+    if (!kUseOptimizedTrajectory){
+        return;
+    }
+
+    trajectory_callback(msg);
+    new_trajectory_ = true;
+    optimized_ = true;
+}
+
+
+void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
+{
+    if (optimized_ || msg->points.size() < 3){
+        return;
+    }
+
+    // Check if the trajectory is the same
+    if(msg->points.size() != pointsXY_.size()
+       || msg->points[msg->points.size()-1].x != pointsXY_[pointsXY_.size()-1].x){
+        new_trajectory_ = true;
+
+        pointsXY_.clear();
+    
+        std::vector<common_msgs::msg::PointXY> points_common = msg -> points;
+        for (const auto &pointXY : points_common) {
+            Point point;
+            point.x = pointXY.x;
+            point.y = pointXY.y;
+            pointsXY_.push_back(point);
+        }
+        s_= msg -> s;
+        k_ = msg -> k;
+        speed_profile_ = msg -> speed_profile;
+        acc_profile_ = msg -> acc_profile; 
+    }
+}
+
+
+void Controller::run_check_callback(const std_msgs::msg::Bool::SharedPtr msg)
+{
+    run_check_ = msg->data;
+}
+
+
+void Controller::braking_procedure_callback(const std_msgs::msg::Bool::SharedPtr msg)
+{
+    braking_procedure_ = msg->data;
+}
+
+
 void Controller::get_global_index() {
     double min_dist = std::numeric_limits<double>::max();
     int N = pointsXY_.size();
@@ -230,73 +301,9 @@ void Controller::get_global_index() {
         }
         i++;
     }
-
     new_trajectory_ = false;
-
 }
 
-void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg)
-{
-    x_ = msg -> x;
-    y_ = msg -> y;
-    yaw_ = msg -> yaw;
-    vx_ = msg -> vx;
-    vy_ = msg -> vy;
-    r_ = msg -> r;
-    delta_ = msg -> delta;
-
-    v_delta_ = 0.7*v_delta_ + 0.3*(delta_ - prev_delta_)/0.01;
-    prev_delta_ = delta_;
-
-}
-
-void Controller::optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
-{   
-    if (!kUseOptimizedTrajectory){
-        return;
-    }
-
-    trajectory_callback(msg);
-    new_trajectory_ = true;
-    optimized_ = true;
-}
-
-void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg)
-{
-    if (optimized_ || msg->points.size() < 3){
-        return;
-    }
-
-    // Check if the trajectory is the same
-    if(msg->points.size() != pointsXY_.size()
-       || msg->points[msg->points.size()-1].x != pointsXY_[pointsXY_.size()-1].x){
-        new_trajectory_ = true;
-
-        pointsXY_.clear();
-    
-        std::vector<common_msgs::msg::PointXY> points_common = msg -> points;
-        for (const auto &pointXY : points_common) {
-            Point point;
-            point.x = pointXY.x;
-            point.y = pointXY.y;
-            pointsXY_.push_back(point);
-        }
-        s_= msg -> s;
-        k_ = msg -> k;
-        speed_profile_ = msg -> speed_profile;
-        acc_profile_ = msg -> acc_profile; 
-    }
-}
-
-void Controller::run_check_callback(const std_msgs::msg::Bool::SharedPtr msg)
-{
-    run_check_ = msg->data;
-}
-
-void Controller::braking_procedure_callback(const std_msgs::msg::Bool::SharedPtr msg)
-{
-    braking_procedure_ = msg->data;
-}
 
 
 int main(int argc, char **argv)

@@ -4,10 +4,8 @@
  * @brief Speed control implementation for ARUS Team Driverless pipeline.
  */
 
-#include "common_msgs/msg/trajectory.hpp"
 #include "controller/PID.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include <utility>
+
 
 class SpeedControl
 {
@@ -20,16 +18,27 @@ class SpeedControl
         double prev_acc_ = 0.0;     // previous acceleration command
         double alpha = 0.7;         // smoothing factor
 
-        const double rho = 1.225;   // air density
-        const double CdA = 1.2;     // drag coefficient
-        const double Crr = 0.01;    // rolling resistance coefficient
-        const double mass = 230;    // mass of the vehicle
-        const double g = 9.81;      // gravity
-            
+        double rho;     // air density
+        double CdA;     // drag coefficient
+        double Crr;     // rolling resistance coefficient
+        double mass;    // mass of the vehicle
+        double g;       // gravity
+           
+        /**
+         * @brief Set vehicle parameters
+         */
+        void set_params(double rho, double CdA, double Crr, double mass, double g) {
+            this->rho = rho;
+            this->CdA = CdA;
+            this->Crr = Crr;
+            this->mass = mass;
+            this->g = g;
+        }
+
+
         /**
          * @brief Get acceleration command using PID and feedforward control
          */
-
         double get_acc_command(double target_speed, double target_acc, double vx, double dt) {
 
             double F_drag = 0.5 * rho * CdA * vx * vx;

@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include <limits>
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/int16.hpp"
 #include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "common_msgs/msg/trajectory.hpp"
@@ -31,28 +31,19 @@ class Controller : public rclcpp::Node
 {
 public:
 
+    /**
+     * @brief Constructor for the Controller class
+     */
     Controller();
     
 private:
+
     // Instances
     SpeedControl speed_control_;
     Pure_pursuit pure_pursuit_;   
     LtiMpc lti_mpc_;
 
-    // Callbacks
-    void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
-    void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
-    void optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
-    void run_check_callback(const std_msgs::msg::Bool::SharedPtr msg);
-    void braking_procedure_callback(const std_msgs::msg::Bool::SharedPtr msg);
-    void on_speed_timer();
-    void on_steer_timer();
-    void get_global_index();
-
-    bool run_check_ = false;
-    bool optimized_ = false;
-
-    // Variable car state
+    // State variables
     double x_;
     double y_;
     double yaw_;
@@ -67,6 +58,8 @@ private:
 
     double acc_cmd_;
     double delta_cmd_;
+    bool run_check_ = false;
+    bool optimized_ = false;
 
     //Trajectory variables
     std::vector<Point> pointsXY_;  
@@ -109,11 +102,18 @@ private:
     double kCostAngularDeviation;
     double kCostSteeringDelta;
     int kCompensationSteps;
+    double kWheelBase;
+    double kRho;
+    double kCdA;
+    double kCrr;
+    double kMass;
+    double kG;
+    bool kDebug;
 
-    // Publishers
-    rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_pub_;
-    rclcpp::Publisher<common_msgs::msg::PointXY>::SharedPtr pursuit_point_pub_;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr target_speed_pub_;
+    //Timers
+    rclcpp::TimerBase::SharedPtr speed_timer_;
+    rclcpp::TimerBase::SharedPtr steer_timer_;
+    rclcpp::Time previous_time_ ;
 
     //Subscribers
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
@@ -122,8 +122,55 @@ private:
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr run_check_sub_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr braking_procedure_sub_;
 
-    //Timers
-    rclcpp::TimerBase::SharedPtr speed_timer_;
-    rclcpp::TimerBase::SharedPtr steer_timer_;
-    rclcpp::Time previous_time_ ;
+    // Publishers
+    rclcpp::Publisher<common_msgs::msg::Cmd>::SharedPtr cmd_pub_;
+    rclcpp::Publisher<common_msgs::msg::PointXY>::SharedPtr pursuit_point_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr target_speed_pub_;
+
+
+    /**
+     * @brief Speed control timer callback.
+     */
+    void on_speed_timer();
+
+    /**
+     * @brief Steering control timer callback.
+     */
+    void on_steer_timer();
+
+    /**
+     * @brief Car state callback.
+     */
+    void car_state_callback(const common_msgs::msg::State::SharedPtr msg);
+
+    /**
+     * @brief Trajectory callback. 
+     * Subscribe to the trajectory topic and update the trajectory.
+     */
+    void trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
+
+    /**
+     * @brief Optimized trajectory callback. 
+     * Subscribe to the optimized trajectory topic and trigger optimized control mode.
+     */
+    void optimized_trajectory_callback(const common_msgs::msg::Trajectory::SharedPtr msg);
+
+    /**
+     * @brief Run check callback. 
+     * Checks whether the vehicle is able to run or not.
+     */
+    void run_check_callback(const std_msgs::msg::Bool::SharedPtr msg);
+
+    /**
+     * @brief Braking procedure callback. 
+     * Subscribe to the braking procedure topic and trigger braking procedure.
+     */
+    void braking_procedure_callback(const std_msgs::msg::Bool::SharedPtr msg);
+
+    /**
+     * @brief Get the global index of the vehicle in the trajectory.
+     * Use the global position to calculate the speed and acceleration profile at each moment.
+     */
+    void get_global_index();
+
 };

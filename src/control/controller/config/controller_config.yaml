@@ -35,15 +35,16 @@ controller:
     KD: 0.01
 
     # Cmd
-    min_cmd: 0.0    # % inv
-    max_cmd: 0.1    # % inv
-    max_steer: 20.0 # degrees
+    min_cmd: -3.0     # m/s^2
+    max_cmd: 5.0      # m/s^2
+    max_steer: 20.0   # degrees
 
     # Vehicle parameters
-    rho: 1.225      # air density
-    CdA: 1.2        # drag coefficient
-    Crr: 0.01       # rolling resistance coefficient
-    mass: 230       # mass of the vehicle
-    g: 9.81         # gravity
+    wheel_base: 1.535 # wheel base
+    rho: 1.225        # air density
+    CdA: 1.2          # drag coefficient
+    Crr: 0.01         # rolling resistance coefficient
+    mass: 230.0       # mass of the vehicle
+    g: 9.81           # gravity
 
     debug: true
