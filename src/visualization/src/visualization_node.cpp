@@ -6,13 +6,6 @@
 #include "visualization/visualization_node.hpp"
 
 
-/**
- * @class Visualization
- * @brief Visualization class 
- * 
- * This class represents the pipeline topics through marker messages 
- * in rviz2
- */
 Visualization::Visualization() : Node("visualization")
 {   
     this->declare_parameter("alpha", 1.0);
