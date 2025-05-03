@@ -8,7 +8,7 @@ graph_slam:
     global_frame: "arussim/world"
     local_frame: "slam/vehicle"
 
-    optimizer_freq: 3           # Hz
+    optimizer_freq: 3.3333      # Hz
     finish_line_offset: 0.0     # m
     track_width: 3.0            # m  
     min_lap_distance: 30.0      # m

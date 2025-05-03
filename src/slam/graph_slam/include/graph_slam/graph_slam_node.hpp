@@ -87,7 +87,7 @@ class GraphSlam : public rclcpp::Node
     std::string kGlobalFrame;
     std::string kLocalFrame;
     std::string kMapFrame;
-    int kOptimizerFreq;
+    double kOptimizerFreq;
     double kFinishLineOffset;
     double kTrackWidth;
     double kMinLapDistance;
