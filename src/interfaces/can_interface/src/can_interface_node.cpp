@@ -364,10 +364,7 @@ void CanInterface::parse_msg(const struct can_frame& frame, const CANParseConfig
     if (pub_iter != publishers_.end()) {
         std_msgs::msg::Float32 msg;
         msg.data = scaledValue;
-
         pub_iter->second->publish(msg);
-
-        }
     } else if (kDebug) {
         RCLCPP_ERROR(this->get_logger(), 
                     "No matching publisher in publishers_ for key: %s", 
@@ -392,17 +389,17 @@ bool CanInterface::filter_subID(const struct can_frame& frame, const std::string
 void CanInterface::control_callback(common_msgs::msg::Cmd msg)
 {   
     if(run_check_){
-        float torque = msg.acc * kCarMass * kWheelRadius * 11/45;
-        this->motor_moment_target_ = torque;
+        float torque_ = msg.acc * kCarMass * kWheelRadius * 11/45;
+        this->motor_moment_target_ = torque_;
 
-        int16_t clamped_torque_ = static_cast<int16_t>(std::clamp(static_cast<float>(torque), -32768.0f, 32767.0f));
+        int16_t clamped_torque_ = static_cast<int16_t>(std::clamp(static_cast<float>(torque_), -32768.0f, 32767.0f));
 
         struct can_frame frame;
         frame.can_id = 0x201;             
         frame.can_dlc = 3;                
         frame.data[0] = 0x90;
-        frame.data[1] = clamped_ax_ & 0xFF;       
-        frame.data[2] = (clamped_ax_ >> 8) & 0xFF; 
+        frame.data[1] = clamped_torque_ & 0xFF;       
+        frame.data[2] = (clamped_torque_ >> 8) & 0xFF; 
         write(socket_can1_, &frame, sizeof(struct can_frame));  
     }
 }

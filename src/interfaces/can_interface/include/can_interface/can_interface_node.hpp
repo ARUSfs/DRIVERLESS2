@@ -124,6 +124,10 @@ class CanInterface : public rclcpp::Node
         std::string kCsvAuxFile;
         std::string kKillerScriptFile;
 
+        // Car parameters
+        double kCarMass;
+        double kWheelRadius;
+
         // Debug
         bool kDebug;
 
