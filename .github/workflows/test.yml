@@ -18,30 +18,32 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     defaults:
       run:
-        working-directory: /workspace
+        working-directory: /_w
 
     steps:
     - name: Checkout DRIVERLESS2
       uses: actions/checkout@v4
+      with:
+        path: /_w
 
     - name: Clone DRIVERLESS_TESTS
       run: |
-        mkdir -p /workspace/src
-        cd /workspace/src
-        git clone https://github.com/ARUSfs/DRIVERLESS_TESTS.git
+        mkdir -p /_w
+        cd /_w
+        git clone https://github.com/ARUSfs/DRIVERLESS_TESTS.git  # Clone directly to _w
 
     - name: Build workspace
       shell: bash
       run: |
         source /opt/ros/humble/setup.bash
-        cd /workspace
+        cd /_w
         colcon build --packages-ignore arussim_interface
 
     - name: Run tests
       shell: bash
       run: |
         source /opt/ros/humble/setup.bash
-        source /workspace/install/setup.bash
-        cd /workspace
+        source /_w/install/setup.bash  # Use _w for setup
+        cd /_w
         colcon test
         colcon test-result --all
