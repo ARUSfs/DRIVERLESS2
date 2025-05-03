@@ -9,25 +9,38 @@
 
 TrajectoryOptimization::TrajectoryOptimization() : Node("trajectory_optimization")
 {   
+    this->declare_parameter<int>("n_iter", 3);
+    this->declare_parameter<int>("n_seg", 3);
+    this->declare_parameter<double>("d_min", 1.2);
+    this->get_parameter("n_iter", kNIter);
+    this->get_parameter("d_min", kMinDist);
+    this->get_parameter("n_seg", kNSeg);    
+    
+    this->declare_parameter<double>("v_max", 8.);
     this->declare_parameter<double>("mu_y", 1.1);
     this->declare_parameter<double>("mu_throttle", 0.6);
     this->declare_parameter<double>("mu_brake", 0.9);
-    this->declare_parameter<double>("v_max", 8.);
-    this->declare_parameter<double>("d_min", 1.2);
-    this->declare_parameter<int>("n_iter", 3);
-    this->declare_parameter<int>("n_seg", 3);
+    this->get_parameter("v_max", kVMax);
     this->get_parameter("mu_y", kMuY);
     this->get_parameter("mu_throttle", kMuXThrottle);
     this->get_parameter("mu_brake", kMuxBrake);
-    this->get_parameter("v_max", kVMax);
-    this->get_parameter("d_min", kMinDist);
-    this->get_parameter("n_iter", kNIter);
-    this->get_parameter("n_seg", kNSeg);
+    
+    this->declare_parameter<double>("g", 9.81);
+    this->declare_parameter<double>("m", 270.0);
+    this->declare_parameter<double>("c_L", 0.5*1.2*3.5);
+    this->declare_parameter<double>("c_D", 0.5*1.2*1.2);
+    this->get_parameter("g", kG);
+    this->get_parameter("m", kMass);
+    this->get_parameter("c_L", kCLift);
+    this->get_parameter("c_D", kCDrag);
 
     this->declare_parameter<std::string>("optimized_trajectory_topic", "/trajectory_optimization/trajectory");
     this->declare_parameter<std::string>("track_limits_topic","/path_planning/track_limits");
     this->get_parameter("optimized_trajectory_topic", kOptimizedTrajectoryTopic);
     this->get_parameter("track_limits_topic", kTrackLimitsTopic);
+
+    this->declare_parameter<bool>("debug", true);
+    this->get_parameter("debug", kDebug);
 
     track_limits_sub_ = this->create_subscription<common_msgs::msg::TrackLimits>(
         kTrackLimitsTopic, 10, std::bind(&TrajectoryOptimization::trajectory_callback, this, std::placeholders::_1));
@@ -82,8 +95,10 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
         common_msgs::msg::Trajectory optimized_traj_msg = TrajectoryOptimization::create_trajectory_msg(x, y, optimized_s, optimized_k, speed_profile, acc_profile);
         optimized_trajectory_pub_ -> publish(optimized_traj_msg);
 
+        if (kDebug) RCLCPP_INFO(this->get_logger(), "Optimized trajectory published correctly.");
+
     } else {
-        std::cerr << "Track limits empty!" << std::endl;
+        if (kDebug) RCLCPP_ERROR(this->get_logger(), "Track limits empty!");
     }
 }
 

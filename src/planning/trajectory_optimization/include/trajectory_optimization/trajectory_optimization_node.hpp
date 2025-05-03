@@ -38,21 +38,26 @@ class TrajectoryOptimization : public rclcpp::Node
         // Optimized trajectory parameters
         int kNIter;
         int kNSeg;
+        double kMinDist;
 
         // Profile parameters
         double kVMax;
-        double kMinDist;
         double kMuY;
         double kMuXThrottle;
         double kMuxBrake;
-        double kG = 9.81;
-        double kCLift = 0.5*1.2*3.5;
-        double kCDrag = 0.5*1.2*1.2;
-        double kMass = 270; 
+
+        // Car parameters
+        double kG ;
+        double kMass; 
+        double kCLift;
+        double kCDrag;
 
         // Message topics
         std::string kOptimizedTrajectoryTopic;
         std::string kTrackLimitsTopic;
+
+        // Debug mode
+        bool kDebug;
 
         // Subscribers
         rclcpp::Subscription<common_msgs::msg::TrackLimits>::SharedPtr track_limits_sub_;
