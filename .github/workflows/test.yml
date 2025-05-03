@@ -1,0 +1,45 @@
+name: Test DRIVERLESS2
+
+permissions:
+  contents: read
+  packages: read
+
+on:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+
+    container:
+      image: ghcr.io/arusfs/arus:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+    - name: Checkout DRIVERLESS2
+      uses: actions/checkout@v4
+      with:
+        path: /__w/DRIVERLESS2/DRIVERLESS2/src
+
+    - name: Clone DRIVERLESS_TESTS
+      run: |
+        cd /__w/DRIVERLESS2/DRIVERLESS2/src
+        git clone https://github.com/ARUSfs/DRIVERLESS_TESTS.git
+
+    - name: Build workspace
+      shell: bash
+      run: |
+        source /opt/ros/humble/setup.bash
+        cd /__w/DRIVERLESS2/DRIVERLESS2
+        colcon build --packages-ignore arussim_interface
+
+    - name: Run tests
+      shell: bash
+      run: |
+        source /opt/ros/humble/setup.bash
+        source /__w/DRIVERLESS2/DRIVERLESS2/install/setup.bash
+        cd /__w/DRIVERLESS2/DRIVERLESS2
+        colcon test --packages-ignore arussim_interface
+        colcon test-result --all
