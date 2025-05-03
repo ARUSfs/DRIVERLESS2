@@ -1,0 +1,20 @@
+can_interface:
+  ros__parameters:
+    # Topics
+    cmd_topic: "/controller/cmd"
+    car_info_topic: "/car_state/car_info"
+    run_check_topic: "/car_state/run_check"
+
+    # Files path
+    csv_main_file: "/can24.csv"
+    csv_aux_file: "/can_aux24.csv"
+    killer_script_file: "/killer.sh"
+
+    # Car parameters
+    car_mass: 250
+    wheel_radius: 0.225
+    transmission_ratio: 0.24444   # 11/45
+    max_inv_torque: 230
+
+    # Debug
+    debug: true
