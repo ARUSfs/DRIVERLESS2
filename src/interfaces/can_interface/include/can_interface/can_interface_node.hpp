@@ -127,6 +127,8 @@ class CanInterface : public rclcpp::Node
         // Car parameters
         double kCarMass;
         double kWheelRadius;
+        double kTransmissionRatio;
+        double kMaxInvTorque;
 
         // Debug
         bool kDebug;

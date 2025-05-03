@@ -24,9 +24,13 @@ CanInterface::CanInterface() : Node("can_interface"){
     // Car parameters
     this->declare_parameter<double>("car_mass", 250);
     this->declare_parameter<double>("wheel_radius", 0.225);
+    this->declare_parameter<double>("transmission_ratio", 0.24444);
+    this->declare_parameter<double>("max_inv_torque", 230);
 
     this->get_parameter("car_mass", kCarMass);
     this->get_parameter("wheel_radius", kWheelRadius);
+    this->get_parameter("transmission_ratio", kTransmissionRatio);
+    this->get_parameter("max_inv_torque", kMaxInvTorque);
 
     //  Debug
     this->declare_parameter<bool>("debug", true);
@@ -386,20 +390,27 @@ bool CanInterface::filter_subID(const struct can_frame& frame, const std::string
     }
 }
 
+void intToBytes(int16_t val, int8_t* bytes)
+{
+    std::memcpy(bytes, &val, sizeof(val));
+}           
+
 void CanInterface::control_callback(common_msgs::msg::Cmd msg)
 {   
     if(run_check_){
-        float torque_ = msg.acc * kCarMass * kWheelRadius * 11/45;
+        float torque_ = msg.acc * kCarMass * kWheelRadius * kTransmissionRatio / kMaxInvTorque;
         this->motor_moment_target_ = torque_;
-
-        int16_t clamped_torque_ = static_cast<int16_t>(std::clamp(static_cast<float>(torque_), -32768.0f, 32767.0f));
+        
+        int16_t intValue = static_cast<int16_t>(torque_ * (1<<15))-1;
+        int8_t bytesCMD[2];
+        intToBytes(intValue, bytesCMD);
 
         struct can_frame frame;
         frame.can_id = 0x201;             
         frame.can_dlc = 3;                
         frame.data[0] = 0x90;
-        frame.data[1] = clamped_torque_ & 0xFF;       
-        frame.data[2] = (clamped_torque_ >> 8) & 0xFF; 
+        frame.data[1] = bytesCMD[0];
+        frame.data[2] = bytesCMD[1];
         write(socket_can1_, &frame, sizeof(struct can_frame));  
     }
 }
