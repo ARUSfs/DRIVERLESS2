@@ -16,7 +16,7 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->declare_parameter("lap_count_topic", "/slam/lap_count");
     this->declare_parameter("global_frame", "arussim/world");
     this->declare_parameter("local_frame", "slam/vehicle");
-    this->declare_parameter("optimizer_freq", 3);
+    this->declare_parameter("optimizer_freq", 3.0);
     this->declare_parameter("finish_line_offset", 0.0);
     this->declare_parameter("track_width", 3.0);
     this->declare_parameter("min_lap_distance", 30.0);
