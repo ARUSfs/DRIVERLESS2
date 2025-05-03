@@ -1,12 +1,9 @@
 /**
  * @file controller_node.cpp
- * 
  * @author Francis Rojas (frarojram@gmail.com)
- * 
  * @brief Controller node implementation for ARUS Team Driverless pipeline
- * 
- * @date 15-11-2024
  */
+
 #include "controller/controller_node.hpp"
 #include <limits>
 
@@ -21,6 +18,25 @@ Controller::Controller() : Node("controller"),
     lti_mpc_()
 {
 
+    // Topic
+    this->declare_parameter<std::string>("state_topic", "/car_state/state");
+    this->declare_parameter<std::string>("run_check_topic", "/car_state/run_check");
+    this->declare_parameter<std::string>("trajectory_topic", "/path_planning/trajectory");
+    this->declare_parameter<std::string>("optimized_trajectory_topic", "/trajectory_optimization/trajetory");
+    this->declare_parameter<std::string>("cmd_topic", "/controller/cmd");
+    this->declare_parameter<std::string>("pursuit_point_topic", "/controller/pursuit_point");
+    this->declare_parameter<std::string>("target_speed_topic", "/controller/target_speed");
+    this->declare_parameter<std::string>("braking_procedure_topic", "/car_state/braking_procedure");
+    this->get_parameter("state_topic", kStateTopic);
+    this->get_parameter("run_check_topic", kRunCheckTopic);
+    this->get_parameter("trajectory_topic", kTrajectoryTopic);
+    this->get_parameter("optimized_trajectory_topic", kOptimizedTrajectoryTopic);
+    this->get_parameter("cmd_topic", kCmdTopic);
+    this->get_parameter("pursuit_point_topic",kPursuitPointTopic);
+    this->get_parameter("target_speed_topic", kTargetSpeedTopic);
+    this->get_parameter("braking_procedure_topic", kBrakingProcedureTopic);
+
+    // Parameters
     this->declare_parameter<std::string>("first_lap_steer_control", "PP");
     this->declare_parameter<std::string>("optimized_steer_control", "PP");
     this->declare_parameter<double>("speed_timer_frequency", 100.0);
@@ -32,17 +48,6 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("steer_timer_frequency", kSteerTimerFreq);
     this->get_parameter("use_optimized_trajectory", kUseOptimizedTrajectory);
 
-    // Topic
-    this->declare_parameter<std::string>("state", "/car_state/state");
-    this->declare_parameter<std::string>("trajectory", "/path_planning/trajectory");
-    this->declare_parameter<std::string>("cmd", "/controller/cmd");
-    this->declare_parameter<std::string>("pursuit_point", "/controller/pursuit_point");
-    this->declare_parameter<std::string>("target_speed", "/controller/target_speed");
-    this->get_parameter("state", kStateTopic);
-    this->get_parameter("trajectory", kTrajectoryTopic);
-    this->get_parameter("cmd", kCmdTopic);
-    this->get_parameter("pursuit_point",kPursuitPointTopic);
-    this->get_parameter("target_speed", kTargetSpeedTopic);
 
     // Pure-Pursuit
     this->declare_parameter<double>("look_ahead_distance", 4.0);
@@ -98,13 +103,13 @@ Controller::Controller() : Node("controller"),
     car_state_sub_ = this->create_subscription<common_msgs::msg::State>(
         kStateTopic, 1, std::bind(&Controller::car_state_callback, this, std::placeholders::_1));
     run_check_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-        "/car_state/run_check", 1, std::bind(&Controller::run_check_callback, this, std::placeholders::_1));
+        kRunCheckTopic, 1, std::bind(&Controller::run_check_callback, this, std::placeholders::_1));
     trayectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
         kTrajectoryTopic, 1, std::bind(&Controller::trajectory_callback, this, std::placeholders::_1));
     optimized_trajectory_sub_ = this->create_subscription<common_msgs::msg::Trajectory>(
-        "/trajectory_optimization/trajectory", 1, std::bind(&Controller::optimized_trajectory_callback, this, std::placeholders::_1));
+        kOptimizedTrajectoryTopic, 1, std::bind(&Controller::optimized_trajectory_callback, this, std::placeholders::_1));
     braking_procedure_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-        "/car_state/braking_procedure", 1, std::bind(&Controller::braking_procedure_callback, this, std::placeholders::_1));
+        kBrakingProcedureTopic, 1, std::bind(&Controller::braking_procedure_callback, this, std::placeholders::_1));
 
     // Publishers
     cmd_pub_ = this->create_publisher<common_msgs::msg::Cmd>(kCmdTopic, 10);
@@ -238,8 +243,6 @@ void Controller::car_state_callback(const common_msgs::msg::State::SharedPtr msg
     vx_ = msg -> vx;
     vy_ = msg -> vy;
     r_ = msg -> r;
-    ax_ = msg -> ax;
-    ay_ = msg -> ay;
     delta_ = msg -> delta;
 
     v_delta_ = 0.7*v_delta_ + 0.3*(delta_ - prev_delta_)/0.01;

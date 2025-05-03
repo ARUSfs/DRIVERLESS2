@@ -1,8 +1,8 @@
 #include <cmath>
 #include <vector>
 #include <Eigen/Dense>
-#include "Point.h"
 #include <unsupported/Eigen/MatrixFunctions>
+#include "controller/utils.hpp"
 
 class LtiMpc
 {

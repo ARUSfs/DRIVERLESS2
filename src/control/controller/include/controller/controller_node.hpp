@@ -1,14 +1,10 @@
-#ifndef CONTROLLER_NODE_HPP
-#define CONTROLLER_NODE_HPP
 /**
  * @file controller_node.hpp
- * 
  * @author Francis Rojas (frarojram@gmail.com).
- * 
  * @brief Controller node header for ARUS Team Driverless pipeline.
- * 
- * @date 15-11-2024
  */
+
+#pragma once
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/int16.hpp"
@@ -21,8 +17,9 @@
 #include "controller/pure_pursuit.hpp"
 #include "controller/speed_control.hpp"
 #include "controller/PID.hpp"
-#include "Point.h"
-#include "lti_mpc.hpp"
+#include "controller/lti_mpc.hpp"
+#include "controller/utils.hpp"
+
 
 /**
  * @brief The Controller class
@@ -62,8 +59,6 @@ private:
     double vx_;
     double vy_;
     double r_;
-    double ax_;
-    double ay_;
     double delta_;
 
     double v_delta_;
@@ -73,7 +68,7 @@ private:
     double acc_cmd_;
     double delta_cmd_;
 
-    //Trajectory variable
+    //Trajectory variables
     std::vector<Point> pointsXY_;  
     std::vector<float> s_;                                         
     std::vector<float> k_ ; 
@@ -83,16 +78,21 @@ private:
     bool new_trajectory_ = false;  
     bool braking_procedure_ = false;       
     
-    // Parameters
-    std::string kFirstLapSteerControl;
-    std::string kOptimizedSteerControl;
+
+    // Topics
     std::string kStateTopic;
-    bool kUseOptimizedTrajectory;
+    std::string kRunCheckTopic;
     std::string kTrajectoryTopic;
+    std::string kOptimizedTrajectoryTopic;
     std::string kCmdTopic;
     std::string kPursuitPointTopic;
     std::string kTargetSpeedTopic;
+    std::string kBrakingProcedureTopic;
 
+    // Parameters
+    bool kUseOptimizedTrajectory;
+    std::string kFirstLapSteerControl;
+    std::string kOptimizedSteerControl;
     double kSpeedTimerFreq;
     double kSteerTimerFreq;
     double kLAD;
@@ -127,5 +127,3 @@ private:
     rclcpp::TimerBase::SharedPtr steer_timer_;
     rclcpp::Time previous_time_ ;
 };
-
-#endif
