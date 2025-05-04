@@ -41,6 +41,7 @@ class Perception : public rclcpp::Node
         double vy;
         double yaw_rate;
         double dt;
+        std::vector<double> final_times;
 
         // Topics
         std::string kLidarTopic;
@@ -56,15 +57,17 @@ class Perception : public rclcpp::Node
         double kThresholdGroundFilter;
         int kNumberSections;
         double kAngleThreshold;
-        int kMinimumRansacPoints;
 
         // Parameters of clustering and filtering
+        int kMinClusterSize;
+        int kMaxClusterSize;
         double kRadius;
 
         // Parameters of scroring
         double kThresholdScoring;
         
         // Parameters of coloring
+        bool kColor;
         double kDistanceThreshold;
         double kColoringThreshold;
 

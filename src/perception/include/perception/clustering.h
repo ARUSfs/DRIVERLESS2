@@ -15,7 +15,8 @@ namespace Clustering
     /**
     * @brief Implements optimized Euclidean clustering using Octree search and OpenMP.
     */
-    void euclidean_clustering(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, std::vector<pcl::PointIndices>& cluster_indices)
+    void euclidean_clustering(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, std::vector<pcl::PointIndices>& cluster_indices,
+        int min_cluster_size, int max_cluster_size)
     {
         if (!cloud || cloud->empty()) return;
 
@@ -26,8 +27,8 @@ namespace Clustering
         // Configure the extraction
         pcl::EuclideanClusterExtraction<pcl::PointXYZI> extraction;
         extraction.setClusterTolerance(0.6);  
-        extraction.setMinClusterSize(4);     
-        extraction.setMaxClusterSize(200);
+        extraction.setMinClusterSize(min_cluster_size);     
+        extraction.setMaxClusterSize(max_cluster_size);
         extraction.setSearchMethod(tree);
 
         // Apply the extraction

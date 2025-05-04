@@ -1,22 +1,13 @@
 /**
  * @file accumulation.h
  * @author Álvaro Galisteo Bermúdez (galisbermo03@gmail.com)
- * @brief Auxiliar file for the Perception node.
- * Contains auxiliar functions used in the algorithm to accumulate the point cloud received from the lidar.
- * @version 0.1
- * @date 12-02-2025
+ * @brief Contains auxiliar functions used in the algorithm to accumulate the point cloud received from the lidar.
  */
 
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/common/common.h>
+
 #include <Eigen/Dense>
-#include <pcl/common/transforms.h>
 #include <deque>
-#include <iostream>
+
 
 namespace Accumulation
 {
@@ -29,11 +20,6 @@ namespace Accumulation
 
     /**
     * @brief Function to apply rigid transformation to a point cloud
-    * @param cloud Points of the cloud.
-    * @param vx  Linear velocities along X.
-    * @param vy  Linear velocities along Y.
-    * @param yaw_rate Yaw rate of the car.
-    * @param dt Time interval.
     */
     void rigidTransformation(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, 
             double vx, double vy, double yaw_rate, double dt)
@@ -63,41 +49,39 @@ namespace Accumulation
 
     /**
     * @brief Accumulate the clouds of the last frames.
-    * @param cloud The clouds you want to store in the buffer.
-    * @param kBufferSize The size of cloud buffers.
     */
     pcl::PointCloud<pcl::PointXYZI>::Ptr accumulate_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int kBufferSize,
             double vx, double vy, double yaw_rate, double dt)
     {
-        //Clean the buffer the first time
+        // Clean the buffer the first time
         if (!buffer_cloud_initialized) {
             cloud_buffer.clear();
             buffer_cloud_initialized = true;
         }
 
-        //Ensure buffer size limit
+        // Ensure buffer size limit
         if (cloud_buffer.size() >= static_cast<size_t>(kBufferSize)) 
         {
             cloud_buffer.pop_front();
         }
 
-        //Add the latest frame
+        // Add the latest frame
         cloud_buffer.push_back(cloud);
 
         // Create an accumulated cloud
         pcl::PointCloud<pcl::PointXYZI>::Ptr accumulated_cloud(new pcl::PointCloud<pcl::PointXYZI>());
 
-        //Iterate through stored frames (excluding the latest)
+        // Iterate through stored frames (excluding the latest)
         for (size_t i = 0; i < cloud_buffer.size() - 1; ++i) 
         {
             if (!cloud_buffer[i] || cloud_buffer[i]->empty()) 
             {
                 continue;
             }
-            //Apply the transformation
+            // Apply the transformation
             rigidTransformation(cloud_buffer[i], vx, vy, yaw_rate, dt);
 
-            //Merge into final accumulated cloud
+            // Merge into final accumulated cloud
             *accumulated_cloud += *cloud_buffer[i];
         }
         // Add the latest frame (unmodified)
@@ -107,11 +91,7 @@ namespace Accumulation
     }
 
     /**
-    * @brief Auxiliar function for the lidar call back function.
-    * Accumulates the clusters of the last 5 frames of the lidar call back.
-    * @param cluster_points The points of the clusters.
-    * @param clusters_centers The centers of the clusters.
-    * @param kBufferSize The size of both cluster and center buffers.
+    * @brief Accumulates the clusters of the last 5 frames of the lidar call back.
     */
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>accumulate_clusters(
             std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& cluster_points, std::vector<PointXYZColorScore>&
@@ -120,7 +100,7 @@ namespace Accumulation
         std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> final_clusters;
         std::vector<PointXYZColorScore> final_centers;
 
-        //Clean the buffer the first time
+        // Clean the buffer the first time
         if (!buffer_cluster_initialized) {
             cluster_buffer.clear();
             center_buffer.clear();

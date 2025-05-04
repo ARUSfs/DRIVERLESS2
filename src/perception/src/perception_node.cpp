@@ -15,17 +15,19 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<std::string>("lidar_topic", "/rslidar_points");
     this->declare_parameter<std::string>("state_topic", "/car_state/state");
     this->declare_parameter<bool>("crop", true);
-    this->declare_parameter<double>("max_x_fov", 25.0);
-    this->declare_parameter<double>("max_y_fov", 20.0);
-    this->declare_parameter<double>("max_z_fov", 0.0);
-    this->declare_parameter<double>("threshold_ground_filter", 0.05);
+    this->declare_parameter<double>("max_x_fov", 30.0);
+    this->declare_parameter<double>("max_y_fov", 15.0);
+    this->declare_parameter<double>("max_z_fov", 0.5);
+    this->declare_parameter<double>("threshold_ground_filter", 0.075);
     this->declare_parameter<int>("number_sections", 8);
-    this->declare_parameter<double>("angle_threshold", 20);
-    this->declare_parameter<int>("minimum_ransac_points", 30);
-    this->declare_parameter<double>("radius", 1.0);
+    this->declare_parameter<double>("angle_threshold", 35.0);
+    this->declare_parameter<int>("min_cluster_size", 4);
+    this->declare_parameter<int>("max_cluster_size", 200);
+    this->declare_parameter<double>("radius", 0.15);
     this->declare_parameter<double>("threshold_scoring", 0.7);
-    this->declare_parameter<double>("distance_threshold", 0.4);
-    this->declare_parameter<double>("coloring_threshold", 0.4);
+    this->declare_parameter<bool>("color", true);
+    this->declare_parameter<double>("distance_threshold", 5.0);
+    this->declare_parameter<double>("coloring_threshold", 15.0);
     this->declare_parameter<bool>("debug", true);
 
     // Get the parameters
@@ -38,9 +40,11 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("threshold_ground_filter", kThresholdGroundFilter);
     this->get_parameter("number_sections", kNumberSections);
     this->get_parameter("angle_threshold", kAngleThreshold);
-    this->get_parameter("minimum_ransac_points", kMinimumRansacPoints);
+    this->get_parameter("min_cluster_size", kMinClusterSize);
+    this->get_parameter("max_cluster_size", kMaxClusterSize);
     this->get_parameter("radius", kRadius);
     this->get_parameter("threshold_scoring", kThresholdScoring);
+    this->get_parameter("color", kColor);
     this->get_parameter("distance_threshold", kDistanceThreshold);
     this->get_parameter("coloring_threshold", kColoringThreshold);
     this->get_parameter("debug", kDebug);
@@ -113,13 +117,20 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     // Apply the ground filter function
     GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, 
-        kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+        kMaxZFov, kNumberSections, kAngleThreshold);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Ground Filter Time: %f", this->now().seconds() - start_time);
 
 
     // Extract the clusters from the point cloud
-    Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
+    Clustering::euclidean_clustering(cloud_filtered, cluster_indices, kMinClusterSize, kMaxClusterSize);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Clustering time: %f", this->now().seconds() - start_time);
+
+
+    if (kDebug && cluster_indices.empty()) 
+    {
+        RCLCPP_WARN(this->get_logger(), "No clusters found");
+        return;
+    }
 
 
     // Store the clusters centers in a new point cloud
@@ -172,12 +183,22 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     // Score the clusters and keep the ones that will be considered cones
     Scoring::scoring_surface(final_map, cluster_points, clusters_centers, kThresholdScoring);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Scoring time: %f", this->now().seconds() - start_time);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Number of cones: %zu", final_map->size());
+    if (kDebug && final_map->size() > 0) RCLCPP_INFO(this->get_logger(), "Number of cones: %zu", final_map->size());
+
+
+    if (kDebug && final_map->size() == 0)
+    {
+        RCLCPP_WARN(this->get_logger(), "No cones found");
+        return;
+    }
 
 
     // Estimate the color of the closest cones
-    ColorEstimation::color_estimation(cluster_points, clusters_centers, kDistanceThreshold, kColoringThreshold);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Color estimation time: %f", this->now().seconds() - start_time);
+    if (kColor)
+    {
+        ColorEstimation::color_estimation(cluster_points, clusters_centers, kDistanceThreshold, kColoringThreshold);
+        if (kDebug) RCLCPP_INFO(this->get_logger(), "Color estimation time: %f", this->now().seconds() - start_time);
+    }
 
 
     // Update the colors of final map points
@@ -199,6 +220,12 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Motion correction time: %f", this->now().seconds() - start_time);
 
 
+    final_times.push_back(this->now().seconds() - start_time);
+    double average_time = std::accumulate(final_times.begin(), final_times.end(), 0.0) / final_times.size();
+
+
+    if (kDebug) RCLCPP_INFO(this->get_logger(), "Final iteration time: %f", this->now().seconds() - start_time);
+    if (kDebug) RCLCPP_INFO(this->get_logger(), "Average time: %f", average_time);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "//////////////////////////////////////////////");
 
 
