@@ -198,17 +198,17 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     {
         ColorEstimation::color_estimation(cluster_points, clusters_centers, kDistanceThreshold, kColoringThreshold);
         if (kDebug) RCLCPP_INFO(this->get_logger(), "Color estimation time: %f", this->now().seconds() - start_time);
-    }
 
 
-    // Update the colors of final map points
-    for (auto& point : final_map->points) 
-    {
-        for (const auto& center : clusters_centers) 
+        // Update the colors of final map points
+        for (auto& point : final_map->points) 
         {
-            if (point.x == center.x && point.y == center.y && point.z == center.z) 
+            for (const auto& center : clusters_centers) 
             {
-                point.color = center.color;
+                if (point.x == center.x && point.y == center.y && point.z == center.z) 
+                {
+                    point.color = center.color;
+                }
             }
         }
     }

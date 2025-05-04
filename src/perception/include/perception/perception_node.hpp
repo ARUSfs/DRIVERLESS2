@@ -43,6 +43,7 @@ class Perception : public rclcpp::Node
         double dt;
         std::vector<double> final_times;
 
+
         // Topics
         std::string kLidarTopic;
         std::string kStateTopic;
@@ -74,22 +75,25 @@ class Perception : public rclcpp::Node
         // Parameters of debugging
         bool kDebug;
 
+
         // Subscribers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_sub_;
         rclcpp::Subscription<common_msgs::msg::State>::SharedPtr state_sub_;
+
 
         // Publishers
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr clusters_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
         
-        /**
-         * @brief Callback function for the lidar topic.
-         */
-        void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
 
         /**
         * @brief Callback function for the car state topic.
         */
         void state_callback(common_msgs::msg::State::SharedPtr state_msg);
+        
+        /**
+         * @brief Callback function for the lidar topic.
+         */
+        void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
 };
