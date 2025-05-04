@@ -3,69 +3,46 @@
  * @brief CarState node header for ARUS Team Driverless pipeline
  */
 
+// ROS2
 #include <rclcpp/rclcpp.hpp>
 
+// Standard ROS 2 messages
 #include "std_msgs/msg/float32.hpp"
-#include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/int16.hpp"
 #include "std_msgs/msg/bool.hpp"
-#include "sensor_msgs/msg/imu.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+
+// Custom messages
+#include "common_msgs/msg/cmd.hpp"
 #include "common_msgs/msg/state.hpp"
 #include "common_msgs/msg/car_info.hpp"
-#include "common_msgs/msg/four_wheel_drive.hpp"
-#include "sensor_msgs/msg/point_cloud2.hpp"
-#include "common_msgs/msg/cmd.hpp"
 
+// TF2 and geometry tools
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 
+// Internal utilities
 #include "car_state/speed_estimator.hpp"
 
-/**
- * @class CarState
- * @brief CarState class 
- * 
- * Header node car_state
- * 
- */
+
 
 class CarState : public rclcpp::Node
 {
 public:
+    /**
+     * @brief Construct the CarState node.
+     * 
+     * Initializes all parameters, publishers, subscribers, and timers.
+     * Sets up the speed estimator, TF listener, and internal state variables.
+     * Also configures plausibility checks if safe mode is enabled.
+     */
     CarState();
 
 private:
-    // Callback for the subscription
-    void extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
-    void as_status_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void ax_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void ay_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void r_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void target_speed_callback(const std_msgs::msg::Float32 msg);
-    void target_delta_callback(const common_msgs::msg::Cmd msg);
-    void lap_count_callback(const std_msgs::msg::Int16 msg);
-    void cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg);
-    void cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg);
-    void ami_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    
-
-    // Functions
-    void on_timer();
-    void get_tf_position();
-
-    // Speed estimator
-    SpeedEstimator speed_estimator_;
-
-    // Private attributes to store received data
+    // Variables
     double x_=0;
     double y_=0;
     double yaw_ = 0;
@@ -98,6 +75,11 @@ private:
     double plausability_ = 0;
     bool epos_OK_ = true; //TODO: subscribe from epos_interface
 
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::unique_ptr<tf2_ros::TransformListener> tf_listener_;
+
+
+    // Parameters
     bool kSimulation;
     std::string kMission;
     int kTrackdriveLaps;
@@ -112,20 +94,21 @@ private:
     double kThresholdConesCountAll;
     double kMaxError;
 
-    // Maximum threshold parameters
     double kMaxAx;
     double kMaxAy;
     double kMaxR;
     double kMaxVx;
     double kMaxPlausabilityError;
 
-    //Error weights
     double kErrorWeightIMU;
     double kErrorWeightExtensometer;
     double kErrorWeightWheelSpeed;
     double kErrorWeightInvSpeed;
     double kErrorWeightConesCountActual;
     double kErrorWeightConesCountAll;    
+
+    bool kDebug;
+
 
     // Topics
     std::string kExtensometerTopic;
@@ -140,9 +123,19 @@ private:
     std::string kRRWheelSpeedTopic;
 
 
-    // TF
-    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-    std::unique_ptr<tf2_ros::TransformListener> tf_listener_;
+    // Timers
+    rclcpp::TimerBase::SharedPtr timer_;
+
+    rclcpp::Time last_imu_msg_time_;
+    rclcpp::Time last_extensometer_msg_time_;
+    rclcpp::Time last_fl_ws_msg_time_;
+    rclcpp::Time last_fr_ws_msg_time_;
+    rclcpp::Time last_rl_ws_msg_time_;
+    rclcpp::Time last_rr_ws_msg_time_;
+    rclcpp::Time last_inv_speed_msg_time_;
+    rclcpp::Time last_cones_count_actual_msg_time_;
+    rclcpp::Time last_cones_count_all_msg_time_;
+
 
     // Subscribers
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr extensometer_sub_;
@@ -163,24 +156,40 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ay_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr r_sub_;
 
-    // Publisher for the aggregated state
+
+    // Publishers
     rclcpp::Publisher<common_msgs::msg::State>::SharedPtr state_pub_;
     rclcpp::Publisher<common_msgs::msg::CarInfo>::SharedPtr car_info_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr run_check_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steer_check_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr braking_procedure_pub_;
 
-    // Timer
-    rclcpp::TimerBase::SharedPtr timer_;
 
-    // Time-tracking members
-    rclcpp::Time last_imu_msg_time_;
-    rclcpp::Time last_extensometer_msg_time_;
-    rclcpp::Time last_fl_ws_msg_time_;
-    rclcpp::Time last_fr_ws_msg_time_;
-    rclcpp::Time last_rl_ws_msg_time_;
-    rclcpp::Time last_rr_ws_msg_time_;
-    rclcpp::Time last_inv_speed_msg_time_;
-    rclcpp::Time last_cones_count_actual_msg_time_;
-    rclcpp::Time last_cones_count_all_msg_time_;
+    // Callbacks for the timers
+    void on_timer();
+
+
+    // Callback for the subscription
+    void extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
+    void as_status_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void ax_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void ay_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void r_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void target_speed_callback(const std_msgs::msg::Float32 msg);
+    void target_delta_callback(const common_msgs::msg::Cmd msg);
+    void lap_count_callback(const std_msgs::msg::Int16 msg);
+    void cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg);
+    void cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg);
+    void ami_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    
+
+    // Auxiliary functions 
+    void get_tf_position();
+    SpeedEstimator speed_estimator_;
 };

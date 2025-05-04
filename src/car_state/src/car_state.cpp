@@ -1,16 +1,5 @@
-/** 
- * @file car_state.cpp
- * @brief CarState node implementaion for ARUS Team Driverless pipeline
-*/
-
 #include "car_state/car_state.hpp"
 
-/**
- * @class CarState
- * @brief CarState class 
- * 
- * Node that collects car data, estimates parameters, and publishes them on /car_state/State.
- */
 
 CarState::CarState(): Node("car_state")
 {   
@@ -93,6 +82,12 @@ CarState::CarState(): Node("car_state")
     this->get_parameter("fr_wheel_speed_topic", kFRWheelSpeedTopic);
     this->get_parameter("rl_wheel_speed_topic", kRLWheelSpeedTopic);
     this->get_parameter("rr_wheel_speed_topic", kRRWheelSpeedTopic);
+
+    // Debug
+    this->declare_parameter<bool>("debug", true);
+
+    this->get_parameter("debug", kDebug);
+
 
 
     state_pub_ = this->create_publisher<common_msgs::msg::State>(

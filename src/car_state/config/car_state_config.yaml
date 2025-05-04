@@ -39,3 +39,5 @@ car_state:
     fr_wheel_speed_topic: "/can_interface/fr_wheel_speed"
     rl_wheel_speed_topic: "/can_interface/rl_wheel_speed"
     rr_wheel_speed_topic: "/can_interface/rr_wheel_speed"
+
+    debug: true
