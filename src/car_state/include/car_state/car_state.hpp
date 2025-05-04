@@ -81,6 +81,8 @@ private:
 
     // Parameters
     bool kSimulation;
+    bool kGetArussimGroundTruth;
+    
     std::string kMission;
     int kTrackdriveLaps;
 
@@ -121,6 +123,19 @@ private:
     std::string kFRWheelSpeedTopic;
     std::string kRLWheelSpeedTopic;
     std::string kRRWheelSpeedTopic;
+    std::string kAmiTopic;
+    std::string kTargetSpeedTopic;
+    std::string kCmdTopic;
+    std::string kLapCountTopic;
+    std::string kPerceptionMap;
+    std::string kSlamMap;
+    std::string kArussimGroundTruthTopic;
+
+    std::string kStateTopic;
+    std::string kCarInfoTopic;
+    std::string kRunCheckTopic;
+    std::string kSteerCheckTopic;
+    std::string kBrakingProcedureTopic;
 
 
     // Timers

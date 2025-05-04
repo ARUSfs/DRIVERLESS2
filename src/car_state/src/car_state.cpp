@@ -3,35 +3,33 @@
 
 CarState::CarState(): Node("car_state")
 {   
-    bool get_arussim_ground_truth;
+    // Declare and get parameters
+    //  Arussim parameters
     this->declare_parameter<bool>("get_arussim_ground_truth", false);
     this->declare_parameter<bool>("simulation", false);
+
+    this->get_parameter("get_arussim_ground_truth", kGetArussimGroundTruth);
+    this->get_parameter("simulation", kSimulation);
+
+    //  Mission parameters
     this->declare_parameter<std::string>("mission", "autocross");
     this->declare_parameter<int>("trackdrive_laps", 10);
 
-    this->declare_parameter<bool>("safe_mode", true);
+    this->get_parameter("mission", kMission);
+    this->get_parameter("trackdrive_laps", kTrackdriveLaps);
+
+    // Wheel speed config
     this->declare_parameter<bool>("use_wheelspeeds", false);
 
-    this->declare_parameter<double>("dt_threshold_imu", 0.05);
-    this->declare_parameter<double>("dt_threshold_extensometer", 0.05);
-    this->declare_parameter<double>("dt_threshold_wheelspeed", 0.05);
-    this->declare_parameter<double>("dt_threshold_inv", 0.05);
-    this->declare_parameter<double>("dt_threshold_cones_count_actual", 0.25);
-    this->declare_parameter<double>("dt_threshold_cones_count_all", 0.25);
+    this->get_parameter("use_wheelspeeds", kUseWheelspeeds);
 
-    this->declare_parameter<double>("max_ax", 15.0);
-    this->declare_parameter<double>("max_ay", 5.0);
-    this->declare_parameter<double>("max_r", 3.0);
-    this->declare_parameter<double>("max_vx", 75.0);
-    this->declare_parameter<double>("max_plausability_error", 5.0);
+    // Safe mode
+    this->get_parameter("safe_mode", kSafeMode);
 
-    this->declare_parameter<double>("error_weight_imu", 1.0);
-    this->declare_parameter<double>("error_weight_wheel_speed", 1.0);
-    this->declare_parameter<double>("error_weight_inv_speed", 1.0);
-    this->declare_parameter<double>("error_weight_cones_count_actual", 1.0);
-    this->declare_parameter<double>("error_weight_cones_count_all", 1.0);
-    this->declare_parameter<double>("error_weight_extensometer", 1.0);
+    this->declare_parameter<bool>("safe_mode", true);
 
+    //  Topics
+    //   Subscribers
     this->declare_parameter<std::string>("extensometer_topic", "/can_interface/extensometer");
     this->declare_parameter<std::string>("imu_ax_topic", "/can_interface/IMU/ax");
     this->declare_parameter<std::string>("imu_ay_topic", "/can_interface/IMU/ay");
@@ -42,35 +40,13 @@ CarState::CarState(): Node("car_state")
     this->declare_parameter<std::string>("fr_wheel_speed_topic", "/can_interface/fr_wheel_speed");
     this->declare_parameter<std::string>("rl_wheel_speed_topic", "/can_interface/rl_wheel_speed");
     this->declare_parameter<std::string>("rr_wheel_speed_topic", "/can_interface/rr_wheel_speed");
-
-    this->get_parameter("get_arussim_ground_truth", get_arussim_ground_truth);
-    this->get_parameter("simulation", kSimulation);
-    this->get_parameter("mission", kMission);
-    this->get_parameter("trackdrive_laps", kTrackdriveLaps);
-
-    this->get_parameter("safe_mode", kSafeMode);
-    this->get_parameter("use_wheelspeeds", kUseWheelspeeds);
-
-    // Parameters for safe mode plausability checks
-    this->get_parameter("dt_threshold_imu", kThresholdImu);
-    this->get_parameter("dt_threshold_extensometer", kThresholdExtensometer);
-    this->get_parameter("dt_threshold_wheelspeed", kThresholdWheelSpeed);
-    this->get_parameter("dt_threshold_inv", kThresholdInv);
-    this->get_parameter("dt_threshold_cones_count_actual", kThresholdConesCountActual);
-    this->get_parameter("dt_threshold_cones_count_all", kThresholdConesCountAll);
-
-    this->get_parameter("max_ax", kMaxAx);
-    this->get_parameter("max_ay", kMaxAy);
-    this->get_parameter("max_r", kMaxR);
-    this->get_parameter("max_vx", kMaxVx);
-    this->get_parameter("max_plausability_error", kMaxPlausabilityError);
-
-    this->get_parameter("error_weight_imu", kErrorWeightIMU);
-    this->get_parameter("error_weight_extensometer", kErrorWeightExtensometer);
-    this->get_parameter("error_weight_wheel_speed", kErrorWeightWheelSpeed);
-    this->get_parameter("error_weight_inv_speed", kErrorWeightInvSpeed);
-    this->get_parameter("error_weight_cones_count_actual", kErrorWeightConesCountActual);
-    this->get_parameter("error_weight_cones_count_all", kErrorWeightConesCountAll);
+    this->declare_parameter<std::string>("ami_topic", "/can_interface/AMI");
+    this->declare_parameter<std::string>("target_speed_topic", "/controller/target_speed");
+    this->declare_parameter<std::string>("cmd_topic", "/controller/cmd");
+    this->declare_parameter<std::string>("lap_count_topic", "/slam/lap_count");
+    this->declare_parameter<std::string>("perception_map_topic", "/perception/map");
+    this->declare_parameter<std::string>("slam_map_topic", "/slam/map");
+    this->declare_parameter<std::string>("arussim_ground_truth_topic", "/arussim_interface/arussim_ground_truth");
 
     this->get_parameter("extensometer_topic", kExtensometerTopic);
     this->get_parameter("imu_ax_topic", kIMUaxTopic);
@@ -82,6 +58,67 @@ CarState::CarState(): Node("car_state")
     this->get_parameter("fr_wheel_speed_topic", kFRWheelSpeedTopic);
     this->get_parameter("rl_wheel_speed_topic", kRLWheelSpeedTopic);
     this->get_parameter("rr_wheel_speed_topic", kRRWheelSpeedTopic);
+    this->get_parameter("ami_topic", kAmiTopic);
+    this->get_parameter("target_speed_topic", kTargetSpeedTopic);
+    this->get_parameter("cmd_topic", kCmdTopic);
+    this->get_parameter("lap_count_topic", kLapCountTopic);
+    this->get_parameter("perception_map_topic", kPerceptionMap);
+    this->get_parameter("slam_map_topic", kSlamMap);
+    this->get_parameter("arussim_ground_truth_topic", kArussimGroundTruthTopic);
+
+    //   Publishers
+    this->declare_parameter<std::string>("state_topic", "/car_state/state");
+    this->declare_parameter<std::string>("car_info_topic", "/car_state/car_info");
+    this->declare_parameter<std::string>("run_check_topic", "/car_state/run_check");
+    this->declare_parameter<std::string>("steer_check_topic", "/car_state/steer_check");
+    this->declare_parameter<std::string>("braking_procedure_topic", "/car_state/braking_procedure");
+
+    this->get_parameter("state_topic", kStateTopic);
+    this->get_parameter("car_info_topic", kCarInfoTopic);
+    this->get_parameter("run_check_topic", kRunCheckTopic);
+    this->get_parameter("steer_check_topic", kSteerCheckTopic);
+    this->get_parameter("braking_procedure_topic", kBrakingProcedureTopic);
+
+    // Parameters for safe mode plausability checks
+    //   Thresholds parameters
+    this->declare_parameter<double>("dt_threshold_imu", 0.05);
+    this->declare_parameter<double>("dt_threshold_extensometer", 0.05);
+    this->declare_parameter<double>("dt_threshold_wheelspeed", 0.05);
+    this->declare_parameter<double>("dt_threshold_inv", 0.05);
+    this->declare_parameter<double>("dt_threshold_cones_count_actual", 0.25);
+    this->declare_parameter<double>("dt_threshold_cones_count_all", 0.25);
+    this->declare_parameter<double>("max_ax", 15.0);
+    this->declare_parameter<double>("max_ay", 5.0);
+    this->declare_parameter<double>("max_r", 3.0);
+    this->declare_parameter<double>("max_vx", 75.0);
+    this->declare_parameter<double>("max_plausability_error", 5.0);
+
+    this->get_parameter("dt_threshold_imu", kThresholdImu);
+    this->get_parameter("dt_threshold_extensometer", kThresholdExtensometer);
+    this->get_parameter("dt_threshold_wheelspeed", kThresholdWheelSpeed);
+    this->get_parameter("dt_threshold_inv", kThresholdInv);
+    this->get_parameter("dt_threshold_cones_count_actual", kThresholdConesCountActual);
+    this->get_parameter("dt_threshold_cones_count_all", kThresholdConesCountAll);
+    this->get_parameter("max_ax", kMaxAx);
+    this->get_parameter("max_ay", kMaxAy);
+    this->get_parameter("max_r", kMaxR);
+    this->get_parameter("max_vx", kMaxVx);
+    this->get_parameter("max_plausability_error", kMaxPlausabilityError);
+
+    //   Error weights
+    this->declare_parameter<double>("error_weight_imu", 1.0);
+    this->declare_parameter<double>("error_weight_wheel_speed", 1.0);
+    this->declare_parameter<double>("error_weight_inv_speed", 1.0);
+    this->declare_parameter<double>("error_weight_cones_count_actual", 1.0);
+    this->declare_parameter<double>("error_weight_cones_count_all", 1.0);
+    this->declare_parameter<double>("error_weight_extensometer", 1.0);
+
+    this->get_parameter("error_weight_imu", kErrorWeightIMU);
+    this->get_parameter("error_weight_wheel_speed", kErrorWeightWheelSpeed);
+    this->get_parameter("error_weight_inv_speed", kErrorWeightInvSpeed);
+    this->get_parameter("error_weight_cones_count_actual", kErrorWeightConesCountActual);
+    this->get_parameter("error_weight_cones_count_all", kErrorWeightConesCountAll);
+    this->get_parameter("error_weight_extensometer", kErrorWeightExtensometer);
 
     // Debug
     this->declare_parameter<bool>("debug", true);
@@ -90,46 +127,52 @@ CarState::CarState(): Node("car_state")
 
 
 
+    // Create publishers
     state_pub_ = this->create_publisher<common_msgs::msg::State>(
-        "/car_state/state", 1);
+        kStateTopic, 1);
+        
     car_info_pub_ = this->create_publisher<common_msgs::msg::CarInfo>(
-        "/car_state/car_info", 1);
+        kCarInfoTopic, 1);
+
     run_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
-        "/car_state/run_check", 1);
+        kRunCheckTopic, 1);
+
     steer_check_pub_ = this->create_publisher<std_msgs::msg::Bool>(
-        "/car_state/steer_check", 1);
+        kSteerCheckTopic, 1);
+
     braking_procedure_pub_ = this->create_publisher<std_msgs::msg::Bool>(
-        "/car_state/braking_procedure", 1);
+        kBrakingProcedureTopic, 1);
 
 
+
+    // Create subscribers
     ami_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-        "/can_interface/AMI", 1, std::bind(&CarState::
+        kAmiTopic, 1, std::bind(&CarState::
             ami_callback, this, std::placeholders::_1));
 
     target_speed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-        "/controller/target_speed", 1, std::bind(&CarState::
+        kTargetSpeedTopic, 1, std::bind(&CarState::
             target_speed_callback, this, std::placeholders::_1));
 
     target_delta_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
-        "/controller/cmd", 1, std::bind(&CarState::
+        kCmdTopic, 1, std::bind(&CarState::
             target_delta_callback, this, std::placeholders::_1));
 
     lap_count_sub_ = this->create_subscription<std_msgs::msg::Int16>(
-        "/slam/lap_count", 1, std::bind(&CarState::
+        kLapCountTopic, 1, std::bind(&CarState::
             lap_count_callback, this, std::placeholders::_1));
 
     cones_count_actual_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "/perception/map", 1, std::bind(&CarState::
+        kPerceptionMap, 1, std::bind(&CarState::
             cones_count_actual_callback, this, std::placeholders::_1));
 
     cones_count_all_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "/slam/map", 1, std::bind(&CarState::
+        kSlamMap, 1, std::bind(&CarState::
             cones_count_all_callback, this, std::placeholders::_1));
 
-
-    if(kSimulation && get_arussim_ground_truth){
+    if(kSimulation && kGetArussimGroundTruth){
     arussim_ground_truth_sub_ = this->create_subscription<common_msgs::msg::State>(
-        "/arussim_interface/arussim_ground_truth", 1, std::bind(&CarState::
+        kArussimGroundTruthTopic, 1, std::bind(&CarState::
             arussim_ground_truth_callback, this, std::placeholders::_1));
     }
 
@@ -160,15 +203,20 @@ CarState::CarState(): Node("car_state")
     fl_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         kFLWheelSpeedTopic, 1, std::bind(&CarState::
             fl_wheelspeed_callback, this, std::placeholders::_1));
+
     fr_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         kFRWheelSpeedTopic, 1, std::bind(&CarState::
             fr_wheelspeed_callback, this, std::placeholders::_1));
+
     rl_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         kRLWheelSpeedTopic, 1, std::bind(&CarState::
             rl_wheelspeed_callback, this, std::placeholders::_1));
+
     rr_wheelspeed_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         kRRWheelSpeedTopic, 1, std::bind(&CarState::
             rr_wheelspeed_callback, this, std::placeholders::_1));
+
+
 
     // Configure timer once in the constructor based on the selected controller and frequency
     timer_ = this->create_wall_timer(
@@ -186,12 +234,15 @@ CarState::CarState(): Node("car_state")
     last_cones_count_actual_msg_time_ = this->now();
     last_cones_count_all_msg_time_ = this->now();
 
+
     // Create TF broadcaster
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
 
+
     // Initialize speed estimator
     speed_estimator_.initialize_speed_estimator();
+
 
     // Start simulation in Driving mode
     if(kSimulation){
