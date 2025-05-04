@@ -250,6 +250,102 @@ CarState::CarState(): Node("car_state")
     }
 }
 
+
+
+void CarState::on_timer()
+{
+    if (kMission!="inspection"){
+        this->get_tf_position();
+    }
+       
+    // Estimate vx, vy
+    double avg_vx;
+    if(kSimulation){
+        avg_vx = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
+    } else if (!kSimulation && kUseWheelspeeds && inv_speed_ > 3.0) {
+        avg_vx = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
+    } else {
+        avg_vx = inv_speed_;
+    }
+
+    Vector2d x_est = speed_estimator_.estimate_speed(ax_, r_, delta_, delta_der_, avg_vx);
+    vx_ = x_est(0);
+    vy_ = x_est(1); 
+
+    // Publish state message
+    auto state_msg = common_msgs::msg::State();
+    
+    state_msg.header.stamp = this->now();
+    state_msg.x = x_;      
+    state_msg.y = y_;    
+    state_msg.yaw = yaw_;  
+    state_msg.vx = vx_;    
+    state_msg.vy = vy_;
+    state_msg.r = r_;      
+    state_msg.ax = ax_;
+    state_msg.ay = ay_;
+    state_msg.delta = delta_;
+
+    state_pub_->publish(state_msg);
+
+    // Check if the mission is finished
+    if(as_status_== 3 && target_speed_== 0.0 && vx_ < 0.5){ 
+        as_status_ = 5;
+    }
+
+    // Publish car info message
+    auto car_info_msg = common_msgs::msg::CarInfo();
+    
+    car_info_msg.header.stamp = this->now();
+    car_info_msg.as_status = as_status_;
+    car_info_msg.ami = ami_;
+    car_info_msg.ebs_status = ebs_status_;
+    car_info_msg.ebs_redundancy_status = ebs_redundancy_status_;
+    car_info_msg.x = x_;      
+    car_info_msg.y = y_;    
+    car_info_msg.yaw = yaw_;  
+    car_info_msg.vx = vx_;    
+    car_info_msg.vy = vy_;
+    car_info_msg.target_speed = target_speed_;
+    car_info_msg.r = r_;      
+    car_info_msg.ax = ax_;
+    car_info_msg.ay = ay_;
+    car_info_msg.delta = delta_;
+    car_info_msg.target_delta = target_delta_;
+    car_info_msg.steering_state = steering_state_;
+    car_info_msg.torque_actual = torque_actual_;
+    car_info_msg.torque_target = torque_target_;
+    car_info_msg.brake_hydr_pressure = brake_hydr_pressure_;
+    car_info_msg.lap_count = lap_count_;
+    car_info_msg.cones_count_actual = cones_count_actual_;
+    car_info_msg.cones_count_all = cones_count_all_;
+
+    car_info_pub_->publish(car_info_msg);
+
+
+    // Decrease plausability buffer    
+    if (plausability_ > 0){
+        plausability_--;
+    }
+
+
+    // Publish run check
+    auto run_check_msg = std_msgs::msg::Bool();
+    if (kSafeMode){
+        run_check_msg.data = (as_status_ == 3) && (plausability_ < kMaxPlausabilityError) && epos_OK_;
+    } else {
+        run_check_msg.data = (as_status_ == 3);
+    }
+
+    run_check_pub_->publish(run_check_msg);
+
+    // Publish steering check
+    auto steering_check_msg = std_msgs::msg::Bool();
+    steering_check_msg.data = run_check_msg.data && (vx_ >= 0.5);
+    steer_check_pub_->publish(steering_check_msg);
+
+}
+
 void CarState::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
     as_status_ = msg->data; 
@@ -487,99 +583,6 @@ void CarState::cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg)
     }
 }
 
-void CarState::on_timer()
-{
-    if (kMission!="inspection"){
-        this->get_tf_position();
-    }
-       
-    // Estimate vx, vy
-    double avg_vx;
-    if(kSimulation){
-        avg_vx = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
-    } else if (!kSimulation && kUseWheelspeeds && inv_speed_ > 3.0) {
-        avg_vx = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
-    } else {
-        avg_vx = inv_speed_;
-    }
-
-    Vector2d x_est = speed_estimator_.estimate_speed(ax_, r_, delta_, delta_der_, avg_vx);
-    vx_ = x_est(0);
-    vy_ = x_est(1); 
-
-    // Publish state message
-    auto state_msg = common_msgs::msg::State();
-    
-    state_msg.header.stamp = this->now();
-    state_msg.x = x_;      
-    state_msg.y = y_;    
-    state_msg.yaw = yaw_;  
-    state_msg.vx = vx_;    
-    state_msg.vy = vy_;
-    state_msg.r = r_;      
-    state_msg.ax = ax_;
-    state_msg.ay = ay_;
-    state_msg.delta = delta_;
-
-    state_pub_->publish(state_msg);
-
-    // Check if the mission is finished
-    if(as_status_== 3 && target_speed_== 0.0 && vx_ < 0.5){ 
-        as_status_ = 5;
-    }
-
-    // Publish car info message
-    auto car_info_msg = common_msgs::msg::CarInfo();
-    
-    car_info_msg.header.stamp = this->now();
-    car_info_msg.as_status = as_status_;
-    car_info_msg.ami = ami_;
-    car_info_msg.ebs_status = ebs_status_;
-    car_info_msg.ebs_redundancy_status = ebs_redundancy_status_;
-    car_info_msg.x = x_;      
-    car_info_msg.y = y_;    
-    car_info_msg.yaw = yaw_;  
-    car_info_msg.vx = vx_;    
-    car_info_msg.vy = vy_;
-    car_info_msg.target_speed = target_speed_;
-    car_info_msg.r = r_;      
-    car_info_msg.ax = ax_;
-    car_info_msg.ay = ay_;
-    car_info_msg.delta = delta_;
-    car_info_msg.target_delta = target_delta_;
-    car_info_msg.steering_state = steering_state_;
-    car_info_msg.torque_actual = torque_actual_;
-    car_info_msg.torque_target = torque_target_;
-    car_info_msg.brake_hydr_pressure = brake_hydr_pressure_;
-    car_info_msg.lap_count = lap_count_;
-    car_info_msg.cones_count_actual = cones_count_actual_;
-    car_info_msg.cones_count_all = cones_count_all_;
-
-    car_info_pub_->publish(car_info_msg);
-
-
-    // Decrease plausability buffer    
-    if (plausability_ > 0){
-        plausability_--;
-    }
-
-
-    // Publish run check
-    auto run_check_msg = std_msgs::msg::Bool();
-    if (kSafeMode){
-        run_check_msg.data = (as_status_ == 3) && (plausability_ < kMaxPlausabilityError) && epos_OK_;
-    } else {
-        run_check_msg.data = (as_status_ == 3);
-    }
-
-    run_check_pub_->publish(run_check_msg);
-
-    // Publish steering check
-    auto steering_check_msg = std_msgs::msg::Bool();
-    steering_check_msg.data = run_check_msg.data && (vx_ >= 0.5);
-    steer_check_pub_->publish(steering_check_msg);
-
-}
 
 void CarState::get_tf_position()
 {

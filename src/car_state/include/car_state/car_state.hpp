@@ -1,6 +1,13 @@
 /**
  * @file car_state.hpp
- * @brief CarState node header for ARUS Team Driverless pipeline
+ * @author 
+ * @brief Header file for the Car State node.
+ * 
+ * This file defines the CarState class, which is responsible for estimating 
+ * and publishing the vehicle state in the ARUS Driverless stack.
+ * It manages subscribers to sensor topics, fuses their data through a 
+ * custom SpeedEstimator, performs plausibility checks, and publishes
+ * the current state and vehicle information.
  */
 
 // ROS2
@@ -28,7 +35,10 @@
 #include "car_state/speed_estimator.hpp"
 
 
-
+/**
+ * @brief Class containing the Car State node.
+ * Subscribes to sensor data, runs plausibility checks, and publishes state info.
+ */
 class CarState : public rclcpp::Node
 {
 public:
@@ -42,7 +52,10 @@ public:
     CarState();
 
 private:
-    // Variables
+    // Variable to estimates the vehicle's longitudinal and lateral velocity.
+    SpeedEstimator speed_estimator_;
+
+    // Car variables
     double x_=0;
     double y_=0;
     double yaw_ = 0;
@@ -75,6 +88,7 @@ private:
     double plausability_ = 0;
     bool epos_OK_ = true; //TODO: subscribe from epos_interface
 
+    // TF variables
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::unique_ptr<tf2_ros::TransformListener> tf_listener_;
 
@@ -82,7 +96,7 @@ private:
     // Parameters
     bool kSimulation;
     bool kGetArussimGroundTruth;
-    
+
     std::string kMission;
     int kTrackdriveLaps;
 
@@ -180,31 +194,104 @@ private:
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr braking_procedure_pub_;
 
 
-    // Callbacks for the timers
+    /**
+     * @brief Periodically processes sensor data, estimates vehicle speed, 
+     *        and publishes the current state and car information.
+     */
     void on_timer();
 
 
-    // Callback for the subscription
-    void extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
-    void as_status_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void ax_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void ay_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void r_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void target_speed_callback(const std_msgs::msg::Float32 msg);
-    void target_delta_callback(const common_msgs::msg::Cmd msg);
-    void lap_count_callback(const std_msgs::msg::Int16 msg);
-    void cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg);
-    void cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg);
-    void ami_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    
 
-    // Auxiliary functions 
+    /**
+     * @brief Callback that receives the current status of the Autonomous System (AS).
+     */
+    void as_status_callback(const std_msgs::msg::Float32::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives and validates longitudinal acceleration from the IMU.
+     */
+    void ax_callback(const std_msgs::msg::Float32::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives and validates lateral acceleration from the IMU.
+     */
+    void ay_callback(const std_msgs::msg::Float32::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives and validates yaw rate (rotation) from the IMU.
+     */
+    void r_callback(const std_msgs::msg::Float32::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives steering angle from the extensometer and computes its derivative.
+     */
+    void extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives and checks front-left wheel speed.
+     */
+    void fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives and checks front-right wheel speed.
+     */
+    void fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives and checks rear-left wheel speed.
+     */
+    void rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives and checks rear-right wheel speed.
+     */
+    void rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives and checks vehicle speed from the inverter.
+     */
+    void inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives ground-truth state from the ARUSSim simulator.
+     */
+    void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives AMI status from the system interface.
+     */
+    void ami_callback(const std_msgs::msg::Float32::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives the target speed from the controller.
+     */
+    void target_speed_callback(const std_msgs::msg::Float32 msg);
+
+    /**
+     * @brief Callback that receives the steering command (target delta) from the controller.
+     */
+    void target_delta_callback(const common_msgs::msg::Cmd msg);
+
+    /**
+     * @brief Callback that receives the current lap count from SLAM and may trigger braking.
+     */
+    void lap_count_callback(const std_msgs::msg::Int16 msg);
+
+    /**
+     * @brief Callback that receives actual perceived cones and checks plausibility.
+     */
+    void cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg);
+
+    /**
+     * @brief Callback that receives all known cones from SLAM and checks plausibility.
+     */
+    void cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg);
+
+
+    
+    /**
+     * @brief Retrieves the vehicle's current position and orientation from TF.
+     * Uses the transform between "arussim/world" and "slam/vehicle".
+     */
     void get_tf_position();
-    SpeedEstimator speed_estimator_;
 };
