@@ -346,6 +346,8 @@ void CarState::on_timer()
 
 }
 
+
+
 void CarState::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
     as_status_ = msg->data; 
@@ -358,6 +360,8 @@ void CarState::as_status_callback(const std_msgs::msg::Float32::SharedPtr msg)
     }
 }
 
+
+
 void CarState::ax_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
     auto now_time = this->now();
@@ -366,16 +370,18 @@ void CarState::ax_callback(const std_msgs::msg::Float32::SharedPtr msg)
 
     if (kSafeMode && (dt > kThresholdImu)) {
         plausability_ += kErrorWeightIMU;
-        RCLCPP_ERROR(this->get_logger(), "IMU dt: %f", dt);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "IMU dt: %f", dt);
     }
     
     ax_ = msg->data;
 
     if (kSafeMode && (ax_ < -kMaxAx || ax_ > kMaxAx)) {
         plausability_ += kErrorWeightIMU;
-        RCLCPP_ERROR(this->get_logger(), "ax_ out of range: %f", ax_);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "ax_ out of range: %f", ax_);
     }
 }
+
+
 
 void CarState::ay_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
@@ -383,9 +389,11 @@ void CarState::ay_callback(const std_msgs::msg::Float32::SharedPtr msg)
 
     if (kSafeMode && (ay_ < -kMaxAy || ay_ > kMaxAy)) {
         plausability_ += kErrorWeightIMU;
-        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible ay: %f", ay_);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "Mechanically impossible ay: %f", ay_);
     }
 }
+
+
 
 void CarState::r_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
@@ -393,9 +401,11 @@ void CarState::r_callback(const std_msgs::msg::Float32::SharedPtr msg)
 
     if (kSafeMode && (r_ < -kMaxR || r_ > kMaxR)) {
         plausability_ += kErrorWeightIMU;
-        RCLCPP_ERROR(this->get_logger(), "Mechanically impossible r: %f", r_);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "Mechanically impossible r: %f", r_);
     }
 }
+
+
 
 void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
@@ -405,7 +415,7 @@ void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg
 
     if (kSafeMode && dt > kThresholdExtensometer) {
         plausability_ += kErrorWeightExtensometer;
-        RCLCPP_ERROR(this->get_logger(), "Extensometer dt: %f", dt);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "Extensometer dt: %f", dt);
     }
     
     delta_der_ = (msg->data - delta_) / dt;
@@ -413,9 +423,11 @@ void CarState::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg
 
     if (kSafeMode && (delta_ < -21 || delta_ > 21)) {
         plausability_ += kErrorWeightExtensometer;
-        RCLCPP_ERROR(this->get_logger(), "delta_ out of range: %f", delta_);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "delta_ out of range: %f", delta_);
     }
 }
+
+
 
 void CarState::fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
@@ -425,16 +437,18 @@ void CarState::fl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
 
     if (kSafeMode && dt > kThresholdWheelSpeed) {
         plausability_ += kErrorWeightWheelSpeed;
-        RCLCPP_ERROR(this->get_logger(), "FL wheelspeed dt: %f", dt);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "FL wheelspeed dt: %f", dt);
     }
 
     v_front_left_ = msg->data;
 
     if (kSafeMode && v_front_left_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
-        RCLCPP_ERROR(this->get_logger(), "v_front_left_ exceeds max: %f", v_front_left_);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "v_front_left_ exceeds max: %f", v_front_left_);
     }
 }
+
+
 
 void CarState::fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
@@ -444,16 +458,18 @@ void CarState::fr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
 
     if (kSafeMode && dt > kThresholdWheelSpeed) {
         plausability_ += kErrorWeightWheelSpeed;
-        RCLCPP_ERROR(this->get_logger(), "FR wheelspeed dt: %f", dt);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "FR wheelspeed dt: %f", dt);
     }
 
     v_front_right_ = msg->data;
 
     if (kSafeMode && v_front_right_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
-        RCLCPP_ERROR(this->get_logger(), "v_front_right_ exceeds max: %f", v_front_right_);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "v_front_right_ exceeds max: %f", v_front_right_);
     }
 }
+
+
 
 void CarState::rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
@@ -463,16 +479,18 @@ void CarState::rl_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
 
     if (kSafeMode && dt > kThresholdWheelSpeed) {
         plausability_ += kErrorWeightWheelSpeed;
-        RCLCPP_ERROR(this->get_logger(), "RL wheelspeed dt: %f", dt);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "RL wheelspeed dt: %f", dt);
     }
 
     v_rear_left_ = msg->data;
 
     if (kSafeMode && v_rear_left_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
-        RCLCPP_ERROR(this->get_logger(), "v_rear_left_ exceeds max: %f", v_rear_left_);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "v_rear_left_ exceeds max: %f", v_rear_left_);
     }
 }
+
+
 
 void CarState::rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
@@ -482,16 +500,18 @@ void CarState::rr_wheelspeed_callback(const std_msgs::msg::Float32::SharedPtr ms
 
     if (kSafeMode && dt > kThresholdWheelSpeed) {
         plausability_ += kErrorWeightWheelSpeed;
-        RCLCPP_ERROR(this->get_logger(), "RR wheelspeed dt: %f", dt);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "RR wheelspeed dt: %f", dt);
     }
 
     v_rear_right_ = msg->data;
 
     if (kSafeMode && v_rear_right_ > kMaxVx) {
         plausability_ += kErrorWeightWheelSpeed;
-        RCLCPP_ERROR(this->get_logger(), "v_rear_right_ exceeds max: %f", v_rear_right_);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "v_rear_right_ exceeds max: %f", v_rear_right_);
     }
 }
+
+
 
 void CarState::inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
@@ -501,16 +521,18 @@ void CarState::inv_speed_callback(const std_msgs::msg::Float32::SharedPtr msg)
 
     if(kSafeMode && dt > kThresholdInv) {
         plausability_ += kErrorWeightInvSpeed;
-        RCLCPP_ERROR(this->get_logger(), "Inv speed dt: %f", dt);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "Inv speed dt: %f", dt);
     }
 
     inv_speed_ = msg->data;
 
     if (kSafeMode && (vx_ > kMaxVx || vx_ < -0.5)) {
         plausability_ += kErrorWeightInvSpeed;
-        RCLCPP_ERROR(this->get_logger(), "vx_ exceeds max: %f", vx_);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "vx_ exceeds max: %f", vx_);
     }
 }
+
+
 
 void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg)
 {
@@ -519,20 +541,28 @@ void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::Shar
     yaw_ = msg->yaw;
 }
 
+
+
 void CarState::ami_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {
     ami_ = msg->data;
 }
+
+
 
 void CarState::target_speed_callback(const std_msgs::msg::Float32 msg)
 {
     target_speed_ = msg.data;
 }
 
+
+
 void CarState::target_delta_callback(const common_msgs::msg::Cmd msg)
 {
     target_delta_ = msg.delta;
 }
+
+
 
 void CarState::lap_count_callback(const std_msgs::msg::Int16 msg)
 {
@@ -545,6 +575,8 @@ void CarState::lap_count_callback(const std_msgs::msg::Int16 msg)
     }
 }
 
+
+
 void CarState::cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 msg)
 {
     auto now_time = this->now();
@@ -553,16 +585,18 @@ void CarState::cones_count_actual_callback(const sensor_msgs::msg::PointCloud2 m
 
     if(kSafeMode && dt > kThresholdConesCountActual) {
         plausability_ += kErrorWeightConesCountActual;
-        RCLCPP_ERROR(this->get_logger(), "Cones count actual dt: %f", dt);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "Cones count actual dt: %f", dt);
     }
 
     cones_count_actual_ = msg.width;
 
     if (kSafeMode && cones_count_actual_ <= 0) {
         plausability_+= kErrorWeightConesCountActual;
-        RCLCPP_ERROR(this->get_logger(), "No cones detected by perception");
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "No cones detected by perception");
     }
 }
+
+
 
 void CarState::cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg)
 {   
@@ -572,16 +606,17 @@ void CarState::cones_count_all_callback(const sensor_msgs::msg::PointCloud2 msg)
 
     if(kSafeMode && dt > kThresholdConesCountAll) {
         plausability_ += kErrorWeightConesCountAll;
-        RCLCPP_ERROR(this->get_logger(), "Cones count all dt: %f", dt);
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "Cones count all dt: %f", dt);
     }
 
     cones_count_all_ = msg.width;
 
     if (kSafeMode && cones_count_all_ <= 0) {
         plausability_+= kErrorWeightConesCountAll;
-        RCLCPP_ERROR(this->get_logger(), "No cones detected by slam");
+        if(kDebug) RCLCPP_ERROR(this->get_logger(), "No cones detected by slam");
     }
 }
+
 
 
 void CarState::get_tf_position()
@@ -601,9 +636,11 @@ void CarState::get_tf_position()
         y_ = transform.transform.translation.y;
         yaw_ = yaw;
     } catch (tf2::TransformException &ex) {
-        // RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
+        // if(kDebug) RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
     }
 }
+
+
 
 int main(int argc, char * argv[])
 {
