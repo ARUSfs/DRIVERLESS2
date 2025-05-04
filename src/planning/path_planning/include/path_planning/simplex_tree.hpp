@@ -1,10 +1,7 @@
 /**
  * @file simplex_tree.hpp
  * @author Ignacio Sánchez Isidro (igsais12@gmail.com)
- * @date 01-11-2024
- * @brief Creates a tree structure to store information about neighbor triangles.
- * It also contain helper functions such as a search function.
- * 
+ * @brief Creates a tree structure using information about neighbor triangles.
  */
 #include <path_planning/simplex_node.hpp>
 #include <iostream>
@@ -15,19 +12,14 @@
 
 
 /**
- * @brief Class for the simlpex tree structure.
- * Nodes are indices of the triangles in the triangulation. Two nodes are connected if they share an edge.
+ * @brief Class for the simplex tree structure.
+ * Nodes are indices of the triangles in the triangulation. Two nodes are connected if they share an
+ * edge (with more conditions).
  */
 class SimplexTree {
     public:
-    /**
-     * @brief Right and left children of the node. Recursive structure for tree construction.
-     */
     SimplexNode root_;
 
-    /**
-     * @brief pcl::PointCloud object containing the cones in the map.
-     */
     pcl::PointCloud<ConeXYZColorScore> cones_cloud_;
 
     double angle_coeff_;
@@ -38,15 +30,8 @@ class SimplexTree {
     std::vector<int> best_index_route_;
     std::vector<std::vector<ConeXYZColorScore>> ending_routes_;
 
-    /**
-     * @brief Array of arrays containing all the posible routes through the tree.
-     */
     std::vector<std::vector<int>> index_routes_;
 
-    /**
-     * @brief Array of arrays containing the midpoints of the edges in the routes.
-     * 
-     */
     std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
 
     /**
@@ -56,14 +41,7 @@ class SimplexTree {
     SimplexTree() = default;
 
     /**
-     * @brief Construct a new generic tree object.
-     * @param triangle_list triangulation.triangles object containing all the triangles.
-     * @param first_tri_ind triangle index from which to start.
-     * @param first_edge edge to start the route.
-     * @param cones_cloud pcl::PointCloud object containing the cones in the map.
-     * @param yaw yaw of the car.
-     * @param angle_coeff coefficient for the angle cost.
-     * @param len_coeff coefficient for the length cost.
+     * @brief Construct a new simplex tree object and expand it.
      */
     SimplexTree(CDT::TriangleVec triangle_list, int first_tri_ind, std::vector<int> first_edge,
                 pcl::PointCloud<ConeXYZColorScore> cones_cloud, std::vector<int> back_route_vertices, 
@@ -72,15 +50,7 @@ class SimplexTree {
     /**
      * @brief Recursive function to create the tree structure.
      * From a triangle list and an index from which to start, it creates a tree structure containing all 
-     * the routes through the triangles that share an edge.
-     * Left is the default path, right is created when there are two valid neighbors.
-     * @param triangle_list triangulation.triangles object containing all the triangles.
-     * @param index triangle index from which to start
-     * @param visited array containing the visited triangle in the current route.
-     * @param passed_vertices array containing the vertices that have been passed 
-     * so any triangle containing them is not visited.
-     * @param mid_route array containing the midpoints of the edges in the route.
-     * @return SimplexNode* pointer to the created tree.
+     * the routes through the triangles that share an edge. Left is the default path.
      */
     SimplexNode* create_tree_aux(CDT::TriangleVec triangle_list, int index, 
                                  std::vector<int> visited, std::vector<int> passed_vertices,
@@ -144,7 +114,7 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
         for (auto v: n_triangle.vertices){
             if (!in(v, triangle.vertices)){
                 if (in(v, passed_vertices)){ // Check the neighbor doesn't contain any passed vertex
-                    if (visited.size()>20 && v == passed_vertices[0]){ // If the first vertex is reached again, end the route 
+                    if (passed_vertices.size() > cones_cloud_.size()*0.75 && (v == passed_vertices[0] || v == passed_vertices[1])){ // If the first vertex is reached again, end the route 
                         finish_route = true;
                     } else {
                         next_edge.clear();
