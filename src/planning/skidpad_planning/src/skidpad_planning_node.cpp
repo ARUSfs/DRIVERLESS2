@@ -1,3 +1,8 @@
+/**
+ * @file skidpad_planning_node.cpp
+ * @author David Guil (davidguilb2@gmail.com)
+ * @brief Node for planning the skidpad trajectory in the ARUS Driverless pipeline.
+ */
 #include "skidpad_planning_node.hpp"
 
 
@@ -16,6 +21,7 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
     this->declare_parameter<double>("top_accy", 5.0);
     this->declare_parameter<double>("step_width_1", 2);
     this->declare_parameter<double>("step_width_2", 2);
+    this->declare_parameter<bool>("debug", true);
 
 
     this->get_parameter("perception_topic", kPerceptionTopic);
@@ -29,6 +35,7 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
     this->get_parameter("top_accy", kMaxYAcc);
     this->get_parameter("step_width_1", kStepWidth1);
     this->get_parameter("step_width_2", kStepWidth2);
+    this->get_parameter("debug", kDebug);
 
     start_time_ = this->now();
     initialize_skidpad(kRouteSpacing, 9.125, kTargetFirstLap, kTargetSecondLap);
@@ -42,7 +49,9 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
 
 }
 
-
+/**
+ * @brief Initializes the skidpad trajectory template and speed/acceleration profiles.
+ */
 void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius, 
                                          double first_lap_speed, double second_lap_speed) {
     template_.clear();
@@ -143,9 +152,16 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         
     }
 
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "Skidpad template initialized with %zu points", template_.size());
+    }
+
 }
 
 
+/**
+ * @brief Finds the center and radius of a circle given three points.
+ */
 std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
     const ConeXYZColorScore& p1, const ConeXYZColorScore& p2, const ConeXYZColorScore& p3) {
     const double radius_target1 = 7.625;
@@ -183,8 +199,20 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
 }
 
 void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
+    auto start_time = this->now();
 
     cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
+
+    if (cones_.points.empty()) {
+        if (kDebug) {
+            RCLCPP_WARN(this->get_logger(), "Received empty PointCloud. Skipping iteration.");
+        }
+        return;
+    }
+
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "Processing PointCloud with %zu points", cones_.points.size());
+    }
 
     if(this->now().seconds() - start_time_.seconds() < kPlanningTime ){
 
@@ -357,9 +385,17 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
             publish_trajectory();
         }
     }  
+
+    auto end_time = this->now();
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "Perception callback execution time: %f seconds", (end_time - start_time).seconds());
+    }
 }
 
 
+/**
+ * @brief Publishes the computed skidpad trajectory to the corresponding topic.
+ */
 void SkidpadPlanning::publish_trajectory() {
     common_msgs::msg::Trajectory trajectory_msg;
 
@@ -367,6 +403,10 @@ void SkidpadPlanning::publish_trajectory() {
         right_center.first == 0.0 || right_center.second == 0.0) {
         RCLCPP_ERROR(this->get_logger(), "Error: Invalid centers detected. Trajectory will not be published.");
         return;
+    }
+
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "Publishing trajectory with %zu points", template_.size());
     }
 
     // Compute the skidpad center
@@ -411,9 +451,18 @@ void SkidpadPlanning::publish_trajectory() {
 }
 
 
-pcl::PointCloud<ConeXYZColorScore> SkidpadPlanning::convert_ros_to_pcl(const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {
+/**
+ * @brief Converts a ROS PointCloud2 message to a PCL point cloud.
+ */
+pcl::PointCloud<ConeXYZColorScore> SkidpadPlanning::convert_ros_to_pcl(
+    const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {
     pcl::PointCloud<ConeXYZColorScore> pcl_cloud;  
     pcl::fromROSMsg(*ros_cloud, pcl_cloud); 
+
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "Converted ROS PointCloud2 to PCL with %zu points", pcl_cloud.points.size());
+    }
+
     return pcl_cloud;
 }
 
