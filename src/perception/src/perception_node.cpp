@@ -111,19 +111,19 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     {
         // Crop the point cloud
         Cropping::crop_filter_cropbox(cloud, kMaxXFov, kMaxYFov, kMaxZFov);
-        if (kDebug) RCLCPP_INFO(this->get_logger(), "Cropping Time: %f", this->now().seconds() - start_time);
+        if (kDebug) RCLCPP_DEBUG(this->get_logger(), "Cropping Time: %f", this->now().seconds() - start_time);
     }
 
 
     // Apply the ground filter function
     GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, 
         kMaxZFov, kNumberSections, kAngleThreshold);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Ground Filter Time: %f", this->now().seconds() - start_time);
+    if (kDebug) RCLCPP_DEBUG(this->get_logger(), "Ground Filter Time: %f", this->now().seconds() - start_time);
 
 
     // Extract the clusters from the point cloud
     Clustering::euclidean_clustering(cloud_filtered, cluster_indices, kMinClusterSize, kMaxClusterSize);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Clustering time: %f", this->now().seconds() - start_time);
+    if (kDebug) RCLCPP_DEBUG(this->get_logger(), "Clustering time: %f", this->now().seconds() - start_time);
 
 
     if (kDebug && cluster_indices.empty()) 
@@ -135,18 +135,17 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     // Store the clusters centers in a new point cloud
     Utils::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Center calculation time: %f", this->now().seconds() - start_time);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Number of possible cones: %zu", clusters_centers.size());
+    if (kDebug) RCLCPP_DEBUG(this->get_logger(), "Center calculation time: %f", this->now().seconds() - start_time);
 
 
     // Recover ground points
     Utils::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Reconstruction time: %f", this->now().seconds() - start_time);
+    if (kDebug) RCLCPP_DEBUG(this->get_logger(), "Reconstruction time: %f", this->now().seconds() - start_time);
 
 
     // Filter the clusters by size
     Utils::filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Filtering time: %f", this->now().seconds() - start_time);
+    if (kDebug) RCLCPP_DEBUG(this->get_logger(), "Filtering time: %f", this->now().seconds() - start_time);
 
 
     // Convert the indices of the clusters to the points of the clusters
@@ -182,8 +181,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     // Score the clusters and keep the ones that will be considered cones
     Scoring::scoring_surface(final_map, cluster_points, clusters_centers, kThresholdScoring);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Scoring time: %f", this->now().seconds() - start_time);
-    if (kDebug && final_map->size() > 0) RCLCPP_INFO(this->get_logger(), "Number of cones: %zu", final_map->size());
+    if (kDebug) RCLCPP_DEBUG(this->get_logger(), "Scoring time: %f", this->now().seconds() - start_time);
 
 
     if (kDebug && final_map->size() == 0)
@@ -197,7 +195,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     if (kColor)
     {
         ColorEstimation::color_estimation(cluster_points, clusters_centers, kDistanceThreshold, kColoringThreshold);
-        if (kDebug) RCLCPP_INFO(this->get_logger(), "Color estimation time: %f", this->now().seconds() - start_time);
+        if (kDebug) RCLCPP_DEBUG(this->get_logger(), "Color estimation time: %f", this->now().seconds() - start_time);
 
 
         // Update the colors of final map points
@@ -217,15 +215,16 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     // Motion correction
     double dt = this->now().seconds() - start_time; // Estimate SDK delay
     Utils::motion_correction(final_map, vx, vy, yaw_rate, dt);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Motion correction time: %f", this->now().seconds() - start_time);
+    if (kDebug) RCLCPP_DEBUG(this->get_logger(), "Motion correction time: %f", this->now().seconds() - start_time);
 
 
     final_times.push_back(this->now().seconds() - start_time);
     double average_time = std::accumulate(final_times.begin(), final_times.end(), 0.0) / final_times.size();
 
 
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Final iteration time: %f", this->now().seconds() - start_time);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Average time: %f", average_time);
+    if (kDebug) RCLCPP_DEBUG(this->get_logger(), "Final iteration time: %f", this->now().seconds() - start_time);
+    if (kDebug && final_map->size() > 0) RCLCPP_INFO(this->get_logger(), "Number of cones: %zu", final_map->size());
+    if (kDebug) RCLCPP_DEBUG(this->get_logger(), "Average time: %f", average_time);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "//////////////////////////////////////////////");
 
 
