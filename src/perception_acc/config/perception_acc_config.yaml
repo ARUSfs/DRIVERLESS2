@@ -14,7 +14,7 @@ perception_acc:
     max_z_fov: 0.5
 
     #Parameters of ground filter
-    threshold_ground_filter: 0.075
+    threshold_ground_filter: 0.1
 
     number_sections: 8
     angle_threshold: 35.0

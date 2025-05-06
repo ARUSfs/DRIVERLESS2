@@ -73,7 +73,7 @@ fast_limo:
       
       rateSampling: # quick downsample
         active: true
-        value: 4                      # The smaller, the more points will be kept and the bigger is the computation load
+        value: 3                      # The smaller, the more points will be kept and the bigger is the computation load
 
     iKFoM: # Iterative Kalman Filter on Manifolds lib
       MAX_NUM_ITERS: 2                # max num+1 of iterations of the KF (limits comp. load)

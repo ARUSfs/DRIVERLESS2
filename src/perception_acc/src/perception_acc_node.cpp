@@ -230,7 +230,12 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Accumulation::accumulate(cloud, accumulated_cloud, x_, y_, yaw_, kDistanceLidarToCoG);
         
     RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", accumulated_cloud->size());
-    // RCLCPP_INFO(this->get_logger(), "p1-> x: %f, y: %f, z: %f", accumulated_cloud->points[0].x, accumulated_cloud->points[0].y, accumulated_cloud->points[0].z);
+
+    // Skip if empty
+    if (accumulated_cloud->empty()) {
+        RCLCPP_WARN(this->get_logger(), "Accumulated cloud is empty. Skipping ground filter.");
+        return;
+    }
 
     // Cropping
     Cropping::crop_filter_cropbox(accumulated_cloud, kMaxXFov, kMaxYFov, kMaxZFov);
@@ -372,20 +377,20 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         //Publish the filtered cloud
         sensor_msgs::msg::PointCloud2 filtered_msg;
         pcl::toROSMsg(*cloud_filtered, filtered_msg);
-        filtered_msg.header.frame_id="/map";
+        filtered_msg.header.frame_id="/rslidar";
         filtered_pub_->publish(filtered_msg);
 
         // Publish the clusters cloud
         sensor_msgs::msg::PointCloud2 clusters_msg;
         pcl::toROSMsg(*clusters_cloud, clusters_msg);
-        clusters_msg.header.frame_id="/map";
+        clusters_msg.header.frame_id="/rslidar";
         clusters_pub_->publish(clusters_msg);
     }
 
     //Publish the map cloud
     sensor_msgs::msg::PointCloud2 map_msg;
     pcl::toROSMsg(*final_map, map_msg);
-    map_msg.header.frame_id="/map";
+    map_msg.header.frame_id="/rslidar";
     map_pub_->publish(map_msg);
 
 }

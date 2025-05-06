@@ -42,7 +42,8 @@ namespace GroundFiltering
         segmentation.setOptimizeCoefficients(true);
         segmentation.setModelType(pcl::SACMODEL_PLANE);
         segmentation.setMethodType(pcl::SAC_RANSAC);
-        segmentation.setMaxIterations(50);
+        segmentation.setEpsAngle(20.0f * (M_PI / 180.0f));
+        segmentation.setMaxIterations(100);
         segmentation.setDistanceThreshold(threshold);
 
         //Aply the segmentation
