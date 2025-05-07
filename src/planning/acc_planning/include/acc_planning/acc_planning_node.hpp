@@ -19,22 +19,30 @@ public:
     AccPlanning();
 
 private:
-    // Parameters
+    // ============================
+    // Parameters (from config file)
+    // ============================
     std::string kPerceptionTopic;
     std::string kTrajectoryTopic;
     double kTargetSpeed;
     double kMaxXAcc;
     double kMaxDec;
     double kTrackLength;
-    bool kDebug ;
+    bool kDebug;
+    double kStep;
+    int kMaxIterations;
+    double kRansacThreshold;
+    int kMinInliersRequired;
+    double kMaxAllowedDeviation;
 
+    // ============================
     // Data structures
+    // ============================
     pcl::PointCloud<ConeXYZColorScore> cones_;
     std::vector<double> s_;
     std::vector<double> speed_profile_;
     std::vector<double> acc_profile_;
 
-    // Line coefficients for trajectory
     double a_;
     double b_;
     std::vector<double> a_history_;
@@ -43,10 +51,15 @@ private:
     double sum_b_ = 0.0;
     const size_t history_size_ = 1;
 
+    // ============================
     // ROS interfaces
+    // ============================
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr perception_sub_;
     rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
 
+    // ============================
+    // Functions
+    // ============================
     /**
      * @brief Callback function for processing perception data.
      * @param per_msg The point cloud received from the perception topic.

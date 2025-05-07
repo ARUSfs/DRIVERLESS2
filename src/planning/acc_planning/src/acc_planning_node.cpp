@@ -1,10 +1,8 @@
 #include "acc_planning_node.hpp"
 /** 
-* @file: acc_planning_node.cpp
-* @author : David Guil Barranco
-* @brief : This file contains the implementation of the AccPlanning class, which is responsible for
-*          generating a trajectory for the acceleration track based on the detected cones by the perception system.
-*/
+ * @file acc_planning_node.cpp
+ * @brief Implementation of the AccPlanning class, responsible for generating a trajectory for the acceleration track based on detected cones.
+ */
 
 AccPlanning::AccPlanning() : Node("acc_planning_node")
 {
@@ -15,6 +13,11 @@ AccPlanning::AccPlanning() : Node("acc_planning_node")
     this->declare_parameter<double>("max_dec", 5.0);
     this->declare_parameter<double>("track_length", 75.0);
     this->declare_parameter<bool>("debug", true);
+    this->declare_parameter<double>("step", 0.1);
+    this->declare_parameter<int>("max_iterations", 500);
+    this->declare_parameter<double>("ransac_threshold", 0.5);
+    this->declare_parameter<int>("min_inliers_required", 3);
+    this->declare_parameter<double>("max_allowed_deviation", 10.0);
 
     this->get_parameter("perception_topic", kPerceptionTopic);
     this->get_parameter("trajectory_topic", kTrajectoryTopic);
@@ -23,7 +26,12 @@ AccPlanning::AccPlanning() : Node("acc_planning_node")
     this->get_parameter("max_dec", kMaxDec);
     this->get_parameter("track_length", kTrackLength);
     this->get_parameter("debug", kDebug);
-    
+    this->get_parameter("step", kStep);
+    this->get_parameter("max_iterations", kMaxIterations);
+    this->get_parameter("ransac_threshold", kRansacThreshold);
+    this->get_parameter("min_inliers_required", kMinInliersRequired);
+    this->get_parameter("max_allowed_deviation", kMaxAllowedDeviation);
+
     calculate_profiles();
 
     // Publish resulting trajectory
@@ -73,21 +81,19 @@ void AccPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr p
  */
 
 void AccPlanning::calculate_profiles() {
-    double step = 0.1;  
-
     s_.clear();
     speed_profile_.clear();
     acc_profile_.clear();
 
-    for (int i = 0; i < 2 * kTrackLength / step; i++) { 
-        s_.push_back(i * step);
+    for (int i = 0; i < 2 * kTrackLength / kStep; i++) { 
+        s_.push_back(i * kStep);
         speed_profile_.push_back(0.0);
     }
 
     speed_profile_[0] = 1;
 
     for (size_t i = 1; i < s_.size(); ++i) {
-        double ds = step;
+        double ds = kStep;
         if (s_[i] < kTrackLength) {
             speed_profile_[i] = std::min(kTargetSpeed, sqrt(pow(speed_profile_[i - 1], 2) + 2 * kMaxXAcc * ds));
         } else {
@@ -96,7 +102,7 @@ void AccPlanning::calculate_profiles() {
     }
 
     for (size_t i = 0; i < speed_profile_.size() - 1; ++i) {
-        double ds = step;
+        double ds = kStep;
         acc_profile_.push_back((pow(speed_profile_[i + 1], 2) - pow(speed_profile_[i], 2)) / (2 * ds));
     }
 
@@ -111,10 +117,6 @@ void AccPlanning::calculate_profiles() {
  * 
  */
 void AccPlanning::generate_planning() {
-    int max_iterations = 500;
-    double ransac_threshold = 0.5;
-    int min_inliers_required = 3; 
-    double max_allowed_deviation = 10;
     std::random_device rd;
     std::mt19937 gen(rd());
 
@@ -130,7 +132,7 @@ void AccPlanning::generate_planning() {
 
     std::vector<int> inliers_indices1;
 
-    for (int iter = 0; iter < max_iterations; ++iter) {
+    for (int iter = 0; iter < kMaxIterations; ++iter) {
         int i = distrib(gen);
         int j = distrib(gen);
         auto& c1 = cones_.points[i];
@@ -149,8 +151,8 @@ void AccPlanning::generate_planning() {
         for (int idx = 0; idx < cones_.points.size(); ++idx) {
             const auto& cone = cones_.points[idx];
             double d = std::abs(a1 * cone.x + b1_1 - cone.y) / std::sqrt(a1 * a1 + 1);
-            if (d < ransac_threshold) {
-                score += 1.0 - (d / ransac_threshold);
+            if (d < kRansacThreshold) {
+                score += 1.0 - (d / kRansacThreshold);
                 temp_inliers_indices.push_back(idx);
             }
         }
@@ -172,7 +174,7 @@ void AccPlanning::generate_planning() {
         }
     }
 
-    if (remaining_cones.size() < 2) {
+    if (remaining_cones.size() < kMinInliersRequired) {
         if (kDebug) {
             RCLCPP_WARN(this->get_logger(), "Not enough remaining cones for second line fitting.");
         }
@@ -182,7 +184,7 @@ void AccPlanning::generate_planning() {
     max_score = 0;
     std::uniform_int_distribution<> distrib_remaining(0, remaining_cones.size() - 1);
 
-    for (int iter2 = 0; iter2 < max_iterations; ++iter2) {
+    for (int iter2 = 0; iter2 < kMaxIterations; ++iter2) {
         int i = distrib_remaining(gen), j = distrib_remaining(gen);
         const auto& c1 = remaining_cones.points[i];
         const auto& c2 = remaining_cones.points[j];
@@ -197,8 +199,8 @@ void AccPlanning::generate_planning() {
         double score = 0.0;
         for (const auto& cone : remaining_cones.points) {
             double d = std::abs(a2 * cone.x + b2_1 - cone.y) / std::sqrt(a2 * a2 + 1);
-            if (d < ransac_threshold) {
-                score += 1.0 - (d / ransac_threshold);
+            if (d < kRansacThreshold) {
+                score += 1.0 - (d / kRansacThreshold);
             }
         }
 
@@ -211,7 +213,7 @@ void AccPlanning::generate_planning() {
 
     double a_temp = (best_a1 + best_a2) / 2;
     double b_temp = (best_b1 + best_b2) / 2;
-    if (std::abs(a_temp - a_initial) > max_allowed_deviation || std::abs(b_temp - b_initial) > max_allowed_deviation) {
+    if (std::abs(a_temp - a_initial) > kMaxAllowedDeviation || std::abs(b_temp - b_initial) > kMaxAllowedDeviation) {
         if (kDebug) {
             RCLCPP_WARN(this->get_logger(), "Deviation too high. Keeping initial trajectory.");
         }
@@ -251,11 +253,10 @@ void AccPlanning::generate_planning() {
 
 void AccPlanning::publish_trajectory() {
     common_msgs::msg::Trajectory trajectory_msg;
-    double step = 0.1;
-
+    
     for (size_t i = 0; i < s_.size(); ++i) {
         common_msgs::msg::PointXY point;
-        point.x = i * step;
+        point.x = i * kStep;
         point.y = a_ * point.x + b_;  // Updates the slope of the trajectory
         trajectory_msg.points.push_back(point);
 
