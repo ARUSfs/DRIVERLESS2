@@ -26,6 +26,7 @@ private:
     double kMaxXAcc;
     double kMaxDec;
     double kTrackLength;
+    bool kDebug ;
 
     // Data structures
     pcl::PointCloud<ConeXYZColorScore> cones_;
