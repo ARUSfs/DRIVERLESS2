@@ -172,7 +172,8 @@ class PathPlanning : public rclcpp::Node
         /**
          * @brief Create a track limits msg object from a given route of triangles and the triangulation.
          */
-        common_msgs::msg::TrackLimits create_track_limits_msg(bool add_forward_route = false);
+        common_msgs::msg::TrackLimits create_track_limits_msg(CDT::TriangleVec triang, 
+                                                              std::vector<int> triangles_route);
         
         /**
          * @brief Add the back edge to the track limits if each cone is colored and not too close to
