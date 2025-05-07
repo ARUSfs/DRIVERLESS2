@@ -65,7 +65,7 @@ Perception::Perception() : Node("Perception")
     clusters_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/map_test", 10);
+        "/perception_acc/map", 10);
 
     // Inicializa el tf_buffer y tf_listener de manera que se suscriban al topic /tf
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
