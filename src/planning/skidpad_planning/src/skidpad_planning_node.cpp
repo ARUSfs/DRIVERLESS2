@@ -1,8 +1,9 @@
 /**
  * @file skidpad_planning_node.cpp
  * @author David Guil (davidguilb2@gmail.com)
- * @brief Node for planning the skidpad trajectory in the ARUS Driverless pipeline.
+ * @brief Skidpad planning nodes for the ARUS Driverless pipeline.
  */
+
 #include "skidpad_planning_node.hpp"
 
 

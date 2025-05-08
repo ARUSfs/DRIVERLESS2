@@ -1,4 +1,10 @@
-#include <rclcpp/rclcpp.hpp>
+/**
+ * @file skidpad_planning_node.cpp
+ * @author David Guil (davidguilb2@gmail.com)
+ * @brief Skidpad planning node header for the ARUS Driverless pipeline.
+ */
+
+ #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/ModelCoefficients.h>
