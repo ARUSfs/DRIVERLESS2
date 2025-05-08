@@ -51,6 +51,93 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
 }
 
 
+void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
+
+    cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
+
+    if (cones_.points.empty()) {
+        if (kDebug) {
+            RCLCPP_WARN(this->get_logger(), "Received empty PointCloud. Skipping iteration.");
+        }
+        return;
+    }
+
+
+    if(this->now().seconds() - start_time_.seconds() < kPlanningTime ){
+
+        if (cones_.points.empty()) {
+            RCLCPP_ERROR(this->get_logger(), "No points in the PointCloud.");
+            return;
+        }
+
+        
+
+        compute_ransac_centers();
+    } else {
+        if (!trajectory_calculated_) {
+
+            DBSCAN ds(3, 2, centers);
+            ds.run();
+
+            int cluster1 = 0;
+            int cluster2 = 0;
+            int max_s = 0;
+            for(int i = 0; i < ds.n_clusters; i++){
+                if(ds.clusters[i].size() > max_s){
+                    max_s = ds.clusters[i].size();
+                    cluster1 = i;
+                }
+            }
+
+            max_s = 0;
+            for(int i = 0; i < ds.n_clusters; i++){
+                if(ds.clusters[i].size() > max_s && i != cluster1){
+                    max_s = ds.clusters[i].size();
+                    cluster2 = i;
+                }
+            }
+
+            for (int i = 0; i < ds.m_points.size(); i++) {
+                if (ds.m_points[i].clusterID == cluster1) {
+                    left_center = {ds.m_points[i].x, ds.m_points[i].y};
+                } else if (ds.m_points[i].clusterID == cluster2) {
+                    right_center = {ds.m_points[i].x, ds.m_points[i].y};
+                }
+            }
+
+            if(left_center.second < right_center.second){
+                std::swap(left_center, right_center);
+            }
+
+            if (kDebug) {
+                RCLCPP_INFO(this->get_logger(), "Left center: (%f, %f)", left_center.first, left_center.second);
+                RCLCPP_INFO(this->get_logger(), "Right center: (%f, %f)", right_center.first, right_center.second);
+            }
+        
+            // Check if the final centers are valid. 
+            // Centers should be 18.25 meters apart and not too close to the origin
+            if(std::abs(std::sqrt(pow(left_center.first - right_center.first, 2) + 
+                    pow(left_center.second - right_center.second, 2)) - 18.25) > 5.0 ||
+                    left_center.first < 5.0 || right_center.first < 5.0){
+                RCLCPP_ERROR(this->get_logger(), "Error: Invalid centers detected. Restarting planning.");
+                start_time_ = this->now();
+                return;
+            }
+
+            trajectory_calculated_ = true;
+
+            
+            publish_trajectory();
+            
+        } else {
+            publish_trajectory();
+            double ratio = check_trajectory();
+            if (ratio<0.7 or true) compute_ransac_centers();
+        }
+    }  
+}
+
+
 void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius, 
                                          double first_lap_speed, double second_lap_speed) {
     template_.clear();
@@ -157,6 +244,121 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
 
 }
 
+void SkidpadPlanning::compute_ransac_centers() {
+
+    auto t0 = this->now();
+
+    const int N_iterations = 100; // RANSAC iterations
+    const double threshold = 0.2; // RANSAC threshold
+    const double radius_target1 = 7.625;
+    const double radius_target2 = 10.625;
+    const double distance_between_centers = 18.25;
+
+    int max_inliers = 0;
+    // Point struct from dbscan.h
+    Point best_center = Point();
+
+    pcl::PointCloud<ConeXYZColorScore> remaining_cones;
+
+    // RANSAC fot first straight
+    for (int iter = 0; iter < N_iterations; ++iter) {
+        int i = rand() % cones_.points.size();
+        int j = rand() % cones_.points.size();
+        int k = rand() % cones_.points.size();
+
+        const auto& p1 = cones_.points[i];
+        const auto& p2 = cones_.points[j];
+        const auto& p3 = cones_.points[k];
+
+        auto [x_center, y_center, r] = find_circle_center(p1, p2, p3);
+
+
+    
+        if ((std::abs(r - radius_target1) < 2.0 || std::abs(r - radius_target2) < 2.0) && x_center > 10.0) {
+            int inliers = 0;
+
+            for (size_t idx = 0; idx < cones_.points.size(); ++idx) {
+                const auto& cone = cones_.points[idx];
+                double d = std::sqrt(std::pow(cone.x - x_center, 2) + std::pow(cone.y - y_center, 2));
+
+                if (std::abs(d - radius_target1) < threshold || std::abs(d - radius_target2) < threshold) {
+                    inliers++;
+                }
+            }
+
+            if (inliers > max_inliers) {
+                best_center.x = x_center;
+                best_center.y = y_center;
+                max_inliers = inliers;
+            }
+        }
+    }
+
+    // Update remaining cones
+    for (size_t idx = 0; idx < cones_.points.size(); ++idx) {
+        double dx = cones_.points[idx].x - best_center.x;
+        double dy = cones_.points[idx].y - best_center.y;
+        double d = std::sqrt(dx * dx + dy * dy);
+        if (std::abs(d - radius_target1) > threshold && std::abs(d - radius_target2) > threshold) {
+            remaining_cones.push_back(cones_.points[idx]);
+        }
+    }
+
+    // first_center_candidates.emplace_back(best_center.first, best_center.second);
+    best_center.z = 0.0;
+    best_center.clusterID = UNCLASSIFIED;
+    if (best_center.x != 0.0){
+        centers.push_back(best_center);
+    }
+
+    if (kDebug) RCLCPP_INFO(this->get_logger(), "First center: (%f, %f)", best_center.x, best_center.y);
+
+    Point best_center2 = Point();
+    max_inliers = 0;
+    // RANSAC for second center
+    if (remaining_cones.size() >= 3) {
+        for (int iter = 0; iter < N_iterations; ++iter) {
+            int i = rand() % remaining_cones.points.size();
+            int j = rand() % remaining_cones.points.size();
+            int k = rand() % remaining_cones.points.size();
+
+            const auto& p1 = remaining_cones.points[i];
+            const auto& p2 = remaining_cones.points[j];
+            const auto& p3 = remaining_cones.points[k];
+
+            auto [x_center, y_center, r] = find_circle_center(p1, p2, p3);
+            if ((std::abs(r - radius_target1) < 2.0 || std::abs(r - radius_target2) < 2.0) && x_center > 13.0 &&
+                std::abs(distance_between_centers - std::sqrt(std::pow(best_center.x - x_center, 2) + std::pow(best_center.y - y_center, 2))) < 2.0) {
+                int inliers = 0;
+
+                for (const auto& cone : remaining_cones.points) {
+                    double d = std::sqrt(std::pow(cone.x - x_center, 2) + std::pow(cone.y - y_center, 2));
+                    if (std::abs(d - radius_target1) < threshold || std::abs(d - radius_target2) < threshold) {
+                        inliers++;
+                    }
+                }
+
+                if (inliers > max_inliers) {
+                    best_center2.x = x_center;
+                    best_center2.y = y_center;
+                    max_inliers = inliers;
+                }
+            }
+        }
+        // second_center_candidates.emplace_back(best_center.first, best_center.second);
+        best_center2.z = 0.0;
+        best_center2.clusterID = UNCLASSIFIED;
+        if (best_center2.x != 0.0){
+            centers.push_back(best_center2);
+        }
+        if (kDebug) RCLCPP_INFO(this->get_logger(), "Second center: (%f, %f)", best_center2.x, best_center2.y);
+    }
+
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "RANSAC time: %f seconds", (this->now() - t0).seconds());
+    }
+}
+
 
 std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
     const ConeXYZColorScore& p1, const ConeXYZColorScore& p2, const ConeXYZColorScore& p3) {
@@ -193,202 +395,6 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
     return{center_x, center_y, radius};
     
 }
-
-void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
-    auto start_time = this->now();
-
-    cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
-
-    if (cones_.points.empty()) {
-        if (kDebug) {
-            RCLCPP_WARN(this->get_logger(), "Received empty PointCloud. Skipping iteration.");
-        }
-        return;
-    }
-
-
-    if(this->now().seconds() - start_time_.seconds() < kPlanningTime ){
-
-        if (cones_.points.empty()) {
-            RCLCPP_ERROR(this->get_logger(), "No points in the PointCloud.");
-            return;
-        }
-
-        const int N_iterations = 100; // RANSAC iterations
-        const double threshold = 0.2; // RANSAC threshold
-        const double radius_target1 = 7.625;
-        const double radius_target2 = 10.625;
-        const double distance_between_centers = 18.25;
-
-        int max_inliers = 0;
-        // Point struct from dbscan.h
-        Point best_center = Point();
-
-        pcl::PointCloud<ConeXYZColorScore> remaining_cones;
-
-        // RANSAC fot first straight
-        for (int iter = 0; iter < N_iterations; ++iter) {
-            int i = rand() % cones_.points.size();
-            int j = rand() % cones_.points.size();
-            int k = rand() % cones_.points.size();
-
-            const auto& p1 = cones_.points[i];
-            const auto& p2 = cones_.points[j];
-            const auto& p3 = cones_.points[k];
-
-            auto [x_center, y_center, r] = find_circle_center(p1, p2, p3);
-    
-
-        
-            if ((std::abs(r - radius_target1) < 2.0 || std::abs(r - radius_target2) < 2.0) && x_center > 10.0) {
-                int inliers = 0;
-
-                for (size_t idx = 0; idx < cones_.points.size(); ++idx) {
-                    const auto& cone = cones_.points[idx];
-                    double d = std::sqrt(std::pow(cone.x - x_center, 2) + std::pow(cone.y - y_center, 2));
-
-                    if (std::abs(d - radius_target1) < threshold || std::abs(d - radius_target2) < threshold) {
-                        ++inliers;
-                    }
-                }
-
-                if (inliers > max_inliers) {
-                    best_center.x = x_center;
-                    best_center.y = y_center;
-                    max_inliers = inliers;
-                }
-            }
-        }
-
-        // Update remaining cones
-        for (size_t idx = 0; idx < cones_.points.size(); ++idx) {
-            double dx = cones_.points[idx].x - best_center.x;
-            double dy = cones_.points[idx].y - best_center.y;
-            double d = std::sqrt(dx * dx + dy * dy);
-            if (std::abs(d - radius_target1) > threshold && std::abs(d - radius_target2) > threshold) {
-                remaining_cones.push_back(cones_.points[idx]);
-            }
-        }
-
-        // first_center_candidates.emplace_back(best_center.first, best_center.second);
-        best_center.z = 0.0;
-        best_center.clusterID = UNCLASSIFIED;
-        if (best_center.x != 0.0){
-            centers.push_back(best_center);
-        }
-
-        if (kDebug) RCLCPP_INFO(this->get_logger(), "First center: (%f, %f)", best_center.x, best_center.y);
-
-        Point best_center2 = Point();
-        max_inliers = 0;
-        // RANSAC for second center
-        if (remaining_cones.size() >= 3) {
-            for (int iter = 0; iter < N_iterations; ++iter) {
-                int i = rand() % remaining_cones.points.size();
-                int j = rand() % remaining_cones.points.size();
-                int k = rand() % remaining_cones.points.size();
-
-                const auto& p1 = remaining_cones.points[i];
-                const auto& p2 = remaining_cones.points[j];
-                const auto& p3 = remaining_cones.points[k];
-
-                auto [x_center, y_center, r] = find_circle_center(p1, p2, p3);
-                if ((std::abs(r - radius_target1) < 2.0 || std::abs(r - radius_target2) < 2.0) && x_center > 13.0 &&
-                    std::abs(distance_between_centers - std::sqrt(std::pow(best_center.x - x_center, 2) + std::pow(best_center.y - y_center, 2))) < 2.0) {
-                    int inliers = 0;
-
-                    for (const auto& cone : remaining_cones.points) {
-                        double d = std::sqrt(std::pow(cone.x - x_center, 2) + std::pow(cone.y - y_center, 2));
-                        if (std::abs(d - radius_target1) < threshold || std::abs(d - radius_target2) < threshold) {
-                            ++inliers;
-                        }
-                    }
-
-                    if (inliers > max_inliers) {
-                        best_center2.x = x_center;
-                        best_center2.y = y_center;
-                        max_inliers = inliers;
-                    }
-                }
-            }
-            // second_center_candidates.emplace_back(best_center.first, best_center.second);
-            best_center2.z = 0.0;
-            best_center2.clusterID = UNCLASSIFIED;
-            if (best_center2.x != 0.0){
-                centers.push_back(best_center2);
-            }
-            if (kDebug) RCLCPP_INFO(this->get_logger(), "Second center: (%f, %f)", best_center2.x, best_center2.y);
-        }
-
-        if (kDebug) {
-            RCLCPP_INFO(this->get_logger(), "RANSAC time: %f seconds", (this->now() - start_time).seconds());
-        }
-
-        
-    } else {
-        if (!trajectory_calculated_) {
-
-            DBSCAN ds(3, 2, centers);
-            ds.run();
-
-            int cluster1 = 0;
-            int cluster2 = 0;
-            int max_s = 0;
-            for(int i = 0; i < ds.n_clusters; i++){
-                if(ds.clusters[i].size() > max_s){
-                    max_s = ds.clusters[i].size();
-                    cluster1 = i;
-                }
-            }
-
-            max_s = 0;
-            for(int i = 0; i < ds.n_clusters; i++){
-                if(ds.clusters[i].size() > max_s && i != cluster1){
-                    max_s = ds.clusters[i].size();
-                    cluster2 = i;
-                }
-            }
-
-            for (int i = 0; i < ds.m_points.size(); i++) {
-                if (ds.m_points[i].clusterID == cluster1) {
-                    left_center = {ds.m_points[i].x, ds.m_points[i].y};
-                } else if (ds.m_points[i].clusterID == cluster2) {
-                    right_center = {ds.m_points[i].x, ds.m_points[i].y};
-                }
-            }
-
-            if(left_center.second < right_center.second){
-                std::swap(left_center, right_center);
-            }
-
-            if (kDebug) {
-                RCLCPP_INFO(this->get_logger(), "Left center: (%f, %f)", left_center.first, left_center.second);
-                RCLCPP_INFO(this->get_logger(), "Right center: (%f, %f)", right_center.first, right_center.second);
-            }
-        
-            // Check if the final centers are valid. 
-            // Centers should be 18.25 meters apart and not too close to the origin
-            if(std::abs(std::sqrt(pow(left_center.first - right_center.first, 2) + 
-                    pow(left_center.second - right_center.second, 2)) - 18.25) > 5.0 ||
-                    left_center.first < 5.0 || right_center.first < 5.0){
-                RCLCPP_ERROR(this->get_logger(), "Error: Invalid centers detected. Restarting planning.");
-                start_time_ = this->now();
-                return;
-            }
-
-            trajectory_calculated_ = true;
-
-            
-            publish_trajectory();
-            
-        } else {
-            publish_trajectory();
-            double ratio = check_trajectory();
-            std::cout << "Ratio: " << ratio << std::endl;
-        }
-    }  
-}
-
 
 double SkidpadPlanning::check_trajectory(){ 
     double valid_cones = 0;
@@ -483,6 +489,8 @@ void SkidpadPlanning::publish_trajectory() {
     trajectory_pub_->publish(trajectory_msg);
 }
 
+
+
 pcl::PointCloud<ConeXYZColorScore> SkidpadPlanning::convert_ros_to_pcl(
     const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {
     pcl::PointCloud<ConeXYZColorScore> pcl_cloud;  
@@ -498,3 +506,4 @@ int main(int argc, char * argv[])
     rclcpp::shutdown();
     return 0;
 }
+

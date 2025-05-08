@@ -92,6 +92,9 @@ private:
     /**
      * @brief Converts a ROS PointCloud2 message to a PCL point cloud.
      */
+
+    void compute_ransac_centers();
+    
     pcl::PointCloud<ConeXYZColorScore> convert_ros_to_pcl(
         const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud);
 
