@@ -49,9 +49,7 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
 
 }
 
-/**
- * @brief Initializes the skidpad trajectory template and speed/acceleration profiles.
- */
+
 void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius, 
                                          double first_lap_speed, double second_lap_speed) {
     template_.clear();
@@ -159,9 +157,6 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
 }
 
 
-/**
- * @brief Finds the center and radius of a circle given three points.
- */
 std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
     const ConeXYZColorScore& p1, const ConeXYZColorScore& p2, const ConeXYZColorScore& p3) {
     const double radius_target1 = 7.625;
@@ -210,9 +205,6 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
         return;
     }
 
-    if (kDebug) {
-        RCLCPP_INFO(this->get_logger(), "Processing PointCloud with %zu points", cones_.points.size());
-    }
 
     if(this->now().seconds() - start_time_.seconds() < kPlanningTime ){
 
@@ -283,7 +275,8 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
         if (best_center.x != 0.0){
             centers.push_back(best_center);
         }
-        std::cout << "First center: (" << best_center.x << ", " << best_center.y << ")" << std::endl;
+
+        if (kDebug) RCLCPP_INFO(this->get_logger(), "First center: (%f, %f)", best_center.x, best_center.y);
 
         Point best_center2 = Point();
         max_inliers = 0;
@@ -323,7 +316,11 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
             if (best_center2.x != 0.0){
                 centers.push_back(best_center2);
             }
-            std::cout << "Second center: (" << best_center2.x << ", " << best_center2.y << ")" << std::endl;
+            if (kDebug) RCLCPP_INFO(this->get_logger(), "Second center: (%f, %f)", best_center2.x, best_center2.y);
+        }
+
+        if (kDebug) {
+            RCLCPP_INFO(this->get_logger(), "RANSAC time: %f seconds", (this->now() - start_time).seconds());
         }
 
         
@@ -363,8 +360,10 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
                 std::swap(left_center, right_center);
             }
 
-            RCLCPP_INFO(this->get_logger(), "Left center: (%f, %f)", left_center.first, left_center.second);
-            RCLCPP_INFO(this->get_logger(), "Right center: (%f, %f)", right_center.first, right_center.second);
+            if (kDebug) {
+                RCLCPP_INFO(this->get_logger(), "Left center: (%f, %f)", left_center.first, left_center.second);
+                RCLCPP_INFO(this->get_logger(), "Right center: (%f, %f)", right_center.first, right_center.second);
+            }
         
             // Check if the final centers are valid. 
             // Centers should be 18.25 meters apart and not too close to the origin
@@ -385,17 +384,9 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
             publish_trajectory();
         }
     }  
-
-    auto end_time = this->now();
-    if (kDebug) {
-        RCLCPP_INFO(this->get_logger(), "Perception callback execution time: %f seconds", (end_time - start_time).seconds());
-    }
 }
 
 
-/**
- * @brief Publishes the computed skidpad trajectory to the corresponding topic.
- */
 void SkidpadPlanning::publish_trajectory() {
     common_msgs::msg::Trajectory trajectory_msg;
 
@@ -450,18 +441,10 @@ void SkidpadPlanning::publish_trajectory() {
     trajectory_pub_->publish(trajectory_msg);
 }
 
-
-/**
- * @brief Converts a ROS PointCloud2 message to a PCL point cloud.
- */
 pcl::PointCloud<ConeXYZColorScore> SkidpadPlanning::convert_ros_to_pcl(
     const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {
     pcl::PointCloud<ConeXYZColorScore> pcl_cloud;  
     pcl::fromROSMsg(*ros_cloud, pcl_cloud); 
-
-    if (kDebug) {
-        RCLCPP_INFO(this->get_logger(), "Converted ROS PointCloud2 to PCL with %zu points", pcl_cloud.points.size());
-    }
 
     return pcl_cloud;
 }
