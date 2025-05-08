@@ -37,7 +37,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Visualization Manager:
   Class: ""
   Displays:
@@ -404,7 +404,7 @@ Visualization Manager:
       Color: 38; 162; 105
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -425,7 +425,7 @@ Visualization Manager:
         Value: /perception/map
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -438,7 +438,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -456,10 +456,10 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /perception/map_test
+        Value: /perception_acc/map
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -541,7 +541,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
-    Fixed Frame: arussim/world
+    Fixed Frame: rslidar
     Frame Rate: 30
   Name: root
   Tools:
@@ -583,26 +583,26 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz_default_plugins/ThirdPersonFollower
-      Distance: 52.40990447998047
+      Class: rviz_default_plugins/Orbit
+      Distance: 10.759751319885254
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -16.44131851196289
-        Y: -3.281123399734497
-        Z: 0
-      Focal Shape Fixed Size: false
+        X: 1.1017365455627441
+        Y: 0.31618785858154297
+        Z: 1.6445040702819824
+      Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5153984427452087
+      Pitch: 0.20539838075637817
       Target Frame: <Fixed Frame>
-      Value: ThirdPersonFollower (rviz_default_plugins)
-      Yaw: 3.430393695831299
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 3.4653966426849365
     Saved: ~
 Window Geometry:
   Displays:

@@ -116,12 +116,13 @@ namespace Accumulation
 
     void accumulate(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, 
                     pcl::PointCloud<PointXYZIRingTime>::Ptr& accumulated_cloud,
-                    double x, double y, double yaw, double kDistanceLidarToCoG)
+                    double x, double y, double yaw, double kDistanceLidarToCoG,
+                    double kBufferSize)
     {
         // Clean the buffer the first time
         if (!buffer_cloud_initialized) {
             cloud_buffer.clear();
-            cloud_buffer.set_capacity(10);
+            cloud_buffer.set_capacity(kBufferSize);
             buffer_cloud_initialized = true;
             cloud_buffer.push_back(cloud);
             return; // Removed invalid return value.

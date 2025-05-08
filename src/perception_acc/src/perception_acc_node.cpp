@@ -30,6 +30,7 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<bool>("global_accumulation", true);
     this->declare_parameter<double>("distance_lidar_to_CoG", 1.65);
     this->declare_parameter<float>("downsample_size", 0.05);
+    this->declare_parameter<int>("buffer_size", 10);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
@@ -48,6 +49,7 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("global_accumulation", kGlobalAccumulation);
     this->get_parameter("distance_lidar_to_CoG", kDistanceLidarToCoG);
     this->get_parameter("downsample_size", kDownsampleSize);
+    this->get_parameter("buffer_size", kBufferSize);
 
     //Transform into radians
     // kHFov *= (M_PI/180);  // Comentada debido a que kHFov no está definido
@@ -227,7 +229,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     // Accumulation
     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulated_cloud(new pcl::PointCloud<PointXYZIRingTime>);
-    Accumulation::accumulate(cloud, accumulated_cloud, x_, y_, yaw_, kDistanceLidarToCoG);
+    Accumulation::accumulate(cloud, accumulated_cloud, x_, y_, yaw_, kDistanceLidarToCoG, kBufferSize);
         
     RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", accumulated_cloud->size());
 
