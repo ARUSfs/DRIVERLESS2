@@ -39,7 +39,7 @@ int get_vertex_index(CDT::V2d<double> vertex, CDT::Triangulation<double> triangu
             }
         }
     }
-    return 0;
+    return -1;
 }
 
 /**
