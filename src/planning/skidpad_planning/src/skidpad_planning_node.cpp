@@ -1,3 +1,9 @@
+/**
+ * @file skidpad_planning_node.cpp
+ * @author David Guil (davidguilb2@gmail.com)
+ * @brief Skidpad planning nodes for the ARUS Driverless pipeline.
+ */
+
 #include "skidpad_planning_node.hpp"
 
 
@@ -16,6 +22,7 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
     this->declare_parameter<double>("top_accy", 5.0);
     this->declare_parameter<double>("step_width_1", 2);
     this->declare_parameter<double>("step_width_2", 2);
+    this->declare_parameter<bool>("debug", true);
 
 
     this->get_parameter("perception_topic", kPerceptionTopic);
@@ -29,6 +36,7 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
     this->get_parameter("top_accy", kMaxYAcc);
     this->get_parameter("step_width_1", kStepWidth1);
     this->get_parameter("step_width_2", kStepWidth2);
+    this->get_parameter("debug", kDebug);
 
     start_time_ = this->now();
     initialize_skidpad(kRouteSpacing, 9.125, kTargetFirstLap, kTargetSecondLap);
@@ -143,6 +151,10 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         
     }
 
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "Skidpad template initialized with %zu points", template_.size());
+    }
+
 }
 
 
@@ -183,8 +195,17 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
 }
 
 void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
+    auto start_time = this->now();
 
     cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
+
+    if (cones_.points.empty()) {
+        if (kDebug) {
+            RCLCPP_WARN(this->get_logger(), "Received empty PointCloud. Skipping iteration.");
+        }
+        return;
+    }
+
 
     if(this->now().seconds() - start_time_.seconds() < kPlanningTime ){
 
@@ -255,7 +276,8 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
         if (best_center.x != 0.0){
             centers.push_back(best_center);
         }
-        std::cout << "First center: (" << best_center.x << ", " << best_center.y << ")" << std::endl;
+
+        if (kDebug) RCLCPP_INFO(this->get_logger(), "First center: (%f, %f)", best_center.x, best_center.y);
 
         Point best_center2 = Point();
         max_inliers = 0;
@@ -295,7 +317,11 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
             if (best_center2.x != 0.0){
                 centers.push_back(best_center2);
             }
-            std::cout << "Second center: (" << best_center2.x << ", " << best_center2.y << ")" << std::endl;
+            if (kDebug) RCLCPP_INFO(this->get_logger(), "Second center: (%f, %f)", best_center2.x, best_center2.y);
+        }
+
+        if (kDebug) {
+            RCLCPP_INFO(this->get_logger(), "RANSAC time: %f seconds", (this->now() - start_time).seconds());
         }
 
         
@@ -335,8 +361,10 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
                 std::swap(left_center, right_center);
             }
 
-            RCLCPP_INFO(this->get_logger(), "Left center: (%f, %f)", left_center.first, left_center.second);
-            RCLCPP_INFO(this->get_logger(), "Right center: (%f, %f)", right_center.first, right_center.second);
+            if (kDebug) {
+                RCLCPP_INFO(this->get_logger(), "Left center: (%f, %f)", left_center.first, left_center.second);
+                RCLCPP_INFO(this->get_logger(), "Right center: (%f, %f)", right_center.first, right_center.second);
+            }
         
             // Check if the final centers are valid. 
             // Centers should be 18.25 meters apart and not too close to the origin
@@ -367,6 +395,10 @@ void SkidpadPlanning::publish_trajectory() {
         right_center.first == 0.0 || right_center.second == 0.0) {
         RCLCPP_ERROR(this->get_logger(), "Error: Invalid centers detected. Trajectory will not be published.");
         return;
+    }
+
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "Publishing trajectory with %zu points", template_.size());
     }
 
     // Compute the skidpad center
@@ -410,10 +442,11 @@ void SkidpadPlanning::publish_trajectory() {
     trajectory_pub_->publish(trajectory_msg);
 }
 
-
-pcl::PointCloud<ConeXYZColorScore> SkidpadPlanning::convert_ros_to_pcl(const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {
+pcl::PointCloud<ConeXYZColorScore> SkidpadPlanning::convert_ros_to_pcl(
+    const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {
     pcl::PointCloud<ConeXYZColorScore> pcl_cloud;  
     pcl::fromROSMsg(*ros_cloud, pcl_cloud); 
+
     return pcl_cloud;
 }
 
