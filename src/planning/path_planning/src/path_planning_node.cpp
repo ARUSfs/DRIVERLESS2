@@ -151,7 +151,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     
     if (kDebug) {
         double triangulation_time = this->now().seconds() - start;
-        RCLCPP_DEBUG(this->get_logger(), "Triangulation time: %f", triangulation_time);
+        RCLCPP_INFO(this->get_logger(), "Triangulation time: %f", triangulation_time);
     }
     
     // Get the nearest triangle containing the back edge
@@ -198,7 +198,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
     if (kDebug) {
         double tree_time = this->now().seconds() - start;
-        RCLCPP_DEBUG(this->get_logger(), "Simplex tree time: %f", tree_time);
+        RCLCPP_INFO(this->get_logger(), "Simplex tree time: %f", tree_time);
     }
     
     // Get the final route using the buffer if selected in config file
@@ -294,7 +294,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     
     if (kDebug) {
         double trajectory_time = this->now().seconds() - start;
-        RCLCPP_DEBUG(this->get_logger(), "Trajectory time: %f", trajectory_time);
+        RCLCPP_INFO(this->get_logger(), "Trajectory time: %f", trajectory_time);
     }
 }
 
