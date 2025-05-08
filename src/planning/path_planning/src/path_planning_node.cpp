@@ -155,6 +155,10 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     double min_distance = INFINITY;
     int edge_v0_ind = get_vertex_index(CDT::V2d<double>::make(back_edge[0].x,back_edge[0].y), triang);
     int edge_v1_ind = get_vertex_index(CDT::V2d<double>::make(back_edge[1].x,back_edge[1].y), triang);
+    if (edge_v0_ind == -1 || edge_v1_ind == -1){
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Back edge vertices not found");
+        return;
+    }
     for (int i : get_triangles_from_vert(edge_v0_ind, triang)){
         if (in(i, get_triangles_from_vert(edge_v1_ind, triang))){
             CDT::V2d<double> centroid = compute_centroid(i, triang.triangles, triang.vertices);
@@ -174,7 +178,8 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     // Get passed vertices from the back route
     std::vector<int> passed_vertices;
     for (auto p : back_points_){
-        int ind_1 = get_vertex_index(CDT::V2d<double>::make(p.x, p.y), triang, 0.5);
+        int ind_1 = get_vertex_index(CDT::V2d<double>::make(p.x, p.y), triang, 0.95);
+        if (ind_1 == -1) continue;
         if (in(ind_1, passed_vertices)) continue;
         passed_vertices.push_back(ind_1);
     }
@@ -376,6 +381,10 @@ std::vector<ConeXYZColorScore> PathPlanning::get_back_edge(){
 
     // Initializing it from each of the origin triangles
     int orig_index = get_vertex_index(CDT::V2d<double>::make(x_,y_), triang);
+    if (orig_index == -1){
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Origin vertex not found");
+        return back_edge;
+    }
     std::vector<int> o_triangles = get_triangles_from_vert(orig_index, triang);        
         
     for (int i = 0; i<o_triangles.size(); i++){
