@@ -1,12 +1,12 @@
 # Skidpad Planning Node
 
-This ROS 2 node generates a trajectory for a vehicle navigating a skidpad track (a figure-8 or double circle layout) using cone detections from perception. It detects circle centers via RANSAC and produces a smooth trajectory around the centers.
+This ROS 2 node generates a trajectory for a vehicle navigating a skidpad track (a 8-shape or double circle layout) using cone detections from perception. It detects circle centers via RANSAC and produces a smooth trajectory around the centers.
 
 ## Features
 
-- Subscribes to cone detections from a SLAM module.
+- Subscribes to cone detections from the SLAM node.
 - Detects left and right circles using RANSAC.
-- Publishes a centerline trajectory.
+- Publishes skidpad centerline trajectory.
 - All parameters are configurable via YAML.
 
 ## Architecture
@@ -23,11 +23,10 @@ The node performs the following steps:
 
 - **Input**: Positions of detected cones.
 - **RANSAC Circle Detection**:
-  - Fit a circle using a RANSAC-based method to handle noise and outliers.
+  - Fit both circles using a RANSAC-based method to handle noise and outliers.
   - Extract circle center and radius.
 - **Trajectory Generation**:
-  - Calculate the midpoint between the detected circles.
-  - Generate a trajectory as a series of waypoints forming a loop around the midpoints.
+  - Pre-computed trajectory is transformed to fit the detected centers.
   - The trajectory is aligned and smoothed for consistent vehicle control.
 
 ## Parameters
@@ -44,15 +43,18 @@ These are loaded via `skidpad_params.yaml`:
 | `min_inliers` | int | Minimum inliers for a valid circle |
 
 
-## Launch
+## Usage
 
 You can launch the node using the included launch file:
 
 ```bash
-ros2 launch common_meta sim_skidpad_launch.py 
+ros2 launch skidpad_planning skidpad_planning_launch.py 
 
 ```
 
-## 📞 Contact
+## Connections
+### Subscribed Topics
+- `/slam/map` (type: `sensor_msgs/PointCloud2`): Receives global map cloud.
 
-For questions or contributions, please reach out to the ARUS Driverless software team.
+### Published Topics
+- `/skidpad_planning/trajectory` (type: `common_msgs/Trajectory`): Publishes skidpad route.
