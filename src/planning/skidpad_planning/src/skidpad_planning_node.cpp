@@ -383,8 +383,49 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
             
         } else {
             publish_trajectory();
+            double ratio = check_trajectory();
+            std::cout << "Ratio: " << ratio << std::endl;
         }
     }  
+}
+
+
+double SkidpadPlanning::check_trajectory(){ 
+    double valid_cones = 0;
+    double kThresholdCheck = 1.0;
+    double v1,v2,v3 = 0.0;
+
+    // Compute distance to the perpendicular between both centers
+    // Ax + By + C = 0, d = |Ax0 + By0 + C| / sqrt(A^2 + B^2)
+    // A = lx-rx, B = ly-ry, C = 0.5*(rx^2 - lx^2 + ry^2 - ly^2)
+
+    double A = left_center.first - right_center.first;
+    double B = left_center.second - right_center.second;
+    double C = 0.5*(right_center.first*right_center.first - left_center.first*left_center.first + 
+                    right_center.second*right_center.second - left_center.second*left_center.second);
+    
+
+    for (size_t i = 0; i < cones_.size(); ++i) {                                           
+        const auto& cone = cones_.points[i];
+        double left_dist =sqrt(pow(cone.x - left_center.first,2)+pow(cone.y - left_center.second,2));
+        double right_dist =sqrt(pow(cone.x - right_center.first,2)+pow(cone.y - right_center.second,2));
+        double perpendicular_dist = std::abs(A*cone.x + B*cone.y + C) / std::sqrt(A*A + B*B);
+
+        if(abs(left_dist-7.625)<kThresholdCheck || abs(left_dist-10.625)<kThresholdCheck){
+            valid_cones++;  
+            v1++;
+        }else if(abs(right_dist-7.625)<kThresholdCheck || abs(right_dist-10.625)<kThresholdCheck){
+            valid_cones++;
+            v2++;
+        } else if(abs(perpendicular_dist-1.5)<kThresholdCheck){
+            valid_cones++;
+            v3++;
+        }
+    
+    }
+    std::cout << "v1: " << v1 << " v2: " << v2 << " v3: " << v3 << std::endl;
+    double ratio = valid_cones/((double)cones_.size());
+    return ratio;
 }
 
 

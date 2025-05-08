@@ -94,4 +94,6 @@ private:
      */
     pcl::PointCloud<ConeXYZColorScore> convert_ros_to_pcl(
         const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud);
+
+        double check_trajectory();
 };
