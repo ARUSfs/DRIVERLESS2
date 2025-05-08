@@ -4,12 +4,8 @@
  * @brief Main file for the Path Planning node. Contains the main function and the implementation
  * of the methods to achieve a robust and reliable path planning algorithm for the ARUS Team
  * which extracts the midpoints of the track that the ART will follow.
- * @version 0.1
- * @date 29-10-2024
- *
  */
 #include "path_planning/path_planning_node.hpp"
-#include <chrono>
 
 PathPlanning::PathPlanning() : Node("path_planning")
 {
@@ -107,7 +103,6 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
             if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
             rclcpp::shutdown();
         }
-        this->add_to_track_limits(this->get_back_edge());
         return;
     }
 
@@ -129,10 +124,11 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         back_edge.push_back(ConeXYZColorScore(0, -1.5, 0, YELLOW, -1));
         back_edge.push_back(ConeXYZColorScore(0, 1.5, 0, BLUE, -1));
     }
-    if (back_edge.size()!=2) return;
 
-    // Create track limits using the back edge
-    this->add_to_track_limits(back_edge);
+    if (back_edge.size()!=2) {
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Back edge not found");
+        return;
+    }
 
     // Create the triangulation
     CDT::Triangulation<double> triang;
@@ -193,6 +189,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     if (angle_diff < M_PI/2){
         best_midpoint_route_ = tree.best_route_;
     } else {
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Best route looking backwards");
         return;
     }
 
@@ -273,7 +270,8 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         }
     }
 
-    if (tree.ending_routes_.size()>0 && route_closed) { 
+    if (tree.ending_routes_.size()>0 && route_closed) {
+        // Create a new SimplexTree without passed vertices 
         SimplexTree closing_tree(triangles_, nearest_tri, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, {},
                                  yaw_, kAngleCoeff, kLenCoeff);
         TL_triang_ = triangles_;
@@ -572,40 +570,6 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     }
 
     return trajectory_msg;
-}
-
-void PathPlanning::add_to_track_limits(std::vector<ConeXYZColorScore> back_edge){
-    if (back_edge.size() != 2) return;
-    if (back_edge[0].score == -1 || back_edge[1].score == -1) return;
-    for (int i = 0; i < 2; i++){
-        if (back_edge[i].color == UNCOLORED) continue;
-        switch (back_edge[i].color) {
-            case YELLOW:
-                if (right_limit_.size() > 0){
-                    if (distance(back_edge[i], right_limit_.back()) < 0.5){
-                        continue;
-                    } else {
-                        right_limit_.push_back(back_edge[i]);
-                    }
-                } else {
-                    right_limit_.push_back(back_edge[i]);
-                }
-                break;
-            case BLUE:
-                if (left_limit_.size() > 0){
-                    if (distance(back_edge[i], left_limit_.back()) < 0.5){
-                        continue;
-                    } else {
-                        left_limit_.push_back(back_edge[i]);
-                    }
-                } else {
-                    left_limit_.push_back(back_edge[i]);
-                }
-                break;
-            default:
-                break;
-        }
-    }
 }
 
 common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::TriangleVec triang, 

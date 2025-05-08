@@ -79,10 +79,6 @@ class PathPlanning : public rclcpp::Node
         CDT::TriangleVec TL_triang_; 
         std::vector<int> TL_tri_indices_;
 
-        // Track limits
-        std::vector<ConeXYZColorScore> left_limit_;
-        std::vector<ConeXYZColorScore> right_limit_;
-
         // Parameters
         // Debug
         bool kDebug;
@@ -174,12 +170,6 @@ class PathPlanning : public rclcpp::Node
          */
         common_msgs::msg::TrackLimits create_track_limits_msg(CDT::TriangleVec triang, 
                                                               std::vector<int> triangles_route);
-        
-        /**
-         * @brief Add the back edge to the track limits if each cone is colored and not too close to
-         * the last cone of the limit (avoid duplicates).
-         */
-        void add_to_track_limits(std::vector<ConeXYZColorScore> back_edge);
 
         /**
          * @brief Create a triangulation msg object from the triangulation

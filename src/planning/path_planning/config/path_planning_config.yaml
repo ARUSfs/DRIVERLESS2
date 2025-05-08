@@ -1,7 +1,7 @@
 path_planning:
   ros__parameters:
     # Debug
-    debug: false
+    debug: true
 
     # Topics
     map_topic: "/slam/map"
