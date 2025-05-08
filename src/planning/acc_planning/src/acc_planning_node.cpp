@@ -1,8 +1,10 @@
-#include "acc_planning_node.hpp"
-/** 
- * @file acc_planning_node.cpp
- * @brief Implementation of the AccPlanning class, responsible for generating a trajectory for the acceleration track based on detected cones.
+/**
+ * @file acc_planning_mode.cpp
+ * @author David Guil (davidguilb2@gmail.com)
+ * @brief Acceleration planning node for the ARUS Driverless pipeline.
  */
+
+ #include "acc_planning_node.hpp"
 
 AccPlanning::AccPlanning() : Node("acc_planning_node")
 {
@@ -32,55 +34,39 @@ AccPlanning::AccPlanning() : Node("acc_planning_node")
     this->get_parameter("min_inliers_required", kMinInliersRequired);
     this->get_parameter("max_allowed_deviation", kMaxAllowedDeviation);
 
-    calculate_profiles();
+    compute_profiles();
 
-    // Publish resulting trajectory
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
-    // Subscribe to the perception point cloud topic
     perception_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         kPerceptionTopic, 10, std::bind(&AccPlanning::perception_callback, this, std::placeholders::_1));
 }
 
-/**
- * @brief  Callback function for the perception topic.
- */
+
 void AccPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
-    auto start_time = this->now();
+    auto t0 = this->now();
 
     cones_ = AccPlanning::convert_ros_to_pcl(per_msg);
 
     if (cones_.points.empty()) {
-        if (kDebug) {
-            RCLCPP_WARN(this->get_logger(), "Received empty PointCloud. Skipping iteration.");
-        }
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Received empty PointCloud. Skipping iteration.");
         return;
     }
 
-    if (kDebug) {
-        RCLCPP_INFO(this->get_logger(), "Processing PointCloud with %zu points", cones_.points.size());
-    }
 
     AccPlanning::generate_planning();
 
     if (a_ == 0.0 && b_ == 0.0) {
-        RCLCPP_ERROR(this->get_logger(), "No valid line found during planning.");
-    } else {
-        RCLCPP_INFO(this->get_logger(), "Best line found with coefficients: a = %f, b = %f", a_, b_);
-    }
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "No valid line found during planning. Skipping iteration.");
+        return;
+    } 
 
     AccPlanning::publish_trajectory();
 
-    auto end_time = this->now();
-    if (kDebug) {
-        RCLCPP_DEBUG(this->get_logger(), "Perception callback execution time: %f seconds", (end_time - start_time).seconds());
-    }
+    if (kDebug) RCLCPP_INFO(this->get_logger(), "Acc planning execution time: %f seconds", (this->now() - t0).seconds());
 }
-/**
- * @brief Calculates the speed and acceleration profiles for the trajectory.
- * 
- */
 
-void AccPlanning::calculate_profiles() {
+
+void AccPlanning::compute_profiles() {
     s_.clear();
     speed_profile_.clear();
     acc_profile_.clear();
@@ -105,17 +91,9 @@ void AccPlanning::calculate_profiles() {
         double ds = kStep;
         acc_profile_.push_back((pow(speed_profile_[i + 1], 2) - pow(speed_profile_[i], 2)) / (2 * ds));
     }
-
-    if (kDebug) {
-        RCLCPP_INFO(this->get_logger(), "Speed and acceleration profiles calculated with %zu points", s_.size());
-    }
 }
 
-/**
- * @brief  Generates the trajectory planning based on the detected cones.
- * @details This function uses the RANSAC algorithm to fit two lines to the detected cones in the point cloud.
- * 
- */
+
 void AccPlanning::generate_planning() {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -175,9 +153,7 @@ void AccPlanning::generate_planning() {
     }
 
     if (remaining_cones.size() < kMinInliersRequired) {
-        if (kDebug) {
-            RCLCPP_WARN(this->get_logger(), "Not enough remaining cones for second line fitting.");
-        }
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Not enough remaining cones for second line fitting.");
         return;
     }
 
@@ -214,42 +190,17 @@ void AccPlanning::generate_planning() {
     double a_temp = (best_a1 + best_a2) / 2;
     double b_temp = (best_b1 + best_b2) / 2;
     if (std::abs(a_temp - a_initial) > kMaxAllowedDeviation || std::abs(b_temp - b_initial) > kMaxAllowedDeviation) {
-        if (kDebug) {
-            RCLCPP_WARN(this->get_logger(), "Deviation too high. Keeping initial trajectory.");
-        }
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Deviation too high. Keeping initial trajectory.");
         return;
     }
 
     a_ = a_temp;
     b_ = b_temp;
 
-    if (a_history_.size() >= history_size_) {
-        sum_a_ -= a_history_.front();
-        a_history_.erase(a_history_.begin());
-    }
-    if (b_history_.size() >= history_size_) {
-        sum_b_ -= b_history_.front();
-        b_history_.erase(b_history_.begin());
-    }
 
-    a_history_.push_back(a_);
-    b_history_.push_back(b_);
-
-    sum_a_ += a_;
-    sum_b_ += b_;
-
-    a_ = sum_a_ / a_history_.size();
-    b_ = sum_b_ / b_history_.size();
-
-    if (kDebug) {
-        RCLCPP_INFO(this->get_logger(), "Final trajectory coefficients: a = %f, b = %f", a_, b_);
-    }
+    if (kDebug) RCLCPP_INFO(this->get_logger(), "Acceleration trajectory coefficients: a = %f, b = %f", a_, b_);
 }
-/**
- * @brief Publishes the trajectory message.
- * @details This function creates a trajectory message and populates it with the calculated points, speed profile, and acceleration profile.
- * 
- */
+
 
 void AccPlanning::publish_trajectory() {
     common_msgs::msg::Trajectory trajectory_msg;
@@ -265,31 +216,17 @@ void AccPlanning::publish_trajectory() {
     }
 
     trajectory_pub_->publish(trajectory_msg);
-
-    if (kDebug) {
-        RCLCPP_INFO(this->get_logger(), "Trajectory published with %zu points", trajectory_msg.points.size());
-    }
 }
 
-/**
- * @brief Converts a ROS PointCloud2 message to a PCL PointCloud.
- */
+
 pcl::PointCloud<ConeXYZColorScore> AccPlanning::convert_ros_to_pcl(const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {
     pcl::PointCloud<ConeXYZColorScore> pcl_cloud;  
     pcl::fromROSMsg(*ros_cloud, pcl_cloud); 
 
-    if (kDebug) {
-        RCLCPP_INFO(this->get_logger(), "Converted ROS PointCloud2 to PCL with %zu points", pcl_cloud.points.size());
-    }
-
     return pcl_cloud;
 }
 
-/**
- * @brief Main function for the AccPlanning node.
- * @details Initializes the ROS 2 node and starts spinning to process callbacks.
- * 
- */
+
 int main(int argc, char * argv[]) {
     rclcpp::init(argc, argv);
     rclcpp::spin(std::make_shared<AccPlanning>());
