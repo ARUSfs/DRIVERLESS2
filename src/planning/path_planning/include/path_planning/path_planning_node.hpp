@@ -79,6 +79,10 @@ class PathPlanning : public rclcpp::Node
         CDT::TriangleVec TL_triang_; 
         std::vector<int> TL_tri_indices_;
 
+        // Track limits
+        std::vector<ConeXYZColorScore> left_limit_;
+        std::vector<ConeXYZColorScore> right_limit_;
+
         // Parameters
         // Debug
         bool kDebug;
@@ -164,6 +168,11 @@ class PathPlanning : public rclcpp::Node
          * profiles. Smooth the trajectory if required.
          */
         common_msgs::msg::Trajectory create_trajectory_msg(std::vector<ConeXYZColorScore> route, bool smooth = true);
+
+        /**
+         * @brief Add the back edge to the track limits.
+         */
+        void add_to_track_limits(std::vector<ConeXYZColorScore> back_edge);
 
         /**
          * @brief Create a track limits msg object from a given route of triangles and the triangulation.

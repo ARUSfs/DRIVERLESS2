@@ -130,6 +130,9 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         return;
     }
 
+    // Add the back edge to the track limits
+    this->add_to_track_limits(back_edge);
+
     // Create the triangulation
     CDT::Triangulation<double> triang;
     triang = this->create_triangulation(pcl_cloud_);
@@ -276,11 +279,8 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     if (tree.ending_routes_.size()>0 && route_closed) {
-        // Create a new SimplexTree without passed vertices 
-        SimplexTree closing_tree(triangles_, nearest_tri, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, {},
-                                 yaw_, kAngleCoeff, kLenCoeff);
         TL_triang_ = triangles_;
-        TL_tri_indices_ = closing_tree.best_index_route_;
+        TL_tri_indices_ = tree.best_index_route_;
     }
 
     // Use closing route if route is closed
@@ -581,6 +581,40 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     return trajectory_msg;
 }
 
+void PathPlanning::add_to_track_limits(std::vector<ConeXYZColorScore> back_edge){
+    if (back_edge.size() != 2) return;
+    if (back_edge[0].score == -1 || back_edge[1].score == -1) return;
+    for (int i = 0; i < 2; i++){
+        if (back_edge[i].color == UNCOLORED) continue;
+        switch (back_edge[i].color) {
+            case YELLOW:
+                if (right_limit_.size() > 0){
+                    if (distance(back_edge[i], right_limit_.back()) < 0.5){
+                        continue;
+                    } else {
+                        right_limit_.push_back(back_edge[i]);
+                    }
+                } else {
+                    right_limit_.push_back(back_edge[i]);
+                }
+                break;
+            case BLUE:
+                if (left_limit_.size() > 0){
+                    if (distance(back_edge[i], left_limit_.back()) < 0.5){
+                        continue;
+                    } else {
+                        left_limit_.push_back(back_edge[i]);
+                    }
+                } else {
+                    left_limit_.push_back(back_edge[i]);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::TriangleVec triang, 
                                                                 std::vector<int> triangles_route){
     CDT::Triangle last_triangle = triang[triangles_route.back()];
@@ -643,11 +677,23 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::Triangl
         }
     }
     common_msgs::msg::TrackLimits track_limits_msg;
+    for (int i = 0; i<left_limit_.size(); i++){
+        common_msgs::msg::PointXY point;
+        point.x = left_limit_[i].x;
+        point.y = left_limit_[i].y;
+        track_limits_msg.left_limit.push_back(point);
+    }
     for (int i = 0; i<left_limit.size(); i++){
         common_msgs::msg::PointXY point;
         point.x = pcl_cloud_.points[left_limit[i]].x;
         point.y = pcl_cloud_.points[left_limit[i]].y;
         track_limits_msg.left_limit.push_back(point);
+    }
+    for (int i = 0; i<right_limit_.size(); i++){
+        common_msgs::msg::PointXY point;
+        point.x = right_limit_[i].x;
+        point.y = right_limit_[i].y;
+        track_limits_msg.right_limit.push_back(point);
     }
     for (int i = 0; i<right_limit.size(); i++){
         common_msgs::msg::PointXY point;
