@@ -73,12 +73,13 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
         MatrixXd optimized_trajectory(n,2);
 
         for(int i=0; i<kNIter; i++){
+            double t0 = this->now().seconds();
             auto opt_out = MinCurvaturepath::get_min_curvature_path(x, y, twr, twl, kNSeg);
             optimized_trajectory = opt_out.first;
             auto status = opt_out.second;
 
             if(status != qpmad::Solver::OK){
-                if (kDebug) RCLCPP_ERROR(this->get_logger(), "qpmad solver didn't find a solution at iteration %d! \n", i+1);
+                if (kDebug) RCLCPP_ERROR(this->get_logger(), "qpmad solver didn't find a solution at iteration %d!", i+1);
             } else {
                 x = optimized_trajectory.col(0);
                 y = optimized_trajectory.col(1);
@@ -86,7 +87,10 @@ void TrajectoryOptimization::trajectory_callback(common_msgs::msg::TrackLimits::
                 twr = TrajectoryOptimization::generate_track_width(x, y, track_limit_right_);
                 twl = TrajectoryOptimization::generate_track_width(x, y, track_limit_left_);
 
-                if (kDebug) RCLCPP_INFO(this->get_logger(), "Trajectory correctly optimized at iteration %d. \n", i+1);
+                if (kDebug) {
+                    RCLCPP_INFO(this->get_logger(), "Trajectory correctly optimized at iteration %d.", i+1);
+                    RCLCPP_INFO(this->get_logger(), "Trajectory optimization time: %f", this->now().seconds()-t0);
+                } 
             }
             
         }
