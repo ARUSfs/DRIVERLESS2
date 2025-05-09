@@ -505,7 +505,7 @@ Visualization Manager:
       Enabled: true
       Name: Marker
       Namespaces:
-        {}
+        trajectory: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -530,7 +530,7 @@ Visualization Manager:
       Enabled: true
       Name: MarkerArray
       Namespaces:
-        {}
+        triangulation: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -541,7 +541,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
-    Fixed Frame: rslidar
+    Fixed Frame: arussim/world
     Frame Rate: 30
   Name: root
   Tools:
@@ -584,7 +584,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 10.759751319885254
+      Distance: 49.31725311279297
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -599,10 +599,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.20539838075637817
+      Pitch: 0.5503981709480286
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 3.4653966426849365
+      Yaw: 3.185397148132324
     Saved: ~
 Window Geometry:
   Displays:
