@@ -1,28 +1,32 @@
 perception:
   ros__parameters:
-    #Topic
+    # Parameters of topic
     lidar_topic: "/rslidar_points"
     state_topic: "/car_state/state"
 
-    #Parameters of FOV
+    # Parameters of cropping
     crop: true
     max_x_fov: 30.0
     max_y_fov: 15.0
     max_z_fov: 0.5
 
-    #Parameters of ground filter
+    # Parameters of ground filter
     threshold_ground_filter: 0.075
-
     number_sections: 8
     angle_threshold: 35.0
-    minimum_ransac_points: 30
 
-    #Parameters of clustering
+    # Parameters of clustering and filtering
+    min_cluster_size: 4
+    max_cluster_size: 200
     radius: 0.15
 
     #Parameters of scoring
-    threshold_scoring: 0.70
+    threshold_scoring: 0.7
 
     #Parameters of coloring
+    kColor: true
     distance_threshold: 5.0
     coloring_threshold: 15.0
+
+    # Parameters of debugging
+    debug: true
