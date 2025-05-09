@@ -72,7 +72,6 @@ Perception::Perception() : Node("Perception")
 }
 
 
-
 void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_msg)
 {
     vx = state_msg->vx;
@@ -154,7 +153,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     for (const auto& cluster : cluster_indices)
     {
         pcl::PointCloud<pcl::PointXYZI>::Ptr new_cluster(new pcl::PointCloud<pcl::PointXYZI>);
-
         for (const auto& idx : cluster.indices)
         {
             pcl::PointXYZI point = cloud_filtered->points[idx];
