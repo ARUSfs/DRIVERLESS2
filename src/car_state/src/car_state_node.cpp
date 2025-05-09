@@ -1,4 +1,11 @@
-#include "car_state/car_state.hpp"
+/**
+ * @file car_state_node.cpp
+ * @author Álvaro Landero (alplepe02@gmail.com)
+ * @brief Car State node for ARUS Team Driverless pipeline
+ */
+
+
+#include "car_state/car_state_node.hpp"
 
 
 CarState::CarState(): Node("car_state")
@@ -636,7 +643,7 @@ void CarState::get_tf_position()
         y_ = transform.transform.translation.y;
         yaw_ = yaw;
     } catch (tf2::TransformException &ex) {
-        // if(kDebug) RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
+        if(kDebug) RCLCPP_WARN(this->get_logger(), "Transform not available: %s", ex.what());
     }
 }
 

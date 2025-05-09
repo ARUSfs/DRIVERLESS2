@@ -1,13 +1,7 @@
 /**
- * @file car_state.hpp
- * @author 
- * @brief Header file for the Car State node.
- * 
- * This file defines the CarState class, which is responsible for estimating 
- * and publishing the vehicle state in the ARUS Driverless stack.
- * It manages subscribers to sensor topics, fuses their data through a 
- * custom SpeedEstimator, performs plausibility checks, and publishes
- * the current state and vehicle information.
+ * @file car_state_node.hpp
+ * @author Álvaro Landero (alplepe02@gmail.com)
+ * @brief Car State node header for ARUS Team Driverless pipeline
  */
 
 // ROS2
@@ -35,19 +29,12 @@
 #include "car_state/speed_estimator.hpp"
 
 
-/**
- * @brief Class containing the Car State node.
- * Subscribes to sensor data, runs plausibility checks, and publishes state info.
- */
+
 class CarState : public rclcpp::Node
 {
 public:
     /**
-     * @brief Construct the CarState node.
-     * 
-     * Initializes all parameters, publishers, subscribers, and timers.
-     * Sets up the speed estimator, TF listener, and internal state variables.
-     * Also configures plausibility checks if safe mode is enabled.
+     * @brief Constructor of CarState node.
      */
     CarState();
 
