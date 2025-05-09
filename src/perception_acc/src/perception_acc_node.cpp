@@ -219,7 +219,17 @@ void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_m
  * @param lidar_msg The point cloud message received from the lidar topic.
  */
 void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg)
-{   
+{
+    // Wait 5 seconds until fast-limo is ready
+    static double start_time = 0.0;
+    if (start_time == 0.0) {
+        start_time = this->now().seconds();
+    }
+    if (this->now().seconds() - start_time < 5.0) {
+        RCLCPP_INFO(this->get_logger(), "Less than 5 seconds have passed, skipping.");
+        return;
+    }
+
     double time_start = this->now().seconds();
     this->get_tf_position();
 
