@@ -1,3 +1,9 @@
+/**
+ * @file skidpad_planning_node.cpp
+ * @author David Guil (davidguilb2@gmail.com)
+ * @brief Skidpad planning nodes for the ARUS Driverless pipeline.
+ */
+
 #include "skidpad_planning_node.hpp"
 
 
@@ -16,6 +22,7 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
     this->declare_parameter<double>("top_accy", 5.0);
     this->declare_parameter<double>("step_width_1", 2);
     this->declare_parameter<double>("step_width_2", 2);
+    this->declare_parameter<bool>("debug", true);
 
 
     this->get_parameter("perception_topic", kPerceptionTopic);
@@ -29,6 +36,7 @@ SkidpadPlanning::SkidpadPlanning() : Node("skidpad_planning_node")
     this->get_parameter("top_accy", kMaxYAcc);
     this->get_parameter("step_width_1", kStepWidth1);
     this->get_parameter("step_width_2", kStepWidth2);
+    this->get_parameter("debug", kDebug);
 
     start_time_ = this->now();
     initialize_skidpad(kRouteSpacing, 9.125, kTargetFirstLap, kTargetSecondLap);
@@ -59,6 +67,7 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
     for (int i = 0; i <= 20 / spacing; ++i) {
         template_.emplace_back(-20 + spacing * i, 0);
         speed_profile_.push_back(first_lap_speed);
+        k_.push_back(0.0);
     }
 
     // Initialize first circle section
@@ -66,6 +75,7 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                -circle_radius + circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(first_lap_speed, ay * circle_radius));
+        k_.push_back(-1/circle_radius);
     }
 
     // Initialize second circle section
@@ -73,6 +83,7 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                -circle_radius + circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(second_lap_speed, ay * circle_radius));
+        k_.push_back(-1/circle_radius);
     }
 
     // Initialize third circle section
@@ -80,6 +91,7 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                circle_radius - circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(first_lap_speed, ay * circle_radius));
+        k_.push_back(1/circle_radius);
     }
 
     // Initialize fourth circle section
@@ -87,16 +99,25 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
         template_.emplace_back(circle_radius * std::sin(2 * M_PI * i / circle_points),
                                circle_radius - circle_radius * std::cos(2 * M_PI * i / circle_points));
         speed_profile_.push_back(min(second_lap_speed, ay * circle_radius));
+        k_.push_back(1/circle_radius);
     }
 
     // Initialize final straight section
     for (int i = 0; i <= 8 / spacing; ++i) {
         template_.emplace_back(spacing * i, 0);
         speed_profile_.push_back(first_lap_speed);
+        k_.push_back(0.0);
     }
     for (int i = 0; i <= 12 / spacing; ++i) {
         template_.emplace_back(8 + spacing * i, 0);
         speed_profile_.push_back(0.0);
+        k_.push_back(0.0);
+    }
+
+    double s_acum = 0.0;
+    for (int i = 0; i < template_.size(); ++i) {
+        s_.push_back(s_acum);
+        s_acum += spacing;
     }
 
 
@@ -128,6 +149,10 @@ void SkidpadPlanning::initialize_skidpad(double spacing, double circle_radius,
     for (int i = 0; i<speed_profile_.size()-1; i++){
             acc_profile_.push_back((pow(speed_profile_[i+1], 2)-pow(speed_profile_[i], 2))/(2*spacing));
         
+    }
+
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "Skidpad template initialized with %zu points", template_.size());
     }
 
 }
@@ -170,8 +195,17 @@ std::tuple<double, double, double> SkidpadPlanning::find_circle_center(
 }
 
 void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr per_msg) {
+    auto start_time = this->now();
 
     cones_ = SkidpadPlanning::convert_ros_to_pcl(per_msg);
+
+    if (cones_.points.empty()) {
+        if (kDebug) {
+            RCLCPP_WARN(this->get_logger(), "Received empty PointCloud. Skipping iteration.");
+        }
+        return;
+    }
+
 
     if(this->now().seconds() - start_time_.seconds() < kPlanningTime ){
 
@@ -242,7 +276,8 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
         if (best_center.x != 0.0){
             centers.push_back(best_center);
         }
-        std::cout << "First center: (" << best_center.x << ", " << best_center.y << ")" << std::endl;
+
+        if (kDebug) RCLCPP_INFO(this->get_logger(), "First center: (%f, %f)", best_center.x, best_center.y);
 
         Point best_center2 = Point();
         max_inliers = 0;
@@ -282,7 +317,11 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
             if (best_center2.x != 0.0){
                 centers.push_back(best_center2);
             }
-            std::cout << "Second center: (" << best_center2.x << ", " << best_center2.y << ")" << std::endl;
+            if (kDebug) RCLCPP_INFO(this->get_logger(), "Second center: (%f, %f)", best_center2.x, best_center2.y);
+        }
+
+        if (kDebug) {
+            RCLCPP_INFO(this->get_logger(), "RANSAC time: %f seconds", (this->now() - start_time).seconds());
         }
 
         
@@ -322,8 +361,10 @@ void SkidpadPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedP
                 std::swap(left_center, right_center);
             }
 
-            RCLCPP_INFO(this->get_logger(), "Left center: (%f, %f)", left_center.first, left_center.second);
-            RCLCPP_INFO(this->get_logger(), "Right center: (%f, %f)", right_center.first, right_center.second);
+            if (kDebug) {
+                RCLCPP_INFO(this->get_logger(), "Left center: (%f, %f)", left_center.first, left_center.second);
+                RCLCPP_INFO(this->get_logger(), "Right center: (%f, %f)", right_center.first, right_center.second);
+            }
         
             // Check if the final centers are valid. 
             // Centers should be 18.25 meters apart and not too close to the origin
@@ -356,6 +397,10 @@ void SkidpadPlanning::publish_trajectory() {
         return;
     }
 
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "Publishing trajectory with %zu points", template_.size());
+    }
+
     // Compute the skidpad center
     double mid_x = (left_center.first + right_center.first) / 2.0;
     double mid_y = (left_center.second + right_center.second) / 2.0;
@@ -386,15 +431,22 @@ void SkidpadPlanning::publish_trajectory() {
     for (const auto& a : acc_profile_) {
         trajectory_msg.acc_profile.push_back(a);
     }
+    for (const auto& s : s_) {
+        trajectory_msg.s.push_back(s);
+    }
+    for (const auto& k : k_) {
+        trajectory_msg.k.push_back(k);
+    }
 
 
     trajectory_pub_->publish(trajectory_msg);
 }
 
-
-pcl::PointCloud<ConeXYZColorScore> SkidpadPlanning::convert_ros_to_pcl(const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {
+pcl::PointCloud<ConeXYZColorScore> SkidpadPlanning::convert_ros_to_pcl(
+    const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud) {
     pcl::PointCloud<ConeXYZColorScore> pcl_cloud;  
     pcl::fromROSMsg(*ros_cloud, pcl_cloud); 
+
     return pcl_cloud;
 }
 

@@ -1,28 +1,27 @@
 path_planning:
   ros__parameters:
     # Topics
-    map_topic: '/slam/map'
-    triangulation_topic: '/path_planning/triangulation'
-    trajectory_topic: '/path_planning/trajectory'
-    points_to_optimize_topic: '/path_planning/midpoints_to_optimize'
-    track_limits_topic: '/path_planning/track_limits'
+    map_topic: "/slam/map"
+    lap_count_topic: "/slam/lap_count"
+    car_info_topic: "/car_state/car_info"
+    optimizer_topic: "/trajectory_optimization/trajectory"
+    triangulation_topic: "/path_planning/triangulation"
+    trajectory_topic: "/path_planning/trajectory"
+    track_limits_topic: "/path_planning/track_limits"
 
     # Triangulation parameters
-    max_tri_len: 7.5
-    max_tri_angle: 3.15
-    color: true
+    max_tri_len: 9.0
 
     # Route parameters
     len_coeff: 0.01
-    angle_coeff: 0.99
-    max_cost: 20.0
+    angle_coeff: 1.2
     max_angle: 1.15
     route_back: 10
     prev_route_bias: 0.5
-    smooth_coeff: 1.5            # Laplacian smoothing coefficient [1.0, 3.0]
+    smooth_coeff: 1.2            # Laplacian smoothing coefficient [1.0, 3.0]
     use_buffer: true
-    use_closing_route: false     # Send the closing route to the trajectory optimizer after getting a route that closes the loop
-    stop_after_closing: true     # Stop generating new routes after getting one that closes the loop
+    time_to_close: 2.0
+    stop_after_closing: false     # Stop generating new routes after getting one that closes the loop
 
     # Profile creation parameters
     v_max: 2.0

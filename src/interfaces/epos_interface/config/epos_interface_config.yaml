@@ -1,5 +1,14 @@
 epos_interface:
   ros__parameters:
-    MAX_ACCELERATION: 6000
-    MAX_DECELERATION: 6000
-    PROFILE_VELOCITY: 6000
+    cmd_topic: "/controller/cmd"
+    extensometer_topic: "/can_interface/extensometer"
+    steer_check_topic: "/car_state/steer_check"
+    epos_info_topic: "/epos_interface/epos_info"
+
+    MAX_ACCELERATION: 10000
+    MAX_DECELERATION: 10000
+    PROFILE_VELOCITY: 7000
+
+    timer_freq: 100   # Hz
+
+    debug: true

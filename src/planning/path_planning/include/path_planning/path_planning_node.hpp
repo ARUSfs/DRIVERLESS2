@@ -25,7 +25,7 @@
 #include <common_msgs/msg/simplex.hpp>
 #include <common_msgs/msg/triangulation.hpp>
 #include <common_msgs/msg/trajectory.hpp>
-#include <common_msgs/msg/state.hpp>
+#include <common_msgs/msg/car_info.hpp>
 #include <common_msgs/msg/track_limits.hpp>
 #include "ConeXYZColorScore.h"
 
@@ -53,25 +53,24 @@ class PathPlanning : public rclcpp::Node
     private:
         // Topics
         std::string kMapTopic;
+        std::string kLapCountTopic;
+        std::string kCarInfoTopic;
+        std::string kOptimizerTopic;
         std::string kTriangulationTopic;
         std::string kTrajectoryTopic;
-        std::string kPointsToOptimizeTopic;
         std::string kTrackLimitsTopic;
 
         // Triangulation parameters
         double kMaxTriLen;
-        double kMaxTriAngle;
-        bool kColor;
 
         // Route parameters
         double kAngleCoeff;
-        double kMaxCost;
         double kLenCoeff;
         double kSmoothCoeff;
         double kPrevRouteBias;
         int kRouteBack;
         bool kUseBuffer;
-        bool kUseClosingRoute;
+        double kTimeToClose;
         bool kStopAfterClosing;
 
         // Profile creation parameters
@@ -81,20 +80,20 @@ class PathPlanning : public rclcpp::Node
 
         // Suscribers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_sub_;
-        rclcpp::Subscription<common_msgs::msg::State>::SharedPtr car_state_sub_;
         rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr lap_count_sub_;
+        rclcpp::Subscription<common_msgs::msg::CarInfo>::SharedPtr car_info_sub_;
         rclcpp::Subscription<common_msgs::msg::Trajectory>::SharedPtr optimizer_sub_;
 
         // Publishers
         rclcpp::Publisher<common_msgs::msg::Triangulation>::SharedPtr triangulation_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
-        rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr unsmoothed_pub_;
         rclcpp::Publisher<common_msgs::msg::TrackLimits>::SharedPtr track_limits_pub_;
 
         // CarState
         double x_=0;
         double y_=0;
         double yaw_;
+        double target_speed_ = 0;
         double vx_;
         double vy_;
         double v_;
@@ -103,6 +102,7 @@ class PathPlanning : public rclcpp::Node
         // Lap count and state of the algorithm
         int lap_count_ = 0;
         bool track_limits_sent_ = false;
+        rclcpp::Time last_unfinished_;
 
         // Point cloud
         pcl::PointCloud<ConeXYZColorScore> pcl_cloud_;
@@ -114,10 +114,14 @@ class PathPlanning : public rclcpp::Node
         // Routes
         std::vector<std::vector<ConeXYZColorScore>> midpoint_routes_;
         std::vector<ConeXYZColorScore> best_midpoint_route_;
-        std::vector<int> best_index_route_;
         std::vector<ConeXYZColorScore> closing_route_= {};
         std::vector<std::vector<ConeXYZColorScore>> previous_midpoint_routes_;
         int invalid_counter_=0;
+        std::vector<ConeXYZColorScore> back_route_ = {ConeXYZColorScore(0,0,0,UNCOLORED,-1)};
+        CDT::TriangleVec TL_triang_; 
+        std::vector<int> TL_tri_indices_;
+
+
 
         /**
          * @brief Callback function for the perception topic.
@@ -135,11 +139,11 @@ class PathPlanning : public rclcpp::Node
         void lap_count_callback(std_msgs::msg::Int16::SharedPtr lap_msg);
 
         /**
-         * @brief Callback function for the car state topic.
+         * @brief Callback function for the car info topic.
          * Update the car state variables when a new message is received.
-         * @param state_msg Common_msgs message containing the car state. Only the x, y and yaw are used.
+         * @param state_msg Common_msgs message containing the car state.
          */
-        void car_state_callback(common_msgs::msg::State::SharedPtr state_msg);
+        void car_info_callback(common_msgs::msg::CarInfo::SharedPtr state_msg);
         
         /**
          * @brief Callback function for the optimizer topic.
@@ -147,6 +151,8 @@ class PathPlanning : public rclcpp::Node
          * @param optimizer_msg Common_msgs message containing the optimized trajectory.
          */
         void optimizer_callback(common_msgs::msg::Trajectory::SharedPtr optimizer_msg);
+
+        std::vector<ConeXYZColorScore> get_back_edge();
 
         /**
          * @brief Create a triangulation object from a point cloud and erase super triangle.
@@ -165,25 +171,17 @@ class PathPlanning : public rclcpp::Node
         common_msgs::msg::Triangulation create_triangulation_msg(CDT::Triangulation<double> triangulation);
 
         /**
-         * @brief Calculate the euclidean norm of a vector. 
-         * i.e.: if v=(x,y), norm(v) = (x^2 + y^2)^(1/2).
-         * @param v Vector to calculate the norm.
-         * @return double 
-         */
-        double norm(CDT::V2d<double> v);
-
-        /**
          * @brief Get the index of the origin vertex in the triangulation.
          * @return int index of the origin vertex.
          */
-        int get_vertex_index(CDT::V2d<double> vertex);
+        int get_vertex_index(CDT::V2d<double> vertex, CDT::Triangulation<double> triangulation);
 
         /**
          * @brief Get the triangles adjacent to a vertex from its index.
          * @param vert_index int index of the vertex.
          * @return std::vector<int> vector of index of the triangles adjacent to the vertex.
          */
-        std::vector<int> get_triangles_from_vert(int vert_index);
+        std::vector<int> get_triangles_from_vert(int vert_index, CDT::Triangulation<double> triangulation);
 
         /**
          * @brief Get the final route after comparing with previous routes to avoid outliers.
@@ -197,10 +195,9 @@ class PathPlanning : public rclcpp::Node
         /**
          * @brief Create a trajectory msg object from a given route.
          * @param route std::vector<CDT::V2d<double>> vector containing the route.
-         * @param smoothed bool flag to indicate if the route is splined or not.
          * @return common_msgs::msg::Trajectory parsed trajectory message to ROS2 format.
          */
-        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<ConeXYZColorScore> route, bool smoothed = true);
+        common_msgs::msg::Trajectory create_trajectory_msg(std::vector<ConeXYZColorScore> route, bool smooth = true);
 
         /**
          * @brief Create a track limits msg object from a given route.
@@ -209,5 +206,6 @@ class PathPlanning : public rclcpp::Node
          * This route is suposed to be the final and closed route once the first lap is completed.
          * @return common_msgs::msg::TrackLimits the message to be published.
          */
-        common_msgs::msg::TrackLimits create_track_limits_msg(std::vector<int> triangle_route);
+        common_msgs::msg::TrackLimits create_track_limits_msg(CDT::TriangleVec triang, 
+                                                                std::vector<int> triangles_route);
 };

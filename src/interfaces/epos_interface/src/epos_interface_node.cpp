@@ -1,29 +1,43 @@
 /**
  * @file epos_interface_node.cpp
- * 
  * @author Francis Rojas (frarojram@gmail.com)
- * 
- * @brief EPOS interface, implementation for ARUS Team Driverless pipeline
- * 
- * @date 22-12-2024
+ * @brief EPOS4 controller interface for ARUS Team Driverless pipeline
  */
 
 #include "epos_interface/epos_interface_node.hpp"
 
-bool DEBUG = false;
+bool DEBUG = true;
 
 
 EPOS_interface::EPOS_interface() : Node("EPOS_interface"), 
     epos_() 
 {
+
+    // Declare parameters
+    this->declare_parameter<std::string>("cmd_topic", "/controller/cmd");
+    this->declare_parameter<std::string>("extensometer_topic", "/can_interface/extensometer");
+    this->declare_parameter<std::string>("steer_check_topic", "/car_state/steer_check");
+    this->declare_parameter<std::string>("epos_info_topic", "/epos_interface/epos_info");
+    this->declare_parameter<int>("timer_freq", 100);
     this->declare_parameter<int>("MAX_ACCELERATION", 6000);
     this->declare_parameter<int>("MAX_DECELERATION", 6000);
     this->declare_parameter<int>("PROFILE_VELOCITY", 6000);
-    this->get_parameter("MAX_ACCELERATION", MAX_ACC_);
-    this->get_parameter("MAX_DECELERATION", MAX_DEC_);
-    this->get_parameter("PROFILE_VELOCITY", PROFILE_VEL_);
+    this->declare_parameter<bool>("debug", true);
 
-    epos_.set_params(MAX_ACC_, MAX_DEC_, PROFILE_VEL_);
+    // Get parameters
+    this->get_parameter("cmd_topic", kCmdTopic);
+    this->get_parameter("extensometer_topic", kExtTopic);
+    this->get_parameter("steer_check_topic", kSteerCheckTopic);
+    this->get_parameter("epos_info_topic", kEposInfoTopic);
+    this->get_parameter("timer_freq", kTimerFreq);
+    this->get_parameter("MAX_ACCELERATION", kMaxAcc);
+    this->get_parameter("MAX_DECELERATION", kMaxDec);
+    this->get_parameter("PROFILE_VELOCITY", kProfileVel);
+    this->get_parameter("debug", kDebug);
+
+    // Initialize and connect to EPOS4
+    epos_.set_params(kMaxAcc, kMaxDec, kProfileVel);
+    epos_.logger_ = this->get_logger();
     epos_.connect_to_device();
     epos_.enable();
 
@@ -32,43 +46,46 @@ EPOS_interface::EPOS_interface() : Node("EPOS_interface"),
     ext_time_ = this->now().seconds();
     epos_pos_ = 0.0;
     ext_pos_ = 0.0;
+    delta_cmd_ = 0.0;
+    steer_check_ = false;
 
 
-    epos_info_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/epos_interface/epos_info", 10);
+    epos_info_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(kEposInfoTopic, 10);
 
     cmd_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
-        "/controller/cmd", 1, 
+        kCmdTopic, 1, 
         std::bind(&EPOS_interface::cmd_callback, this, std::placeholders::_1));
 
     steer_check_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-        "/car_state/steer_check", 1, 
+        kSteerCheckTopic, 1, 
         std::bind(&EPOS_interface::steer_check_callback, this, std::placeholders::_1));
 
     extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-        "/can_interface/extensometer", 1, 
+        kExtTopic, 1, 
         std::bind(&EPOS_interface::extensometer_callback, this, std::placeholders::_1));
+
+    timer_ = this->create_wall_timer(
+        std::chrono::milliseconds((int)(1000/kTimerFreq)), 
+        std::bind(&EPOS_interface::on_timer, this));
     
-    RCLCPP_INFO(this->get_logger(), "EPOS_interface node initialized.");
+    if (kDebug) (this->get_logger(), "EPOS_interface node initialized.");
 }
+
 
 EPOS_interface::~EPOS_interface()
 {
     clean_and_close();
 }
 
-void EPOS_interface::cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg)
+
+void EPOS_interface::on_timer()
 {
-    double angle = msg -> delta * 180 / M_PI;
-    assert(angle <= 20.0 && angle >= -20.0 && "Angle out of range");
+    assert(delta_cmd_ <= M_PI/9.0 && delta_cmd_ >= -M_PI/9.0 && "Angle out of range");
+    double epos_cmd = delta_cmd_ - ext_pos_;
 
-    // Check if the extensometer is working
-    if (this->now().seconds() - ext_time_ < 0.2){
-        double diff = angle - ext_pos_;
-        if (DEBUG) std::cout << "Angle diff: " << diff << std::endl;
-
-        if (!is_shutdown_ && steer_check_ && std::abs(diff) > 0.1){
-            epos_.move_to(epos_pos_ + diff);
-        }
+    if (!is_shutdown_ && steer_check_){
+        epos_.move_to(epos_cmd);
+        started_ = true;
     } 
     
 
@@ -77,26 +94,44 @@ void EPOS_interface::cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg)
     for (const auto &value : epos_info) {
         info_msg.data.push_back(value);
     }
-    epos_pos_ = epos_info[1];
+    // epos_pos_ = epos_info[1];
     epos_info_pub_->publish(info_msg);
     
 }
 
-void EPOS_interface::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg){
-    // Smooth extensometer value
-    ext_pos_ = 0.8*msg->data*180/M_PI + 0.2*ext_pos_;
-    ext_time_ = this->now().seconds();
+
+void EPOS_interface::cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg)
+{
+    delta_cmd_ = msg->delta;
 }
+
+
+void EPOS_interface::extensometer_callback(const std_msgs::msg::Float32::SharedPtr msg){
+    // Get smoothed extensometer value until movement starts
+    if (started_) return;
+
+    ext_pos_ = 0.8*msg->data + 0.2*ext_pos_;
+    ext_time_ = this->now().seconds();
+
+    if (std::abs(ext_pos_) > 22.0*M_PI/180.0){
+        if (kDebug) RCLCPP_ERROR(this->get_logger(), "Extensometer value out of range: %f", msg->data);
+        rclcpp::shutdown();
+        return;
+    }
+}
+
 
 void EPOS_interface::steer_check_callback(const std_msgs::msg::Bool::SharedPtr msg){
     steer_check_ = msg -> data;
 }
+
 
 void EPOS_interface::clean_and_close(){
     is_shutdown_ = true;
     epos_.disable();
     epos_.disconnect_device();
 }
+
 
 int main(int argc, char *argv[])
 {
