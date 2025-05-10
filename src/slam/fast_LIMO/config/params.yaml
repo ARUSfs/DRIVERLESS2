@@ -14,7 +14,7 @@ fast_limo:
       body: base_link
       tf_pub: true
 
-    num_threads: 3 # OpenMP threads (will be equal to $(nproc) if it is set higher)
+    num_threads: 20 # OpenMP threads (will be equal to $(nproc) if it is set higher)
 
     sensor_type: 4  # LiDAR type (0: OUSTER \ 1: VELODYNE \ 2: HESAI \ 3: LIVOX \ 4: RSLIDAR)
 
@@ -29,7 +29,7 @@ fast_limo:
       gravity_align: false     # estimate gravity vector
       accel: true             # estimate lin. accel. bias
       gyro: true              # estimate ang. vel. bias
-      time: 5.0               # [s] time to estimate (during this time, the robot must be at stand still)
+      time: 10.0               # [s] time to estimate (during this time, the robot must be at stand still)
 
     extrinsics: # w.r.t baselink [SI]
       imu:
@@ -61,7 +61,7 @@ fast_limo:
 
       voxelGrid:
         active: true
-        leafSize: [ 0.1, 0.1, 0.01 ]
+        leafSize: [ 0.05, 0.05, 0.01 ]
 
       minDistance: # sphere crop
         active: true
@@ -73,7 +73,7 @@ fast_limo:
       
       rateSampling: # quick downsample
         active: true
-        value: 3                      # The smaller, the more points will be kept and the bigger is the computation load
+        value: 4                      # The smaller, the more points will be kept and the bigger is the computation load
 
     iKFoM: # Iterative Kalman Filter on Manifolds lib
       MAX_NUM_ITERS: 2                # max num+1 of iterations of the KF (limits comp. load)
@@ -90,7 +90,7 @@ fast_limo:
       iKDTree: # Incremental KD Tree lib
         balance: 0.6      # tree balancing param
         delete: 0.3       # tree deletion param
-        voxel: 0.5        # downsampling value
+        voxel: 0.2        # downsampling value
         bb_size: 100.0   # [m] Local Map's bounding box dimension
         bb_range: 50.0   # [m] Local Map's bounding box moving range (if the robot is closer than bb_range to any local map edge, the BB will move)
 

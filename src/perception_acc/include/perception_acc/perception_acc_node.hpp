@@ -62,7 +62,6 @@ class Perception : public rclcpp::Node
         double kMaxXFov;
         double kMaxYFov;
         double kMaxZFov;
-        double kHFov;
         double kThresholdGroundFilter;
         int kNumberSections;
         double kAngleThreshold;
@@ -80,7 +79,6 @@ class Perception : public rclcpp::Node
         bool kAccumulation_clusters;
         bool kGlobalAccumulation;
         double kDistanceLidarToCoG;
-        float kDownsampleSize;
 
         // Variables
         double x_;

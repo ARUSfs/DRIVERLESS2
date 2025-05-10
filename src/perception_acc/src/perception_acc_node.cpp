@@ -29,7 +29,6 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<double>("coloring_threshold", 0.4);
     this->declare_parameter<bool>("global_accumulation", true);
     this->declare_parameter<double>("distance_lidar_to_CoG", 1.65);
-    this->declare_parameter<float>("downsample_size", 0.05);
     this->declare_parameter<int>("buffer_size", 10);
 
     //Get the parameters
@@ -48,11 +47,7 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("coloring_threshold", kColoringThreshold);
     this->get_parameter("global_accumulation", kGlobalAccumulation);
     this->get_parameter("distance_lidar_to_CoG", kDistanceLidarToCoG);
-    this->get_parameter("downsample_size", kDownsampleSize);
     this->get_parameter("buffer_size", kBufferSize);
-
-    //Transform into radians
-    // kHFov *= (M_PI/180);  // Comentada debido a que kHFov no está definido
     
     //Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -179,7 +174,7 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_in
         double min_z = min_point.z;
 
         //Filter the cluster by size and keep the center of the cluster
-        if ((max_z-min_z)<0.4 && min_z<0.0 && (max_x-min_x)<0.5 && (max_y-min_y)<0.5)
+        if ((max_z-min_z)<0.4 && min_z<0.0 && (max_x-min_x)<0.25 && (max_y-min_y)<0.25)
         {
             Eigen::Vector4f centroid;
             pcl::compute3DCentroid(*cluster_cloud, centroid);
@@ -220,13 +215,13 @@ void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_m
  */
 void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg)
 {
-    // Wait 5 seconds until fast-limo is ready
+    // Wait 10 seconds until fast-limo is ready
     static double start_time = 0.0;
     if (start_time == 0.0) {
         start_time = this->now().seconds();
     }
-    if (this->now().seconds() - start_time < 5.0) {
-        RCLCPP_INFO(this->get_logger(), "Less than 5 seconds have passed, skipping.");
+    if (this->now().seconds() - start_time < 10.0) {
+        RCLCPP_INFO(this->get_logger(), "Less than 10 seconds have passed, skipping.");
         return;
     }
 

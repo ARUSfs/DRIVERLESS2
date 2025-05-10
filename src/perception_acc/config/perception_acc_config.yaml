@@ -5,20 +5,19 @@ perception_acc:
 
     #Accumulation
     distance_lidar_to_CoG: 1.75
-    downsample_size: 0.3
-    buffer_size: 15
+    buffer_size: 7
 
     #Parameters of FOV
     crop: true
-    max_x_fov: 40.0
-    max_y_fov: 40.0
+    max_x_fov: 25.0
+    max_y_fov: 25.0
     max_z_fov: 0.5
 
     #Parameters of ground filter
     threshold_ground_filter: 0.1
 
-    number_sections: 15
-    angle_threshold: 35.0
+    number_sections: 8
+    angle_threshold: 5.0
     minimum_ransac_points: 30
 
     #Parameters of clustering
