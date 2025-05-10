@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e  # Si algún comando falla, el script se detiene
+set -e  # If any command fails, the script will stop
 
 # Define colors
 RED='\033[0;31m'
@@ -10,15 +10,11 @@ NC='\033[0m' # No color
 
 # Banner
 cat << "EOF"
-
-
      _    ____  _   _ ____    ____       _                _                 ____
     / \  |  _ \| | | / ___|  |  _ \ _ __(_)_   _____ _ __| | ___  ___ ___  |___ \
    / _ \ | |_) | | | \___ \  | | | | '__| \ \ / / _ \ '__| |/ _ \/ __/ __|   __) |
   / ___ \|  _ <| |_| |___) | | |_| | |  | |\ V /  __/ |  | |  __/\__ \__ \  / __/
  /_/   \_\_| \_\\___/|____/  |____/|_|  |_| \_/ \___|_|  |_|\___||___/___/ |_____|
-
-
 
 EOF
 
@@ -26,7 +22,7 @@ EOF
 echo -e "${BLUE}Welcome to the ARUS Driverless2 dependencies installer.${NC}"
 echo -e "This script provides an easy way to install the dependencies required to run the ARUS Driverless2 software and the ROS2 Humble distribution."
 echo -e "This script was tested on Ubuntu 22.04.2 LTS (Jammy Jellyfish)"
-echo -e "Made by Ángel García. Last update: 03-02-2025\n"
+echo -e "Made by Ángel García. Last update: 10-05-2025\n"
 echo -e "${NC}"
 
 # Selection menu
@@ -39,7 +35,7 @@ read option
 
 USER_FOLDER=$(eval echo ~$SUDO_USER)
 
-# Function to install dependencies
+# Function to install all dependencies
 install_dependencies() {
   install_apt_dependencies
   install_pip_dependencies
@@ -90,15 +86,27 @@ install_apt_dependencies() {
 # Function to install complex dependencies
 install_complex_dependencies(){
   echo -e "${NC}Installing complex dependencies${NC}"
-  echo -e "${NC}Installing && building g2o. ${YELLOW}It may take a while...${NC}"
 
-  cd $USER_FOLDER && git clone https://github.com/RainerKuemmerle/g2o.git 1>/dev/null
-  sudo chmod 777 -R $USER_FOLDER/g2o
-  cd $USER_FOLDER/g2o && mkdir build && cd build 1>/dev/null
+  if [ -d "$USER_FOLDER/g2o" ]; then
+    echo -e "${YELLOW}g2o is already installed in $USER_FOLDER. Skipping installation.${NC}"
+    return
+  fi
+
+  echo -e "${NC}Installing and building g2o. ${YELLOW}It may take a while...${NC}"
+
+  cd "$USER_FOLDER" && git clone https://github.com/RainerKuemmerle/g2o.git 1>/dev/null
+  sudo chmod 777 -R "$USER_FOLDER/g2o"
+  cd "$USER_FOLDER/g2o" && mkdir build && cd build 1>/dev/null
   cmake ..
   make 
   sudo make install
   sudo ldconfig
+  
+  if ldconfig -p | grep libg2o_core > /dev/null; then
+    echo -e "${GREEN}libg2o_core installed successfully.${NC}"
+  else
+    echo -e "${RED}libg2o_core installation check failed.${NC}"
+  fi
   
   echo -e "${GREEN}g2o installed successfully.${NC}"
 }
