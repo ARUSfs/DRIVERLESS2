@@ -1,10 +1,6 @@
 # DRIVERLESS2
 
-<p align="center" style="margin-top: 50px; margin-bottom: 50px;">
-    <a href="https://www.arusteam.com/">
-        <img src="config/static/arus_logo.png" alt="ARUS Team">
-    </a>
-</p>
+![image](https://github.com/user-attachments/assets/e899bc0a-869d-4f2d-bb1c-81bb53f521bd)
 
 ## Table of Contents
 
