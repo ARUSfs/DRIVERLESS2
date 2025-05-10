@@ -1,5 +1,8 @@
 path_planning:
   ros__parameters:
+    # Debug
+    debug: true
+
     # Topics
     map_topic: "/slam/map"
     lap_count_topic: "/slam/lap_count"
@@ -10,7 +13,7 @@ path_planning:
     track_limits_topic: "/path_planning/track_limits"
 
     # Triangulation parameters
-    max_tri_len: 9.0
+    max_tri_len: 7.5
 
     # Route parameters
     len_coeff: 0.01

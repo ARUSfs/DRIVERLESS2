@@ -4,16 +4,17 @@
  * @brief Main file for the Path Planning node. Contains the main function and the implementation
  * of the methods to achieve a robust and reliable path planning algorithm for the ARUS Team
  * which extracts the midpoints of the track that the ART will follow.
- * @version 0.1
- * @date 29-10-2024
- *
  */
 #include "path_planning/path_planning_node.hpp"
-#include <chrono>
 
 PathPlanning::PathPlanning() : Node("path_planning")
 {
     // Declare and get parameters
+    // Debug
+    this->declare_parameter<bool>("debug", true);
+
+    this->get_parameter("debug", kDebug);
+
     // Topics
     this->declare_parameter<std::string>("map_topic", "/slam/map");
     this->declare_parameter<std::string>("lap_count_topic", "/slam/lap_count");
@@ -83,6 +84,7 @@ PathPlanning::PathPlanning() : Node("path_planning")
 
 void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
 {
+    double start = this->now().seconds();
     // Get the track limits in the second lap
     if (lap_count_ > 0 && x_>3 && !track_limits_sent_){
         common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(TL_triang_, TL_tri_indices_);
@@ -92,7 +94,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
 
     // Publish the closing route if selected in config file and shutdown the node
-    if ((closing_route_.size() > 0)){
+    if (closing_route_.size() > 0){
         common_msgs::msg::Trajectory trajectory_msg = this->create_trajectory_msg(closing_route_);
         if (trajectory_msg.points.size()>0) trajectory_pub_->publish(trajectory_msg);
         
@@ -104,14 +106,12 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         return;
     }
 
-
-
     // Save the point cloud as a pcl object from ROS2 msg
     pcl::fromROSMsg(*per_msg, pcl_cloud_);
 
     // Check if the point cloud is empty and return if it is
     if(pcl_cloud_.size() < 3){
-        RCLCPP_INFO(this->get_logger(), "Empty point cloud");
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Empty point cloud");
         return;
     }
 
@@ -124,7 +124,14 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         back_edge.push_back(ConeXYZColorScore(0, -1.5, 0, YELLOW, -1));
         back_edge.push_back(ConeXYZColorScore(0, 1.5, 0, BLUE, -1));
     }
-    if (back_edge.size()!=2) return;
+
+    if (back_edge.size()!=2) {
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Back edge not found");
+        return;
+    }
+
+    // Add the back edge to the track limits
+    this->add_to_track_limits(back_edge);
 
     // Create the triangulation
     CDT::Triangulation<double> triang;
@@ -141,14 +148,22 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
     triangulation_pub_ -> publish(triangulation_msg);
     
+    if (kDebug) {
+        double triangulation_time = this->now().seconds() - start;
+        RCLCPP_INFO(this->get_logger(), "Triangulation time: %f", triangulation_time);
+    }
     
     // Get the nearest triangle containing the back edge
     int nearest_tri = -1;
     double min_distance = INFINITY;
-    int edge_v0_ind = this->get_vertex_index(CDT::V2d<double>::make(back_edge[0].x,back_edge[0].y), triang);
-    int edge_v1_ind = this->get_vertex_index(CDT::V2d<double>::make(back_edge[1].x,back_edge[1].y), triang);
-    for (int i : this->get_triangles_from_vert(edge_v0_ind, triang)){
-        if (in(i, this->get_triangles_from_vert(edge_v1_ind, triang))){
+    int edge_v0_ind = get_vertex_index(CDT::V2d<double>::make(back_edge[0].x,back_edge[0].y), triang);
+    int edge_v1_ind = get_vertex_index(CDT::V2d<double>::make(back_edge[1].x,back_edge[1].y), triang);
+    if (edge_v0_ind == -1 || edge_v1_ind == -1){
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Back edge vertices not found");
+        return;
+    }
+    for (int i : get_triangles_from_vert(edge_v0_ind, triang)){
+        if (in(i, get_triangles_from_vert(edge_v1_ind, triang))){
             CDT::V2d<double> centroid = compute_centroid(i, triang.triangles, triang.vertices);
             double d = (centroid.x-x_) * (centroid.x-x_) + (centroid.y-y_) * (centroid.y-y_);
             if (d < min_distance){
@@ -159,21 +174,37 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     }
 
     if (nearest_tri == -1){
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Nearest triangle not found");
         return;
     }
+
+    // Get passed vertices from the back route
+    std::vector<int> passed_vertices;
+    for (auto p : back_points_){
+        int ind_1 = get_vertex_index(CDT::V2d<double>::make(p.x, p.y), triang, 0.95);
+        if (ind_1 == -1) continue;
+        if (in(ind_1, passed_vertices)) continue;
+        passed_vertices.push_back(ind_1);
+    }
+
     SimplexTree tree;
-    tree = SimplexTree(triangles_, nearest_tri, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, yaw_,
-        kAngleCoeff, kLenCoeff);
+    tree = SimplexTree(triangles_, nearest_tri, {edge_v0_ind, edge_v1_ind}, pcl_cloud_, passed_vertices,
+                       yaw_, kAngleCoeff, kLenCoeff);
     auto c0 = tree.best_route_[0];
     auto c2 = tree.best_route_[2];
     double angle_diff = std::abs(atan2(c2.y-c0.y, c2.x-c0.x)-yaw_);
-    std::min(angle_diff, 2*M_PI-angle_diff);
+    angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
     if (angle_diff < M_PI/2){
         best_midpoint_route_ = tree.best_route_;
     } else {
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Best route looking backwards");
         return;
     }
-            
+
+    if (kDebug) {
+        double tree_time = this->now().seconds() - start;
+        RCLCPP_INFO(this->get_logger(), "Simplex tree time: %f", tree_time);
+    }
     
     // Get the final route using the buffer if selected in config file
     std::vector<ConeXYZColorScore> final_route;
@@ -185,7 +216,10 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         final_route = best_midpoint_route_;
     }
 
-    if (final_route.size() <3) return;
+    if (final_route.size() <3) {
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Final route is empty");
+        return;
+    }
 
     ConeXYZColorScore back_point;
     bool route_closed = false;
@@ -203,6 +237,8 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
         if (append_point) {
             back_route_.push_back(back_point);
+            back_points_.push_back(back_edge[0]);
+            back_points_.push_back(back_edge[1]);
         } else if (back_route_.size() > 10 && distance(back_point, back_route_[0]) < 3.0){
             route_closed = true;
         }
@@ -242,11 +278,10 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         }
     }
 
-    if (tree.ending_routes_.size()>0 && route_closed) { 
+    if (tree.ending_routes_.size()>0 && route_closed) {
         TL_triang_ = triangles_;
         TL_tri_indices_ = tree.best_index_route_;
-    } 
-
+    }
 
     // Use closing route if route is closed
     if (route_closed || lap_count_ > 0) {
@@ -256,9 +291,14 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     } else {
         last_unfinished_ = this -> now();
     }
+
     // Publish the best trajectory
     trajectory_pub_ -> publish(this->create_trajectory_msg(full_route));
-
+    
+    if (kDebug) {
+        double trajectory_time = this->now().seconds() - start;
+        RCLCPP_INFO(this->get_logger(), "Trajectory time: %f", trajectory_time);
+    }
 }
 
 void PathPlanning::car_info_callback(const common_msgs::msg::CarInfo::SharedPtr state_msg)
@@ -282,48 +322,6 @@ void PathPlanning::optimizer_callback(const common_msgs::msg::Trajectory::Shared
 {   
     if (track_limits_sent_) rclcpp::shutdown(); // End only if the track limits have been sent
 }
-
-
-std::vector<ConeXYZColorScore> PathPlanning::get_back_edge(){
-
-    std::vector<ConeXYZColorScore> back_edge = {}; 
-
-    pcl::PointCloud<ConeXYZColorScore> local_cloud = pcl_cloud_;
-    local_cloud.points.push_back(origin_);
-    
-    // Create the triangulation
-    CDT::Triangulation<double> triang = this->create_triangulation(local_cloud);
-
-    // Construct the tree from the triangulation. Initializing it from each of the origin triangles
-    int orig_index = this->get_vertex_index(CDT::V2d<double>::make(x_,y_), triang);
-    std::vector<int> o_triangles = this->get_triangles_from_vert(orig_index, triang);        
-        
-    for (int i = 0; i<o_triangles.size(); i++){
-        // Calculate the centroid of the triangle and the angle difference with the car yaw
-        CDT::V2d<double> centroid = compute_centroid(o_triangles[i], triang.triangles, triang.vertices);
-        double angle_diff = abs(atan2(centroid.y-y_, centroid.x-x_)-yaw_);
-        double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
-
-        // Create the tree if the angle difference is less than pi/2 degrees
-        if (corrected_angle_diff >  M_PI/2) {
-            for (int j = 0; j<3; j++){
-                if (back_edge.size()==2 || triang.triangles[o_triangles[i]].vertices[j] == orig_index){
-                    continue;
-                    }
-                if (pcl_cloud_[triang.triangles[o_triangles[i]].vertices[j]].color != UNCOLORED){
-                    back_edge.push_back(pcl_cloud_[triang.triangles[o_triangles[i]].vertices[j]]);
-                    }
-                }
-            if (back_edge.size() != 2) back_edge.clear();
-            if (back_edge.size() == 2 && back_edge[0].color == back_edge[1].color){
-                back_edge.clear();
-            }
-        }
-    }
-
-    return back_edge;
-}
-
 
 CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<ConeXYZColorScore> input_cloud){
     // Initialize empty triangulation and empty points vector
@@ -371,51 +369,48 @@ CDT::Triangulation<double> PathPlanning::create_triangulation(pcl::PointCloud<Co
     return triangulation;
 }
 
-common_msgs::msg::Triangulation PathPlanning::create_triangulation_msg(CDT::Triangulation<double> triangulation){
-    common_msgs::msg::Triangulation triangulation_msg;
-    CDT::Triangulation<double>::V2dVec points = triangulation.vertices;
-    CDT::TriangleVec triangles = triangulation.triangles;
-    for (int i = 0; i < triangles.size(); i++){
-        common_msgs::msg::Simplex simplex;
-        common_msgs::msg::PointXY a, b, c;
-        CDT::Triangle triangle = triangles[i];
-        CDT::VerticesArr3 vertices_index = triangle.vertices;
-        CDT::VertInd a_ind = vertices_index[0];
-        CDT::VertInd b_ind = vertices_index[1];
-        CDT::VertInd c_ind = vertices_index[2];
-        a.x = points[a_ind].x;
-        a.y = points[a_ind].y;
-        b.x = points[b_ind].x;
-        b.y = points[b_ind].y;
-        c.x = points[c_ind].x;
-        c.y = points[c_ind].y;
-        simplex.points = {a, b, c};
-        triangulation_msg.simplices.push_back(simplex);
-    }
-    return triangulation_msg;
-}
+std::vector<ConeXYZColorScore> PathPlanning::get_back_edge(){
 
-int PathPlanning::get_vertex_index(CDT::V2d<double> vertex, CDT::Triangulation<double> triangulation){
-    int o_ind;
-    CDT::Triangulation<double>::V2dVec vertices = triangulation.vertices;
-    for (int i = 0; i<vertices.size(); i++){
-        if (vertices[i] == vertex){
-            o_ind = i;
-            return o_ind;
+    std::vector<ConeXYZColorScore> back_edge = {}; 
+
+    pcl::PointCloud<ConeXYZColorScore> local_cloud = pcl_cloud_;
+    local_cloud.points.push_back(origin_);
+    
+    // Create the triangulation
+    CDT::Triangulation<double> triang = this->create_triangulation(local_cloud);
+
+    // Initializing it from each of the origin triangles
+    int orig_index = get_vertex_index(CDT::V2d<double>::make(x_,y_), triang);
+    if (orig_index == -1){
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Origin vertex not found");
+        return back_edge;
+    }
+    std::vector<int> o_triangles = get_triangles_from_vert(orig_index, triang);        
+        
+    for (int i = 0; i<o_triangles.size(); i++){
+        // Calculate the centroid of the triangle and the angle difference with the car yaw
+        CDT::V2d<double> centroid = compute_centroid(o_triangles[i], triang.triangles, triang.vertices);
+        double angle_diff = abs(atan2(centroid.y-y_, centroid.x-x_)-yaw_);
+        double corrected_angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
+
+        // Back edge is behind the car (angle diff > pi/2)
+        if (corrected_angle_diff >  M_PI/2) {
+            for (int j = 0; j<3; j++){
+                if (back_edge.size()==2 || triang.triangles[o_triangles[i]].vertices[j] == orig_index){
+                    continue;
+                }
+                if (pcl_cloud_[triang.triangles[o_triangles[i]].vertices[j]].color != UNCOLORED){
+                    back_edge.push_back(pcl_cloud_[triang.triangles[o_triangles[i]].vertices[j]]);
+                }
+            }
+            if (back_edge.size() != 2) back_edge.clear();
+            if (back_edge.size() == 2 && back_edge[0].color == back_edge[1].color){
+                back_edge.clear();
+            }
         }
     }
-    return 0;
-}
 
-std::vector<int> PathPlanning::get_triangles_from_vert(int vert_index, CDT::Triangulation<double> triangulation){
-    std::vector<int> o_triangles;
-    CDT::TriangleVec triangles = triangulation.triangles;
-    for (int i = 0; i<triangles.size(); i++){
-        if (triangles[i].containsVertex(vert_index)){
-            o_triangles.push_back(i);
-        }
-    }
-    return o_triangles;
+    return back_edge;
 }
 
 std::vector<ConeXYZColorScore> PathPlanning::get_final_route(){
@@ -451,8 +446,6 @@ std::vector<ConeXYZColorScore> PathPlanning::get_final_route(){
         return previous_midpoint_routes_[previous_midpoint_routes_.size() - 1 - invalid_counter_];
     }
 }
-
-
 
 common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
             std::vector<ConeXYZColorScore> route, bool smooth){
@@ -588,6 +581,40 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     return trajectory_msg;
 }
 
+void PathPlanning::add_to_track_limits(std::vector<ConeXYZColorScore> back_edge){
+    if (back_edge.size() != 2) return;
+    if (back_edge[0].score == -1 || back_edge[1].score == -1) return;
+    for (int i = 0; i < 2; i++){
+        if (back_edge[i].color == UNCOLORED) continue;
+        switch (back_edge[i].color) {
+            case YELLOW:
+                if (right_limit_.size() > 0){
+                    if (distance(back_edge[i], right_limit_.back()) < 0.5){
+                        continue;
+                    } else {
+                        right_limit_.push_back(back_edge[i]);
+                    }
+                } else {
+                    right_limit_.push_back(back_edge[i]);
+                }
+                break;
+            case BLUE:
+                if (left_limit_.size() > 0){
+                    if (distance(back_edge[i], left_limit_.back()) < 0.5){
+                        continue;
+                    } else {
+                        left_limit_.push_back(back_edge[i]);
+                    }
+                } else {
+                    left_limit_.push_back(back_edge[i]);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::TriangleVec triang, 
                                                                 std::vector<int> triangles_route){
     CDT::Triangle last_triangle = triang[triangles_route.back()];
@@ -634,7 +661,7 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::Triangl
                 } else {
                     std::vector<double> yaw_vector, cone_vector;
                     CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triang, vertices_);
-                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[0], triang, vertices_);
+                    CDT::V2d<double> centroid_2 = CDT::V2d<double>::make(1.5, 0);
                     double route_angle = atan2(centroid_2.y-centroid_1.y, centroid_2.x-centroid_1.x);
                     yaw_vector = {cos(route_angle), sin(route_angle)};
                     cone_vector = {cone.x-centroid_1.x, cone.y-centroid_1.y};
@@ -650,11 +677,23 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::Triangl
         }
     }
     common_msgs::msg::TrackLimits track_limits_msg;
+    for (int i = 0; i<left_limit_.size(); i++){
+        common_msgs::msg::PointXY point;
+        point.x = left_limit_[i].x;
+        point.y = left_limit_[i].y;
+        track_limits_msg.left_limit.push_back(point);
+    }
     for (int i = 0; i<left_limit.size(); i++){
         common_msgs::msg::PointXY point;
         point.x = pcl_cloud_.points[left_limit[i]].x;
         point.y = pcl_cloud_.points[left_limit[i]].y;
         track_limits_msg.left_limit.push_back(point);
+    }
+    for (int i = 0; i<right_limit_.size(); i++){
+        common_msgs::msg::PointXY point;
+        point.x = right_limit_[i].x;
+        point.y = right_limit_[i].y;
+        track_limits_msg.right_limit.push_back(point);
     }
     for (int i = 0; i<right_limit.size(); i++){
         common_msgs::msg::PointXY point;
@@ -666,6 +705,30 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::Triangl
     
     return track_limits_msg;
 
+}
+
+common_msgs::msg::Triangulation PathPlanning::create_triangulation_msg(CDT::Triangulation<double> triangulation){
+    common_msgs::msg::Triangulation triangulation_msg;
+    CDT::Triangulation<double>::V2dVec points = triangulation.vertices;
+    CDT::TriangleVec triangles = triangulation.triangles;
+    for (int i = 0; i < triangles.size(); i++){
+        common_msgs::msg::Simplex simplex;
+        common_msgs::msg::PointXY a, b, c;
+        CDT::Triangle triangle = triangles[i];
+        CDT::VerticesArr3 vertices_index = triangle.vertices;
+        CDT::VertInd a_ind = vertices_index[0];
+        CDT::VertInd b_ind = vertices_index[1];
+        CDT::VertInd c_ind = vertices_index[2];
+        a.x = points[a_ind].x;
+        a.y = points[a_ind].y;
+        b.x = points[b_ind].x;
+        b.y = points[b_ind].y;
+        c.x = points[c_ind].x;
+        c.y = points[c_ind].y;
+        simplex.points = {a, b, c};
+        triangulation_msg.simplices.push_back(simplex);
+    }
+    return triangulation_msg;
 }
 
 int main(int argc, char * argv[])
