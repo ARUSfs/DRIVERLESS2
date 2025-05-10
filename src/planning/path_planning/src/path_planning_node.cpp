@@ -661,7 +661,7 @@ common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::Triangl
                 } else {
                     std::vector<double> yaw_vector, cone_vector;
                     CDT::V2d<double> centroid_1 = compute_centroid(triangles_route[i], triang, vertices_);
-                    CDT::V2d<double> centroid_2 = compute_centroid(triangles_route[0], triang, vertices_);
+                    CDT::V2d<double> centroid_2 = CDT::V2d<double>::make(1.5, 0);
                     double route_angle = atan2(centroid_2.y-centroid_1.y, centroid_2.x-centroid_1.x);
                     yaw_vector = {cos(route_angle), sin(route_angle)};
                     cone_vector = {cone.x-centroid_1.x, cone.y-centroid_1.y};
