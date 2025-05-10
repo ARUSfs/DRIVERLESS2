@@ -1,23 +1,12 @@
 /**
  * @file ground_filtering.h
  * @author Alejandro Vallejo Mayo (alejandro.vm.1805@gmail.com)
- * @brief Auxiliar file for the Perception node.
- * Contains auxiliar functions used in the algorithm to remove the ground from the original point cloud. It is 
- * a method that consists of dividing the point cloud into a grid and applying ransac to each square, verifying 
- * that the filtered points correspond to the ground using the normal vectors of the planes.
- * @version 0.1
- * @date 12-11-2024
+ * @brief Contains auxiliar functions used in the algorithm to remove the ground from the original point cloud. 
  */
 
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
-#include <pcl_conversions/pcl_conversions.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/ModelCoefficients.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <iostream>
 #include <pcl/filters/crop_box.h>
 #include <pcl/filters/passthrough.h>
 #include <omp.h>
@@ -57,65 +46,44 @@ namespace GroundFiltering
 
     /**
     * @brief Implements ground filtering using ransac segmentation.
-    * @param cloud The raw point cloud that will be filtered.
-    * @param cloud_filtered The point cloud that will store the not planar points.
-    * @param cloud_plane The point cloud that will store the planar points.
-    * @param coefficients The coefficients of the planar ecuation.
-    * @param threshold The threshold that will determine if the point belong to the ground.
     */
     void ransac_ground_filter(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, 
         pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold)
     {   
-        //Define the parameters
+        // Define the parameters
         pcl::SACSegmentation<pcl::PointXYZI> segmentation;
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
         pcl::PointIndices::Ptr outliers(new pcl::PointIndices);
 
-        //Configure the algorithm
+        // Configure the algorithm
         segmentation.setOptimizeCoefficients(true);
         segmentation.setModelType(pcl::SACMODEL_PLANE);
         segmentation.setMethodType(pcl::SAC_RANSAC);
         segmentation.setMaxIterations(50);
         segmentation.setDistanceThreshold(threshold);
 
-        //Aply the segmentation
+        // Aply the segmentation
         segmentation.setInputCloud(cloud);
         segmentation.segment(*inliers, *coefficients);
 
-        //Verify the segmentation is not empty
-        if (inliers->indices.size() == 0)
-        {
-            std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
-        }
-
-        //Extract the planar inliers from the input cloud
+        // Extract the planar inliers from the input cloud
         pcl::ExtractIndices<pcl::PointXYZI> extract;
         extract.setInputCloud(cloud);
         extract.setIndices(inliers);
 
-        //Store the not planar points
+        // Store the not planar points
         extract.setNegative(true);
         extract.filter(*cloud_filtered);
         extract.filter(outliers->indices);
 
-        //Store the planar points
+        // Store the planar points
         extract.setNegative(false);
         extract.filter(*cloud_plane);
     }
 
     /**
-    * @brief Auxiliar function for  the function grid_ground_filter, apply ransac in the square specified and check if the result plane is in
-    * accordance with the previus ground plane by measuring the angle between their normal vectors, repeating the process until it succeed.
-    * @param grid_cloud The raw point cloud of the specified square.
-    * @param temp_filtered The temporal cloud cloud that will store the not planar points.
-    * @param temp_plane The temporal cloud that will store the planar points.
-    * @param coefficients The coefficients of the planar ecuation.
-    * @param threshold The threshold that will determine if the point belong to the ground.
-    * @param cloud_filtered The point cloud that will store the not planar points.
-    * @param cloud_plane The point cloud that will store the planar points.
-    * @param prev_normal The normal vector of the previus calculated plane.
-    * @param normal The normal vector of the current plane, that will be recalculated.
-    * @param angle_threshold The threshold that will determine if the potencial plane is discard as plane or not.
+    * @brief Apply ransac in the square specified and check if the result plane is in accordance with the previus ground plane 
+    * by measuring the angle between their normal vectors, repeating the process until it succeed.
     */
     void ransac_checking_normal_vectors(pcl::PointCloud<pcl::PointXYZI>::Ptr& grid_cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& temp_filtered, 
         pcl::PointCloud<pcl::PointXYZI>::Ptr& temp_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, 
@@ -172,16 +140,8 @@ namespace GroundFiltering
 
 
     /**
-    * @brief Principal function of the file, divide the cloud in the specified numbers of squares as a grid and call the function 
+    * @brief Divide the cloud in the specified numbers of squares as a grid and call the function 
     * ransac_checking_normal_vectors on each square, in order to apply ransac checking verifying that what is filtered is the ground. 
-    * @param cloud The raw point cloud that will be filtered.
-    * @param cloud_filtered The point cloud that will store the not planar points.
-    * @param cloud_plane The point cloud that will store the planar points.
-    * @param coefficients The coefficients of the planar ecuation.
-    * @param threshold The threshold that will determine if the point belong to the ground.
-    * @param Mx The lenght in the x axis.
-    * @param My The lenght in the y axis.
-    * @param Mz The lenght in the z axis.
     */
     void grid_ground_filter(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, 
         pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, double Mx, double My, double Mz,
@@ -198,15 +158,10 @@ namespace GroundFiltering
         Eigen::Vector3d prev_normal(0, 0, 1);
         Eigen::Vector3d normal(0, 0, 1);
         pcl::ModelCoefficients::Ptr prev_coefficients(new pcl::ModelCoefficients(*coefficients));
-
-        // Transform the angle threshold from degree to radians
         angle_threshold *= (M_PI/180);
-
-        // Define the measures if the grid
         double x_step = Mx / number_sections;
         double y_step = 2 * My / number_sections;
 
-        // Iterate on each square
         for (int i = 0; i < number_sections; ++i)
         {
             for (int j = 0; j < number_sections; ++j)
@@ -293,8 +248,8 @@ namespace GroundFiltering
 
         Eigen::Vector3d ground_normal(0, 0, 1);
         Eigen::Vector3d current_normal(0, 0, 1);
-        // Eigen::Vector3d sum(0, 0, 0); // Otra opción
-        // int count = 0;
+        Eigen::Vector3d sum(0, 0, 0);
+        int count = 0;
 
         // Define the measures if the grid
         double x_step = Mx / number_sections;
@@ -333,13 +288,12 @@ namespace GroundFiltering
                 *cloud_filtered += *local_filtered;
                 *cloud_plane += *local_plane;
 
-                ground_normal = (ground_normal + current_normal).normalized();
-                // sum += current_normal; // Otra opción
-                // count++;
-                // if (count > 0)
-                // {
-                //     ground_normal = (sum / count).normalized();
-                // }
+                sum += current_normal;
+                count++;
+                if (count > 0)
+                {
+                    ground_normal = (sum / count).normalized();
+                }
             }
         }
     }
