@@ -114,7 +114,7 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
         for (auto v: n_triangle.vertices){
             if (!in(v, triangle.vertices)){
                 if (in(v, passed_vertices)){ // Check the neighbor doesn't contain any passed vertex
-                    if (passed_vertices.size() > cones_cloud_.size()*0.75 && (v == passed_vertices[0] || v == passed_vertices[1])){ // If the first vertex is reached again, end the route 
+                    if (passed_vertices.size() > cones_cloud_.size()*0.5 && (v == passed_vertices[0] || v == passed_vertices[1])){ // If the first vertex is reached again, end the route 
                         finish_route = true;
                     } else {
                         next_edge.clear();
