@@ -31,7 +31,7 @@ namespace GroundFiltering
     * @param threshold The threshold that will determine if the point belong to the ground.
     */
     void ransac_ground_filter(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_filtered, 
-        pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold)
+        pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, double eps_angle)
     {   
         //Define the parameters
         pcl::SACSegmentation<PointXYZIRingTime> segmentation;
@@ -42,7 +42,7 @@ namespace GroundFiltering
         segmentation.setOptimizeCoefficients(true);
         segmentation.setModelType(pcl::SACMODEL_PLANE);
         segmentation.setMethodType(pcl::SAC_RANSAC);
-        segmentation.setEpsAngle(20.0f * (M_PI / 180.0f));
+        segmentation.setEpsAngle(eps_angle * (M_PI / 180.0f));
         segmentation.setMaxIterations(100);
         segmentation.setDistanceThreshold(threshold);
 
@@ -88,7 +88,7 @@ namespace GroundFiltering
     void ransac_checking_normal_vectors(pcl::PointCloud<PointXYZIRingTime>::Ptr& grid_cloud, pcl::PointCloud<PointXYZIRingTime>::Ptr& temp_filtered, 
         pcl::PointCloud<PointXYZIRingTime>::Ptr& temp_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, 
         pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_filtered, pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_plane, Eigen::Vector3d& prev_normal, 
-        Eigen::Vector3d& normal, double angle_threshold, int minimum_ransac_points)
+        Eigen::Vector3d& normal, double angle_threshold, int minimum_ransac_points, double eps_angle)
     {
         // Filter the squares with just a few points
         if (!(grid_cloud->size() < static_cast<std::size_t>(minimum_ransac_points)))
@@ -98,7 +98,7 @@ namespace GroundFiltering
             pcl::PointCloud<PointXYZIRingTime>::Ptr new_temp_plane(new pcl::PointCloud<PointXYZIRingTime>);
 
             // Apply ransac
-            ransac_ground_filter(grid_cloud, temp_filtered, temp_plane, coefficients, threshold);
+            ransac_ground_filter(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, eps_angle);
 
             // Extract the coefficients of the plane of ecuation Ax + By + Cz + D = 0
             double A = coefficients->values[0];
@@ -120,7 +120,7 @@ namespace GroundFiltering
 
                 // Call the function again until the ground is suitable
                 ransac_checking_normal_vectors(temp_filtered, new_temp_filtered, new_temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, 
-                    prev_normal, normal, angle_threshold, minimum_ransac_points);
+                    prev_normal, normal, angle_threshold, minimum_ransac_points, eps_angle);
             }
 
             if (new_temp_filtered->points.empty())
@@ -153,7 +153,7 @@ namespace GroundFiltering
     */
     void grid_ground_filter(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_filtered, 
         pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud_plane, pcl::ModelCoefficients::Ptr& coefficients, double threshold, double Mx, double My, double Mz,
-        int number_sections, double angle_threshold, int minimum_ransac_points)
+        int number_sections, double angle_threshold, int minimum_ransac_points, double eps_angle)
     {
         // Initialize the variables
         Eigen::Vector3d prev_normal(0, 0, 1);
@@ -188,7 +188,7 @@ namespace GroundFiltering
                 pcl::PointCloud<PointXYZIRingTime>::Ptr temp_plane(new pcl::PointCloud<PointXYZIRingTime>);
                 
                 // Apply ransac and check the normal vectors
-                ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, prev_normal, normal, angle_threshold, minimum_ransac_points);
+                ransac_checking_normal_vectors(grid_cloud, temp_filtered, temp_plane, coefficients, threshold, cloud_filtered, cloud_plane, prev_normal, normal, angle_threshold, minimum_ransac_points, eps_angle);
 
                 // Update the variables for the next iteration
                 prev_normal = normal;

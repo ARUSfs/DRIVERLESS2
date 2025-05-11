@@ -7,24 +7,24 @@ perception_acc:
     distance_lidar_to_CoG: 1.75
     buffer_size: 7
 
-    #Parameters of FOV
+    #Parameters of cropping
     crop: true
     max_x_fov: 25.0
     max_y_fov: 25.0
     max_z_fov: 0.5
 
     #Parameters of ground filter
-    threshold_ground_filter: 0.1
+    threshold_ground_filter: 0.05   # [m] Maximum distance of a point to the plane to be considered as part of the ground 
+    eps_angle: 5.0                  # [degree] How much the ground can be tilted
+    number_sections: 8              # Number of sections to divide the point cloud into
+    angle_threshold: 5.0            # [degree] Maximum angle between the normal of the ground and the normal of the point cloud
+    minimum_ransac_points: 30       # Minimum number of points to consider a plane
 
-    number_sections: 8
-    angle_threshold: 5.0
-    minimum_ransac_points: 30
-
-    #Parameters of clustering
-    radius: 0.15
+    #Parameters of reconstruction
+    radius: 0.15                    # [m] Radius of the cone
 
     #Parameters of scoring
-    threshold_scoring: 0.75
+    threshold_scoring: 0.75         # Probability of being a cone
 
     #Parameters of coloring
     distance_threshold: 5.0

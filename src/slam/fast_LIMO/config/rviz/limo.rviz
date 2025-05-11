@@ -374,7 +374,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 255
+      Max Intensity: 104
       Min Color: 0; 0; 0
       Min Intensity: 1
       Name: PointCloud2
@@ -405,7 +405,7 @@ Visualization Manager:
       Color: 38; 162; 105
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -426,7 +426,7 @@ Visualization Manager:
         Value: /perception/map
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -439,7 +439,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -460,7 +460,7 @@ Visualization Manager:
         Value: /perception_acc/map
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -506,7 +506,7 @@ Visualization Manager:
       Enabled: true
       Name: Marker
       Namespaces:
-        trajectory: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -531,7 +531,7 @@ Visualization Manager:
       Enabled: true
       Name: MarkerArray
       Namespaces:
-        triangulation: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -619,25 +619,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 29.226964950561523
+      Distance: 15.152665138244629
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: 1.3297152519226074
+        Y: -0.3116306662559509
+        Z: -0.25683605670928955
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5953983664512634
+      Pitch: 0.4553985595703125
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 3.5053980350494385
+      Yaw: 3.595388412475586
     Saved: ~
 Window Geometry:
   Displays:

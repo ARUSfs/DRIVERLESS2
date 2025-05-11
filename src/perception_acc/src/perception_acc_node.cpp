@@ -30,6 +30,7 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<bool>("global_accumulation", true);
     this->declare_parameter<double>("distance_lidar_to_CoG", 1.65);
     this->declare_parameter<int>("buffer_size", 10);
+    this->declare_parameter<double>("eps_angle", 20.0);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
@@ -48,6 +49,7 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("global_accumulation", kGlobalAccumulation);
     this->get_parameter("distance_lidar_to_CoG", kDistanceLidarToCoG);
     this->get_parameter("buffer_size", kBufferSize);
+    this->get_parameter("eps_angle", kEpsAngle);
     
     //Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -257,7 +259,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Apply the ground filter fuction
     GroundFiltering::grid_ground_filter(accumulated_cloud, cloud_filtered, cloud_plane, coefficients,
-        kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints);
+        kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints, kEpsAngle);
     if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - time_start << std::endl;
     
 
