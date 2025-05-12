@@ -29,6 +29,11 @@ car_state:
     max_vx: 75.0
     max_plausability_error: 20.0
 
+    # Car parameters
+    lf: 0.84315
+    tf: 1.22
+    tr: 1.22
+
     #  Error weights
     error_weight_imu: 2.0
     error_weight_extensometer: 2.0

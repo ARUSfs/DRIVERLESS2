@@ -103,6 +103,10 @@ private:
     double kMaxVx;
     double kMaxPlausabilityError;
 
+    double kLf;
+    double kTf;
+    double kTr;
+
     double kErrorWeightIMU;
     double kErrorWeightExtensometer;
     double kErrorWeightWheelSpeed;
