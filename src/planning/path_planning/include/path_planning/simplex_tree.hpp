@@ -127,13 +127,15 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
         }
 
         if (finish_route && next_edge.size() == 2){
-            visited.push_back(neighbors[i]);
-            index_routes_.push_back(visited);
-            mid_route.push_back(ConeXYZColorScore((next_edge[0].x+next_edge[1].x)/2,
-                                                      (next_edge[0].y+next_edge[1].y)/2, 0, UNCOLORED, 1));
-            midpoint_routes_.push_back(mid_route);
-            ending_routes_.push_back(mid_route);
-            if (mid_route.size() > 0.95*cones_cloud_.size()){
+            auto v = visited;
+            v.push_back(neighbors[i]);
+            index_routes_.push_back(v);
+            auto m = mid_route;
+            m.push_back(ConeXYZColorScore((next_edge[0].x+next_edge[1].x)/2,
+                                          (next_edge[0].y+next_edge[1].y)/2, 0, UNCOLORED, 1));
+            midpoint_routes_.push_back(m);
+            ending_routes_.push_back(m);
+            if (m.size() > 0.95*cones_cloud_.size()){
                 route_cost -= 100;
             } 
             if (route_cost < min_cost_){
@@ -141,7 +143,7 @@ SimplexNode* SimplexTree::create_tree_aux(CDT::TriangleVec triangle_list, int in
                 best_route_ = mid_route;
                 best_index_route_ = visited;
             }
-            return node;
+            continue;
         }
 
         if (next_edge.size() == 2 &&

@@ -146,7 +146,7 @@ void Controller::on_speed_timer()
         common_msgs::msg::Cmd cmd;       
         cmd.acc = std::clamp(acc_cmd_, kMinCmd, kMaxCmd);
         if (vx_ < 3) cmd.acc = std::clamp(acc_cmd_, 0.0, kMaxCmd);
-        cmd.delta = std::clamp(delta_cmd_, -kMaxSteer*M_PI/180, kMaxSteer*M_PI/180);;
+        cmd.delta = std::clamp(delta_cmd_, -kMaxSteer*M_PI/180, kMaxSteer*M_PI/180);
         cmd_pub_ -> publish(cmd); 
     }
 }
