@@ -399,11 +399,9 @@ void CanInterface::control_callback(common_msgs::msg::Cmd msg)
 {   
     if(run_check_){
         float torque = msg.acc * kCarMass * kWheelRadius * kTransmissionRatio / kMaxInvTorque;
-        std::cout << "torque: " << torque << std::endl;
         this->motor_moment_target_ = torque;
         
         int16_t intValue = static_cast<int16_t>(torque * (1<<15))-1;
-        std::cout << "intValue: " << intValue << std::endl;
 
         int8_t bytesCMD[2];
         intToBytes(intValue, bytesCMD);
