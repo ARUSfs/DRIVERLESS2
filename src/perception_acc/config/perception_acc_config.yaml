@@ -6,6 +6,7 @@ perception_acc:
     #Accumulation
     distance_lidar_to_CoG: 1.75
     buffer_size: 7
+    pcl_inclination: 6.0            # [degree] Inclination of the point cloud. Depends on the inclination of the sensor (or the car)
 
     #Parameters of cropping
     crop: true

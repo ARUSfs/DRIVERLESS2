@@ -80,6 +80,7 @@ class Perception : public rclcpp::Node
         bool kGlobalAccumulation;
         double kDistanceLidarToCoG;
         double kEpsAngle;
+        double kPclInclination;
 
         // Variables
         double x_;

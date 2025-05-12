@@ -105,9 +105,9 @@ namespace Accumulation
         pcl::transformPointCloud(*cloud, *cloud, shiftMat);
     }
 
-    inline void disinclinate_cloud2(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud)
+    inline void disinclinate_cloud2(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, double pcl_inclination)
     {
-        float angle_rad = 6.0f * M_PI / 180.0f; 
+        float angle_rad = pcl_inclination * M_PI / 180.0f; 
         Eigen::AngleAxisf rotation(-angle_rad, Eigen::Vector3f::UnitY());
         Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
         transform.block<3,3>(0,0) = rotation.toRotationMatrix();
@@ -117,7 +117,7 @@ namespace Accumulation
     void accumulate(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, 
                     pcl::PointCloud<PointXYZIRingTime>::Ptr& accumulated_cloud,
                     double x, double y, double yaw, double kDistanceLidarToCoG,
-                    double kBufferSize)
+                    double kBufferSize, double pcl_inclination)
     {
         // Clean the buffer the first time
         if (!buffer_cloud_initialized) {
@@ -141,7 +141,7 @@ namespace Accumulation
             *accumulated_cloud += *cloud_buffer[i];
         }
 
-        disinclinate_cloud2(accumulated_cloud);
+        disinclinate_cloud2(accumulated_cloud, pcl_inclination);
 
         // Revert to original position before returning
         pcl::transformPointCloud(*accumulated_cloud, *accumulated_cloud, final_transform.inverse().matrix());        

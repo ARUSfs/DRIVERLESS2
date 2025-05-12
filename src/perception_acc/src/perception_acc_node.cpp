@@ -31,6 +31,7 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<double>("distance_lidar_to_CoG", 1.65);
     this->declare_parameter<int>("buffer_size", 10);
     this->declare_parameter<double>("eps_angle", 20.0);
+    this->declare_parameter<double>("pcl_inclination", 0.0);
 
     //Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
@@ -50,6 +51,7 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("distance_lidar_to_CoG", kDistanceLidarToCoG);
     this->get_parameter("buffer_size", kBufferSize);
     this->get_parameter("eps_angle", kEpsAngle);
+    this->get_parameter("pcl_inclination", kPclInclination);
     
     //Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -236,7 +238,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     // Accumulation
     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulated_cloud(new pcl::PointCloud<PointXYZIRingTime>);
-    Accumulation::accumulate(cloud, accumulated_cloud, x_, y_, yaw_, kDistanceLidarToCoG, kBufferSize);
+    Accumulation::accumulate(cloud, accumulated_cloud, x_, y_, yaw_, kDistanceLidarToCoG, kBufferSize, kPclInclination);
         
     RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", accumulated_cloud->size());
 
