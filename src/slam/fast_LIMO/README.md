@@ -35,186 +35,10 @@ A real-time, tightly coupled LiDAR-Inertial SLAM algorithm developed on top of [
 
 `Fast-LIMO` stands for a multithreaded version of the approach _Localize Intensively Map Offline (LIMO)_ stated in [LIMO-Velo](https://github.com/Huguet57/LIMO-Velo) 's algorithm developed by [Huget57](https://github.com/Huguet57). 
 
-<div align="center">
-  <img src="doc/cat15.gif" alt="CAT15X's performance"  width="800"/>
-  <small>
-  <p> Formula Student race car <a href="https://youtu.be/mk9U0lRWr-0?si=j4mM6e5dzihfCLJM">CAT15X</a>. Velocity in straights (~12m/s) and really tight turns (~100deg/s). </p>
-  </small>
-</div>
-<br/>
-
-<div align="center">
-  <img src="doc/kitti_0071.gif" alt="KITTI 0071 performance"  width="800"/>
-  <small>
-  <p> <a href="https://www.cvlibs.net/datasets/kitti/index.php">KITTI</a> dataset (0071). Dynamic objects being added to the map. Still robust enough. </p>
-  </small>
-</div>
-<br/>
-
-<div align="center">
-  <img src="doc/xaloc.gif" alt="XALOC's performance"  width="800"/>
-  <small>
-  <p> Formula Student race car <a href="https://youtu.be/ly_ax8w-T7E?si=sDFiMFtRN5jRwWKC">XALOC</a>. High velocity in straights (~15m/s) and tight turns (~80deg/s). </p>
-  </small>
-</div>
-<br/>
-
-<div align="center">
-  <img src="doc/kitti_0034.gif" alt="KITTI 0034 performance"  width="800"/>
-  <small>
-  <p> <a href="https://www.cvlibs.net/datasets/kitti/index.php">KITTI</a> dataset (0034). High velocity (~20m/s), smooth turns (~35deg/s). </p>
-  </small>
-</div>
-<br/>
-
-<div align="center">
-  <img src="doc/ona.gif" alt="ONA delivery robot"  width="800"/>
-  <small>
-  <p> <a href="https://youtu.be/mElLMG7OPwo?feature=shared">ONA</a> robot. Double-ackermann autonomous delivery device.</p>
-  </small>
-</div>
 
 ## Disclaimer
 If you plan to use `Fast-LIMO` please make sure to give some love to [LIMO-Velo](https://github.com/Huguet57/LIMO-Velo), [FASTLIO2](https://github.com/hku-mars/FAST_LIO) and [DLIO](https://github.com/vectr-ucla/direct_lidar_inertial_odometry) projects, which greatly influenced this work.
 
-## Dependencies
-<details open>
-    <summary>Fast-LIMO C++14 library:</summary>
-    <ol>
-        <li>
-        <a href="https://eigen.tuxfamily.org/index.php?title=Main_Page">Eigen3</a>
-        </li>
-        <li>
-        <a href="https://pointclouds.org/">PCL (1.8)</a>
-        </li>
-    </ol>
-</details>
-
-<details>
-    <summary>ROS2 (Humble) wrapper:</summary>
-    <ol>
-        <li>
-        <a href="./include/fast_limo/">fast_limo</a>
-        </li>
-        <li><a href="http://wiki.ros.org/pcl_conversions">pcl_conversions</a>
-        </li>
-        <li>
-        <a href="http://wiki.ros.org/sensor_msgs">sensor_msgs</a>
-        </li>
-        <li>
-        <a href="http://wiki.ros.org/geometry_msgs">geometry_msgs</a>
-        </li>
-        <li>
-        <a href="https://wiki.ros.org/tf2">tf2</a>
-        </li>
-        <li>
-        <a href="https://wiki.ros.org/tf2_ros">tf2_ros</a>
-        </li>
-        <li>
-        <a href="https://wiki.ros.org/visualization_msgs">visualization_msgs</a>
-        </li>
-        <li>
-        <a href="https://wiki.ros.org/nav_msgs">nav_msgs</a>
-        </li>
-    </ol>
-</details>
-
-<details>
-    <summary>ROS (Noetic) wrapper:</summary>
-    <ol>
-        <li>
-        <a href="./include/fast_limo/">fast_limo</a>
-        </li>
-        <li>
-        <a href="http://wiki.ros.org/pcl_ros">pcl_ros</a>
-        </li>
-        <li>
-        <a href="http://wiki.ros.org/sensor_msgs">sensor_msgs</a>
-        </li>
-        <li>
-        <a href="http://wiki.ros.org/geometry_msgs">geometry_msgs</a>
-        </li>
-        <li>
-        <a href="https://wiki.ros.org/tf2">tf2</a>
-        </li>
-        <li>
-        <a href="https://wiki.ros.org/visualization_msgs">visualization_msgs</a>
-        </li>
-        <li>
-        <a href="https://wiki.ros.org/nav_msgs">nav_msgs</a>
-        </li>
-    </ol>
-</details>
-
-## Future Work (To Do)
-### DevOps
-- [X] ROS2 branch. 
-### New Features
-- [X] Take into account GPS data. _Pose-graph optimization using [GTSAM](https://github.com/borglab/gtsam)_
-- [X] Add loop closure strategy. _Loop Closure detection with [ScanContext](https://ieeexplore.ieee.org/document/8593953)._
-- [ ] Relocalize in previously saved pcl map. _Probably ICP-based correction for initial pose._
-
-:envelope_with_arrow: _Feel free to reach out for new ideas or questions!_ :envelope_with_arrow:
-
-## Quick Start
-### 0. Cloning the repo
-```sh
-git clone https://github.com/fetty31/fast_LIMO
-```
-
-_More than half of the storage space needed to clone this repo is due to the [README gifs](doc/). There's a branch updated with the `master` but without all this media files called `no_media`._
-
-### 1. Building fast LIMO
-Use `colcon build --symlink-install` to build the code. By default it will compile under the `CMAKE_BUILD_TYPE="Release"` flag.
-
-### 2. Running fast LIMO
-```sh
-ros2 launch fast_limo fast_limo.launch.py
-```
-
-Afterwards, you should be seeing this output _(if `verbose` param is set to true)_:
-
-<div align="center">
-<a> <img src="doc/verbose.png" alt="Logo" width="555"> </a>
-</div>
-<br />
-
-You can also run `Fast-LIMO` together with an rviz instance with:
-```sh
-ros2 launch fast_limo fast_limo.launch.py rviz:=True
-```
-
-### 4. Quickly check its performance
-[IN THIS FOLDER](https://www.dropbox.com/scl/fi/60u6xq0daav9enecluroh/cat15_trackdrive.bag?rlkey=jfjba58h8hohfi8b7kpi8zsvx&st=jck682n6&dl=0) you can find the rosbag file (___850.41 MB___) of [this CAT15X trackdrive](https://youtu.be/mk9U0lRWr-0?si=j4mM6e5dzihfCLJM). Download it and try it out!
-```sh
-ros2 launch fast_limo cat.launch.py rviz:=True
-```
-
-_Note that this algorithm's precision greatly depends on the pointcloud & IMU timestamps, so remember to run the rosbag with __use_sim_time=true__ and __--clock__ flag._
-
-## Docker
-A [Dockerfile](docker/Dockerfile) is provided in order to build a `Fast-LIMO` image on top of `ros2-humble` or `ros-noetic` desktop image.
-
-Note that some bash scripts are given in order to quickly build & run the ROS docker container (__also enabling GUI applications__).
-```sh
-cd docker/
-chmod +x build run
-./build # build fastlimo docker image
-./run   # deploy a fastlimo container
-```
-
-Finally, once inside the docker container run:
-```sh
-# ROS2 Humble
-cd /home/colcon_ws/
-colcon build --symlink-install
-```
-
-```sh
-# ROS Noetic
-cd /home/catkin_ws/
-catkin_make
-```
 
 ## Approach
 If you are interested in truly understanding the working principle of this SLAM algorithm, please read the [FASTLIO paper](https://doi.org/10.48550/arXiv.2010.08196). _This project is merely an alternative implementation of this outstanding work, still relying upon [IKFoM](include/IKFoM/) and [ikd-Tree](include/ikd-Tree/) open-source projects._
@@ -229,7 +53,7 @@ Here, the configuration file for `Fast-LIMO` is explained. _Note that some param
 | Parameter             | Units | Summary                           |
 | --------------        | ----- | --------------------------------- |
 | num_threads           | -  | OpenMP threads (will be equal to $(nproc) if it is set higher). |
-| sensor_type           | -  | LiDAR type (0: OUSTER \ 1: VELODYNE \ 2: HESAI \ 3: LIVOX). |
+| sensor_type           | -  | LiDAR type (0: OUSTER \ 1: VELODYNE \ 2: HESAI \ 3: LIVOX \ 4: RSLIDAR). |
 | debug                 | -  | Save useful intermediate pcl for visualization purposes (pc2match, deskewed...).  |
 | verbose               | -  | Print debugging board with performance stats. |
 | estimate_extrinsics   | -  | Enable continuous estimation of LiDAR-IMU extrinsics as in FASTLIOv2. |
@@ -260,8 +84,11 @@ Here, the configuration file for `Fast-LIMO` is explained. _Note that some param
 | iKFoM/iKDTree/bb_size           | m | Local Map's bounding box dimension (actually a cube). _When LocalMapping is active, the local map won't include points outside this cube. Note that the local map is always defined relative to the robot's current position._ |
 | iKFoM/iKDTree/bb_range          | m | Local Map's bounding box moving range (if the robot is closer than _bb_range_ to any local map's edge, the map will "move"). |
 | iKFoM/covariance                | m^2 | Covariance of IMU measurements. |
+| iKFoM/LIMITS                    | -  | Minimum numeric threshold used by iKFoM steps. |
+| frames                          | -  | World & body frames. If 'tf_pub' is true, broadcast the transform. |
+| topics                          | -  | Setup input topics for LiDAR, IMU, and state. |
 
 ## References
 This project relies upon [HKU-Mars](https://github.com/hku-mars)' open-source _C++_ libraries:
 - Iterative Kalman Filters on Manifolds ([IKFoM](include/IKFoM/)) 
-- Incremental KD-Tree ([ikd-Tree](include/ikd-Tree/)) 
+- Incremental KD-Tree ([ikd-Tree](include/ikd-Tree/))

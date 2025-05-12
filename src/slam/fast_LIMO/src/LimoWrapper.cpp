@@ -52,6 +52,8 @@ namespace ros2wrap {
                 // TF 
             std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
+            bool verbose_; 
+            
         // FUNCTIONS
 
         public:
@@ -68,6 +70,9 @@ namespace ros2wrap {
                     // Load config
                     fast_limo::Config config;
                     this->loadConfig(&config);
+
+                    // Initialize verbose_ from config
+                    this->verbose_ = config.verbose; 
 
                     rclcpp::Parameter tf_pub = this->get_parameter("frames.tf_pub");
                     this->publish_tf = tf_pub.as_bool();
@@ -122,7 +127,7 @@ namespace ros2wrap {
                 pcl::PointCloud<PointType>::Ptr pc_ (std::make_shared<pcl::PointCloud<PointType>>());
                 pcl::fromROSMsg(msg, *pc_);
 
-                RCLCPP_INFO(this->get_logger(), "PCL Size: %d", pc_->points.size());
+                if(this->verbose_) RCLCPP_INFO(this->get_logger(), "PCL Size: %d", pc_->points.size());
 
                 loc.updatePointCloud(pc_, rclcpp::Time(msg.header.stamp).seconds());
 
@@ -197,7 +202,7 @@ namespace ros2wrap {
             void state_callback(const common_msgs::msg::State & msg) {
 
                 fast_limo::Localizer& loc = fast_limo::Localizer::getInstance();
-                RCLCPP_INFO(this->get_logger(), "Received state message");
+                if(this->verbose_) RCLCPP_INFO(this->get_logger(), "Received state message");
 
                 fast_limo::IMUmeas imu;
                 imu.stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9;

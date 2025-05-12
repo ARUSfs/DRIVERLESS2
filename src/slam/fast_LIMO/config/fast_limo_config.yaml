@@ -18,8 +18,8 @@ fast_limo:
 
     sensor_type: 4  # LiDAR type (0: OUSTER \ 1: VELODYNE \ 2: HESAI \ 3: LIVOX \ 4: RSLIDAR)
 
-    debug: true     # fill useful intermediate pcl (deskewed, final_raw...) for visualizing purposes
-    verbose: true   # print debug/performance board
+    debug: false     # fill useful intermediate pcl (deskewed, final_raw...) for visualizing purposes
+    verbose: false   # print debug/performance board
 
     estimate_extrinsics: true   # continuous estimation of LiDAR-IMU extrinsics 
     time_offset: true           # whether to take into account a possible sync offset between IMU and LiDAR (set to true if they are not properly in sync)

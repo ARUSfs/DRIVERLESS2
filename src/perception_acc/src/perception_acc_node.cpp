@@ -9,7 +9,7 @@
  */
 
 #include "perception_acc/perception_acc_node.hpp"
-bool DEBUG = true;
+bool DEBUG = false;
 
 Perception::Perception() : Node("Perception")
 {
@@ -240,7 +240,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::PointCloud<PointXYZIRingTime>::Ptr accumulated_cloud(new pcl::PointCloud<PointXYZIRingTime>);
     Accumulation::accumulate(cloud, accumulated_cloud, x_, y_, yaw_, kDistanceLidarToCoG, kBufferSize, kPclInclination);
         
-    RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", accumulated_cloud->size());
+    if (DEBUG) RCLCPP_INFO(this->get_logger(), "Accumulated cloud size: %zu", accumulated_cloud->size());
 
     // Skip if empty
     if (accumulated_cloud->empty()) {
@@ -250,7 +250,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     // Cropping
     Cropping::crop_filter_cropbox(accumulated_cloud, kMaxXFov, kMaxYFov, kMaxZFov);
-    if (DEBUG) std::cout << "Cropping Time: " << this->now().seconds() - time_start << std::endl;
+    if (DEBUG) RCLCPP_INFO(this->get_logger(), "Cropping Time: %f", this->now().seconds() - time_start);
 
 
     //Define the variables for the ground filter
@@ -262,7 +262,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //Apply the ground filter fuction
     GroundFiltering::grid_ground_filter(accumulated_cloud, cloud_filtered, cloud_plane, coefficients,
         kThresholdGroundFilter, kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold, kMinimumRansacPoints, kEpsAngle);
-    if (DEBUG) std::cout << "Ground Filter Time: " << this->now().seconds() - time_start << std::endl;
+    if (DEBUG) RCLCPP_INFO(this->get_logger(), "Ground Filter Time: %f", this->now().seconds() - time_start);
     
 
     //Extract the clusters from the point cloud
@@ -284,23 +284,23 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     fec.segment(cluster_indices);
     
-    if (DEBUG) std::cout << "Clustering time: " << this->now().seconds() - time_start << std::endl;
+    if (DEBUG) RCLCPP_INFO(this->get_logger(), "Clustering time: %f", this->now().seconds() - time_start);
 
 
     //Store clusters centers
     std::vector<PointXYZColorScore> clusters_centers;
     this->get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers);
-    if (DEBUG) std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
+    if (DEBUG) RCLCPP_INFO(this->get_logger(), "Number of posibles cones: %zu", clusters_centers.size());
 
 
     //Recover ground points
     Perception::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius);
-    if (DEBUG) std::cout << "Reconstruction time: " << this->now().seconds() - time_start << std::endl;
+    if (DEBUG) RCLCPP_INFO(this->get_logger(), "Reconstruction time: %f", this->now().seconds() - time_start);
 
 
     //Filter clusters by size
     Perception::filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
-    if (DEBUG) std::cout << "Filtering time: " << this->now().seconds() - time_start << std::endl;
+    if (DEBUG) RCLCPP_INFO(this->get_logger(), "Filtering time: %f", this->now().seconds() - time_start);
 
 
     // Convert indices to cluster point clouds
@@ -350,8 +350,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     
 
     //Print the number of cones and the time of the scoring
-    if (DEBUG) std::cout << "Number of cones: " << final_map->size() << std::endl;
-    if (DEBUG) std::cout << "Scoring time: " << this->now().seconds() - time_start << std::endl;
+    if (DEBUG) RCLCPP_INFO(this->get_logger(), "Number of cones: %zu", final_map->size());
+    if (DEBUG) RCLCPP_INFO(this->get_logger(), "Scoring time: %f", this->now().seconds() - time_start);
 
 
     //Estime the color of the closest cones
@@ -382,7 +382,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     //     p.y = p.x*std::sin(theta) + p.y*std::cos(theta) - dy;
     // }
 
-    if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;
+    if (DEBUG) RCLCPP_INFO(this->get_logger(), "//////////////////////////////////////////////");
 
     if (DEBUG){
         //Publish the filtered cloud
