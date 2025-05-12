@@ -104,30 +104,33 @@ public:
         }
     }
 
-    void set_params(double cost_lateral, double cost_angular, double cost_delta, int compensation_steps){
+    void set_params(double cost_lateral, double cost_angular, double cost_delta, int compensation_steps,
+        int prediction_horizon, double ts_mpc, double cornering_stiffness_front, double cornering_stiffness_rear,
+        double wheelbase, double r_cdg, double mass, double Izz, double steer_u, double steer_delta, double steer_delta_v){
+
         kCostAngularDeviation = cost_angular;
         kCostLateralDeviation = cost_lateral;
         kCostSteeringDelta = cost_delta;
         kCompensationSteps = compensation_steps;
+        kPredictionHorizon = prediction_horizon;
+        kTsMPC = ts_mpc;
+        kMass = mass;
+        kWheelbase = wheelbase;
+        kIzz = Izz;
+        kWeightDistributionRear = r_cdg;
+        kCorneringStiffnessF = cornering_stiffness_front;
+        kCorneringStiffnessR = cornering_stiffness_rear;
+        kSteerModelU = steer_u;
+        kSteerModelDelta = steer_delta;
+        kSteerModelDeltaV = steer_delta_v;
     }
 
 private:
-    int kPredictionHorizon = 65;
-    double kTsMPC = 0.02;
-
-    double kCorneringStiffnessF = -25440;
-    double kCorneringStiffnessR = -22560;
-
-    double kWheelbase = 1.535;
-    double kLf = kWheelbase*0.47;
-    double kLr = kWheelbase-kLf;
-
-    double kMass = 270;
-    double kIzz = 180;
-
+    // Variables
     double v_linearisation;
     double delta_{0.0};
     double delta_v_{0.0};
+    double yaw_interp{0.0};
 
     Eigen::VectorXd x_0_;
     Eigen::VectorXd target_trajectory_;
@@ -143,13 +146,28 @@ private:
     Eigen::MatrixXd R;
     Eigen::MatrixXd U;
 
-    // Configurable parameters
+    // Parameters
     double kCostLateralDeviation;
     double kCostAngularDeviation;
     double kCostSteeringDelta;
     int kCompensationSteps;
+    int kPredictionHorizon;
+    double kTsMPC;
 
-    double yaw_interp{0.0};
+    double kCorneringStiffnessF;
+    double kCorneringStiffnessR;
+
+    double kWheelbase;
+    double kWeightDistributionRear;
+    double kLf = kWheelbase*kWeightDistributionRear;
+    double kLr = kWheelbase-kLf;
+
+    double kMass;
+    double kIzz;
+
+    double kSteerModelU;
+    double kSteerModelDelta;
+    double kSteerModelDeltaV;
 
     void linearize_model(double v_linearisation, Eigen::MatrixXd &Ac, Eigen::MatrixXd &Bc){
 
@@ -163,9 +181,9 @@ private:
         0, (kLf*kCorneringStiffnessF - kLr*kCorneringStiffnessR)/(kIzz*v_linearisation), 0, 
         (std::pow(kLf,2)*kCorneringStiffnessF + std::pow(kLr,2)*kCorneringStiffnessR)/(kIzz*v_linearisation), -kLf*kCorneringStiffnessF/kIzz, 0, 
         0, 0, 0, 0, 0, 1,
-        0, 0, 0, 0, -306.3, -25.69;
+        0, 0, 0, 0, kSteerModelDelta, kSteerModelDeltaV;
 
-        Bc << 0, 0, 0, 0, 0, 307;
+        Bc << 0, 0, 0, 0, 0, kSteerModelU;
         
     }
 

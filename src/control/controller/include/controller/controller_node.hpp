@@ -103,13 +103,22 @@ private:
     double kCostSteeringDelta;
     int kCompensationSteps;
     double kWheelBase;
+    double kWeightDistributionRear;
     double kRho;
     double kCdA;
     double kCrr;
     double kMass;
+    double kIzz;
     double kG;
     bool kDebug;
-
+    int kPredictionHorizon;
+    double kTsMPC;
+    double kCorneringStiffnessF;
+    double kCorneringStiffnessR;
+    double kSteerModelU;
+    double kSteerModelDelta;
+    double kSteerModelDeltaV;
+    
     //Timers
     rclcpp::TimerBase::SharedPtr speed_timer_;
     rclcpp::TimerBase::SharedPtr steer_timer_;
