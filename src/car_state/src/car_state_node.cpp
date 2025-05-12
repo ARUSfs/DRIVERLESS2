@@ -27,13 +27,11 @@ CarState::CarState(): Node("car_state")
 
     // Wheel speed config
     this->declare_parameter<bool>("use_wheelspeeds", false);
-
     this->get_parameter("use_wheelspeeds", kUseWheelspeeds);
 
     // Safe mode
+    this->declare_parameter<bool>("safe_mode", false);
     this->get_parameter("safe_mode", kSafeMode);
-
-    this->declare_parameter<bool>("safe_mode", true);
 
     //  Topics
     //   Subscribers

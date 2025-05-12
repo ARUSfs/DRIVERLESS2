@@ -6,7 +6,7 @@ inspection_control:
     cmd_topic: '/controller/cmd'
 
     # PID
-    KP: 43.87
+    KP: 10.0
     KI: 0.0
     KD: 0.0
 

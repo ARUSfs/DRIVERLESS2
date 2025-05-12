@@ -11,10 +11,10 @@ can_interface:
     killer_script_file: "/killer.sh"
 
     # Car parameters
-    car_mass: 250
+    car_mass: 250.0
     wheel_radius: 0.225
     transmission_ratio: 0.24444   # 11/45
-    max_inv_torque: 230
+    max_inv_torque: 230.0
 
     # Debug
     debug: true

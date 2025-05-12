@@ -22,10 +22,10 @@ CanInterface::CanInterface() : Node("can_interface"){
     this->get_parameter("killer_script_file", kKillerScriptFile);
 
     // Car parameters
-    this->declare_parameter<double>("car_mass", 250);
+    this->declare_parameter<double>("car_mass", 250.0);
     this->declare_parameter<double>("wheel_radius", 0.225);
     this->declare_parameter<double>("transmission_ratio", 0.24444);
-    this->declare_parameter<double>("max_inv_torque", 230);
+    this->declare_parameter<double>("max_inv_torque", 230.0);
 
     this->get_parameter("car_mass", kCarMass);
     this->get_parameter("wheel_radius", kWheelRadius);
@@ -398,10 +398,13 @@ void intToBytes(int16_t val, int8_t* bytes)
 void CanInterface::control_callback(common_msgs::msg::Cmd msg)
 {   
     if(run_check_){
-        float torque_ = msg.acc * kCarMass * kWheelRadius * kTransmissionRatio / kMaxInvTorque;
-        this->motor_moment_target_ = torque_;
+        float torque = msg.acc * kCarMass * kWheelRadius * kTransmissionRatio / kMaxInvTorque;
+        std::cout << "torque: " << torque << std::endl;
+        this->motor_moment_target_ = torque;
         
-        int16_t intValue = static_cast<int16_t>(torque_ * (1<<15))-1;
+        int16_t intValue = static_cast<int16_t>(torque * (1<<15))-1;
+        std::cout << "intValue: " << intValue << std::endl;
+
         int8_t bytesCMD[2];
         intToBytes(intValue, bytesCMD);
 
