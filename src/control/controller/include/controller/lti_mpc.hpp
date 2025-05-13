@@ -123,6 +123,9 @@ public:
         kSteerModelU = steer_u;
         kSteerModelDelta = steer_delta;
         kSteerModelDeltaV = steer_delta_v;
+
+        kLf = kWheelbase * kWeightDistributionRear;
+        kLr = kWheelbase - kLf;
     }
 
 private:
@@ -159,8 +162,8 @@ private:
 
     double kWheelbase;
     double kWeightDistributionRear;
-    double kLf = kWheelbase*kWeightDistributionRear;
-    double kLr = kWheelbase-kLf;
+    double kLf;
+    double kLr;
 
     double kMass;
     double kIzz;
