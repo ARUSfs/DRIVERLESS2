@@ -63,14 +63,29 @@ Controller::Controller() : Node("controller"),
     this->get_parameter("KD", KD);
 
     // MPC
-    this->declare_parameter<double>("cost_lateral_error", 10);
-    this->declare_parameter<double>("cost_angular_error", 5);
-    this->declare_parameter<double>("cost_steering_delta", 1000); 
+    this->declare_parameter<double>("cost_lateral_error", 10.0);
+    this->declare_parameter<double>("cost_angular_error", 5.0);
+    this->declare_parameter<double>("cost_steering_delta", 1000.0); 
     this->declare_parameter<int>("compensation_steps", 5); 
+    this->declare_parameter<double>("cornering_stiffness_front", -25000.0); 
+    this->declare_parameter<double>("cornering_stiffness_rear", -20000.0); 
+    this->declare_parameter<int>("prediction_horizon", 65); 
+    this->declare_parameter<double>("ts_mpc", 0.02);
+    this->declare_parameter<double>("steer_model_u", 307.0); 
+    this->declare_parameter<double>("steer_model_delta", -306.3); 
+    this->declare_parameter<double>("steer_model_delta_v", -25.69); 
+
     this->get_parameter("cost_lateral_error", kCostLateralDeviation);
     this->get_parameter("cost_angular_error", kCostAngularDeviation);
     this->get_parameter("cost_steering_delta", kCostSteeringDelta);   
-    this->get_parameter("compensation_steps", kCompensationSteps);   
+    this->get_parameter("compensation_steps", kCompensationSteps); 
+    this->get_parameter("cornering_stiffness_front", kCorneringStiffnessF); 
+    this->get_parameter("cornering_stiffness_rear", kCorneringStiffnessR); 
+    this->get_parameter("prediction_horizon", kPredictionHorizon); 
+    this->get_parameter("ts_mpc", kTsMPC);
+    this->get_parameter("steer_model_u", kSteerModelU); 
+    this->get_parameter("steer_model_delta", kSteerModelDelta); 
+    this->get_parameter("steer_model_delta_v", kSteerModelDeltaV); 
 
     // Cmd limits
     this->declare_parameter<double>("min_cmd", -3.0);
@@ -87,12 +102,16 @@ Controller::Controller() : Node("controller"),
     this->declare_parameter<double>("Crr", 0.01);
     this->declare_parameter<double>("mass", 230);
     this->declare_parameter<double>("g", 9.81);
+    this->declare_parameter<double>("Izz", 180);
+    this->declare_parameter<double>("weight_dist_rear", 0.5);
     this->get_parameter("wheel_base", kWheelBase);
     this->get_parameter("rho", kRho);
     this->get_parameter("CdA", kCdA);
     this->get_parameter("Crr", kCrr);
     this->get_parameter("mass", kMass);
     this->get_parameter("g", kG);
+    this->get_parameter("Izz", kIzz);
+    this->get_parameter("weight_dist_rear", kWeightDistributionRear);
 
     this->declare_parameter<bool>("debug", true);
     this->get_parameter("debug", kDebug);
@@ -101,7 +120,9 @@ Controller::Controller() : Node("controller"),
     speed_control_.set_params(kRho, kCdA, kCrr, kMass, kG);
     speed_control_.pid_.set_params(KP,KI,KD);
     pure_pursuit_.wheel_base_ = kWheelBase;
-    lti_mpc_.set_params(kCostLateralDeviation,kCostAngularDeviation,kCostSteeringDelta,kCompensationSteps);
+    lti_mpc_.set_params(kCostLateralDeviation,kCostAngularDeviation,kCostSteeringDelta,kCompensationSteps,
+            kPredictionHorizon, kTsMPC, kCorneringStiffnessF, kCorneringStiffnessR, kWheelBase, kWeightDistributionRear,
+            kMass, kIzz, kSteerModelU, kSteerModelDelta, kSteerModelDeltaV);
 
     previous_time_ = this->get_clock()->now();
 
@@ -198,7 +219,7 @@ void Controller::on_steer_timer()
             lti_mpc_.set_reference_trajectory(pointsXY_, s_, position, yaw_, vx_, index_global_);
             delta_cmd_ = lti_mpc_.calculate_control(delta_, v_delta_, vy_, r_);
 
-            RCLCPP_INFO(this->get_logger(), "MPC time: %f", this->now().seconds() - t0);
+            if (kDebug) RCLCPP_INFO(this->get_logger(), "MPC time: %f ms", (this->now().seconds() - t0)*1000);
         }
     }
 }
