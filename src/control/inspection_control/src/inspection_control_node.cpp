@@ -14,7 +14,7 @@ InspectionControl::InspectionControl() : Node("inspection_control_node")
     this->declare_parameter("car_state_topic", "/car_state/state");
     this->declare_parameter("as_status_topic", "/can_interface/AS_status");
     this->declare_parameter("cmd_topic", "/controller/cmd");
-    this->declare_parameter("KP", 43.87);
+    this->declare_parameter("KP", 10.0);
     this->declare_parameter("KI", 0.0);
     this->declare_parameter("KD", 0.0);
     this->declare_parameter("amplitude", 20.0);
@@ -62,7 +62,7 @@ void InspectionControl::on_timer()
 
         // 230 is the maximum toque value
         // Clamp the value between 0% and 20% of the maximum torque
-        cmd_msg.acc = std::clamp(pid_.compute_control(vx_, 1.0, 0.01)/230, 0.0, 0.05);
+        cmd_msg.acc = std::clamp(pid_.compute_control(vx_, 1.0, 0.01), 0.0, 3.0);
 
         double t = this->get_clock()->now().seconds() - start_time_.seconds();
         cmd_msg.delta = (kAmplitude*M_PI/180)*sin(2.0*M_PI*kFrequency*t);

@@ -27,13 +27,11 @@ CarState::CarState(): Node("car_state")
 
     // Wheel speed config
     this->declare_parameter<bool>("use_wheelspeeds", false);
-
     this->get_parameter("use_wheelspeeds", kUseWheelspeeds);
 
     // Safe mode
+    this->declare_parameter<bool>("safe_mode", false);
     this->get_parameter("safe_mode", kSafeMode);
-
-    this->declare_parameter<bool>("safe_mode", true);
 
     //  Topics
     //   Subscribers
@@ -111,6 +109,15 @@ CarState::CarState(): Node("car_state")
     this->get_parameter("max_r", kMaxR);
     this->get_parameter("max_vx", kMaxVx);
     this->get_parameter("max_plausability_error", kMaxPlausabilityError);
+
+    // Car parameters
+    this->declare_parameter<double>("lf", 0.84315);
+    this->declare_parameter<double>("tf", 1.22);
+    this->declare_parameter<double>("tr", 1.22);
+
+    this->get_parameter("lf", kLf);
+    this->get_parameter("tf", kTf);
+    this->get_parameter("tr", kTr);
 
     //   Error weights
     this->declare_parameter<double>("error_weight_imu", 1.0);
@@ -268,11 +275,34 @@ void CarState::on_timer()
     // Estimate vx, vy
     double avg_vx;
     if(kSimulation){
-        avg_vx = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
-    } else if (!kSimulation && kUseWheelspeeds && inv_speed_ > 3.0) {
-        avg_vx = (v_front_left_ + v_front_right_ + v_rear_left_ + v_rear_right_)/4;
+
+        double sin = std::sin(delta_);
+        double cos = std::cos(delta_);
+
+        double vx_fl_cog = (v_front_left_ - sin*vy_ -(kLf*sin - 0.5*kTf*cos)*r_) / cos;
+        double vx_fr_cog = (v_front_right_ - sin*vy_ -(kLf*sin + 0.5*kTf*cos)*r_) / cos;
+        double vx_rl_cog = v_rear_left_ + 0.5*kTr*r_;
+        double vx_rr_cog = v_rear_right_ - 0.5*kTr*r_;
+
+        avg_vx = (vx_fl_cog+vx_fr_cog+vx_rl_cog+vx_rr_cog)/4;
+
+    } else if (!kSimulation && kUseWheelspeeds 
+        && inv_speed_ > 3.0 && std::abs(v_front_right_) < 1.5*kMaxVx  && std::abs(v_rear_right_) < 1.5*kMaxVx) {
+
+        double sin = std::sin(delta_);
+        double cos = std::cos(delta_);
+
+        // double vx_fl_cog = (v_front_left_ - sin*vy_ -(kLf*sin - 0.5*kTf*cos)*r_) / cos;
+        double vx_fr_cog = (v_front_right_ - sin*vy_ -(kLf*sin + 0.5*kTf*cos)*r_) / cos;
+        // double vx_rl_cog = v_rear_left_ + 0.5*kTr*r_;
+        double vx_rr_cog = v_rear_right_ - 0.5*kTr*r_;
+
+        avg_vx = (vx_fr_cog + vx_rr_cog)/2;
+
     } else {
+
         avg_vx = inv_speed_;
+
     }
 
     Vector2d x_est = speed_estimator_.estimate_speed(ax_, r_, delta_, delta_der_, avg_vx);

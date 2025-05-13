@@ -27,6 +27,9 @@ install(TARGETS
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME})
 
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME})
+
 install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/can_interface/can24.csv
   ${CMAKE_CURRENT_SOURCE_DIR}/include/can_interface/can_aux24.csv

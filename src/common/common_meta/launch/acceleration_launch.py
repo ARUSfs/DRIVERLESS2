@@ -32,18 +32,21 @@ def generate_launch_description():
         create_node(pkg='acc_planning',
                     params=[{'target_speed': 3.0,
                              'max_acc': 5.0,
-                             'max_dec': 5.0,
+                             'max_dec': 7.0,
                              'track_length': 75.0}]),
         create_node(pkg='controller',
-                    params=[{'trajectory': "/acc_planning/trajectory",
-                             'min_cmd': 0.0,
-                             'max_cmd': 0.1}]),
+                    params=[{'trajectory_topic': "/acc_planning/trajectory",
+                             'min_cmd': -5.0,
+                             'max_cmd': 6.0,
+                             'look_ahead_distance': 8.0}]),
         create_node(pkg='graph_slam'),
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
-                    'mission': 'acceleration'}]),
+                    'mission': 'acceleration',
+                    'use_wheelspeeds': False}]),
         create_node(pkg='visualization'),
-        rosbag_record
+        rosbag_record,
+        Node(package='common_meta', executable='param_dumper_exec', name='param_dumper'),
     ])
 
 
