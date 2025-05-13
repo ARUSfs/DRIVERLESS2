@@ -52,7 +52,6 @@ namespace ros2wrap {
                 // TF 
             std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
-            bool verbose_; 
             
         // FUNCTIONS
 
@@ -70,9 +69,6 @@ namespace ros2wrap {
                     // Load config
                     fast_limo::Config config;
                     this->loadConfig(&config);
-
-                    // Initialize verbose_ from config
-                    this->verbose_ = config.verbose; 
 
                     rclcpp::Parameter tf_pub = this->get_parameter("frames.tf_pub");
                     this->publish_tf = tf_pub.as_bool();
@@ -126,8 +122,6 @@ namespace ros2wrap {
 
                 pcl::PointCloud<PointType>::Ptr pc_ (std::make_shared<pcl::PointCloud<PointType>>());
                 pcl::fromROSMsg(msg, *pc_);
-
-                if(this->verbose_) RCLCPP_INFO(this->get_logger(), "PCL Size: %d", pc_->points.size());
 
                 loc.updatePointCloud(pc_, rclcpp::Time(msg.header.stamp).seconds());
 
@@ -202,7 +196,6 @@ namespace ros2wrap {
             void state_callback(const common_msgs::msg::State & msg) {
 
                 fast_limo::Localizer& loc = fast_limo::Localizer::getInstance();
-                if(this->verbose_) RCLCPP_INFO(this->get_logger(), "Received state message");
 
                 fast_limo::IMUmeas imu;
                 imu.stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9;
@@ -255,8 +248,6 @@ namespace ros2wrap {
                 config->sensor_type = sensor_p.as_int();
                 rclcpp::Parameter debug_p = this->get_parameter("debug");
                 config->debug = debug_p.as_bool();
-                rclcpp::Parameter verbose_p = this->get_parameter("verbose");
-                config->verbose = verbose_p.as_bool();
                 rclcpp::Parameter extr_p = this->get_parameter("estimate_extrinsics");
                 config->ikfom.estimate_extrinsics = extr_p.as_bool();
                 rclcpp::Parameter offset_p = this->get_parameter("time_offset");
