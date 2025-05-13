@@ -12,8 +12,8 @@ controller:
 
     # Parameters
     use_optimized_trajectory: False   # use optimized trajectory
-    first_lap_steer_control: "MPC"     # PP, MPC
-    optimized_steer_control: "MPC"     # PP, MPC
+    first_lap_steer_control: "PP"     # PP, MPC
+    optimized_steer_control: "MPC"    # PP, MPC
     speed_timer_frequency: 100.0      # speed timer frecuency in Hz
     steer_timer_frequency: 50.0       # steer timer frecuency in Hz
 
@@ -29,10 +29,10 @@ controller:
     cornering_stiffness_front: -25440.0
     cornering_stiffness_rear: -22560.0
     prediction_horizon: 65
-    ts_mpc: 0.02
-    steer_model_u: 307.0
-    steer_model_delta: -306.3
-    steer_model_delta_v: -25.69
+    ts_mpc: 0.02                          # time step for the MPC   
+    steer_model_u: 307.0                  # input coef for steer model
+    steer_model_delta: -306.3             # delta coef for steer model 
+    steer_model_delta_v: -25.69           # delta vel coef for steer model 
 
     # PID
     target: 5.0
