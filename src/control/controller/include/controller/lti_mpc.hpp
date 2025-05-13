@@ -11,7 +11,10 @@ public:
         C.resize(2,6);
         C << 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0;    
     }
-
+    
+    /**
+     * @brief Calculate steering angle command using LTI-MPC
+     */
     double calculate_control(const double &delta, double &delta_v, double &vy, double &r){
 
         delta_ = delta;
@@ -77,6 +80,9 @@ public:
         return delta_target;
     }
 
+    /**
+     * @brief Create discrete local reference trajectory
+     */
     void set_reference_trajectory(const std::vector<Point> &global_reference_trajectory, const std::vector<float> &s, 
         const Point &position, double &yaw, double &vx, size_t index_global){
 
@@ -104,6 +110,9 @@ public:
         }
     }
 
+    /**
+     * @brief Set configurable parameters from config file
+     */
     void set_params(double cost_lateral, double cost_angular, double cost_delta, int compensation_steps,
         int prediction_horizon, double ts_mpc, double cornering_stiffness_front, double cornering_stiffness_rear,
         double wheelbase, double r_cdg, double mass, double Izz, double steer_u, double steer_delta, double steer_delta_v){
@@ -172,6 +181,9 @@ private:
     double kSteerModelDelta;
     double kSteerModelDeltaV;
 
+    /**
+     * @brief Linearize vehicle model using current speed
+     */
     void linearize_model(double v_linearisation, Eigen::MatrixXd &Ac, Eigen::MatrixXd &Bc){
 
         Ac.resize(6, 6);
@@ -190,6 +202,9 @@ private:
         
     }
 
+    /**
+     * @brief Discretize linear model using matrix exponential
+     */
     void discretize_model(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B, const double& dT, Eigen::MatrixXd& Phi, Eigen::MatrixXd& Gamma) {
 
         int m = A.rows();
@@ -208,6 +223,9 @@ private:
 
     }
 
+    /**
+     * @brief Interpolate variables to match with predicted position
+     */
     Point interpolate_data(const std::vector<Point> &XYdata, const std::vector<float> &s, const double &s0) {
 
         if (s0 <= s.front()) return XYdata.front();
