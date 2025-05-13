@@ -44,7 +44,8 @@ def generate_launch_description():
                     params=[{'simulation': False, 
                     'mission': 'autocross'}]),
         create_node(pkg='visualization'),
-        rosbag_record
+        rosbag_record,
+        Node(package='common_meta', executable='param_dumper_exec', name='param_dumper'),
     ])
 
 
