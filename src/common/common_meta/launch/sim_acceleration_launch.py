@@ -9,14 +9,17 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_node(pkg='acc_planning',
-                    params=[{'target_speed': 10.0,
-                             'min_acc': 5.0,
+                    params=[{'target_speed': 15.0,
+                             'max_acc': 7.0,
                              'max_dec': 5.0,
-                             'track_length': 75.0}]),
+                             'track_length': 75.0,
+                             'debug': False}]),
         create_node(pkg='controller',
-                    params=[{'trajectory': "/acc_planning/trajectory",
-                             'min_cmd': -100.0,
-                             'max_cmd': 100.0}]),
+                    params=[{'trajectory_topic': "/acc_planning/trajectory",
+                             'min_cmd': -10.0,
+                             'max_cmd': 10.0,
+                             'look_ahead_distance': 8.0,
+                             'debug': False}]),
         create_node(pkg='visualization'),
         create_node(pkg='arussim_interface'),
         create_node(pkg='car_state', 
@@ -29,9 +32,11 @@ def generate_launch_description():
                     'fr_wheel_speed_topic': '/arussim/fr_wheel_speed',
                     'fl_wheel_speed_topic': '/arussim/fl_wheel_speed',
                     'rr_wheel_speed_topic': '/arussim/rr_wheel_speed',
-                    'rl_wheel_speed_topic': '/arussim/rl_wheel_speed'}]),
+                    'rl_wheel_speed_topic': '/arussim/rl_wheel_speed',
+                    'debug': False}]),
         create_node(pkg='graph_slam',
-                    params=[{'perception_topic': '/arussim/perception',}])
+                    params=[{'perception_topic': '/arussim/perception',
+                             'debug': False}])
     ])
 
 

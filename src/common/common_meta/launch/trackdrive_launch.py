@@ -35,8 +35,8 @@ def generate_launch_description():
         create_node(pkg='controller',
                     params=[{'look_ahead_distance': 4.0,
                              'optimized_look_ahead_distance': 6.5,
-                             'min_cmd': -0.1,
-                             'max_cmd': 0.3,
+                             'min_cmd': -3.0,
+                             'max_cmd': 5.0,
                              'use_optimized_trajectory': True,
                              'first_lap_steer_control': "PP",
                              'optimized_steer_control': "MPC"}]),
@@ -44,7 +44,8 @@ def generate_launch_description():
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
                     'mission': 'trackdrive',
-                    'trackdrive_laps': 10,}]),
+                    'trackdrive_laps': 10,
+                    'use_wheelspeeds': False}]),
         create_node(pkg='trajectory_optimization',
                     params=[{'v_max': 8.0,
                              'd_min': 1.3,
@@ -52,7 +53,8 @@ def generate_launch_description():
                              'mu_throttle': 0.4,
                              'mu_brake': 0.3}]),
         create_node(pkg='visualization'),
-        rosbag_record
+        rosbag_record,
+        Node(package='common_meta', executable='param_dumper_exec', name='param_dumper'),
     ])
 
 

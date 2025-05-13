@@ -33,20 +33,22 @@ def generate_launch_description():
                     params=[{'target_first_lap': 3.0, 
                     'target_second_lap': 3.0,
                     'top_accx_forwards': 5.0,
-                    'top_accx_backwards': 7.0,
+                    'top_accx_backwards': 3.0,
                     'top_accy': 6.0,
                     'step_width_1': 0.0,
                     'step_width_2': 0.0}]),
         create_node(pkg='controller',
-                    params=[{'trajectory': "/skidpad_planning/trajectory",
-                             'min_cmd': 0.0,
-                             'max_cmd': 0.1}]),
+                    params=[{'trajectory_topic': "/skidpad_planning/trajectory",
+                             'min_cmd': -3.0,
+                             'max_cmd': 5.0}]),
         create_node(pkg='graph_slam'),
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
-                    'mission': 'skidpad'}]),
+                    'mission': 'skidpad',
+                    'use_wheelspeeds': False}]),
         create_node(pkg='visualization'),
-        rosbag_record
+        rosbag_record,
+        Node(package='common_meta', executable='param_dumper_exec', name='param_dumper'),
     ])
 
 
