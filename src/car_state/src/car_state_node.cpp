@@ -326,7 +326,7 @@ void CarState::on_timer()
     state_pub_->publish(state_msg);
 
     // Check if the mission is finished
-    if(as_status_== 3 && target_speed_== 0.0 && vx_ < 0.5){ 
+    if(as_status_== 3 && target_speed_== 0.0 && vx_ < 2.5){ 
         as_status_ = 5;
     }
 

@@ -261,7 +261,8 @@ void Controller::trajectory_callback(const common_msgs::msg::Trajectory::SharedP
 
     // Check if the trajectory is the same
     if(msg->points.size() != pointsXY_.size()
-       || msg->points[msg->points.size()-1].x != pointsXY_[pointsXY_.size()-1].x){
+       || msg->points[msg->points.size()-1].x != pointsXY_[pointsXY_.size()-1].x
+       || msg->points[msg->points.size()-1].y != pointsXY_[pointsXY_.size()-1].y ){
         new_trajectory_ = true;
 
         pointsXY_.clear();
