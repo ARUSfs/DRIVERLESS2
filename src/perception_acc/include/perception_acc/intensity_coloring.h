@@ -13,8 +13,17 @@
     * @brief Estimates the color of detected cones based on intensity. 
     */
     void color_estimation(std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr> cluster_points, std::vector<PointXYZColorScore>& clusters_centers,
-        double distance_threshold, double intensity_threshold)
+        double distance_threshold, pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_plane)
     {
+        // Find average intensity of the ground
+        double ground_intensity = 0.0;
+        for(const auto& pt : cloud_plane->points)
+        {
+            ground_intensity += pt.intensity;
+        }
+        ground_intensity /= cloud_plane->size();
+        std::cout << "Ground intensity: " << ground_intensity << std::endl;
+
         static double highest_z = -std::numeric_limits<double>::infinity();
 
         // Find closest cluster and update highest_z
@@ -64,10 +73,10 @@
                 average_intensity += intensity;
             }
             average_intensity /= intensity_values.size();
-            // std::cout << "x: " << clusters_centers[i].x << "; y: " << clusters_centers[i].y << "; Highest z: " << highest_z << "; Intensity_values.size(): " << intensity_values.size() << "; Average intensity: " << average_intensity << "; intensity_threshold: " << intensity_threshold << std::endl;
+            // std::cout << "x: " << clusters_centers[i].x << "; y: " << clusters_centers[i].y << "; Highest z: " << highest_z << "; Intensity_values.size(): " << intensity_values.size() << "; Average intensity: " << average_intensity << "; ground_intensity: " << ground_intensity << std::endl;
 
-            if (average_intensity >= intensity_threshold - 2 && average_intensity <= intensity_threshold + 2) clusters_centers[i].color = 0; // unknown
-            else if(average_intensity > intensity_threshold) clusters_centers[i].color = 1; // blue
+            if (average_intensity >= ground_intensity + 3 && average_intensity <= ground_intensity + 5) clusters_centers[i].color = 0; // unknown
+            else if(average_intensity > ground_intensity + 3) clusters_centers[i].color = 1; // blue
             else clusters_centers[i].color = 2; // yellow
         }
     }
