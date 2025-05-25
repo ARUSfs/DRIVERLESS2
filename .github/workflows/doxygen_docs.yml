@@ -3,7 +3,7 @@ name: Generate doxygen docs
 on:
   push:
     branches:
-      - feature/common/doxygen_documentation
+      - develop
 
 jobs:
   generate-docs:
