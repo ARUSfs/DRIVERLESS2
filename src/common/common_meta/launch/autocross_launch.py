@@ -43,7 +43,7 @@ def generate_launch_description():
         create_node(pkg='car_state', 
                     params=[{'simulation': False, 
                     'mission': 'autocross',
-                    'use_wheelspeeds': False}]),
+                    'use_wheelspeeds': True}]),
         create_node(pkg='visualization'),
         rosbag_record,
         Node(package='common_meta', executable='param_dumper_exec', name='param_dumper'),
