@@ -1,14 +1,21 @@
 car_state:
   ros__parameters:
+    # Arussim parameters
     get_arussim_ground_truth: false
     simulation: false
+    
+    # Mission parameters
     mission: "autocross"
     trackdrive_laps: 10
 
-    safe_mode: false
+    # Wheel speed config
     use_wheelspeeds: false
 
-    # Following parameters only used in safe mode for plausability checks
+    # Safe mode
+    safe_mode: false
+
+    # Parameters for safe mode plausability checks
+    #  Thresholds parameters
     dt_threshold_imu: 0.05
     dt_threshold_extensometer: 0.05
     dt_threshold_wheelspeed: 0.05
@@ -22,6 +29,12 @@ car_state:
     max_vx: 75.0
     max_plausability_error: 20.0
 
+    # Car parameters
+    lf: 0.84315
+    tf: 1.22
+    tr: 1.22
+
+    #  Error weights
     error_weight_imu: 2.0
     error_weight_extensometer: 2.0
     error_weight_wheel_speed: 2.0
@@ -29,6 +42,8 @@ car_state:
     error_weight_cones_count_actual: 11.0
     error_weight_cones_count_all: 11.0
 
+    # Topics
+    #  Subscribers
     extensometer_topic: "/can_interface/extensometer"
     imu_ax_topic: "/can_interface/IMU/ax"
     imu_ay_topic: "/can_interface/IMU/ay"
@@ -39,3 +54,20 @@ car_state:
     fr_wheel_speed_topic: "/can_interface/fr_wheel_speed"
     rl_wheel_speed_topic: "/can_interface/rl_wheel_speed"
     rr_wheel_speed_topic: "/can_interface/rr_wheel_speed"
+    ami_topic: "/can_interface/AMI"
+    target_speed_topic: "/controller/target_speed"
+    cmd_topic: "/controller/cmd"
+    lap_count_topic: "/slam/lap_count"
+    perception_map_topic: "/perception/map"
+    slam_map_topic: "/slam/map"
+    arussim_ground_truth_topic: "/arussim_interface/arussim_ground_truth"
+
+    #  Publishers
+    state_topic: "/car_state/state"
+    car_info_topic: "/car_state/car_info"
+    run_check_topic: "/car_state/run_check"
+    steer_check_topic: "/car_state/steer_check"
+    braking_procedure_topic: "/car_state/braking_procedure"
+
+    # Debug
+    debug: true

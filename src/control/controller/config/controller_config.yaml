@@ -1,24 +1,38 @@
 controller:
   ros__parameters:
-    use_optimized_trajectory: False # use optimized trajectory
-    first_lap_steer_control: "PP" # PP, MPC
-    optimized_steer_control: "PP"   # PP, MPC
-    speed_timer_frequency: 100.0    # speed timer frecuency in Hz
-    steer_timer_frequency: 50.0    # steer timer frecuency in Hz
-    
-
     # Topics
-    state: "/car_state/state"
-    as_status: "/can/AS_status"
-    as_check: "/car_state/AS_check"
-    trajectory: "/path_planning/trajectory"
-    cmd: "/controller/cmd"
-    pursuit_point: "/controller/pursuit_point"
-    target_speed: "/controller/target_speed"
+    state_topic: "/car_state/state"
+    run_check_topic: "/car_state/run_check"
+    trajectory_topic: "/path_planning/trajectory"
+    optimized_trajectory_topic: "/trajectory_optimization/trajectory"
+    cmd_topic: "/controller/cmd"
+    pursuit_point_topic: "/controller/pursuit_point"
+    target_speed_topic: "/controller/target_speed"
+    braking_procedure_topic: "/car_state/braking_procedure"
+
+    # Parameters
+    use_optimized_trajectory: False   # use optimized trajectory
+    first_lap_steer_control: "PP"     # PP, MPC
+    optimized_steer_control: "MPC"    # PP, MPC
+    speed_timer_frequency: 100.0      # speed timer frecuency in Hz
+    steer_timer_frequency: 50.0       # steer timer frecuency in Hz
 
     # PP
     look_ahead_distance: 4.0
     optimized_look_ahead_distance: 7.0
+
+    # MPC
+    cost_lateral_error: 5.0
+    cost_angular_error: 10.0
+    cost_steering_delta: 3000.0
+    compensation_steps: 6
+    cornering_stiffness_front: -25440.0
+    cornering_stiffness_rear: -22560.0
+    prediction_horizon: 65
+    ts_mpc: 0.02                          # time step for the MPC   
+    steer_model_u: 307.0                  # input coef for steer model
+    steer_model_delta: -306.3             # delta coef for steer model 
+    steer_model_delta_v: -25.69           # delta vel coef for steer model 
 
     # PID
     target: 5.0
@@ -27,13 +41,19 @@ controller:
     KI: 0.55
     KD: 0.01
 
-    # MPC
-    cost_lateral_error: 5.0
-    cost_angular_error: 10.0
-    cost_steering_delta: 3000.0
-    compensation_steps: 6
-
     # Cmd
-    min_cmd: 0.0    # % inv
-    max_cmd: 0.1    # % inv
-    max_steer: 20.0 # degrees
+    min_cmd: -3.0     # m/s^2
+    max_cmd: 5.0      # m/s^2
+    max_steer: 20.0   # degrees
+
+    # Vehicle parameters
+    wheel_base: 1.535                 # wheel base
+    wheight_dist_rear: 0.55           # weight distribution (1 is 100% rear)
+    rho: 1.225                        # air density
+    CdA: 1.2                          # drag coefficient
+    Crr: 0.01                         # rolling resistance coefficient
+    mass: 270.0                       # mass of the vehicle
+    Izz: 180.0                        # yaw inertia
+    g: 9.81                           # gravity
+
+    debug: true

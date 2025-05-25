@@ -1,13 +1,21 @@
 skidpad_planning:
   ros__parameters:
+    # Topics
     perception_topic: "/slam/map"
     trajectory_topic: "/skidpad_planning/trajectory"
-    planning_time: 5.0      # seconds comuting the skidpad centers
-    target_first_lap: 5.0
-    target_second_lap: 10.0
-    route_spacing: 0.5
-    top_accx_forwards: 5.0
-    top_accx_backwards: 7.0
-    top_accy: 6.0
-    step_width_1 : 0.0
-    step_width_2 : 0.0
+
+    # General parameters
+    planning_time: 5.0          # Time for computing the skidpad centers
+    target_first_lap: 5.0       # Target time for the first lap
+    target_second_lap: 10.0     # Target time for the second lap
+    route_spacing: 0.5          # Spacing between trajectory points
+
+    # Algorithm thresholds and limits
+    top_accx_forwards: 5.0      # Maximum forward acceleration in m/s^2
+    top_accx_backwards: 7.0     # Maximum backward acceleration in m/s^2
+    top_accy: 6.0               # Maximum lateral acceleration in m/s^2
+    step_width_1: 0.0           # Step width for trajectory generation (phase 1)
+    step_width_2: 0.0           # Step width for trajectory generation (phase 2)
+
+    # Debugging
+    debug: true                 # Enable or disable debug mode
