@@ -1,0 +1,40 @@
+name: Generate doxygen docs
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches: 
+      - develop
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+
+      - name: Generate Doxygen documentation
+        run: |
+          mkdir -p docs/_build/doxygen
+          doxygen Doxyfile
+
+      - name: Disable Jekyll on GitHub Pages
+        run: touch docs/_build/doxygen/.nojekyll
+
+      - name: List generated docs
+        run: ls -R docs/_build/doxygen
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/doxygen
+          publish_branch: gh-pages
+          force_orphan: true
+          keep_files: false

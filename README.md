@@ -13,7 +13,7 @@
 
 ## Introduction
 
-This guide provides comprehensive details on how to install and configure the DRIVERLESS2 enviroment, along with an overview of its repository node structure and launch file organization.
+This guide provides comprehensive details on how to install and configure the DRIVERLESS2 enviroment, along with an overview of its repository node structure and launch file organization. For a more detailed explanation of the code structure and functionality of each node, please refer to the **[DRIVERLESS2 documentation](https://arusfs.github.io/DRIVERLESS2/doxygen)**.
 
 ---
 
