@@ -287,7 +287,7 @@ void CarState::on_timer()
         avg_vx = (vx_fl_cog+vx_fr_cog+vx_rl_cog+vx_rr_cog)/4;
 
     } else if (!kSimulation && kUseWheelspeeds 
-        && inv_speed_ > 3.0 && std::abs(v_front_right_) < 1.5*kMaxVx  && std::abs(v_rear_right_) < 1.5*kMaxVx) {
+        && inv_speed_ > 2.0 && std::abs(v_front_right_) < 1.5*kMaxVx  && std::abs(v_rear_right_) < 1.5*kMaxVx) {
 
         double sin = std::sin(delta_);
         double cos = std::cos(delta_);
@@ -326,7 +326,7 @@ void CarState::on_timer()
     state_pub_->publish(state_msg);
 
     // Check if the mission is finished
-    if(as_status_== 3 && target_speed_== 0.0 && vx_ < 0.5){ 
+    if(as_status_== 3 && target_speed_== 0.0 && vx_ < 2.5){ 
         as_status_ = 5;
     }
 
