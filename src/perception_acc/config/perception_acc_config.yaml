@@ -6,8 +6,8 @@ perception_acc:
     #Accumulation
     accumulation: false
     distance_lidar_to_CoG: 1.5
-    buffer_size: 4
-    estimation_time: 3.5            # [s] Time to estimate the point cloud (during this time, the car should be at stand still)
+    buffer_size: 3
+    estimation_time: 0.0            # [s] Time to estimate the point cloud (during this time, the car should be at stand still)
     
     #Parameters of cropping
     crop: true
@@ -26,10 +26,10 @@ perception_acc:
     radius: 0.15                    # [m] Radius of the cone
 
     #Parameters of scoring
-    threshold_scoring: 0.7         # Probability of being a cone
+    threshold_scoring: 0.65         # Probability of being a cone
 
     #Parameters of coloring
-    distance_threshold: 15.0
+    distance_threshold: 20.0
     intensity_threshold: 16.0
 
     debug: true

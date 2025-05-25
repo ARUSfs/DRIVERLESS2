@@ -24,29 +24,7 @@
         ground_intensity /= cloud_plane->size();
         std::cout << "Ground intensity: " << ground_intensity << std::endl;
 
-        static double highest_z = -std::numeric_limits<double>::infinity();
-
-        // Find closest cluster and update highest_z
-        {
-            double min_dist = std::numeric_limits<double>::infinity();
-            size_t closest_idx = 0;
-            for(size_t i = 0; i < cluster_points.size(); i++)
-            {
-                double dist = std::sqrt(std::pow(clusters_centers[i].x, 2) + std::pow(clusters_centers[i].y, 2));
-                if(dist < min_dist)
-                {
-                    min_dist = dist;
-                    closest_idx = i;
-                }
-            }
-            double temp_z = -std::numeric_limits<double>::infinity();
-            for(const auto& pt : cluster_points[closest_idx]->points)
-            {
-                if(pt.z > temp_z) temp_z = pt.z;
-            }
-            highest_z = temp_z;
-        }
-
+        
         for(size_t i = 0; i < cluster_points.size(); i++)
         {
             if(std::sqrt(std::pow(clusters_centers[i].x, 2) + std::pow(clusters_centers[i].y, 2)) > distance_threshold ||
@@ -56,28 +34,18 @@
                 continue;
             }
 
-            double max_line_z = highest_z - 0.1;
-            double min_line_z = highest_z - 0.15;
-            std::vector<int> intensity_values;
+            double average_intensity = 0.0;
             for(const auto& pt : cluster_points[i]->points)
             {
-                if(pt.z <= min_line_z || pt.z >= max_line_z)
-                {
-                    intensity_values.push_back(pt.intensity);
-                };
+                average_intensity += pt.intensity;
             }
+            average_intensity /= cluster_points[i]->points.size();
 
-            double average_intensity = 0.0;
-            for(const auto& intensity : intensity_values)
-            {
-                average_intensity += intensity;
-            }
-            average_intensity /= intensity_values.size();
-            // std::cout << "x: " << clusters_centers[i].x << "; y: " << clusters_centers[i].y << "; Highest z: " << highest_z << "; Intensity_values.size(): " << intensity_values.size() << "; Average intensity: " << average_intensity << "; ground_intensity: " << ground_intensity << std::endl;
+            double color_param = ground_intensity + 5;
+            double coloring_scoring = average_intensity / color_param;
+            clusters_centers[i].color = coloring_scoring;
 
-            if (average_intensity >= ground_intensity + 3 && average_intensity <= ground_intensity + 5) clusters_centers[i].color = 0; // unknown
-            else if(average_intensity > ground_intensity + 3) clusters_centers[i].color = 1; // blue
-            else clusters_centers[i].color = 2; // yellow
+            std::cout << "x: " << clusters_centers[i].x << "; y: " << clusters_centers[i].y << "; Coloring Scoring: " << coloring_scoring << "; cluster_points[i]->points.size(): " << cluster_points[i]->points.size() << "; Average intensity: " << average_intensity << "; ground_intensity: " << ground_intensity << std::endl;
         }
     }
  }
