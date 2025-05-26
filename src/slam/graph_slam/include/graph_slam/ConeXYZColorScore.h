@@ -1,3 +1,9 @@
+/**
+ * @file ConeXYZColorScore.hpp
+ * @author Álvaro Landero (alplepe02@gmail.com)
+ * @brief Cone point structure for pcl
+ */
+
 #pragma once
 
 #include <pcl/point_types.h>

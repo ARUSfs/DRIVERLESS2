@@ -20,7 +20,7 @@ find_package(Eigen3 REQUIRED)
 include_directories(include)
 
 # Añadir el ejecutable
-add_executable(car_state_exec src/car_state.cpp)
+add_executable(car_state_exec src/car_state_node.cpp)
 
 # Establecer dependencias del ejecutable
 ament_target_dependencies(car_state_exec 

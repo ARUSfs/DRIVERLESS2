@@ -15,12 +15,14 @@ def generate_launch_description():
                     'top_accx_backwards': 3.0,
                     'top_accy': 6.0,
                     'step_width_1': 0.0,
-                    'step_width_2': 0.0}]),
+                    'step_width_2': 0.0,
+                    'debug': False}]),
         create_node(pkg='controller',
-                    params=[{'trajectory': "/skidpad_planning/trajectory",
-                             'target': 10.0,
-                             'min_cmd': -100.0,
-                             'max_cmd': 100.0}]),
+                    params=[{'trajectory_topic': "/skidpad_planning/trajectory",
+                             'min_cmd': -10.0,
+                             'max_cmd': 10.0,
+                             'look_ahead_distance': 6.0,
+                             'debug': False}]),
         create_node(pkg='visualization'),
         create_node(pkg='arussim_interface'),
         create_node(pkg='car_state', 
@@ -33,9 +35,11 @@ def generate_launch_description():
                     'fr_wheel_speed_topic': '/arussim/fr_wheel_speed',
                     'fl_wheel_speed_topic': '/arussim/fl_wheel_speed',
                     'rr_wheel_speed_topic': '/arussim/rr_wheel_speed',
-                    'rl_wheel_speed_topic': '/arussim/rl_wheel_speed'}]),
+                    'rl_wheel_speed_topic': '/arussim/rl_wheel_speed',
+                    'debug': False}]),
         create_node(pkg='graph_slam',
-                    params=[{'perception_topic': '/arussim/perception',}])
+                    params=[{'perception_topic': '/arussim/perception',
+                             'debug': False}])
     ])
 
 

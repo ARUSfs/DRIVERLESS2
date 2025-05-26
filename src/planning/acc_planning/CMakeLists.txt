@@ -6,11 +6,9 @@ project(acc_planning)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
-find_package(visualization_msgs REQUIRED)
 find_package(common_msgs REQUIRED)
 
 
@@ -32,11 +30,9 @@ add_executable(acc_planning_exec
 ament_target_dependencies(acc_planning_exec 
   rclcpp 
   std_msgs 
-  geometry_msgs 
   sensor_msgs 
   PCL
   pcl_conversions
-  visualization_msgs
   common_msgs
 )
 target_link_libraries(acc_planning_exec ${PCL_LIBRARIES})

@@ -1,8 +1,14 @@
 acc_planning:
   ros__parameters:
+
+    #Topic names
     perception_topic: "/slam/map"
     trajectory_topic: "/acc_planning/trajectory"
+    
+    # Parameters
+    # The following parameters are used to configure the acceleration planning algorithm
     target_speed: 10.0
     max_acc: 5.0
     max_dec: 5.0
     track_length: 75.0
+    debug: true

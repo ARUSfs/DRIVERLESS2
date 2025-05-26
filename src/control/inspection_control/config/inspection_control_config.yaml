@@ -1,8 +1,18 @@
 inspection_control:
   ros__parameters:
-    KP: 43.87
+    # Topics
+    car_state_topic: '/car_state/state'
+    as_status_topic: '/can_interface/AS_status'
+    cmd_topic: '/controller/cmd'
+
+    # PID
+    KP: 10.0
     KI: 0.0
     KD: 0.0
-    AMPLITUDE: 20.0
-    FREQUENCY: 0.2
-    DURATION: 27.0
+
+    # Mission
+    amplitude: 20.0
+    frequency: 0.2
+    duration: 27.0
+
+    debug: true

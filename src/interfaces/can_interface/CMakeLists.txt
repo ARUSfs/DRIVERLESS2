@@ -12,16 +12,12 @@ include_directories(
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(common_msgs REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 
 add_executable(can_interface_exec src/can_interface_node.cpp)
 ament_target_dependencies(can_interface_exec rclcpp 
                             std_msgs 
-                            geometry_msgs 
-                            sensor_msgs
                             common_msgs)
 
 install(TARGETS
@@ -29,6 +25,9 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME})
+
+install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME})
 
 install(FILES

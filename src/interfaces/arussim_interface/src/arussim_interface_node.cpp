@@ -1,17 +1,12 @@
 /**
  * @file arussim_interface_node.cpp
+ * @author Rafael Guil Valero (rafaguilvalero@gmail.com)
  * @brief ARUSSimInterface node implementaion for ARUS Team Driverless pipeline
  */
 
 #include "arussim_interface/arussim_interface_node.hpp"
 
 
-/**
- * @class ARUSSimInterface
- * @brief ARUSSimInterface class 
- * 
- * This class translates the custom messages between the simulator and the pipeline
- */
 ARUSSimInterface::ARUSSimInterface() : Node("arussim_interface")
 {
     this->get_config_parameters();

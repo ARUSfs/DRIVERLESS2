@@ -1,12 +1,9 @@
 /**
  * @file VSC_funtions.hpp
- * 
  * @author Francis Rojas (frarojram@gmail.com)
- * 
- * @brief VSC interface, vsc funtions implementation for ARUS Team Driverless pipeline
- * 
- * @date 22-12-2024
+ * @brief VSCfuntions implementation for ARUS Team Driverless pipeline
  */
+
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include <stdio.h>
@@ -20,6 +17,7 @@ class VSC
 public:
     const char* EPOS_LIB_PATH = "libEposCmd.so";
     int NodeID = 4;
+    rclcpp::Logger logger_ = rclcpp::get_logger("VSC");
 
     VSC(){
         max_acc_ = 0;
@@ -49,12 +47,20 @@ public:
         
     }
 
+
+    /**
+     * @brief Set the parameters for the EPOS4 controller.
+     */
     void set_params(int max_acceleration, int max_deceleration, int prof_velocity){
         max_acc_ = max_acceleration;
         max_dec_ = max_deceleration;
         prof_vel_ = prof_velocity;
     }
 
+
+    /**
+     * @brief Connect to EPOS4 and activate position profile mode.
+     */
     void connect_to_device() {
         uint32_t pErrorCode = 0;
         
@@ -64,91 +70,103 @@ public:
             keyhandle_ = VCS_OpenDevice("EPOS4", "CANopen", "CAN_kvaser_usb 0", "CAN1", &pErrorCode);
 
             if (keyhandle_ == nullptr) {
-                std::cerr << "Error: Failed to connect to EPOS4 device." << std::endl;
+                RCLCPP_ERROR(logger_, "Error: Failed to open EPOS4 device.");
                 return;
             } else if (pErrorCode != 0) {
-                std::cerr << "Connection error: Error code " << pErrorCode << std::endl;
+                RCLCPP_ERROR(logger_, "Connection error: Error code  %d", pErrorCode);
                 return;
             }
 
             _is_connected_ = true;
-            std::cout << "Connection established with EPOS4." << std::endl;
+            RCLCPP_INFO(logger_, "Connection established with EPOS4.");
 
             // Activate position mode
             int ret = VCS_ActivateProfilePositionMode(keyhandle_, NodeID, &pErrorCode);
             if (ret == 0) {
-                std::cerr << "Error activating position mode: Error code " << pErrorCode << std::endl;
+                RCLCPP_ERROR(logger_, "Error activating position mode: Error code %d", pErrorCode);
             } else {
-                std::cout << "Position mode successfully activated." << std::endl;
+                RCLCPP_INFO(logger_, "Position mode successfully activated.");
             }
 
             // Configure the position profile
             ret = VCS_SetPositionProfile(keyhandle_, NodeID, prof_vel_, max_acc_, max_dec_, &pErrorCode);
             if (ret == 0) {
-                std::cerr << "Error configuring position profile: Error code " << pErrorCode << std::endl;
+                RCLCPP_ERROR(logger_, "Error configuring position profile: Error code %d", pErrorCode);
             } else {
-                std::cout << "Position profile successfully configured." << std::endl;
+                RCLCPP_INFO(logger_, "Position profile successfully configured.");
             }
         }
     }
 
+
+    /**
+     * @brief Disconnect EPOS4 controller.
+     */
     void disconnect_device() {
         uint32_t pErrorCode = 0;
         if (_is_connected_) {
             int ret = VCS_CloseDevice(keyhandle_, &pErrorCode);
 
             if (ret == 0) {
-                std::cerr << "Error: Failed to disconnect from EPOS4." << std::endl;
+                RCLCPP_ERROR(logger_, "Error: Failed to disconnect from EPOS4 device.");
             } else if (pErrorCode != 0) {
-                std::cerr << "Error: EPOS CloseDevice returned error code " << pErrorCode << std::endl;
+                RCLCPP_ERROR(logger_, "Error: EPOS CloseDevice returned error code %d", pErrorCode);
             } else {
                 _is_connected_ = false;
-                std::cout << "EPOS4 successfully disconnected." << std::endl;
+                RCLCPP_INFO(logger_, "EPOS4 successfully disconnected.");
             }
         }
     }
 
+
+    /**
+     * @brief Enable EPOS4 controller.
+     */
     void enable() {
         uint32_t pErrorCode = 0;
 
         if (!_is_connected_) {
-            std::cerr << "Error: EPOS4 not connected. Cannot enable." << std::endl;
+            RCLCPP_ERROR(logger_, "Error: EPOS4 not connected. Cannot enable.");
         } else if (!_is_enable_) {
             int return_code = VCS_SetEnableState(keyhandle_, NodeID, &pErrorCode);
             if (return_code == 0) {
-                std::cerr << "Error: Couldn't enable EPOS4 with error code " << pErrorCode << std::endl;
+                RCLCPP_ERROR(logger_, "Error: Couldn't enable EPOS4 with error code %d", pErrorCode);
             } else {
-                std::cout << "EPOS4 enabled." << std::endl;
+                RCLCPP_INFO(logger_, "EPOS4 successfully enabled.");
                 _is_enable_ = true;
             }
         } else {
-            std::cerr << "Warning: EPOS4 already enabled." << std::endl;
+            RCLCPP_WARN(logger_, "Warning: EPOS4 already enabled.");
         }
     }
 
+
+    /**
+     * @brief Disable EPOS4 controller.
+     */
     void disable() {
         uint32_t pErrorCode = 0;
 
         if (!_is_connected_) {
-            
-            std::cerr << "Error: EPOS4 not connected. Cannot disable." << std::endl;
+            RCLCPP_ERROR(logger_, "Error: EPOS4 not connected. Cannot disable.");
         } else if (_is_enable_) {
             
             int return_code = VCS_SetDisableState(keyhandle_, NodeID, &pErrorCode);
             if (return_code == 0) {
-                
-                std::cerr << "Error: Couldn't disable EPOS4 with error code " << pErrorCode << std::endl;
+                RCLCPP_ERROR(logger_, "Error: Couldn't disable EPOS4 with error code %d", pErrorCode);
             } else {
-                
-                std::cout << "EPOS4 disabled." << std::endl;
+                RCLCPP_INFO(logger_, "EPOS4 successfully disabled.");
                 _is_enable_ = false;
             }
         } else {
-            
-            std::cerr << "Warning: EPOS4 already disabled." << std::endl;
+            RCLCPP_WARN(logger_, "Warning: EPOS4 already disabled.");
         }
     }
 
+
+    /**
+     * @brief Move EPOS4 to a specified position. Position is given in radians and transformed to increments.
+     */
     void move_to(double wheel_angle) {
         uint32_t pErrorCode = 0;
 
@@ -162,17 +180,19 @@ public:
             int ret = VCS_MoveToPosition(keyhandle_, NodeID, motor_position, 1, 1, &pErrorCode);
 
             if (ret == 0) {
-               
-                std::cerr << "Warning: MoveToPosition error with code " << pErrorCode 
-                        << ". Disabling controller." << std::endl;
+                RCLCPP_ERROR(logger_, "Error: MoveToPosition failed with error code %d. Disabling controller", pErrorCode);
                 disable();
             }
         } else {
-            
-            std::cerr << "Error: Cannot move to position with disabled controller." << std::endl;
+            RCLCPP_ERROR(logger_, "Error: Cannot move to position with disabled controller.");
         }
     }
 
+
+    /**
+     * @brief Get EPOS4 information such as movement state, position, target position, 
+     * velocity, averaged velocity, and torque.
+     */
     std::vector<double> get_epos_info() {
         uint32_t pErrorCode = 0;
         uint32_t pMovementState = 0;
@@ -188,14 +208,14 @@ public:
         if (_is_enable_) {
             // Get Movement State
             if (VCS_GetMovementState(keyhandle_, NodeID, &pMovementState, &pErrorCode) == 0) {
-                std::cerr << "WARNING: getMovementState error with code " << pErrorCode << ". Disabling controller." << std::endl;
+                RCLCPP_WARN(logger_, "WARNING: getMovementState error with code %d. Disabling controller.", pErrorCode);
                 disable();
             }
             epos_info.push_back(static_cast<double>(pMovementState));
 
             // Get Position
             if (VCS_GetPositionIs(keyhandle_, NodeID, &pPosition, &pErrorCode) == 0) {
-                std::cerr << "WARNING: getPosition error with code " << pErrorCode << ". Disabling controller." << std::endl;
+                RCLCPP_WARN(logger_, "WARNING: getPosition error with code %d. Disabling controller.", pErrorCode);
                 disable();
             }
             if (std::bitset<32>(pPosition).count() == 34) {
@@ -205,7 +225,7 @@ public:
 
             // Get Target Position
             if (VCS_GetTargetPosition(keyhandle_, NodeID, &pTargetPosition, &pErrorCode) == 0) {
-                std::cerr << "WARNING: getTargetPosition error with code " << pErrorCode << ". Disabling controller." << std::endl;
+                RCLCPP_WARN(logger_, "WARNING: getTargetPosition error with code %d. Disabling controller.", pErrorCode);
                 disable();
             }
             if (std::bitset<32>(pTargetPosition).count() == 34) {
@@ -215,28 +235,28 @@ public:
 
             // Get Velocity
             if (VCS_GetVelocityIs(keyhandle_, NodeID, &pVelocity, &pErrorCode) == 0) {
-                std::cerr << "WARNING: getVelocity error with code " << pErrorCode << ". Disabling controller." << std::endl;
+                RCLCPP_WARN(logger_, "WARNING: getVelocity error with code %d. Disabling controller.", pErrorCode);
                 disable();
             }
             epos_info.push_back(static_cast<double>(pVelocity));
 
             // Get Averaged Velocity
             if (VCS_GetVelocityIsAveraged(keyhandle_, NodeID, &pVelocityAvg, &pErrorCode) == 0) {
-                std::cerr << "WARNING: getVelocityAvg error with code " << pErrorCode << ". Disabling controller." << std::endl;
+                RCLCPP_WARN(logger_, "WARNING: getVelocityAvg error with code %d. Disabling controller.", pErrorCode);
                 disable();
             }
             epos_info.push_back(static_cast<double>(pVelocityAvg));
 
             // Get Torque
             if (VCS_GetObject(keyhandle_, NodeID, 0x6077, 0x00, &pTorque, 2, &pBytesRead, &pErrorCode) == 0) {
-                std::cerr << "WARNING: getTorque error with code " << pErrorCode << ". Disabling controller." << std::endl;
+                RCLCPP_WARN(logger_, "WARNING: getTorque error with code %d. Disabling controller.", pErrorCode);
                 disable();
             }
             epos_info.push_back(static_cast<double>(pTorque));
 
             return epos_info;
         } else {
-            std::cerr << "ERROR: Cannot get epos info with disabled controller :(" << std::endl;
+            RCLCPP_ERROR(logger_, "ERROR: Cannot get epos info with disabled controller :(");
             return {};
         }
     }
@@ -281,10 +301,12 @@ private:
     VCS_GetObject_t VCS_GetObject;
     VCS_SetObject_t VCS_SetObject;
 
+    // EPOS4 parameters
     int max_acc_;
     int max_dec_;
     int prof_vel_;
 
+    // EPOS4 state
     bool _is_enable_;
     bool _is_centered_;
     bool _is_connected_;
@@ -292,6 +314,10 @@ private:
     void* keyhandle_ = nullptr;
     void* epos_lib_ = nullptr;
 
+
+    /**
+     * @brief Load a function from the EPOS4 library.
+     */
     template<typename Func>
     void loadFunctionVSC(Func& func, const char* name) {
         func = reinterpret_cast<Func>(dlsym(epos_lib_, name));

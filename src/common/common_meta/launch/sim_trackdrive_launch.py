@@ -7,15 +7,21 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    return LaunchDescription([
+   return LaunchDescription([
         create_node(pkg='path_planning',
                     params=[{'v_max': 7.0,
                              'ax_max': 5.0,
-                             'ay_max': 5.0}]),
+                             'ay_max': 5.0,
+                             'debug': False}]),
         create_node(pkg='controller',
-                    params=[{'min_cmd': -10.0,
-                             'max_cmd': 10.0,
-                             'use_optimized_trajectory': True}]),
+                    params=[{'min_cmd': -5.0,
+                             'max_cmd': 7.0,
+                             'look_ahead_distance': 6.0,
+                             'optimized_look_ahead_distance': 8.0,
+                             'use_optimized_trajectory': True,
+                             'first_lap_steer_control': "PP",
+                             'optimized_steer_control': "MPC",
+                             'debug': False}]),
         create_node(pkg='visualization'),
         create_node(pkg='arussim_interface'),
         create_node(pkg='car_state', 
@@ -29,16 +35,18 @@ def generate_launch_description():
                     'fr_wheel_speed_topic': '/arussim/fr_wheel_speed',
                     'fl_wheel_speed_topic': '/arussim/fl_wheel_speed',
                     'rr_wheel_speed_topic': '/arussim/rr_wheel_speed',
-                    'rl_wheel_speed_topic': '/arussim/rl_wheel_speed'}]),
+                    'rl_wheel_speed_topic': '/arussim/rl_wheel_speed',
+                    'debug': False}]),
         create_node(pkg='graph_slam',
                     params=[{'perception_topic': '/arussim/perception',
-                             'verbose': False}]),
+                             'debug': False}]),
         create_node(pkg='trajectory_optimization',
                     params=[{'v_max': 10.0,
                              'd_min': 1.3,
                              'mu_y': 1.0,
                              'mu_throttle': 0.6,
-                             'mu_brake': 0.6}])
+                             'mu_brake': 0.6,
+                             'debug': False}]),
     ])
 
 
