@@ -1,0 +1,5 @@
+<map id="CanInterface::heart_beat_callback" name="CanInterface::heart_beat_callback">
+<area shape="rect" id="Node000001" title="Callback, which in a loop send a CAN message to let the rest of the devices connected to the bus know..." alt="" coords="249,5,396,45"/>
+<area shape="rect" id="Node000002" href="$classCanInterface.html#a30b4be0d42ccab7b5a4b321f1dff2353" title="Construct the CAN interface node." alt="" coords="5,13,201,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="236,28,202,28,202,23,236,23"/>
+</map>

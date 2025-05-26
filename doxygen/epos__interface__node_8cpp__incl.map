@@ -1,0 +1,28 @@
+<map id="src/interfaces/epos_interface/src/epos_interface_node.cpp" name="src/interfaces/epos_interface/src/epos_interface_node.cpp">
+<area shape="rect" id="Node000001" title="EPOS4 controller interface for ARUS Team Driverless pipeline." alt="" coords="285,5,438,60"/>
+<area shape="rect" id="Node000002" href="$epos__interface__node_8hpp.html" title="EPOS4 controller interface header for ARUS Team Driverless pipeline." alt="" coords="284,108,439,148"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="364,60,364,94,359,94,359,60"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="105,291,237,317"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="284,136,208,143,128,154,59,172,33,184,17,198,9,212,10,225,17,237,30,248,68,269,112,285,111,290,66,274,27,253,13,240,5,226,4,211,12,194,31,180,57,167,127,149,207,137,284,130"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="27,203,240,229"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="312,151,177,201,175,196,310,146"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="265,203,458,229"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="364,148,364,189,359,189,359,148"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="483,203,659,229"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="408,146,531,196,529,201,406,151"/>
+<area shape="rect" id="Node000007" href="$VSC__funtions_8hpp.html" title="VSCfuntions implementation for ARUS Team Driverless pipeline." alt="" coords="683,196,831,236"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="440,143,670,193,669,198,438,149"/>
+<area shape="poly" id="edge7_Node000007_Node000003" title=" " alt="" coords="684,236,671,239,442,273,250,297,250,291,442,268,670,233,683,231"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="395,284,560,324"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="697,239,552,283,551,277,695,234"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="584,291,651,317"/>
+<area shape="poly" id="edge9_Node000007_Node000009" title=" " alt="" coords="728,238,649,286,646,282,725,234"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="675,291,746,317"/>
+<area shape="poly" id="edge10_Node000007_Node000010" title=" " alt="" coords="749,238,726,280,721,278,744,235"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="771,291,837,317"/>
+<area shape="poly" id="edge11_Node000007_Node000011" title=" " alt="" coords="770,235,793,278,789,280,765,238"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="861,291,920,317"/>
+<area shape="poly" id="edge12_Node000007_Node000012" title=" " alt="" coords="788,234,863,282,860,286,785,239"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="945,291,1015,317"/>
+<area shape="poly" id="edge13_Node000007_Node000013" title=" " alt="" coords="807,234,933,282,939,284,937,289,931,286,806,239"/>
+</map>

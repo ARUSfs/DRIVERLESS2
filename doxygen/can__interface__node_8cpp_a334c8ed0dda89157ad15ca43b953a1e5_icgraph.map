@@ -1,0 +1,7 @@
+<map id="intToBytes" name="intToBytes">
+<area shape="rect" id="Node000001" title=" " alt="" coords="456,13,547,38"/>
+<area shape="rect" id="Node000002" href="$classCanInterface.html#af7d76fdba2e138146a49a8d2217428a7" title="Callback that send in a CAN message the motor inverter command that receive from Controller." alt="" coords="249,5,408,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="442,28,408,28,408,23,442,23"/>
+<area shape="rect" id="Node000003" href="$classCanInterface.html#a30b4be0d42ccab7b5a4b321f1dff2353" title="Construct the CAN interface node." alt="" coords="5,13,201,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="235,28,202,28,202,23,235,23"/>
+</map>

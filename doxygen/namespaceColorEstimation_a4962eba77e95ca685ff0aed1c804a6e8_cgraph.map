@@ -1,0 +1,5 @@
+<map id="ColorEstimation::color_estimation" name="ColorEstimation::color_estimation">
+<area shape="rect" id="Node000001" title="Estimates the color of detected cones based on their intensity values. It filters cones within a give..." alt="" coords="5,5,172,45"/>
+<area shape="rect" id="Node000002" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#a35877fef1adaeca4db6df0211ca81f2b" title="Calculate the euclidean distance between two cones." alt="" coords="220,13,297,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="172,23,206,23,206,28,172,28"/>
+</map>

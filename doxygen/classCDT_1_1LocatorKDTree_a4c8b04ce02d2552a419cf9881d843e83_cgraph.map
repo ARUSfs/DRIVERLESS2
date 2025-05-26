@@ -1,0 +1,22 @@
+<map id="CDT::LocatorKDTree::addPoint" name="CDT::LocatorKDTree::addPoint">
+<area shape="rect" id="Node000001" title="Add point to KD&#45;tree." alt="" coords="5,164,156,204"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1KDTree_1_1KDTree.html#a60406d0c4c13d5dc36dfff83e65175d5" title=" " alt="" coords="204,164,360,204"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="157,182,190,182,190,187,157,187"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1KDTree_1_1KDTree.html#ab76e29593b014a16e72de22e9a5a06f6" title="Add a new node and return it&#39;s index in nodes buffer." alt="" coords="618,40,774,80"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="290,163,306,130,331,90,365,52,385,35,407,22,436,11,466,5,528,5,587,16,639,33,637,38,586,22,528,11,467,10,437,16,409,27,388,39,369,55,336,93,311,132,294,165"/>
+<area shape="rect" id="Node000004" href="$classCDT_1_1KDTree_1_1KDTree.html#a30fb5e78fd83304b499fe06268ad2152" title="Calculate split location, direction, and children boxes." alt="" coords="408,36,564,76"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="304,162,350,125,407,86,418,80,420,85,409,91,353,129,308,166"/>
+<area shape="rect" id="Node000005" href="$classCDT_1_1KDTree_1_1KDTree.html#a51c5a4c255ad4b077e678b882f09d075" title=" " alt="" coords="408,100,564,140"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="346,162,408,142,409,147,347,167"/>
+<area shape="rect" id="Node000006" href="$classCDT_1_1KDTree_1_1KDTree.html#a6da994f358551469ab86e1ee2db98033" title="Calculate root&#39;s box enclosing all root points." alt="" coords="408,164,564,204"/>
+<area shape="poly" id="edge6_Node000002_Node000006" title=" " alt="" coords="360,182,394,182,394,187,360,187"/>
+<area shape="rect" id="Node000008" href="$classCDT_1_1KDTree_1_1KDTree.html#a51061c6a5b6c53eba1e57316a453a39d" title="Test if point is inside a box." alt="" coords="408,228,564,268"/>
+<area shape="poly" id="edge8_Node000002_Node000008" title=" " alt="" coords="347,202,409,222,408,227,346,207"/>
+<area shape="rect" id="Node000009" href="$structCDT_1_1KDTree_1_1KDTree_1_1Node.html#a922cedc473b84a441f4da5be1ecb618b" title="Children setter for convenience." alt="" coords="408,292,564,332"/>
+<area shape="poly" id="edge9_Node000002_Node000009" title=" " alt="" coords="308,203,353,240,409,278,420,284,418,289,407,283,350,244,304,207"/>
+<area shape="rect" id="Node000010" href="$classCDT_1_1KDTree_1_1KDTree.html#a80ba1384b6d4acd200758594c7e37e73" title=" " alt="" coords="408,356,564,396"/>
+<area shape="poly" id="edge10_Node000002_Node000010" title=" " alt="" coords="297,203,341,271,373,309,410,342,417,347,414,352,406,346,369,312,337,274,292,206"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="556,98,611,82,613,87,558,103"/>
+<area shape="rect" id="Node000007" href="$structCDT_1_1V2d.html#ac3bef2ac94c6fe96858bb65822e6e523" title="Create vector from X and Y coordinates." alt="" coords="612,164,780,204"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="565,182,598,182,598,187,565,187"/>
+</map>

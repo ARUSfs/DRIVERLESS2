@@ -1,0 +1,17 @@
+<map id="CDT::orient2D" name="CDT::orient2D">
+<area shape="rect" id="Node000001" title="Orient p against line v1&#45;v2 2D: robust geometric predicate." alt="" coords="683,42,795,67"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1Triangulation.html#a7628eea8601675dc0148f5ddcc6a9e87" title=" " alt="" coords="479,5,634,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="669,46,634,40,635,35,670,41"/>
+<area shape="rect" id="Node000003" href="$namespaceCDT.html#aa50e3fa54c376fb436336558b90765d4" title="Check if point lies to the left of, to the right of, or on a line." alt="" coords="479,70,635,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="670,68,635,73,634,68,669,63"/>
+<area shape="rect" id="Node000004" href="$classCDT_1_1Triangulation.html#a2dfbdada76166661f5507607d49a5b87" title=" " alt="" coords="271,5,411,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="494,69,410,46,411,41,496,64"/>
+<area shape="rect" id="Node000005" href="$namespaceCDT.html#a93b004213f06c1f469c9575520ff0748" title="Check if point a lies inside of, outside of, or on an edge of a triangle." alt="" coords="251,70,431,95"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="465,85,431,85,431,80,465,80"/>
+<area shape="rect" id="Node000008" href="$classCDT_1_1Triangulation.html#a540bdefc7fe54afe365cd83d4ccef418" title=" " alt="" coords="271,120,411,160"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="496,101,411,124,410,119,494,96"/>
+<area shape="rect" id="Node000006" href="$classCDT_1_1Triangulation.html#a9cbb8e1a9faf7c11a4e526640fc5de92" title=" " alt="" coords="34,31,174,71"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="236,71,174,63,174,57,237,66"/>
+<area shape="rect" id="Node000007" href="$classCDT_1_1Triangulation.html#a7f0ed1c2005cf1531ebb79f576818424" title=" " alt="" coords="5,95,203,135"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="238,99,203,104,202,99,237,94"/>
+</map>

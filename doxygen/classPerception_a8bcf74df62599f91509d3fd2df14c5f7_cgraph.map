@@ -1,0 +1,32 @@
+<map id="Perception::Perception" name="Perception::Perception">
+<area shape="rect" id="Node000001" title="Construct a new Perception object." alt="" coords="5,281,173,306"/>
+<area shape="rect" id="Node000002" href="$classPerception.html#a7c6f9e4953d3780c1827f3cc0cbed09e" title="Callback function for the lidar topic." alt="" coords="223,255,413,281"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="173,281,209,277,210,283,174,287"/>
+<area shape="rect" id="Node000015" href="$classPerception.html#a91d885a657fa8ed092ad15acfc62b588" title="Callback function for the car state topic." alt="" coords="221,305,415,330"/>
+<area shape="poly" id="edge15_Node000001_Node000015" title=" " alt="" coords="174,299,208,303,207,308,173,305"/>
+<area shape="rect" id="Node000003" href="$namespaceColorEstimation.html#a4962eba77e95ca685ff0aed1c804a6e8" title="Estimates the color of detected cones based on their intensity values. It filters cones within a give..." alt="" coords="469,5,636,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="322,254,340,216,370,162,410,105,435,79,461,55,469,50,472,54,464,59,438,83,415,109,374,165,345,218,327,256"/>
+<area shape="rect" id="Node000005" href="$namespaceCropping.html#a091a82864778aa7b9cf285b9996acab0" title="Create crop filter function using the class CropBox from pcl." alt="" coords="476,69,629,109"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="327,253,379,190,418,152,461,119,472,113,475,117,464,124,421,156,383,194,331,257"/>
+<area shape="rect" id="Node000006" href="$namespaceClustering.html#a284c08290ff5b92bc1605f07457fbc9e" title="Implements optimized Euclidean clustering using Octree search and OpenMP." alt="" coords="473,133,632,173"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="338,253,393,219,462,183,477,176,480,181,464,188,395,224,341,257"/>
+<area shape="rect" id="Node000007" href="$namespaceUtils.html#a634849b244bddcbc6d4dbc1002bb5e7a" title="Filter the final clusters by size to delete the ones that are too small or too large to be considered..." alt="" coords="479,198,627,223"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="370,253,486,224,488,229,371,258"/>
+<area shape="rect" id="Node000008" href="$namespaceUtils.html#ad3208fb8513a7e018f9e76b2e0485ee1" title="Extract the center of each cluster." alt="" coords="483,248,622,288"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="413,265,469,265,469,271,413,271"/>
+<area shape="rect" id="Node000009" href="$namespaceGroundFiltering.html#ad1bc882b476335f839d96597dd767555" title="Divide the cloud in the specified numbers of squares as a grid and call the function ransac_checking_..." alt="" coords="475,312,630,352"/>
+<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="369,278,415,291,469,306,467,311,414,296,367,283"/>
+<area shape="rect" id="Node000012" href="$namespaceUtils.html#a1371239b03263e524107115fb35d8abc" title="Correct the motion of the points in the final map." alt="" coords="463,377,642,402"/>
+<area shape="poly" id="edge12_Node000002_Node000012" title=" " alt="" coords="392,278,416,291,433,309,441,328,449,345,464,362,475,369,473,373,461,366,444,348,436,330,429,312,413,295,389,283"/>
+<area shape="rect" id="Node000013" href="$namespaceUtils.html#aba264516be4b1e29dc23ebc762b26e74" title="Recover falsely ground filtered points." alt="" coords="476,426,629,451"/>
+<area shape="poly" id="edge13_Node000002_Node000013" title=" " alt="" coords="397,279,416,291,430,307,437,322,441,354,446,384,452,398,465,413,470,417,467,421,461,417,448,401,440,386,436,354,432,324,425,309,413,295,394,283"/>
+<area shape="rect" id="Node000014" href="$namespaceScoring.html#aaad828131e7e3616bea17a53d8fdae93" title="Score every cluster by how similar its to a cone and based on the distance between its points and wha..." alt="" coords="463,475,643,501"/>
+<area shape="poly" id="edge14_Node000002_Node000014" title=" " alt="" coords="398,279,417,291,433,313,441,335,441,379,442,421,449,442,465,462,468,466,465,470,461,466,444,444,437,422,436,379,435,336,428,316,413,295,395,283"/>
+<area shape="rect" id="Node000004" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#a35877fef1adaeca4db6df0211ca81f2b" title="Calculate the euclidean distance between two cones." alt="" coords="749,13,827,38"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="636,23,735,23,735,28,636,28"/>
+<area shape="rect" id="Node000010" href="$namespaceGroundFiltering.html#ac754e959f8a1371a1d4f36bfa5dc348b" title="Apply ransac in the square specified and check if the result plane is in accordance with the previus ..." alt="" coords="691,312,885,352"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="630,329,677,329,677,335,630,335"/>
+<area shape="poly" id="edge10_Node000010_Node000010" title=" " alt="" coords="745,312,742,302,749,293,764,287,788,285,815,288,830,295,827,300,814,293,788,291,766,293,752,297,747,303,750,311"/>
+<area shape="rect" id="Node000011" href="$namespaceGroundFiltering.html#a309b709ff242b65b04b5f22ad501fa08" title="Implements ground filtering using ransac segmentation." alt="" coords="933,312,1107,352"/>
+<area shape="poly" id="edge11_Node000010_Node000011" title=" " alt="" coords="886,329,920,329,920,335,886,335"/>
+</map>

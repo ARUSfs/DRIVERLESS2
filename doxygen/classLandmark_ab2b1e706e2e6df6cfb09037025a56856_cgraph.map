@@ -1,0 +1,5 @@
+<map id="Landmark::Landmark" name="Landmark::Landmark">
+<area shape="rect" id="Node000001" title="Constructor for Landmark with given local position and vehicle pose." alt="" coords="5,5,165,31"/>
+<area shape="rect" id="Node000002" href="$classLandmark.html#aa50683e0d26920037dd9c44eabb0f0ed" title="Get the world position of the landmark from the local position and vehicle pose." alt="" coords="213,5,403,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="165,15,200,15,200,21,165,21"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="CDT::RemapNoSuperTriangle" name="CDT::RemapNoSuperTriangle">
+<area shape="rect" id="Node000001" title="Remap removing super&#45;triangle: subtract 3 from vertices." alt="" coords="215,13,423,38"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1Triangulation.html#a7e19c82f35a633f53ac6e905bf2e2ce7" title=" " alt="" coords="5,5,167,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="201,28,167,28,167,23,201,23"/>
+</map>

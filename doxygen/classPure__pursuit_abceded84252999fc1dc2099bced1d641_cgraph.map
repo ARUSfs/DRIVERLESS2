@@ -1,0 +1,5 @@
+<map id="Pure_pursuit::get_steering_angle" name="Pure_pursuit::get_steering_angle">
+<area shape="rect" id="Node000001" title="Get steering angle to the pursuit point." alt="" coords="5,5,197,45"/>
+<area shape="rect" id="Node000002" href="$classPure__pursuit.html#a549055f92ad5ca4eeab90355a70976d5" title="Search pursuit point. Returns the point on the trajectory closest to the look&#45;ahead distance." alt="" coords="245,5,400,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="198,23,231,23,231,28,198,28"/>
+</map>

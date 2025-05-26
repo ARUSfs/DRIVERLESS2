@@ -1,0 +1,5 @@
+<map id="src/control/controller/include/controller/controller_node.hpp" name="src/control/controller/include/controller/controller_node.hpp">
+<area shape="rect" id="Node000001" title="Controller node header for ARUS Team Driverless pipeline." alt="" coords="5,5,211,60"/>
+<area shape="rect" id="Node000002" href="$controller__node_8cpp.html" title="Controller node implementation for ARUS Team Driverless pipeline." alt="" coords="19,108,197,148"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="111,74,111,108,105,108,105,74"/>
+</map>

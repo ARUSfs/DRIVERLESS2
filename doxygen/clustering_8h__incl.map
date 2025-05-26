@@ -1,0 +1,9 @@
+<map id="src/perception/include/perception/clustering.h" name="src/perception/include/perception/clustering.h">
+<area shape="rect" id="Node000001" title="Contains auxiliar functions used in the algorithm to make the clusters from the filtered point cloud." alt="" coords="180,5,355,45"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,101,151,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="227,48,117,98,114,93,225,43"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="175,93,360,133"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="270,46,270,79,265,79,265,46"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="384,101,447,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="301,43,385,92,383,96,298,48"/>
+</map>

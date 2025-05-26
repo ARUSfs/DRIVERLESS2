@@ -1,0 +1,58 @@
+<map id="src/perception/src/perception_node.cpp" name="src/perception/src/perception_node.cpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="1319,5,1480,45"/>
+<area shape="rect" id="Node000002" href="$perception__node_8hpp.html" title="Contains the class definition and the declaration of the methods used in the algorithm." alt="" coords="1317,93,1481,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1402,46,1402,79,1397,79,1397,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,189,137,214"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="1317,117,1111,118,822,127,488,147,318,163,150,184,127,188,126,183,150,179,317,158,488,142,822,121,1111,113,1317,111"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="162,181,338,221"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="1317,119,1144,125,907,136,633,155,352,184,352,179,633,150,906,131,1144,120,1317,114"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="363,189,495,214"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="1317,119,1166,125,964,136,737,155,508,184,485,188,484,183,507,179,736,150,964,131,1165,119,1317,114"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="519,181,669,221"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="1317,122,1040,142,864,160,683,184,682,179,863,155,1039,137,1317,116"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="693,189,826,214"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="1317,124,1100,146,969,163,838,184,817,188,816,183,838,179,968,158,1099,141,1317,119"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="851,189,1025,214"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="1318,132,1038,184,1013,189,1012,183,1038,179,1317,127"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="1050,189,1239,214"/>
+<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="1344,136,1193,187,1191,182,1343,131"/>
+<area shape="rect" id="Node000010" href="$ground__filtering_8h.html" title="Contains auxiliar functions used in the algorithm to remove the ground from the original point cloud." alt="" coords="1263,189,1399,214"/>
+<area shape="poly" id="edge9_Node000002_Node000010" title=" " alt="" coords="1386,135,1351,179,1347,176,1382,132"/>
+<area shape="rect" id="Node000015" href="$clustering_8h.html" title="Contains auxiliar functions used in the algorithm to make the clusters from the filtered point cloud." alt="" coords="1538,189,1637,214"/>
+<area shape="poly" id="edge14_Node000002_Node000015" title=" " alt="" coords="1442,131,1551,181,1549,186,1439,136"/>
+<area shape="rect" id="Node000019" href="$cropping_8h.html" title="Contains auxiliar functions used in the algorithm to crop the point cloud received from the lidar." alt="" coords="1423,189,1514,214"/>
+<area shape="poly" id="edge18_Node000002_Node000019" title=" " alt="" coords="1417,132,1453,176,1449,179,1413,135"/>
+<area shape="rect" id="Node000020" href="$scoring_8h.html" title="Contains auxiliar functions used in the algorithm to score every cluster in order to determine the re..." alt="" coords="1661,189,1743,214"/>
+<area shape="poly" id="edge20_Node000002_Node000020" title=" " alt="" coords="1476,131,1649,179,1659,182,1657,187,1648,184,1475,136"/>
+<area shape="rect" id="Node000021" href="$PointXYZColorScore_8h.html" title="Defines the structure of the custom type PointXYZColorScore." alt="" coords="1809,277,1971,302"/>
+<area shape="poly" id="edge25_Node000002_Node000021" title=" " alt="" coords="1482,116,1543,123,1613,135,1686,153,1755,179,1866,266,1863,270,1753,184,1684,158,1612,140,1543,129,1481,122"/>
+<area shape="rect" id="Node000022" href="$accumulation_8h.html" title="Contains auxiliar functions used in the algorithm to accumulate the point cloud received from the lid..." alt="" coords="1986,189,2109,214"/>
+<area shape="poly" id="edge22_Node000002_Node000022" title=" " alt="" coords="1482,118,1704,140,1839,157,1973,179,1993,183,1992,188,1972,184,1838,162,1704,145,1481,124"/>
+<area shape="rect" id="Node000025" href="$color__estimation_8h.html" title="Contains auxiliar functions used in the algorithm to estimate the color of the closest cones." alt="" coords="1819,189,1961,214"/>
+<area shape="poly" id="edge26_Node000002_Node000025" title=" " alt="" coords="1482,125,1800,179,1824,183,1823,189,1799,184,1481,130"/>
+<area shape="rect" id="Node000026" href="$utils_8h.html" title=" " alt="" coords="2133,189,2196,214"/>
+<area shape="poly" id="edge28_Node000002_Node000026" title=" " alt="" coords="1482,111,1607,114,1767,124,1945,144,2034,160,2121,179,2129,181,2128,186,2120,184,2033,165,1944,150,1767,129,1607,120,1482,117"/>
+<area shape="rect" id="Node000027" title=" " alt="" coords="2221,189,2439,214"/>
+<area shape="poly" id="edge29_Node000002_Node000027" title=" " alt="" coords="1482,117,1801,139,2004,157,2209,179,2248,184,2248,189,2208,184,2004,162,1801,145,1481,122"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="620,269,781,309"/>
+<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="1288,217,1252,224,1125,241,1025,249,924,256,795,272,795,266,924,251,1025,244,1125,236,1251,219,1287,211"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="805,269,937,309"/>
+<area shape="poly" id="edge11_Node000010_Node000012" title=" " alt="" coords="1285,217,1252,224,1103,248,951,272,950,266,1102,242,1251,219,1284,211"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="961,277,1136,302"/>
+<area shape="poly" id="edge12_Node000010_Node000013" title=" " alt="" coords="1294,217,1100,275,1099,270,1292,212"/>
+<area shape="rect" id="Node000014" title=" " alt="" coords="1161,277,1318,302"/>
+<area shape="poly" id="edge13_Node000010_Node000014" title=" " alt="" coords="1321,216,1264,269,1261,265,1317,212"/>
+<area shape="rect" id="Node000016" title=" " alt="" coords="1343,277,1488,302"/>
+<area shape="poly" id="edge15_Node000015_Node000016" title=" " alt="" coords="1565,217,1452,273,1450,268,1563,212"/>
+<area shape="rect" id="Node000017" title=" " alt="" coords="1512,269,1697,309"/>
+<area shape="poly" id="edge16_Node000015_Node000017" title=" " alt="" coords="1592,214,1601,255,1595,256,1587,215"/>
+<area shape="rect" id="Node000018" title=" " alt="" coords="1721,277,1784,302"/>
+<area shape="poly" id="edge17_Node000015_Node000018" title=" " alt="" coords="1611,212,1719,268,1717,273,1608,217"/>
+<area shape="poly" id="edge19_Node000019_Node000014" title=" " alt="" coords="1439,217,1284,274,1282,269,1437,212"/>
+<area shape="poly" id="edge21_Node000020_Node000021" title=" " alt="" coords="1728,212,1853,268,1851,273,1726,217"/>
+<area shape="rect" id="Node000023" title=" " alt="" coords="1996,277,2099,302"/>
+<area shape="poly" id="edge23_Node000022_Node000023" title=" " alt="" coords="2050,214,2050,262,2045,262,2045,214"/>
+<area shape="rect" id="Node000024" title=" " alt="" coords="2123,277,2185,302"/>
+<area shape="poly" id="edge24_Node000022_Node000024" title=" " alt="" coords="2063,212,2131,266,2127,270,2060,216"/>
+<area shape="poly" id="edge27_Node000025_Node000021" title=" " alt="" coords="1893,214,1893,262,1887,262,1887,214"/>
+</map>

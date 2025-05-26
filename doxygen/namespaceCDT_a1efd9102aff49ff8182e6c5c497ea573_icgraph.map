@@ -1,0 +1,7 @@
+<map id="CDT::edgeNeighborInd" name="CDT::edgeNeighborInd">
+<area shape="rect" id="Node000001" title="Index of triangle&#39;s neighbor opposed to an edge." alt="" coords="200,42,367,67"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1Triangulation.html#a753d40bdd4510b3c12339d660bd8f46c" title=" " alt="" coords="9,5,149,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="186,43,149,38,150,33,187,38"/>
+<area shape="rect" id="Node000003" href="$namespaceCDT.html#a54d389c21a6b172c72757f053bc7a4a1" title="Given triangle and an edge find neighbor sharing the edge." alt="" coords="5,70,152,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="187,71,153,75,152,70,186,65"/>
+</map>

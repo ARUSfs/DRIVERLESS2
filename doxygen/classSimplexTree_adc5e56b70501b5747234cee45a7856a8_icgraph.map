@@ -1,0 +1,6 @@
+<map id="SimplexTree::create_tree_aux" name="SimplexTree::create_tree_aux">
+<area shape="rect" id="Node000001" title="Recursive function to create the tree structure. From a triangle list and an index from which to star..." alt="" coords="244,29,395,69"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="356,18,343,11,319,8,298,10,286,15,281,21,283,28,278,30,276,20,282,10,297,5,319,3,345,6,359,13"/>
+<area shape="rect" id="Node000002" href="$classSimplexTree.html#a8a8fe3e9f3be5a4427773a6cab6cd43c" title="Construct a new simplex tree object and expand it." alt="" coords="5,37,196,62"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="230,52,196,52,196,47,230,47"/>
+</map>

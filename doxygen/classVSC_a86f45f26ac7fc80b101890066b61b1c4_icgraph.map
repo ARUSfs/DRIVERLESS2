@@ -1,0 +1,5 @@
+<map id="VSC::enable" name="VSC::enable">
+<area shape="rect" id="Node000001" title="Enable EPOS4 controller." alt="" coords="216,13,316,38"/>
+<area shape="rect" id="Node000002" href="$classEPOS__interface.html#ac8dde287b72cd078d7f7f52e52e07117" title="Constructor for the EPOS_interface class. Initializes the node, parameters, and subscriptions." alt="" coords="5,5,168,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="202,28,168,28,168,23,202,23"/>
+</map>

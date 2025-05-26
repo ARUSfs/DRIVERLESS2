@@ -1,0 +1,13 @@
+<map id="CDT::Triangulation::flipEdge" name="CDT::Triangulation::flipEdge">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,97,145,137"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT_1_1detail.html#a3d0029052f21c5ae87d2eb1084f6eb1f" title="Needed for c++03 compatibility (no uniform initialization available)" alt="" coords="217,5,343,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="102,94,143,66,192,40,210,32,212,37,194,44,146,71,105,99"/>
+<area shape="rect" id="Node000003" href="$namespaceCDT.html#a71e51d357ff08262d1bb774ce23b0c29" title="Advance vertex or neighbor index counter&#45;clockwise." alt="" coords="239,55,321,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="145,97,225,78,226,83,146,102"/>
+<area shape="rect" id="Node000004" href="$namespaceCDT.html#a36f349a95810a0abb13c81e7386fceb5" title="Advance vertex or neighbor index clockwise." alt="" coords="243,104,317,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="146,114,229,114,229,119,146,119"/>
+<area shape="rect" id="Node000005" href="$structCDT_1_1Triangle.html#a8dba5775643ed59bc5477f441de82303" title=" " alt="" coords="205,153,355,179"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="146,131,214,147,213,153,145,136"/>
+<area shape="rect" id="Node000006" href="$namespaceCDT.html#ae670571f2331af35b407dc5e83a80cc4" title="Index of triangle&#39;s vertex opposed to a triangle." alt="" coords="193,203,367,228"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="105,134,146,162,194,188,215,196,213,201,192,192,144,166,102,139"/>
+</map>
