@@ -15,7 +15,8 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include "PointXYZColorScore.h"
+#include "PointXYZColorScoreTime.h"
+#include "PointXYZIRingTime.h"
 
 namespace Scoring
 {
@@ -28,8 +29,8 @@ namespace Scoring
     * @param cluster_centers The center of each cluster.
     * @param threshold The threshold that wll the determinate if the cluster is a cone or not.
     */
-    void scoring_surface(pcl::PointCloud<PointXYZColorScore>::Ptr& final_map, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points, 
-        std::vector<PointXYZColorScore>& cluster_centers, double threshold)
+    void scoring_surface(pcl::PointCloud<PointXYZColorScoreTime>::Ptr& final_map, std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr> cluster_points, 
+        std::vector<PointXYZColorScoreTime>& cluster_centers, double threshold)
     {
         //Define the cone
         const double kBaseRadius = 0.07525;  
@@ -38,7 +39,7 @@ namespace Scoring
         //iterate on each cluster
         for (size_t i = 0; i < cluster_points.size(); ++i) 
         {
-            PointXYZColorScore& center = cluster_centers[i];
+            PointXYZColorScoreTime& center = cluster_centers[i];
             const auto& cluster = cluster_points[i];
             double total_score = 0.0;
             double cone_radius_at_z;

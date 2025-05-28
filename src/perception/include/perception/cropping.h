@@ -12,6 +12,7 @@
 #include <pcl/filters/crop_box.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include "PointXYZIRingTime.h"
 
 namespace Cropping
 {
@@ -22,10 +23,10 @@ namespace Cropping
     * @param My The lenght in the y axis.
     * @param Mz The lenght in the z axis.
     */
-    void crop_filter_cropbox(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, double& Mx, double& My, double& Mz)
+    void crop_filter_cropbox(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, double& Mx, double& My, double& Mz)
     {
         //Configure the cropping filter
-        pcl::CropBox<pcl::PointXYZI> crop_box_filter;
+        pcl::CropBox<PointXYZIRingTime> crop_box_filter;
         crop_box_filter.setInputCloud(cloud);
         crop_box_filter.setMin(Eigen::Vector4f(0, -My, -100.0, 1.0));
         crop_box_filter.setMax(Eigen::Vector4f(Mx, My, Mz, 1.0));

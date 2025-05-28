@@ -8,6 +8,8 @@
  * @date 05-02-2025
  */
 
+#define PCL_NO_PRECOMPILE
+
 #include "perception/perception_node.hpp"
 bool DEBUG = true;
 
@@ -77,16 +79,16 @@ Perception::Perception() : Node("Perception")
  * @param cluster_centers The center of each cluster.
  */
 void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_indices,
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScoreTime>& clusters_centers)
 {
     for (auto it = cluster_indices.begin(); it != cluster_indices.end(); )
     {
         //Create a temporal point cloud
-        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<PointXYZIRingTime>::Ptr cluster_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         pcl::copyPointCloud(*cloud_filtered, *it, *cluster_cloud);
 
         //Obtain the new bounding box of the cluster
-        pcl::PointXYZI min_point, max_point;
+        PointXYZIRingTime min_point, max_point;
         pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
         double max_x = max_point.x;
         double min_x = min_point.x;
@@ -100,12 +102,13 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_in
         {
             Eigen::Vector4f centroid;
             pcl::compute3DCentroid(*cluster_cloud, centroid);
-            PointXYZColorScore center;
+            PointXYZColorScoreTime center;
             center.x = centroid[0];
             center.y = centroid[1];
             center.z = min_z;
             center.color = 0;
             center.score = 0;
+            center.timestamp = max_point.timestamp;
             clusters_centers.push_back(center);
 
             it++;
@@ -128,15 +131,15 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_in
  * @param cluster_centers The center of each cluster.
  * @param radius The radius used to search for eliminated points.
  */
-void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, 
-    std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore> clusters_centers, 
+void Perception::reconstruction(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_plane, pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, 
+    std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScoreTime> clusters_centers, 
     double radius)
 {
     //Iterate on clusters
     for (size_t i = 0; i < clusters_centers.size(); ++i)
     {
-        //Convert from PointXYZColorScore to PointXYZI
-        pcl::PointXYZI center;
+        //Convert from PointXYZColorScoreTime to PointXYZIRingTime
+        PointXYZIRingTime center;
         center.x = clusters_centers[i].x;
         center.y = clusters_centers[i].y;
         center.z = clusters_centers[i].z;
@@ -145,7 +148,7 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
         //Iterate on planar points
         for (size_t j = 0; j < cloud_plane->size(); ++j)
         {
-            pcl::PointXYZI point = cloud_plane->points[j];
+            PointXYZIRingTime point = cloud_plane->points[j];
 
             //Check if the point lies inside the cylinder
             double dx = point.x - center.x;
@@ -173,17 +176,17 @@ void Perception::reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane
  * @param cluster_centers The center of each cluster.
  */
 void Perception::filter_clusters(std::vector<pcl::PointIndices>& cluster_indices,
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers)
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScoreTime>& clusters_centers)
 {
     for (int i = cluster_indices.size() - 1; i >= 0; i--)
     {
         //Create a temporal point cloud
         pcl::PointIndices indices = cluster_indices[i];
-        pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<PointXYZIRingTime>::Ptr cluster_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         pcl::copyPointCloud(*cloud_filtered, indices, *cluster_cloud);
 
         //Obtain the new bounding box of the cluster
-        pcl::PointXYZI min_point, max_point;
+        PointXYZIRingTime min_point, max_point;
         pcl::getMinMax3D(*cluster_cloud, min_point, max_point);
         double max_x = max_point.x;
         double min_x = min_point.x;
@@ -227,13 +230,13 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     double start_time = this->now().seconds();
 
     //Define the variables for the ground filter
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered(new pcl::PointCloud<PointXYZIRingTime>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_plane(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
     
 
     //Transform the message into a pcl point cloud
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
 
 
@@ -257,7 +260,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 
     //Store the clusters centers in a new point cloud
-    std::vector<PointXYZColorScore> clusters_centers;
+    std::vector<PointXYZColorScoreTime> clusters_centers;
     Perception::get_clusters_centers(cluster_indices, cloud_filtered, clusters_centers);
     if (DEBUG) std::cout << "Number of posibles cones: " << clusters_centers.size() << std::endl;
 
@@ -271,22 +274,49 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Perception::filter_clusters(cluster_indices, cloud_filtered, clusters_centers);
     if (DEBUG) std::cout << "Filtering time: " << this->now().seconds() - start_time << std::endl;
 
+    // Motion correction
+    for (size_t i = 0; i < cluster_indices.size(); i++)
+    {
+        for (auto j : cluster_indices[i].indices)
+        {
+            PointXYZIRingTime p = cloud_filtered->points[j];
+
+            double dt = this->now().seconds() - start_time + p.timestamp;
+            double point_theta = -yaw_rate * dt;
+
+            double dx = vx * dt, dy = vy * dt;
+
+            p.x = p.x * std::cos(point_theta) - p.y * std::sin(point_theta) - dx;
+            p.y = p.x * std::sin(point_theta) + p.y * std::cos(point_theta) - dy;
+        }
+
+        PointXYZColorScoreTime center = clusters_centers[i];
+        double dt = this->now().seconds() - start_time + center.timestamp;
+
+        double point_theta = -yaw_rate * dt;
+        double dx = vx * dt, dy = vy * dt;
+
+        center.x = center.x * std::cos(point_theta) - center.y * std::sin(point_theta) - dx;
+        center.y = center.x * std::sin(point_theta) + center.y * std::cos(point_theta) - dy;
+    }
+    if (DEBUG) std::cout << "Motion correction Time: " << this->now().seconds() - start_time << std::endl;
+
     // Convert the indices of the clusters to the points of the clusters
-    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points;
+    std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr> cluster_points;
     for (const auto& cluster : cluster_indices)
     {
-        pcl::PointCloud<pcl::PointXYZI>::Ptr new_cluster(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<PointXYZIRingTime>::Ptr new_cluster(new pcl::PointCloud<PointXYZIRingTime>);
  
         for (const auto& idx : cluster.indices)
         {
-            pcl::PointXYZI point = cloud_filtered->points[idx];
+            PointXYZIRingTime point = cloud_filtered->points[idx];
             new_cluster->points.push_back(point);
         } 
         cluster_points.push_back(new_cluster);
     }
 
 
-    pcl::PointCloud<pcl::PointXYZI>::Ptr clusters_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr clusters_cloud(new pcl::PointCloud<PointXYZIRingTime>);
     if (DEBUG) {
         // Publish clusters cloud with different colors
         int i = 0;
@@ -294,17 +324,17 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         {
             for (auto &p : c->points)
             {
-                pcl::PointXYZI q = p;
+                PointXYZIRingTime q = p;
                 q.intensity = i;
                 clusters_cloud->push_back(q);
             }
             i++;
         }
     }
-    
+
 
     //Score the clusters and keep the ones that will be consider cones
-    pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
+    pcl::PointCloud<PointXYZColorScoreTime>::Ptr final_map(new pcl::PointCloud<PointXYZColorScoreTime>);
     Scoring::scoring_surface(final_map, cluster_points, clusters_centers, kThresholdScoring);
 
 
@@ -328,17 +358,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
                 point.color = center.color;
             }
         }
-    }
-
-    // Motion correction
-    double dt = this->now().seconds() - start_time; // Estimate sdk delay
-    double theta = -yaw_rate*(dt);
-    for (auto& p : final_map->points)
-    {
-        // double point_delay = std::atan(p.y/p.x)/(2*M_PI)*0.1;
-        double dx = vx*dt, dy = vy*dt;
-        p.x = p.x*std::cos(theta) - p.y*std::sin(theta) - dx;
-        p.y = p.x*std::sin(theta) + p.y*std::cos(theta) - dy;
     }
 
     if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;

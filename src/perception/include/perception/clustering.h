@@ -16,6 +16,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <omp.h>
+#include "PointXYZIRingTime.h"
 
 namespace Clustering
 {
@@ -24,14 +25,14 @@ namespace Clustering
     * @param cloud The filtered point cloud from which we will extract the clusters.
     * @param cluster_indices The vector that will store the different indices of the clusters points.
     */
-    void euclidean_clustering(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, std::vector<pcl::PointIndices>& cluster_indices)
+    void euclidean_clustering(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, std::vector<pcl::PointIndices>& cluster_indices)
     {
         if (!cloud || cloud->empty()) return;
 
-        pcl::search::Octree<pcl::PointXYZI>::Ptr tree(new pcl::search::Octree<pcl::PointXYZI>(0.3));
+        pcl::search::Octree<PointXYZIRingTime>::Ptr tree(new pcl::search::Octree<PointXYZIRingTime>(0.3));
         tree->setInputCloud(cloud);
 
-        pcl::EuclideanClusterExtraction<pcl::PointXYZI> extraction;
+        pcl::EuclideanClusterExtraction<PointXYZIRingTime> extraction;
         extraction.setClusterTolerance(0.6);  
         extraction.setMinClusterSize(4);     
         extraction.setMaxClusterSize(200);
@@ -45,7 +46,7 @@ namespace Clustering
         }
     }
 
-    void parallel_euclidean_clustering(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, std::vector<pcl::PointIndices>& cluster_indices)
+    void parallel_euclidean_clustering(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, std::vector<pcl::PointIndices>& cluster_indices)
     {
         int number_sections = 2;
         double Mx = 30.0;
@@ -68,8 +69,8 @@ namespace Clustering
                 Eigen::Vector4f min_pt(i * x_step, -My + j * y_step, -100.0, 1.0);
                 Eigen::Vector4f max_pt((i + 1) * x_step, -My + (j + 1) * y_step, Mz, 1.0);
 
-                pcl::PointCloud<pcl::PointXYZI>::Ptr subcloud(new pcl::PointCloud<pcl::PointXYZI>);
-                pcl::CropBox<pcl::PointXYZI> crop_box_filter;
+                pcl::PointCloud<PointXYZIRingTime>::Ptr subcloud(new pcl::PointCloud<PointXYZIRingTime>);
+                pcl::CropBox<PointXYZIRingTime> crop_box_filter;
                 crop_box_filter.setInputCloud(cloud);
                 crop_box_filter.setMin(min_pt);
                 crop_box_filter.setMax(max_pt);
@@ -77,10 +78,10 @@ namespace Clustering
 
                 if (subcloud->empty()) continue;
 
-                pcl::search::Octree<pcl::PointXYZI>::Ptr tree(new pcl::search::Octree<pcl::PointXYZI>(0.3));
+                pcl::search::Octree<PointXYZIRingTime>::Ptr tree(new pcl::search::Octree<PointXYZIRingTime>(0.3));
                 tree->setInputCloud(subcloud);
 
-                pcl::EuclideanClusterExtraction<pcl::PointXYZI> extraction;
+                pcl::EuclideanClusterExtraction<PointXYZIRingTime> extraction;
                 extraction.setClusterTolerance(0.6);
                 extraction.setMinClusterSize(4);
                 extraction.setMaxClusterSize(200);

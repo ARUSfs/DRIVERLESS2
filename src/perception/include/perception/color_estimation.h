@@ -6,6 +6,8 @@
  * @version 0.1
  * @date 4-2-2025
  */
+ 
+ #include "PointXYZIRingTime.h"
 
  namespace ColorEstimation
  {
@@ -21,7 +23,7 @@
     * @param distance_threshold The distance that decides if the cone is going to be processed or not.
     * @param coloring_threshold The threshold between the global average intensity and the average intensity of each cone.
     */
-    void color_estimation(std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points, std::vector<PointXYZColorScore>& clusters_centers,
+    void color_estimation(std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr> cluster_points, std::vector<PointXYZColorScoreTime>& clusters_centers,
         double distance_threshold, double coloring_threshold)
     {
         // Define a vector to store (average, id) pairs for each cone, where the id will be the index
@@ -38,7 +40,7 @@
         for (size_t i = 0; i < clusters_centers.size(); ++i)
         {
             // Define the center and the indices of the cone
-            PointXYZColorScore& center = clusters_centers[i];
+            PointXYZColorScoreTime& center = clusters_centers[i];
             const auto& cluster = cluster_points[i];
 
             // Calculate the distance from the cone to the origin

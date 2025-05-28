@@ -8,6 +8,8 @@
  * @date 3-11-2024
  */
 
+#define PCL_NO_PRECOMPILE
+
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>
@@ -18,8 +20,7 @@
 #include "perception/clustering.h"
 #include "perception/cropping.h"
 #include "scoring.h"
-#include "perception/accumulation.h"
-#include "PointXYZColorScore.h"
+#include "PointXYZColorScoreTime.h"
 #include "color_estimation.h"
 #include <pcl/common/common.h>
 #include <Eigen/Dense>
@@ -28,6 +29,7 @@
 #include <deque>
 #include <omp.h>
 #include <iostream>
+#include "PointXYZIRingTime.h"
 
 
 /**
@@ -103,7 +105,7 @@ class Perception : public rclcpp::Node
          * @param cluster_centers The center of each cluster.
          */
         void get_clusters_centers(std::vector<pcl::PointIndices>& cluster_indices,
-            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& cluster_centers);
+            pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScoreTime>& cluster_centers);
     
         /**
          * @brief Auxiliar function for the call back function.
@@ -114,8 +116,8 @@ class Perception : public rclcpp::Node
          * @param cluster_centers The center of each cluster.
          * @param radius The radius used to search for eliminated points.
          */
-        void reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, 
-            std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore> cluster_centers, 
+        void reconstruction(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_plane, pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, 
+            std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScoreTime> cluster_centers, 
             double radius);
 
         /**
@@ -126,7 +128,7 @@ class Perception : public rclcpp::Node
         * @param cluster_centers The center of each cluster.
         */
         void filter_clusters(std::vector<pcl::PointIndices>& cluster_indices,
-            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, std::vector<PointXYZColorScore>& clusters_centers);
+            pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered, std::vector<PointXYZColorScoreTime>& clusters_centers);
         
         /**
         * @brief Callback function for the car state topic.
