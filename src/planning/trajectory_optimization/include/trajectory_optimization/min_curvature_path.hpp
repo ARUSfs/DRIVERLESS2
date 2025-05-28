@@ -39,7 +39,7 @@ namespace MinCurvaturepath {
     /**
      * @brief Solves the quadratic optimization problem using qpmad solver
      */
-    pair<VectorXd,qpmad::Solver::ReturnStatus> qpmad_solver(MatrixXd H, VectorXd B);
+    pair<VectorXd,qpmad::Solver::ReturnStatus> qpmad_solver(MatrixXd H, VectorXd B, VectorXd xin, VectorXd delx);
 
     
 
@@ -62,7 +62,7 @@ namespace MinCurvaturepath {
         VectorXd  B = vectorB(xin, yin, delx, dely);
 
         //Solve the quadratic problem
-        auto solver_out = qpmad_solver(H,B);
+        auto solver_out = qpmad_solver(H,B,xin,delx);
         VectorXd resMCP = solver_out.first;
         qpmad::Solver::ReturnStatus status = solver_out.second;
 
@@ -208,7 +208,7 @@ namespace MinCurvaturepath {
         return B;
     }
 
-    pair<VectorXd,qpmad::Solver::ReturnStatus> qpmad_solver(MatrixXd H, VectorXd B){
+    pair<VectorXd,qpmad::Solver::ReturnStatus> qpmad_solver(MatrixXd H, VectorXd B, VectorXd xin, VectorXd delx){
         // Define lower and upper bounds
         int n = H.rows();
         VectorXd lb = VectorXd::Zero(n);
@@ -217,15 +217,19 @@ namespace MinCurvaturepath {
         // Define equality constraints (same first and last point with smooth transition)
         // Solver doesn't handle equality constraints, but we can implement it as two inequalities:
         // beq <= Aeq*res <= beq
-        MatrixXd Aeq = MatrixXd::Zero(4,n);
-        Aeq(0,0) = 1;
-        Aeq(1,1) = 1;
-        Aeq(2,n-2) = 1;
-        Aeq(3,n-1) = 1;
-        VectorXd beq(4);
-        beq << 0.5, 0.5, 0.5, 0.5;
+        MatrixXd Aeq = MatrixXd::Zero(2,n);
+        Aeq(0,0) = delx(0);
+        Aeq(0,1) = -delx(1);
+        Aeq(0,n-2) = -delx(n-2);
+        Aeq(0,n-1) = delx(n-1);
 
-        VectorXd Alb(4), Aub(4);
+        Aeq(1,0) = -1;
+        Aeq(1,n-1) = 1;
+
+        VectorXd beq(2);
+        beq << -xin(0)+xin(1)+xin(n-2)-xin(n-1), 0;
+
+        VectorXd Alb(2), Aub(2);
         Alb << beq;
         Aub << beq;
 
