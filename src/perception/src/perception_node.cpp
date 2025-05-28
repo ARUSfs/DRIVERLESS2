@@ -255,7 +255,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Extract the clusters from the point cloud
     std::vector<pcl::PointIndices> cluster_indices;
-    Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
+    // Clustering::euclidean_clustering(cloud_filtered, cluster_indices);
+    Clustering::fast_euclidean_clustering(cloud_filtered, cluster_indices);
     if (DEBUG) std::cout << "Clustering time: " << this->now().seconds() - start_time << std::endl;
 
 

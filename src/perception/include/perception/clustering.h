@@ -17,6 +17,7 @@
 #include <pcl/point_types.h>
 #include <omp.h>
 #include "PointXYZIRingTime.h"
+#include "external/fast_euclidean_clustering.h"
 
 namespace Clustering
 {
@@ -39,68 +40,23 @@ namespace Clustering
         extraction.setSearchMethod(tree);
 
         extraction.setInputCloud(cloud);
-        #pragma omp parallel
-        {
-            #pragma omp single
-            extraction.extract(cluster_indices);
-        }
+        extraction.extract(cluster_indices);
     }
 
-    void parallel_euclidean_clustering(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, std::vector<pcl::PointIndices>& cluster_indices)
+    void fast_euclidean_clustering(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, std::vector<pcl::PointIndices>& cluster_indices)
     {
-        int number_sections = 2;
-        double Mx = 30.0;
-        double My = 15.0;
-        double Mz = 0.5;
+        if (!cloud || cloud->empty()) return;
+
+        pcl::search::KdTree<PointXYZIRingTime>::Ptr tree(new pcl::search::KdTree<PointXYZIRingTime>);
         
-        double x_step = Mx / number_sections;
-        double y_step = 2 * My / number_sections;
-        
-        // #pragma omp parallel for
-        for (int i = 0; i < number_sections; ++i)
-        {
-            for (int j = 0; j < number_sections; ++j)
-            {
-                std::cout << "Sección " << i << " " << j << std::endl;
+        FastEuclideanClustering<PointXYZIRingTime> fec;
+        fec.setInputCloud(cloud);
+        fec.setSearchMethod(tree);
+        fec.setClusterTolerance(0.6);
+        fec.setQuality(0.5);
+        fec.setMinClusterSize(4);     
+        fec.setMaxClusterSize(200);
 
-                // int i = index / number_sections;
-                // int j = index % number_sections;
-
-                Eigen::Vector4f min_pt(i * x_step, -My + j * y_step, -100.0, 1.0);
-                Eigen::Vector4f max_pt((i + 1) * x_step, -My + (j + 1) * y_step, Mz, 1.0);
-
-                pcl::PointCloud<PointXYZIRingTime>::Ptr subcloud(new pcl::PointCloud<PointXYZIRingTime>);
-                pcl::CropBox<PointXYZIRingTime> crop_box_filter;
-                crop_box_filter.setInputCloud(cloud);
-                crop_box_filter.setMin(min_pt);
-                crop_box_filter.setMax(max_pt);
-                crop_box_filter.filter(*subcloud);
-
-                if (subcloud->empty()) continue;
-
-                pcl::search::Octree<PointXYZIRingTime>::Ptr tree(new pcl::search::Octree<PointXYZIRingTime>(0.3));
-                tree->setInputCloud(subcloud);
-
-                pcl::EuclideanClusterExtraction<PointXYZIRingTime> extraction;
-                extraction.setClusterTolerance(0.6);
-                extraction.setMinClusterSize(4);
-                extraction.setMaxClusterSize(200);
-                extraction.setSearchMethod(tree);
-                extraction.setInputCloud(subcloud);
-
-                std::vector<pcl::PointIndices> local_clusters;
-                extraction.extract(local_clusters);
-
-                std::cout << "Number of clusters in section " << i << " " << j << ": " << local_clusters.size() << std::endl;
-
-                // #pragma omp critical
-                // {
-                    cluster_indices.insert(cluster_indices.end(), local_clusters.begin(), local_clusters.end());
-                // }
-
-                std::cout << "Number of total clusters: " << cluster_indices.size() << std::endl;
-                std::cout << "----------------------------------------" << std::endl;
-            }
-        }
+        fec.segment(cluster_indices);
     }
 }
