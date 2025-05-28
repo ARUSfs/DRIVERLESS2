@@ -171,9 +171,14 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     
     Eigen::Matrix4f solution_eigen      = Eigen::Matrix4f::Identity();
     solution_eigen.block<3, 3>(0, 0)    = solution.rotation.cast<float>();
-    solution_eigen.topRightCorner(3, 1) = solution.translation.cast<float>();
+    solution_eigen.topRightCorner(3, 1) = solution.translation.cast<float>();    
 
+    pcl::PointCloud<PointXYZIRingTime>::Ptr src_xy(new pcl::PointCloud<PointXYZIRingTime>);
+    pcl::transformPointCloud(*src_pcl, *src_xy, solution_eigen);
 
+    // Estimate Δz and update solution_eigen
+    float dz = estimateZOffsetMedian(*src_xy, *tgt_pcl, 0.30f, 100);
+    solution_eigen(2,3) = dz;
     
 
     if (DEBUG) {

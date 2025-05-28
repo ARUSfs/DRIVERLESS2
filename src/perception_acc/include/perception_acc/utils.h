@@ -1,4 +1,6 @@
 #include <pcl/point_types.h>
+#include <pcl/kdtree/kdtree_flann.h>
+#include <algorithm> 
 #include <iostream>
 
 
@@ -28,4 +30,36 @@ Eigen::Matrix4f tf2TransformToEigen(const tf2::Transform &tf)
     mat(2, 3) = tf.getOrigin().z();
 
     return mat;
+}
+
+  
+float estimateZOffsetMedian(const pcl::PointCloud<PointXYZIRingTime>& src_xy,
+                            const pcl::PointCloud<PointXYZIRingTime>& tgt,
+                            float xy_radius   = 0.30f,   
+                            int   max_samples = 100) 
+{
+  pcl::KdTreeFLANN<PointXYZIRingTime> kdtree;
+  kdtree.setInputCloud(tgt.makeShared());
+
+  std::vector<float> dz; dz.reserve(max_samples);
+  std::vector<int>   idx(1);
+  std::vector<float> dist2(1);
+
+  const int step = std::max<int>(1, src_xy.size() / max_samples);
+
+  for (size_t i = 0; i < src_xy.size(); i += step)
+  {
+    const auto& p = src_xy[i];
+    if (kdtree.nearestKSearch(p, 1, idx, dist2) > 0)
+    {
+      const auto& q = tgt[idx[0]];
+      float dx = p.x - q.x, dy = p.y - q.y;
+      if (dx*dx + dy*dy < xy_radius*xy_radius)
+        dz.push_back(q.z - p.z);             
+    }
+  }
+  if (dz.empty()) return 0.f;              
+
+  std::nth_element(dz.begin(), dz.begin()+dz.size()/2, dz.end());
+  return dz[dz.size()/2];                   
 }
