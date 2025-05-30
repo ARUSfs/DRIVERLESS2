@@ -47,7 +47,6 @@ class Perception : public rclcpp::Node
         double r_;
         double dt;
         std::vector<double> final_times;
-        pcl::PointCloud<pcl::PointXYZI>::Ptr prev_cloud_;
         std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_buffer_;
 
 

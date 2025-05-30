@@ -8,7 +8,7 @@
 #include "perception/perception_node.hpp"
 
 
-int BUFF_SIZE = 10; 
+int BUFF_SIZE = 5; 
 
 
 Perception::Perception() : Node("Perception")
@@ -57,7 +57,6 @@ Perception::Perception() : Node("Perception")
     r_ = 0.0;
     dt = 0.1;
 
-    prev_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     
     // Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -146,12 +145,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         return;
     }
 
-    if (prev_cloud_->size() == 0) 
-    {
-        prev_cloud_ = cloud;
-        return;
-    }
-
     if (cloud_buffer_.size() == 0) 
     {
         cloud_buffer_.push_back(cloud);
@@ -159,9 +152,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     }
 
 
-
     pcl::PointCloud<pcl::PointXYZI>::Ptr acum_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-
+    *acum_cloud += *cloud;
 
     Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
     transform(0, 3) = -vx_ * dt; // x translation
@@ -176,7 +168,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::PointCloud<pcl::PointXYZ>::Ptr actual_cones(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cones(new pcl::PointCloud<pcl::PointXYZ>);
     process_cloud(cloud, actual_cones);
-    auto prev_cloud = cloud_buffer_[0];
+    auto prev_cloud = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>(*(cloud_buffer_[0]));
     pcl::transformPointCloud(*prev_cloud, *prev_cloud, transform);
     process_cloud(prev_cloud, prev_cones);
 
@@ -221,6 +213,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         *acum_cloud += *pcl;
     }
 
+
     std::cout << "Accumulation time: " << this->now().seconds() - start_time << " seconds" << std::endl;
 
     // Publish the map cloud
@@ -244,7 +237,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     filtered_msg.header.frame_id = "/rslidar";
     filtered_pub_->publish(filtered_msg);
 
-    *prev_cloud_ = *cloud; 
     return;
 
 
