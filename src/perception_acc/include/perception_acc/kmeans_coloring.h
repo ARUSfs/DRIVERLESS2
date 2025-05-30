@@ -23,7 +23,11 @@ namespace KMeansColoring
         {
             for(const auto& pt : cluster_points[i]->points)
             {
-                intensity_points.push_back({pt.intensity});
+                if (std::sqrt(std::pow(pt.x, 2) + std::pow(pt.y, 2)) < distance_threshold &&
+                    std::sqrt(std::pow(pt.x, 2) + std::pow(pt.y, 2)) > 3.0)
+                {
+                    intensity_points.push_back({pt.intensity});
+                }
             }
         }
 
@@ -46,7 +50,7 @@ namespace KMeansColoring
         for(size_t i = 0; i < clusters_centers.size(); i++)
         {
             if(std::sqrt(std::pow(clusters_centers[i].x, 2) + std::pow(clusters_centers[i].y, 2)) > distance_threshold ||
-                std::sqrt(std::pow(clusters_centers[i].x, 2) + std::pow(clusters_centers[i].y, 2)) < 3.0)
+                std::sqrt(std::pow(clusters_centers[i].x, 2) + std::pow(clusters_centers[i].y, 2)) < 4.0)
             {
                 clusters_centers[i].prob_yellow = -1; // unknown
                 clusters_centers[i].prob_blue   = -1; // unknown
@@ -65,18 +69,16 @@ namespace KMeansColoring
 
                 // Yellow probability
                 double mean_yellow = avg_yellow_intensity;
-                double sigma_yellow = 5.0;
+                double sigma_yellow = 10.0;
                 boost::math::normal dist_yellow(mean_yellow, sigma_yellow);
-                double pdf_yellow = pdf(dist_yellow, avg_cluster_intensity);
+                double cdf_yellow = boost::math::cdf(dist_yellow, avg_cluster_intensity);
 
                 // Blue probability
                 double mean_blue = avg_blue_intensity;
-                double sigma_blue = 5.0;
+                double sigma_blue = 10.0;
                 boost::math::normal dist_blue(mean_blue, sigma_blue);
-                double pdf_blue   = pdf(dist_blue, avg_cluster_intensity);
+                double cdf_blue   = boost::math::cdf(dist_blue,   avg_cluster_intensity);
 
-                double prior_yellow = 0.5;
-                double prior_blue = 0.5;
                 if (avg_cluster_intensity < avg_yellow_intensity) {
                     clusters_centers[i].prob_yellow = 1.0; // More likely to be yellow
                     clusters_centers[i].prob_blue = 0.0;   // Less likely to be blue
@@ -84,10 +86,10 @@ namespace KMeansColoring
                     clusters_centers[i].prob_yellow = 0.0; // Less likely to be yellow
                     clusters_centers[i].prob_blue = 1.0;   // More likely to be blue
                 } else {
-                    double Pyellow = pdf_yellow * prior_yellow / (pdf_yellow * prior_yellow + pdf_blue * prior_blue);
-                    double Pblue   = pdf_blue   * prior_blue   / (pdf_yellow * prior_yellow + pdf_blue * prior_blue);
-                    clusters_centers[i].prob_yellow = Pyellow;
-                    clusters_centers[i].prob_blue   = Pblue;
+                    double prob_yellow = (1 - cdf_yellow) / 0.5; // Normalize to [0, 1]   
+                    double prob_blue   = cdf_blue   / 0.5; // Normalize to [0, 1]
+                    clusters_centers[i].prob_yellow = prob_yellow;
+                    clusters_centers[i].prob_blue   = prob_blue;
                 }
 
                 std::cout << "x: " << clusters_centers[i].x << "; y: " << clusters_centers[i].y << "; prob_yellow = " << clusters_centers[i].prob_yellow
