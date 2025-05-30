@@ -144,4 +144,80 @@ namespace GroundFiltering
             }
         }
     }
+
+    void pillar_ground_filter(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, 
+        pcl::PointCloud<pcl::PointXYZI>::Ptr& ground_cloud, double threshold, double Mx, double My,
+        int number_sections)
+    {
+        cloud_filtered->clear();
+        ground_cloud->clear();
+        std::map<std::pair<int, int>, pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_grid;
+
+
+        for (const auto& point : cloud->points) 
+        {
+            int x_index = static_cast<int>((point.x + Mx) / (2 * Mx) * number_sections);
+            int y_index = static_cast<int>((point.y + My) / (2 * My) * number_sections);
+
+            if (x_index < 0 || x_index >= number_sections || y_index < 0 || y_index >= number_sections)
+                continue;
+
+            std::pair<int, int> grid_key(x_index, y_index);
+            if (cloud_grid.find(grid_key) == cloud_grid.end()) 
+            {
+                cloud_grid[grid_key] = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+            }
+            cloud_grid[grid_key]->points.push_back(point);
+        }
+
+        pcl::PointXYZI min_pt, max_pt;
+        for (const auto& [key, cell_cloud] : cloud_grid) {
+            pcl::getMinMax3D(*cell_cloud, min_pt, max_pt);
+
+            if (max_pt.z - min_pt.z < threshold) 
+            {
+                *ground_cloud += *cell_cloud;
+            // } else {
+            //     *cloud_filtered += *cell_cloud;
+            // }
+            } else if (max_pt.z - min_pt.z < 0.4 && max_pt.z < 0.5){ // Avoid hill pillar such as walls or buildings
+                pcl::PointCloud<pcl::PointXYZI>::Ptr centroid (new pcl::PointCloud<pcl::PointXYZI>);
+                pcl::PointCloud<pcl::PointXYZI>::Ptr points_to_add (new pcl::PointCloud<pcl::PointXYZI>);
+                for (auto& point : cell_cloud->points) {   
+                    if (std::abs(point.z-max_pt.z) < 0.03) 
+                    {
+                        centroid->points.push_back(point);
+                    }   
+                    
+                }
+
+                if (centroid->points.empty()) continue;
+                pcl::PointXYZI top_pt;
+                pcl::computeCentroid(*centroid, top_pt);
+
+                float min_outer_z = std::numeric_limits<float>::max();
+                float max_outer_z = std::numeric_limits<float>::lowest();
+                for (auto& point : cell_cloud->points) {
+                    if((point.x-top_pt.x)*(point.x-top_pt.x) + (point.y-top_pt.y)*(point.y-top_pt.y) < 0.015)
+                    {
+                        // point.intensity = 300.0;
+                        points_to_add->points.push_back(point);
+                    } else {
+                        // min_outer_z = std::min(min_outer_z, point.z);
+                        // max_outer_z = std::max(max_outer_z, point.z);
+                        // point.intensity = 0.0; 
+                    }
+                }
+                if (max_outer_z - min_outer_z > threshold) 
+                {
+                    points_to_add->clear();
+                    continue;
+                } 
+                
+                *cloud_filtered += *points_to_add;
+            }
+        }
+
+
+    }
 } 

@@ -21,6 +21,11 @@
 #include "color_estimation.h"
 #include "utils.h"
 #include "common_msgs/msg/state.hpp"
+#include <pcl/registration/icp.h>
+#include "fast_euclidean_clustering.h"
+
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/registration/transformation_estimation_svd.h>
 
 
 /**
@@ -37,11 +42,13 @@ class Perception : public rclcpp::Node
 
     private:
         // Variables
-        double vx;
-        double vy;
-        double yaw_rate;
+        double vx_;
+        double vy_;
+        double r_;
         double dt;
         std::vector<double> final_times;
+        pcl::PointCloud<pcl::PointXYZI>::Ptr prev_cloud_;
+        std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_buffer_;
 
 
         // Topics
@@ -96,4 +103,6 @@ class Perception : public rclcpp::Node
          * @brief Callback function for the lidar topic.
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
+
+        void process_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& cones_map);
 };

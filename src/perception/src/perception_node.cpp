@@ -5,8 +5,10 @@
  * Team, which extracts the location of the cones on the track.
  */
 
-
 #include "perception/perception_node.hpp"
+
+
+int BUFF_SIZE = 10; 
 
 
 Perception::Perception() : Node("Perception")
@@ -50,10 +52,12 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("debug", kDebug);
 
     // Initialize the variables
-    vx = 0.0;
-    vy = 0.0;
-    yaw_rate = 0.0;
+    vx_ = 0.0;
+    vy_ = 0.0;
+    r_ = 0.0;
     dt = 0.1;
+
+    prev_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     
     // Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -71,12 +75,46 @@ Perception::Perception() : Node("Perception")
         "/perception/map", 10);
 }
 
+void Perception::process_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& cones_map) {
+    
+    // Define the necessary variables
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZI>);
+    std::vector<PointXYZColorScore> clusters_centers;
+
+    GroundFiltering::pillar_ground_filter(cloud, cloud_filtered, cloud_plane, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kNumberSections);
+    
+    // FEC
+    pcl::search::KdTree<pcl::PointXYZI>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZI>);
+    std::vector<pcl::PointIndices> cluster_indices2;
+
+    FastEuclideanClustering<pcl::PointXYZI> fec;
+    fec.setInputCloud(cloud_filtered);
+    fec.setSearchMethod(tree);
+    fec.setClusterTolerance(0.5);
+    fec.setQuality(0.5);
+    fec.setMinClusterSize(4);     
+    fec.setMaxClusterSize(200);
+    fec.segment(cluster_indices2);
+
+    Utils::get_clusters_centers(cluster_indices2, cloud_filtered, clusters_centers);
+    Utils::filter_clusters(cluster_indices2, cloud_filtered, clusters_centers);
+    
+    for (auto center : clusters_centers) 
+    {
+        pcl::PointXYZ cone;
+        cone.x = center.x;
+        cone.y = center.y;
+        cone.z = center.z;
+        cones_map->points.push_back(cone);
+    }
+}
 
 void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_msg)
 {
-    vx = state_msg->vx;
-    vy = state_msg->vy;
-    yaw_rate = state_msg->r;
+    vx_ = state_msg->vx;
+    vy_ = state_msg->vy;
+    r_ = state_msg->r;
 }
 
 
@@ -98,13 +136,116 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     
     // Transform the message into a pcl point cloud
     pcl::fromROSMsg(*lidar_msg, *cloud);
-
+    Eigen::Matrix4f T_lidar_to_cog = Eigen::Matrix4f::Identity();
+    T_lidar_to_cog(0, 3) = 1.5; // x translation
+    pcl::transformPointCloud(*cloud, *cloud, T_lidar_to_cog);
 
     if (kDebug && cloud->size() == 0) 
     {
         RCLCPP_WARN(this->get_logger(), "Empty point cloud");
         return;
     }
+
+    if (prev_cloud_->size() == 0) 
+    {
+        prev_cloud_ = cloud;
+        return;
+    }
+
+    if (cloud_buffer_.size() == 0) 
+    {
+        cloud_buffer_.push_back(cloud);
+        return;
+    }
+
+
+
+    pcl::PointCloud<pcl::PointXYZI>::Ptr acum_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+
+
+    Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+    transform(0, 3) = -vx_ * dt; // x translation
+    transform(1, 3) = -vy_ * dt; // y translation
+    transform(2, 3) = 0.0; // z translation (assuming no vertical movement)
+    double phi = - r_ * dt; // rotation around z-axis
+    transform(0, 0) = cos(phi);
+    transform(0, 1) = -sin(phi);
+    transform(1, 0) = sin(phi);
+    transform(1, 1) = cos(phi);
+    
+    pcl::PointCloud<pcl::PointXYZ>::Ptr actual_cones(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cones(new pcl::PointCloud<pcl::PointXYZ>);
+    process_cloud(cloud, actual_cones);
+    auto prev_cloud = cloud_buffer_[0];
+    pcl::transformPointCloud(*prev_cloud, *prev_cloud, transform);
+    process_cloud(prev_cloud, prev_cones);
+
+    
+    pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+    kdtree.setInputCloud(actual_cones);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr paired_src(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr paired_dst(new pcl::PointCloud<pcl::PointXYZ>);
+
+    for (const auto& pt : prev_cones->points) {
+        std::vector<int> indices(1);
+        std::vector<float> sqr_dists(1);
+
+        if (kdtree.nearestKSearch(pt, 1, indices, sqr_dists) > 0) {
+            if (sqr_dists[0] <= 1.0f) { // 1 metro al cuadrado
+                paired_src->points.push_back(pt);
+                paired_dst->points.push_back(actual_cones->points[indices[0]]);
+            }
+        }
+    }
+
+    // Estimar la transformación con SVD
+    Eigen::Matrix4f transform2;
+    pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ> svd;
+    svd.estimateRigidTransformation(*paired_src, *paired_dst, transform2);
+
+    pcl::transformPointCloud(*prev_cones, *prev_cones, transform2);
+    
+    *actual_cones += *prev_cones;
+    for (auto point : actual_cones->points) 
+    {
+        PointXYZColorScore p(point.x, point.y, point.z, 1, 0.0f); // color 1 for actual cones
+        final_map->points.push_back(p);
+    }
+
+    for (auto& pcl : cloud_buffer_) 
+    {
+        pcl::PointCloud<PointXYZColorScore>::Ptr cones_map(new pcl::PointCloud<PointXYZColorScore>);
+        pcl::transformPointCloud(*pcl, *pcl, transform);
+        pcl::transformPointCloud(*pcl, *pcl, transform2);
+        *acum_cloud += *pcl;
+    }
+
+    std::cout << "Accumulation time: " << this->now().seconds() - start_time << " seconds" << std::endl;
+
+    // Publish the map cloud
+    sensor_msgs::msg::PointCloud2 map_msg2;
+    pcl::toROSMsg(*final_map, map_msg2);
+    map_msg2.header.frame_id = "/rslidar";
+    map_pub_->publish(map_msg2);
+    
+
+
+    if (cloud_buffer_.size() > BUFF_SIZE) 
+    {
+        cloud_buffer_.pop_back();
+    }
+    cloud_buffer_.insert(cloud_buffer_.begin(), cloud);
+
+
+    // Publish the filtered cloud
+    sensor_msgs::msg::PointCloud2 filtered_msg;
+    pcl::toROSMsg(*acum_cloud, filtered_msg);
+    filtered_msg.header.frame_id = "/rslidar";
+    filtered_pub_->publish(filtered_msg);
+
+    *prev_cloud_ = *cloud; 
+    return;
 
 
     if (kCrop) 
@@ -214,7 +355,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     // Motion correction
     double dt = this->now().seconds() - start_time; // Estimate SDK delay
-    Utils::motion_correction(final_map, vx, vy, yaw_rate, dt);
+    Utils::motion_correction(final_map, vx_, vy_, r_, dt);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Motion correction time: %f", this->now().seconds() - start_time);
 
 
