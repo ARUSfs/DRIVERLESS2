@@ -39,7 +39,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -375,7 +375,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 98
+      Max Intensity: 239
       Min Color: 0; 0; 0
       Min Intensity: 1
       Name: PointCloud2
@@ -435,16 +435,16 @@ Visualization Manager:
         Min Value: -10
         Value: true
       Axis: Z
-      Channel Name: color
+      Channel Name: prob_blue
       Class: rviz_default_plugins/PointCloud2
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
-      Max Color: 229; 165; 10
-      Max Intensity: 2
-      Min Color: 255; 255; 255
+      Max Color: 28; 113; 216
+      Max Intensity: 1
+      Min Color: 245; 194; 17
       Min Intensity: 0
       Name: PointCloud2
       Position Transformer: XYZ
@@ -478,10 +478,10 @@ Visualization Manager:
       Invert Rainbow: false
       Max Color: 245; 194; 17
       Max Intensity: 1
-      Min Color: 28; 113; 216
-      Min Intensity: 0
+      Min Color: 26; 95; 180
+      Min Intensity: -1
       Name: PointCloud2
-      Position Transformer: XYZ
+      Position Transformer: ""
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.5
@@ -552,7 +552,7 @@ Visualization Manager:
       Color: 255; 0; 196
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -573,7 +573,7 @@ Visualization Manager:
         Value: /slam/map
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -654,7 +654,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 39.73949432373047
+      Distance: 30.781574249267578
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

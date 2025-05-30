@@ -13,26 +13,28 @@
 
 #pragma once
 
-struct PointXYZColorScore 
+struct PointXYZColorScore
 {
     //definition of the type
     PCL_ADD_POINT4D;  
-    double color;
+    double prob_yellow;
+    double prob_blue;
     float score;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     //Default constructor
     PointXYZColorScore()
-        : color(0), score(0.0f) {
+        : prob_yellow(0), prob_blue(0), score(0.0f) {
         x = y = z = 0.0f;
     }
 
     //Constructor with parameters
-    PointXYZColorScore(float x, float y, float z, double color, float score) {
+    PointXYZColorScore(float x, float y, float z, double prob_yellow, double prob_blue, float score) {
         this->x = x;
         this->y = y;
         this->z = z;
-        this->color = color;
+        this->prob_yellow = prob_yellow;
+        this->prob_blue = prob_blue;
         this->score = score;
         this->data[3] = 1.0f; 
     }
@@ -44,6 +46,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT (
     (float, x, x)
     (float, y, y)
     (float, z, z)
-    (double, color, color)
+    (double, prob_yellow, prob_yellow)
+    (double, prob_blue, prob_blue)
     (float, score, score)
 )

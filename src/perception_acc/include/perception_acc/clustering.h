@@ -79,7 +79,8 @@ namespace Clustering
                 center.x = centroid[0];
                 center.y = centroid[1];
                 center.z = min_z;
-                center.color = 0;
+                center.prob_yellow = 0;
+                center.prob_blue = 0;
                 center.score = 0;
                 clusters_centers.push_back(center);
 

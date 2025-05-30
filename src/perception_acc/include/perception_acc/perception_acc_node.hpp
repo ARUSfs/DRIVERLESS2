@@ -34,11 +34,11 @@
 #include "perception_acc/cropping.h"
 #include "perception_acc/scoring.h"
 #include "perception_acc/accumulation.h"
-#include "perception_acc/color_estimation.h"
 #include "perception_acc/ground_remove.h"
 #include "perception_acc/string_clustering.h"
 #include "perception_acc/fast_euclidean_clustering.h"
 #include "perception_acc/intensity_coloring.h"
+#include "perception_acc/kmeans_coloring.h"
 
 /**
  * @class Perception

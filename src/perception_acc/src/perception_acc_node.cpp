@@ -187,7 +187,8 @@ void Perception::get_clusters_centers(std::vector<pcl::PointIndices>& cluster_in
             center.x = centroid[0];
             center.y = centroid[1];
             center.z = min_z;
-            center.color = 0;
+            center.prob_yellow = 0;
+            center.prob_blue = 0;
             center.score = 0;
             clusters_centers.push_back(center);
 
@@ -358,7 +359,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     //Estime the color of the closest cones
     // ColorEstimation::color_estimation(cluster_points, clusters_centers, kDistanceThreshold, kIntensityThreshold);
-    IntensityColoring::color_estimation(cluster_points, clusters_centers, kDistanceThreshold, cloud_plane);
+    KMeansColoring::color_estimation(cluster_points, clusters_centers, kDistanceThreshold);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Color estimation time: %f", this->now().seconds() - time_start);
 
 
@@ -369,7 +370,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         {
             if (point.x == center.x && point.y == center.y && point.z == center.z) 
             {
-                point.color = center.color;
+                point.prob_blue = center.prob_blue;
+                point.prob_yellow = center.prob_yellow;
             }
         }
     }

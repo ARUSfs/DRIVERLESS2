@@ -30,7 +30,8 @@
             if(std::sqrt(std::pow(clusters_centers[i].x, 2) + std::pow(clusters_centers[i].y, 2)) > distance_threshold ||
                 std::sqrt(std::pow(clusters_centers[i].x, 2) + std::pow(clusters_centers[i].y, 2)) < 3.0)
             {
-                clusters_centers[i].color = 0; // unknown
+                clusters_centers[i].prob_yellow = 0; // unknown
+                clusters_centers[i].prob_blue = 0; // unknown
                 continue;
             }
 
@@ -43,9 +44,11 @@
 
             double color_param = ground_intensity + 5;
             double coloring_scoring = average_intensity / color_param;
-            clusters_centers[i].color = coloring_scoring;
+            clusters_centers[i].prob_yellow = coloring_scoring;
+            clusters_centers[i].prob_blue = 1.0 - coloring_scoring;
 
-            std::cout << "x: " << clusters_centers[i].x << "; y: " << clusters_centers[i].y << "; Coloring Scoring: " << coloring_scoring << "; cluster_points[i]->points.size(): " << cluster_points[i]->points.size() << "; Average intensity: " << average_intensity << "; ground_intensity: " << ground_intensity << std::endl;
+            // std::cout << "x: " << clusters_centers[i].x << "; y: " << clusters_centers[i].y << "; Coloring Scoring: " << coloring_scoring << "; cluster_points[i]->points.size(): " << cluster_points[i]->points.size() << "; Average intensity: " << average_intensity << "; ground_intensity: " << ground_intensity << std::endl;
         }
+
     }
  }
