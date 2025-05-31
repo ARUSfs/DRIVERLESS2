@@ -77,6 +77,7 @@ class Perception : public rclcpp::Node
         double vy;
         double yaw_rate;
         double dt;
+        std::vector<double> final_times;
 
         //Subscriber
         std::string kLidarTopic;

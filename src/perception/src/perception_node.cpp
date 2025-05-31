@@ -361,6 +361,10 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         }
     }
 
+    final_times.push_back(this->now().seconds() - start_time);
+    double average_time = std::accumulate(final_times.begin(), final_times.end(), 0.0) / final_times.size();
+    if (DEBUG) std::cout << "Final iteration time: " <<  this->now().seconds() - start_time << std::endl;
+    if (DEBUG) std::cout << "Average time: " << average_time << std::endl;
     if (DEBUG) std::cout << "//////////////////////////////////////////////" << std::endl;
 
     if (DEBUG){
