@@ -71,7 +71,7 @@ Perception::Perception() : Node("Perception")
     clusters_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/map", 10);
+        "/perception/map2", 10);
 }
 
 void Perception::process_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& cones_map) {
@@ -139,9 +139,9 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     T_lidar_to_cog(0, 3) = 1.5; // x translation
     pcl::transformPointCloud(*cloud, *cloud, T_lidar_to_cog);
 
-    if (kDebug && cloud->size() == 0) 
+    if (cloud->size() == 0) 
     {
-        RCLCPP_WARN(this->get_logger(), "Empty point cloud");
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Empty point cloud");
         return;
     }
 
@@ -217,10 +217,10 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     std::cout << "Accumulation time: " << this->now().seconds() - start_time << " seconds" << std::endl;
 
     // Publish the map cloud
-    sensor_msgs::msg::PointCloud2 map_msg2;
-    pcl::toROSMsg(*final_map, map_msg2);
-    map_msg2.header.frame_id = "/rslidar";
-    map_pub_->publish(map_msg2);
+    // sensor_msgs::msg::PointCloud2 map_msg2;
+    // pcl::toROSMsg(*final_map, map_msg2);
+    // map_msg2.header.frame_id = "/rslidar";
+    // map_pub_->publish(map_msg2);
     
 
 
@@ -232,30 +232,40 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 
     // Publish the filtered cloud
-    sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*acum_cloud, filtered_msg);
-    filtered_msg.header.frame_id = "/rslidar";
-    filtered_pub_->publish(filtered_msg);
-
-    return;
+    // sensor_msgs::msg::PointCloud2 filtered_msg;
+    // pcl::toROSMsg(*acum_cloud, filtered_msg);
+    // filtered_msg.header.frame_id = "/rslidar";
+    // filtered_pub_->publish(filtered_msg);
 
 
     if (kCrop) 
     {
         // Crop the point cloud
-        Cropping::crop_filter_cropbox(cloud, kMaxXFov, kMaxYFov, kMaxZFov);
+        Cropping::crop_filter_cropbox(acum_cloud, kMaxXFov, kMaxYFov, kMaxZFov);
         if (kDebug) RCLCPP_INFO(this->get_logger(), "Cropping Time: %f", this->now().seconds() - start_time);
     }
 
 
     // Apply the ground filter function
-    GroundFiltering::grid_ground_filter(cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, 
-        kMaxZFov, kNumberSections, kAngleThreshold);
+    // GroundFiltering::grid_ground_filter(acum_cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, 
+    //     kMaxZFov, kNumberSections, kAngleThreshold);
+    GroundFiltering::pillar_ground_filter(acum_cloud, cloud_filtered, cloud_plane, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kNumberSections);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Ground Filter Time: %f", this->now().seconds() - start_time);
 
+    // FEC
+    pcl::search::KdTree<pcl::PointXYZI>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZI>);
+
+    FastEuclideanClustering<pcl::PointXYZI> fec;
+    fec.setInputCloud(cloud_filtered);
+    fec.setSearchMethod(tree);
+    fec.setClusterTolerance(0.5);
+    fec.setQuality(0.5);
+    fec.setMinClusterSize(4);     
+    fec.setMaxClusterSize(200);
+    fec.segment(cluster_indices);
 
     // Extract the clusters from the point cloud
-    Clustering::euclidean_clustering(cloud_filtered, cluster_indices, kMinClusterSize, kMaxClusterSize);
+    // Clustering::euclidean_clustering(cloud_filtered, cluster_indices, kMinClusterSize, kMaxClusterSize);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Clustering time: %f", this->now().seconds() - start_time);
 
 
