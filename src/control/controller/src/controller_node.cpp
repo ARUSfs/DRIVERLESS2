@@ -216,7 +216,7 @@ void Controller::on_steer_timer()
         if (!(s_.empty())){
             double t0 = this->now().seconds();
 
-            lti_mpc_.set_reference_trajectory(pointsXY_, s_, position, yaw_, vx_, index_global_);
+            lti_mpc_.set_reference_trajectory(pointsXY_, speed_profile_, s_, position, yaw_, vx_, index_global_);
             delta_cmd_ = lti_mpc_.calculate_control(delta_, v_delta_, vy_, r_);
 
             if (kDebug) RCLCPP_INFO(this->get_logger(), "MPC time: %f ms", (this->now().seconds() - t0)*1000);
