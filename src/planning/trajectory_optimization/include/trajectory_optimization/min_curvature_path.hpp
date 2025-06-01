@@ -223,13 +223,13 @@ namespace MinCurvaturepath {
         Aeq(0,n-2) = -delx(n-2);
         Aeq(0,n-1) = delx(n-1);
 
-        Aeq(0,0) = dely(0);
-        Aeq(0,1) = -dely(1);
-        Aeq(0,n-2) = -dely(n-2);
-        Aeq(0,n-1) = dely(n-1);
+        Aeq(1,0) = dely(0);
+        Aeq(1,1) = -dely(1);
+        Aeq(1,n-2) = -dely(n-2);
+        Aeq(1,n-1) = dely(n-1);
 
-        Aeq(1,0) = -1;
-        Aeq(1,n-1) = 1;
+        Aeq(2,0) = -1;
+        Aeq(2,n-1) = 1;
 
         VectorXd beq(3);
         beq << -xin(0)+xin(1)+xin(n-2)-xin(n-1), -yin(0)+yin(1)+yin(n-2)-yin(n-1), 0;
