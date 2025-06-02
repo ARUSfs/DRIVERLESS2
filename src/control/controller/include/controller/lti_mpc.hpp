@@ -90,16 +90,17 @@ public:
     void set_reference_trajectory(const std::vector<Point> &global_reference_trajectory, const std::vector<float> &vx_profile, const std::vector<float> &s, 
         const Point &position, double &yaw, double &vx, size_t index_global){
 
-        if (vx >= 2.0){
+        if (vx >= 3.0){
             v_linearisation = vx;
         } else {
-            v_linearisation = 2.0;
+            v_linearisation = 3.0;
         }
         prediction_speed_ = Eigen::VectorXd::Zero(kPredictionHorizon+1);
         prediction_speed_(0) = v_linearisation;
 
         double s_predicted = s[index_global];
-        // double ds = v_linearisation * kTsMPC;
+
+        // Target trajectory consists of lateral and angular deviation from car frame of reference trajectory
 
         target_trajectory_.resize(2*kPredictionHorizon);
 
@@ -114,7 +115,7 @@ public:
 
             s_predicted += v_interp * kTsMPC;
             
-            if (s_predicted >= s[s.size()-1]) {s_predicted -= s[s.size()-1];}
+            if (s_predicted >= s[s.size()-1]) {s_predicted -= s[s.size()-1];} // Global reference can be a closed lap
         }
     }
 
@@ -128,21 +129,24 @@ public:
         kCostAngularDeviation = cost_angular;
         kCostLateralDeviation = cost_lateral;
         kCostSteeringDelta = cost_delta;
+
         kCompensationSteps = compensation_steps;
         kPredictionHorizon = prediction_horizon;
         kTsMPC = ts_mpc;
+
         kMass = mass;
         kWheelbase = wheelbase;
         kIzz = Izz;
         kWeightDistributionRear = r_cdg;
         kCorneringStiffnessF = cornering_stiffness_front;
         kCorneringStiffnessR = cornering_stiffness_rear;
+        kLf = kWheelbase * kWeightDistributionRear;
+        kLr = kWheelbase - kLf;
+
         kSteerModelU = steer_u;
         kSteerModelDelta = steer_delta;
         kSteerModelDeltaV = steer_delta_v;
 
-        kLf = kWheelbase * kWeightDistributionRear;
-        kLr = kWheelbase - kLf;
     }
 
 private:
@@ -200,6 +204,14 @@ private:
         Ac.resize(6, 6);
         Bc.resize(6, 1);
 
+        /** Linear bicycle model with extended 2nd order steering dynamics
+
+            dx/dt = A*x + B*u
+
+            x = [y, vy, yaw, yawrate, delta, d(delta)/dt]
+            u = [0, 0, 0, 0, 0, input_delta]
+        */
+        
         Ac << 0, 1, v_linearisation, 0, 0, 0,
         0, (kCorneringStiffnessF+kCorneringStiffnessR)/(kMass*v_linearisation), 0, 
         (kLf*kCorneringStiffnessF - kLr*kCorneringStiffnessR)/(kMass*v_linearisation) - v_linearisation, -kCorneringStiffnessF/kMass, 0, 
@@ -252,7 +264,7 @@ private:
 
                 yaw_interp = std::atan2((XYdata[i+1].y-XYdata[i].y),(XYdata[i+1].x-XYdata[i].x));
 
-                v_interp = std::max(2.0, vx_profile[i] + alpha * (vx_profile[i+1] - vx_profile[i]));
+                v_interp = std::max(3.0, vx_profile[i] + alpha * (vx_profile[i+1] - vx_profile[i]));
 
                 point.x = x_interp;
                 point.y = y_interp;

@@ -15,7 +15,7 @@ controller:
     first_lap_steer_control: "PP"     # PP, MPC
     optimized_steer_control: "MPC"    # PP, MPC
     speed_timer_frequency: 100.0      # speed timer frecuency in Hz
-    steer_timer_frequency: 50.0       # steer timer frecuency in Hz
+    steer_timer_frequency: 100.0       # steer timer frecuency in Hz
 
     # PP
     look_ahead_distance: 4.0
@@ -23,22 +23,22 @@ controller:
 
     # MPC
     cost_lateral_error: 5.0
-    cost_angular_error: 10.0
-    cost_steering_delta: 3000.0
+    cost_angular_error: 15.0
+    cost_steering_delta: 2000.0
     compensation_steps: 2
-    cornering_stiffness_front: -25440.0
-    cornering_stiffness_rear: -22560.0
+    cornering_stiffness_front: -22440.0
+    cornering_stiffness_rear: -18560.0
     prediction_horizon: 65
     ts_mpc: 0.02                          # time step for the MPC   
-    steer_model_u: 307.0                  # input coef for steer model
-    steer_model_delta: -306.3             # delta coef for steer model 
-    steer_model_delta_v: -25.69           # delta vel coef for steer model 
+    steer_model_u: 224.1                  # input coef for steer model
+    steer_model_delta: -220.2             # delta coef for steer model 
+    steer_model_delta_v: -17.67           # delta vel coef for steer model 
 
     # PID
     target: 5.0
     braking_decc: 3.0
     KP: 10.0
-    KI: 0.55
+    KI: 0.1
     KD: 0.01
 
     # Cmd
@@ -52,7 +52,7 @@ controller:
     rho: 1.225                        # air density
     CdA: 1.2                          # drag coefficient
     Crr: 0.01                         # rolling resistance coefficient
-    mass: 270.0                       # mass of the vehicle
+    mass: 260.0                       # mass of the vehicle
     Izz: 180.0                        # yaw inertia
     g: 9.81                           # gravity
 
