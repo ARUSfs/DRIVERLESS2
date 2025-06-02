@@ -103,5 +103,6 @@ class Perception : public rclcpp::Node
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
 
-        void process_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& cones_map);
+        void process_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& cones_map, 
+                           std::map<std::pair<int, int>, double>* ground_grid);
 };

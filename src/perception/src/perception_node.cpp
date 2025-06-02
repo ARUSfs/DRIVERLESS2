@@ -8,7 +8,7 @@
 #include "perception/perception_node.hpp"
 
 
-int BUFF_SIZE = 5; 
+int BUFF_SIZE = 10; 
 
 
 Perception::Perception() : Node("Perception")
@@ -74,14 +74,20 @@ Perception::Perception() : Node("Perception")
         "/perception/map2", 10);
 }
 
-void Perception::process_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& cones_map) {
+void Perception::process_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& cones_map,
+                               std::map<std::pair<int, int>, double>* ground_grid) {
     
     // Define the necessary variables
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZI>);
     std::vector<PointXYZColorScore> clusters_centers;
 
-    GroundFiltering::pillar_ground_filter(cloud, cloud_filtered, cloud_plane, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kNumberSections);
+    GroundFiltering::pillar_ground_filter(cloud, cloud_filtered, cloud_plane, kThresholdGroundFilter, kMaxXFov, 
+                                            kMaxYFov, kNumberSections, ground_grid);
+    // sensor_msgs::msg::PointCloud2 filtered_msg;
+    // pcl::toROSMsg(*cloud_filtered, filtered_msg);
+    // filtered_msg.header.frame_id = "/rslidar";
+    // filtered_pub_->publish(filtered_msg);
     
     // FEC
     pcl::search::KdTree<pcl::PointXYZI>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZI>);
@@ -145,6 +151,44 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         return;
     }
 
+    
+
+
+    GroundFiltering::ransac_ground_filter(cloud,  cloud_filtered,  cloud_plane,  coefficients, 0.05);
+    cloud_filtered->points.clear();
+    cloud_plane->points.clear();
+
+    std::cout << coefficients->values.size() << " coefficients found." << std::endl;
+    std::cout << "Ground plane: " << coefficients->values[0] << "x + " 
+              << coefficients->values[1] << "y + " << coefficients->values[2] << "z + "
+              << coefficients->values[3] << " = 0" << std::endl;
+
+
+    // Paso 1: normalizar el vector normal del plano
+    Eigen::Vector3f plane_normal(coefficients->values[0],
+                                 coefficients->values[1],
+                                 coefficients->values[2]);
+    plane_normal.normalize();
+
+    // Paso 2: calcular la rotación que alinea la normal del plano con el eje Z
+    Eigen::Quaternionf q = Eigen::Quaternionf::FromTwoVectors(plane_normal, Eigen::Vector3f::UnitZ());
+    Eigen::Matrix3f rotation_matrix = q.toRotationMatrix();
+
+    // Paso 3: calcular un punto sobre el plano (usamos -d * normal)
+    float d = coefficients->values[3];
+    Eigen::Vector3f point_on_plane = -d * plane_normal;
+
+    // Paso 4: rotar ese punto
+    Eigen::Vector3f rotated_point = rotation_matrix * point_on_plane;
+
+    // Paso 5: construir la matriz 4x4 final con rotación + traslación
+    Eigen::Matrix4f transform3 = Eigen::Matrix4f::Identity();
+    transform3.block<3,3>(0,0) = rotation_matrix;
+    transform3.block<3,1>(0,3) = -rotated_point;
+
+    pcl::transformPointCloud(*cloud, *cloud, transform3);
+
+
     if (cloud_buffer_.size() == 0) 
     {
         cloud_buffer_.push_back(cloud);
@@ -167,10 +211,27 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     
     pcl::PointCloud<pcl::PointXYZ>::Ptr actual_cones(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cones(new pcl::PointCloud<pcl::PointXYZ>);
-    process_cloud(cloud, actual_cones);
+    std::map<std::pair<int, int>, double> actual_ground_grid;
+    std::map<std::pair<int, int>, double> prev_ground_grid;
+
+    process_cloud(cloud, actual_cones, &actual_ground_grid);
     auto prev_cloud = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>(*(cloud_buffer_[0]));
     pcl::transformPointCloud(*prev_cloud, *prev_cloud, transform);
-    process_cloud(prev_cloud, prev_cones);
+    process_cloud(prev_cloud, prev_cones, &prev_ground_grid);
+
+
+    std::vector<double> ground_diffs;
+    for (auto [key, value] : actual_ground_grid) 
+    {
+        if (prev_ground_grid.find(key) != prev_ground_grid.end()) 
+        {
+            double diff = value - prev_ground_grid[key];
+            // std::cout << "(" << key.first << ", " << key.second << "): " << diff;
+            if (std::abs(diff)<0.3) ground_diffs.push_back(diff);
+        }
+    }
+    double mean_diff = std::accumulate(ground_diffs.begin(), ground_diffs.end(), 0.0) / ground_diffs.size();
+    std::cout << "Mean ground difference: " << mean_diff << std::endl;
 
     
     pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
@@ -195,15 +256,15 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Eigen::Matrix4f transform2;
     pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ> svd;
     svd.estimateRigidTransformation(*paired_src, *paired_dst, transform2);
+    // transform(2, 3) = mean_diff;
 
-    pcl::transformPointCloud(*prev_cones, *prev_cones, transform2);
-    
-    *actual_cones += *prev_cones;
-    for (auto point : actual_cones->points) 
-    {
-        PointXYZColorScore p(point.x, point.y, point.z, 1, 0.0f); // color 1 for actual cones
-        final_map->points.push_back(p);
-    }
+    // pcl::transformPointCloud(*prev_cones, *prev_cones, transform2);
+    // *actual_cones += *prev_cones;
+    // for (auto point : actual_cones->points) 
+    // {
+    //     PointXYZColorScore p(point.x, point.y, point.z, 1, 0.0f); // color 1 for actual cones
+    //     final_map->points.push_back(p);
+    // }
 
     for (auto& pcl : cloud_buffer_) 
     {
@@ -249,8 +310,16 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     // Apply the ground filter function
     // GroundFiltering::grid_ground_filter(acum_cloud, cloud_filtered, cloud_plane, coefficients, kThresholdGroundFilter, kMaxXFov, kMaxYFov, 
     //     kMaxZFov, kNumberSections, kAngleThreshold);
-    GroundFiltering::pillar_ground_filter(acum_cloud, cloud_filtered, cloud_plane, kThresholdGroundFilter, kMaxXFov, kMaxYFov, kNumberSections);
+    // GroundFiltering::pillar_ground_filter(acum_cloud, cloud_filtered, cloud_plane, 0.1, kMaxXFov, kMaxYFov, kNumberSections);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Ground Filter Time: %f", this->now().seconds() - start_time);
+    *cloud_filtered = *acum_cloud;
+
+    // Publish the filtered clouds
+    // sensor_msgs::msg::PointCloud2 filtered_msg;
+    // pcl::toROSMsg(*acum_cloud, filtered_msg);
+    // filtered_msg.header.frame_id = "/rslidar";
+    // filtered_pub_->publish(filtered_msg);
+
 
     // FEC
     pcl::search::KdTree<pcl::PointXYZI>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZI>);
@@ -258,7 +327,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     FastEuclideanClustering<pcl::PointXYZI> fec;
     fec.setInputCloud(cloud_filtered);
     fec.setSearchMethod(tree);
-    fec.setClusterTolerance(0.5);
+    fec.setClusterTolerance(0.4);
     fec.setQuality(0.5);
     fec.setMinClusterSize(4);     
     fec.setMaxClusterSize(200);

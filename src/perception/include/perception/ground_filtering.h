@@ -28,7 +28,7 @@ namespace GroundFiltering
         segmentation.setOptimizeCoefficients(true);
         segmentation.setModelType(pcl::SACMODEL_PLANE);
         segmentation.setMethodType(pcl::SAC_RANSAC);
-        segmentation.setMaxIterations(50);
+        segmentation.setMaxIterations(200);
         segmentation.setDistanceThreshold(threshold);
 
         // Aply the segmentation
@@ -147,16 +147,17 @@ namespace GroundFiltering
 
     void pillar_ground_filter(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, 
         pcl::PointCloud<pcl::PointXYZI>::Ptr& ground_cloud, double threshold, double Mx, double My,
-        int number_sections)
+        int number_sections, std::map<std::pair<int, int>, double>* ground_grid)
     {
         cloud_filtered->clear();
         ground_cloud->clear();
         std::map<std::pair<int, int>, pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_grid;
+    
 
 
         for (const auto& point : cloud->points) 
         {
-            int x_index = static_cast<int>((point.x + Mx) / (2 * Mx) * number_sections);
+            int x_index = static_cast<int>((point.x/Mx) * number_sections);
             int y_index = static_cast<int>((point.y + My) / (2 * My) * number_sections);
 
             if (x_index < 0 || x_index >= number_sections || y_index < 0 || y_index >= number_sections)
@@ -177,10 +178,8 @@ namespace GroundFiltering
             if (max_pt.z - min_pt.z < threshold) 
             {
                 *ground_cloud += *cell_cloud;
-            // } else {
-            //     *cloud_filtered += *cell_cloud;
-            // }
-            } else if (max_pt.z - min_pt.z < 0.4 && max_pt.z < 0.5){ // Avoid hill pillar such as walls or buildings
+                (*ground_grid)[key] = (max_pt.z+min_pt.z)/2; // Store the height of the ground in this cell
+            } else if (max_pt.z - min_pt.z < 0.4 && max_pt.z < 1.0){ // Avoid high pillars such as walls or buildings
                 pcl::PointCloud<pcl::PointXYZI>::Ptr centroid (new pcl::PointCloud<pcl::PointXYZI>);
                 pcl::PointCloud<pcl::PointXYZI>::Ptr points_to_add (new pcl::PointCloud<pcl::PointXYZI>);
                 for (auto& point : cell_cloud->points) {   
@@ -203,8 +202,8 @@ namespace GroundFiltering
                         // point.intensity = 300.0;
                         points_to_add->points.push_back(point);
                     } else {
-                        // min_outer_z = std::min(min_outer_z, point.z);
-                        // max_outer_z = std::max(max_outer_z, point.z);
+                        min_outer_z = std::min(min_outer_z, point.z);
+                        max_outer_z = std::max(max_outer_z, point.z);
                         // point.intensity = 0.0; 
                     }
                 }

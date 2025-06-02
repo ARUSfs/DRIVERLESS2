@@ -30,7 +30,7 @@ namespace Utils
             double min_z = min_point.z;
 
             // Filter the cluster by size and keep the center of the cluster
-            if ((max_z - min_z) < 0.4 && min_z < 0.0 && (max_x - min_x)<  0.5 && (max_y - min_y) < 0.5)
+            if ((max_z - min_z) < 0.5 && min_z < 1.0 && (max_x - min_x)<  0.6 && (max_y - min_y) < 0.6)
             {
                 Eigen::Vector4f centroid;
                 pcl::compute3DCentroid(*cluster_cloud, centroid);
@@ -118,7 +118,7 @@ namespace Utils
             double min_z = min_point.z;
 
             // Filter the cluster by size and delete the ones that are too small or too large
-            if ((max_z - min_z) < 0.10 || (max_z - min_z) > 0.4 || (max_x - min_x) > 0.5 || (max_y - min_y) > 0.5)
+            if ((max_z - min_z) < 0.10 || (max_z - min_z) > 0.5 || (max_x - min_x) > 0.6 || (max_y - min_y) > 0.6)
             {
                 clusters_centers.erase(clusters_centers.begin() + i);
                 cluster_indices.erase(cluster_indices.begin() + i);
