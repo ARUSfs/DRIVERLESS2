@@ -31,6 +31,7 @@
 #include "simplex_tree.hpp"
 #include "utils.hpp"
 
+#include <std_msgs/msg/float32.hpp>
 
 /**
  * @brief Class containing the Path Planning node.
@@ -124,6 +125,7 @@ class PathPlanning : public rclcpp::Node
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
         rclcpp::Publisher<common_msgs::msg::TrackLimits>::SharedPtr track_limits_pub_;
 
+        rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr time_pub_;
 
         /**
          * @brief Callback function for the perception topic.

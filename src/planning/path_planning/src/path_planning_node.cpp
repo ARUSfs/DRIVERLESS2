@@ -79,7 +79,9 @@ PathPlanning::PathPlanning() : Node("path_planning")
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
     track_limits_pub_ = this->create_publisher<common_msgs::msg::TrackLimits>(kTrackLimitsTopic, 10);
-
+    
+    time_pub_ = this->create_publisher<std_msgs::msg::Float32>(
+        "/path_planning/time", 10);
 }
 
 void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
@@ -298,6 +300,9 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     if (kDebug) {
         double trajectory_time = this->now().seconds() - start;
         RCLCPP_INFO(this->get_logger(), "Trajectory time: %f", trajectory_time);
+        auto time_msg = std_msgs::msg::Float32();
+        time_msg.data = trajectory_time;
+        time_pub_->publish(time_msg);
     }
 }
 
@@ -454,7 +459,9 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     common_msgs::msg::Trajectory trajectory_msg;
     double acum = 0.0;
 
-    std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile;
+    std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile, k1;
+    std::vector<double> indices;
+
 
     if (route_size <= 3){
         return trajectory_msg;
@@ -495,9 +502,9 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
         control_points, degree);
 
     // Add the points to the trajectory message
-    for (double i = 0; i<route_size*10-1; i++){
-        Eigen::Vector2d point_1 = b_spline(i/(10*route_size));
-        Eigen::Vector2d point_2 = b_spline((i+1)/(10*route_size));
+    for (double i = 0; i<route_size*15-1; i++){
+        Eigen::Vector2d point_1 = b_spline(i/(15*route_size));
+        Eigen::Vector2d point_2 = b_spline((i+1)/(15*route_size));
         double x = point_1(0);
         double y = point_1(1);
         double dx = point_2(0)-x;
@@ -512,28 +519,77 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
         acum += dist;
         s.push_back(acum);
         speed_profile.push_back(0.0);
+        indices.push_back(i/(15*route_size));
     }
 
-    xp.push_back(xp.back());
-    yp.push_back(yp.back());
+    // xp.push_back(xp.back());
+    // yp.push_back(yp.back());
 
-    for (int i = 0; i<xp.size()-1; i++){
-        xpp.push_back(xp[i+1]-xp[i]);
-        ypp.push_back(yp[i+1]-yp[i]);
-    }
-    xpp.push_back(xpp.back());
-    ypp.push_back(ypp.back());
+    // for (int i = 0; i<xp.size()-1; i++){
+    //     xpp.push_back(xp[i+1]-xp[i]);
+    //     ypp.push_back(yp[i+1]-yp[i]);
+    // }
+    // xpp.push_back(xpp.back());
+    // ypp.push_back(ypp.back());
 
-    for (int i = 0; i<xpp.size(); i++){
-        double den = pow(pow(xp[i],2)+pow(yp[i],2), 1.5);
-        double val;
-        if (std::abs(den) < 0.001){
-            val = 0;
-        } else{
-            val = (xp[i]*ypp[i]-yp[i]*xpp[i])/den;
+    // for (int i = 0; i<xpp.size(); i++){
+    //     double den = pow(pow(xp[i],2)+pow(yp[i],2), 1.5);
+    //     double val;
+    //     if (std::abs(den) < 0.001){
+    //         val = 0;
+    //     } else{
+    //         val = (xp[i]*ypp[i]-yp[i]*xpp[i])/den;
+    //     }
+    //     k.push_back(val);
+    // }
+
+    for (int i = 1; i < trajectory_msg.points.size()-1; i++){
+        double k_val_1, k_val_2;
+
+        auto p1 = trajectory_msg.points[i-1];
+        auto p2 = trajectory_msg.points[i];
+        auto p3 = trajectory_msg.points[i+1];
+
+        double a = hypot(p2.x-p1.x, p2.y-p1.y);
+        double b = hypot(p3.x-p2.x, p3.y-p2.y);
+        double c = hypot(p3.x-p1.x, p3.y-p1.y);
+        
+        if (a < 0.001 || b < 0.001 || c < 0.001) { // Avoid division by zero
+            k_val_1 = 0.0;
+        } else {
+            double area = 0.5 * (p1.x*(p2.y-p3.y) + p2.x*(p3.y-p1.y) + p3.x*(p1.y-p2.y));
+            k_val_1 = 4*area/(a*b*c);
         }
-        k.push_back(val);
+
+        auto p4 = trajectory_msg.points[i-2];
+        auto p5 = trajectory_msg.points[i+2];
+        
+        double d = hypot(p2.x-p4.x, p2.y-p4.y);
+        double e = hypot(p5.x-p2.x, p5.y-p2.y);
+        double f = hypot(p5.x-p4.x, p5.y-p4.y);
+        if (d < 0.001 || e < 0.001 || f < 0.001) { // Avoid division by zero
+            k_val_2 = 0.0;
+        } else {
+            double area_2 = 0.5 * (p4.x*(p2.y-p5.y) + p2.x*(p5.y-p4.y) + p5.x*(p4.y-p2.y));
+            k_val_2 = 4*area_2/(d*e*f);
+        }
+
+        k.push_back(k_val_1);
     }
+
+    k.push_back(k.back());
+    k.push_back(k.back());
+    k.insert(k.begin(), k.front());
+    k.insert(k.begin(), k.front());
+    
+    std::vector<double> k_new;
+    k_new.push_back(k[0]);
+    for (int i = 1; i<k.size()-1; i++){
+        k_new.push_back(0.25*k[i-1] + 0.5*k[i] + 0.25*k[i+1]);
+    }
+    k_new.push_back(k.back());
+    
+    //k = k_new;
 
     for (const auto &val : k){
         double v = std::min(kMaxVel, sqrt(kMaxYAcc/std::max(abs(val), 0.001)));
@@ -617,6 +673,10 @@ void PathPlanning::add_to_track_limits(std::vector<ConeXYZColorScore> back_edge)
 
 common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::TriangleVec triang, 
                                                                 std::vector<int> triangles_route){
+    if (triangles_route.size() < 3 || triang.size() < 3) {
+        if (kDebug) RCLCPP_ERROR(this->get_logger(), "Final route is empty in track limits function");
+        return common_msgs::msg::TrackLimits();
+    }
     CDT::Triangle last_triangle = triang[triangles_route.back()];
     CDT::NeighborsArr3 neighbors = last_triangle.neighbors;
     for (int i = 0; i<3; i++){
