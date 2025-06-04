@@ -68,6 +68,8 @@ Perception::Perception() : Node("Perception")
     // Create the publishers
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/filtered_cloud", 10);
+    accumulation_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+        "/perception/accumulation_cloud", 10);
     clusters_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/perception/clusters", 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
@@ -240,14 +242,17 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::PointCloud<pcl::PointXYZ>::Ptr paired_src(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr paired_dst(new pcl::PointCloud<pcl::PointXYZ>);
 
-    for (const auto& pt : prev_cones->points) {
+    for (auto& pt : prev_cones->points) {
         std::vector<int> indices(1);
         std::vector<float> sqr_dists(1);
 
         if (kdtree.nearestKSearch(pt, 1, indices, sqr_dists) > 0) {
             if (sqr_dists[0] <= 1.0f) { // 1 metro al cuadrado
+                pt.z = 0;
+                pcl::PointXYZ pt_dest = actual_cones->points[indices[0]];
+                pt_dest.z = 0; // Height at 0 to ensure the transformation is in the XY plane
                 paired_src->points.push_back(pt);
-                paired_dst->points.push_back(actual_cones->points[indices[0]]);
+                paired_dst->points.push_back(pt_dest);
             }
         }
     }
@@ -256,7 +261,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     Eigen::Matrix4f transform2;
     pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ> svd;
     svd.estimateRigidTransformation(*paired_src, *paired_dst, transform2);
-    // transform(2, 3) = mean_diff;
+    
 
     // pcl::transformPointCloud(*prev_cones, *prev_cones, transform2);
     // *actual_cones += *prev_cones;
@@ -275,7 +280,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     }
 
 
-    std::cout << "Accumulation time: " << this->now().seconds() - start_time << " seconds" << std::endl;
 
     // Publish the map cloud
     // sensor_msgs::msg::PointCloud2 map_msg2;
@@ -292,12 +296,21 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     cloud_buffer_.insert(cloud_buffer_.begin(), cloud);
 
 
-    // Publish the filtered cloud
-    // sensor_msgs::msg::PointCloud2 filtered_msg;
-    // pcl::toROSMsg(*acum_cloud, filtered_msg);
-    // filtered_msg.header.frame_id = "/rslidar";
-    // filtered_pub_->publish(filtered_msg);
+    pcl::VoxelGrid<pcl::PointXYZI> voxel_filter;
+    voxel_filter.setInputCloud(acum_cloud);
+    voxel_filter.setLeafSize(0.1f, 0.1f, 0.1f); // Adjust leaf size as needed
+    voxel_filter.filter(*acum_cloud);
 
+
+    // Publish the accumulation cloud
+    sensor_msgs::msg::PointCloud2 acum_msg;
+    pcl::toROSMsg(*acum_cloud, acum_msg);
+    acum_msg.header.frame_id = "/rslidar";
+    accumulation_pub_->publish(acum_msg);
+
+    std::cout << "Accumulation time: " << this->now().seconds() - start_time << " seconds" << std::endl;
+
+    // return;
 
     if (kCrop) 
     {
@@ -330,7 +343,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     fec.setClusterTolerance(0.4);
     fec.setQuality(0.5);
     fec.setMinClusterSize(4);     
-    fec.setMaxClusterSize(200);
+    fec.setMaxClusterSize(150+20*BUFF_SIZE);
     fec.segment(cluster_indices);
 
     // Extract the clusters from the point cloud

@@ -21,7 +21,7 @@ perception:
     radius: 0.15
 
     #Parameters of scoring
-    threshold_scoring: 0.3
+    threshold_scoring: 0.0
 
     #Parameters of coloring
     kColor: false
