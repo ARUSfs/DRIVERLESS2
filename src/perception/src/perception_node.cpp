@@ -117,6 +117,41 @@ void Perception::process_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl:
     }
 }
 
+
+void Perception::ground_align(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::ModelCoefficients::Ptr& coefficients) {
+    
+    if (coefficients->values.size() != 4) {
+        RCLCPP_ERROR(this->get_logger(), "Invalid coefficients size: %zu", coefficients->values.size());
+        return;
+    }
+
+    // Paso 1: normalizar el vector normal del plano
+    Eigen::Vector3f plane_normal(coefficients->values[0],
+                                 coefficients->values[1],
+                                 coefficients->values[2]);
+    plane_normal.normalize();
+
+    // Paso 2: calcular la rotación que alinea la normal del plano con el eje Z
+    Eigen::Quaternionf q = Eigen::Quaternionf::FromTwoVectors(plane_normal, Eigen::Vector3f::UnitZ());
+    Eigen::Matrix3f rotation_matrix = q.toRotationMatrix();
+
+    // Paso 3: calcular un punto sobre el plano (usamos -d * normal)
+    float d = coefficients->values[3];
+    Eigen::Vector3f point_on_plane = -d * plane_normal;
+
+    // Paso 4: rotar ese punto
+    Eigen::Vector3f rotated_point = rotation_matrix * point_on_plane;
+
+    // Paso 5: construir la matriz 4x4 final con rotación + traslación
+    Eigen::Matrix4f transform3 = Eigen::Matrix4f::Identity();
+    transform3.block<3,3>(0,0) = rotation_matrix;
+    transform3.block<3,1>(0,3) = -rotated_point;
+
+    pcl::transformPointCloud(*cloud, *cloud, transform3);
+}
+
+
+
 void Perception::state_callback(const common_msgs::msg::State::SharedPtr state_msg)
 {
     vx_ = state_msg->vx;
@@ -154,52 +189,51 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     }
 
     
+    int SUBDIVISIONS = 4;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr aligned_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    for (int i = 0; i < SUBDIVISIONS; i++) 
+    {
+        for (int j = 0; j < SUBDIVISIONS; j++) 
+        {
+            pcl::PointCloud<pcl::PointXYZI>::Ptr sub_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+            
+            Cropping::crop_filter_cropbox(cloud, sub_cloud, 
+                i * (kMaxXFov / SUBDIVISIONS), 
+                -kMaxYFov + (j * (2 * kMaxYFov / SUBDIVISIONS)), 
+                -2.0,
+                kMaxXFov - (i * (kMaxXFov / SUBDIVISIONS)), 
+                kMaxYFov - (j * (2 * kMaxYFov / SUBDIVISIONS)), 
+                kMaxZFov);
+
+            if (sub_cloud->size() > 0) 
+            {
+                pcl::PointCloud<pcl::PointXYZI>::Ptr sub_cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
+                pcl::PointCloud<pcl::PointXYZI>::Ptr sub_cloud_plane(new pcl::PointCloud<pcl::PointXYZI>);
+                pcl::ModelCoefficients::Ptr sub_coefficients(new pcl::ModelCoefficients);
+                GroundFiltering::ransac_ground_filter(sub_cloud, sub_cloud_filtered, sub_cloud_plane, sub_coefficients, 0.05);
+                ground_align(sub_cloud, sub_coefficients);
+                *aligned_cloud += *sub_cloud;
+            }
+        }
+    }
+
+    // GroundFiltering::ransac_ground_filter(cloud,  cloud_filtered,  cloud_plane,  coefficients, 0.05);
+    // cloud_filtered->points.clear();
+    // cloud_plane->points.clear();
 
 
-    GroundFiltering::ransac_ground_filter(cloud,  cloud_filtered,  cloud_plane,  coefficients, 0.05);
-    cloud_filtered->points.clear();
-    cloud_plane->points.clear();
-
-    std::cout << coefficients->values.size() << " coefficients found." << std::endl;
-    std::cout << "Ground plane: " << coefficients->values[0] << "x + " 
-              << coefficients->values[1] << "y + " << coefficients->values[2] << "z + "
-              << coefficients->values[3] << " = 0" << std::endl;
-
-
-    // Paso 1: normalizar el vector normal del plano
-    Eigen::Vector3f plane_normal(coefficients->values[0],
-                                 coefficients->values[1],
-                                 coefficients->values[2]);
-    plane_normal.normalize();
-
-    // Paso 2: calcular la rotación que alinea la normal del plano con el eje Z
-    Eigen::Quaternionf q = Eigen::Quaternionf::FromTwoVectors(plane_normal, Eigen::Vector3f::UnitZ());
-    Eigen::Matrix3f rotation_matrix = q.toRotationMatrix();
-
-    // Paso 3: calcular un punto sobre el plano (usamos -d * normal)
-    float d = coefficients->values[3];
-    Eigen::Vector3f point_on_plane = -d * plane_normal;
-
-    // Paso 4: rotar ese punto
-    Eigen::Vector3f rotated_point = rotation_matrix * point_on_plane;
-
-    // Paso 5: construir la matriz 4x4 final con rotación + traslación
-    Eigen::Matrix4f transform3 = Eigen::Matrix4f::Identity();
-    transform3.block<3,3>(0,0) = rotation_matrix;
-    transform3.block<3,1>(0,3) = -rotated_point;
-
-    pcl::transformPointCloud(*cloud, *cloud, transform3);
-
+    // ground_align(cloud, coefficients);
+    
 
     if (cloud_buffer_.size() == 0) 
     {
-        cloud_buffer_.push_back(cloud);
+        cloud_buffer_.push_back(aligned_cloud);
         return;
     }
 
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr acum_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-    *acum_cloud += *cloud;
+    *acum_cloud += *aligned_cloud;
 
     Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
     transform(0, 3) = -vx_ * dt; // x translation
@@ -216,7 +250,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     std::map<std::pair<int, int>, double> actual_ground_grid;
     std::map<std::pair<int, int>, double> prev_ground_grid;
 
-    process_cloud(cloud, actual_cones, &actual_ground_grid);
+    process_cloud(aligned_cloud, actual_cones, &actual_ground_grid);
     auto prev_cloud = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>(*(cloud_buffer_[0]));
     pcl::transformPointCloud(*prev_cloud, *prev_cloud, transform);
     process_cloud(prev_cloud, prev_cones, &prev_ground_grid);
@@ -293,7 +327,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     {
         cloud_buffer_.pop_back();
     }
-    cloud_buffer_.insert(cloud_buffer_.begin(), cloud);
+    cloud_buffer_.insert(cloud_buffer_.begin(), aligned_cloud);
 
 
     pcl::VoxelGrid<pcl::PointXYZI> voxel_filter;
@@ -315,7 +349,10 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     if (kCrop) 
     {
         // Crop the point cloud
-        Cropping::crop_filter_cropbox(acum_cloud, kMaxXFov, kMaxYFov, kMaxZFov);
+        double min_x = 0.0;
+        double min_y = -kMaxYFov;
+        double min_z = 0.08;
+        Cropping::crop_filter_cropbox(acum_cloud, acum_cloud, min_x, min_y, min_z, kMaxXFov, kMaxYFov, kMaxZFov);
         if (kDebug) RCLCPP_INFO(this->get_logger(), "Cropping Time: %f", this->now().seconds() - start_time);
     }
 

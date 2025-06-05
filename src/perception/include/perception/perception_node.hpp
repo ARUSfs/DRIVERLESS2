@@ -108,4 +108,6 @@ class Perception : public rclcpp::Node
 
         void process_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& cones_map, 
                            std::map<std::pair<int, int>, double>* ground_grid);
+
+        void ground_align(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::ModelCoefficients::Ptr& coefficients);
 };

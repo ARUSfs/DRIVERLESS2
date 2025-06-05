@@ -8,7 +8,7 @@ perception:
     crop: true
     max_x_fov: 50.0
     max_y_fov: 25.0
-    max_z_fov: 1.5
+    max_z_fov: 10.0
 
     # Parameters of ground filter
     threshold_ground_filter: 0.05
