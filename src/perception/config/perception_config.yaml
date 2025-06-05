@@ -12,7 +12,7 @@ perception:
 
     # Parameters of ground filter
     threshold_ground_filter: 0.05
-    number_sections: 100
+    number_sections: 30
     angle_threshold: 35.0
 
     # Parameters of clustering and filtering

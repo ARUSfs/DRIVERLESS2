@@ -50,6 +50,7 @@ class Perception : public rclcpp::Node
         double dt;
         std::vector<double> final_times;
         std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_buffer_;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cones_;
 
 
         // Topics
@@ -106,8 +107,7 @@ class Perception : public rclcpp::Node
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
 
-        void process_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& cones_map, 
-                           std::map<std::pair<int, int>, double>* ground_grid);
+        void process_cloud(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& cones_map);
 
         void ground_align(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::ModelCoefficients::Ptr& coefficients);
 };
