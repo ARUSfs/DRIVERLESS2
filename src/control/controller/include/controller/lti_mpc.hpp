@@ -63,6 +63,7 @@ public:
 
             PSI.middleRows(i * C.rows(), C.rows()) = C * Apow;
             Q_YPS.middleRows(i * Q.rows(), Q.rows()) = Q * YPS.middleRows(i * C.rows(), C.rows());            
+
         }
 
         for (int i = 0; i < kPredictionHorizon; i++){
@@ -79,12 +80,14 @@ public:
 
         double delta_target = delta_ + U(0,0);
 
-        linearize_model(prediction_speed_(0), A, B);
-        discretize_model(A, B, kTsMPC, Ad, Bd);
+        if (prediction_speed_(0) > 2.0){
+            linearize_model(prediction_speed_(0), A, B);
+            discretize_model(A, B, kTsMPC, Ad, Bd);
+            Eigen::VectorXd x_next = Ad* x_0_ + Bd * delta_target;
+            target_r_ = x_next(3);  // Desired yawrate from mpc
+        }
 
-        Eigen::VectorXd x_next = Ad* x_0_ + Bd * delta_target;
-        target_r_ = x_next(3);
-
+        // Delay compensation
         for (int i = 1; i < kCompensationSteps + 1; i++){
             delta_target += U(i,0);
         }
@@ -98,10 +101,10 @@ public:
     void set_reference_trajectory(const std::vector<Point> &global_reference_trajectory, const std::vector<float> &vx_profile, const std::vector<float> &s, 
         const Point &position, double &yaw, double &vx, size_t index_global){
 
-        if (vx >= 3.0){
+        if (vx >= 2.0){
             v_linearisation = vx;
         } else {
-            v_linearisation = 3.0;
+            v_linearisation = 2.0;
         }
         prediction_speed_ = Eigen::VectorXd::Zero(kPredictionHorizon+1);
         prediction_speed_(0) = v_linearisation;
@@ -163,7 +166,7 @@ private:
     double delta_{0.0};
     double delta_v_{0.0};
     double yaw_interp{0.0};
-    double v_interp{0.0};
+    double v_interp{2.0};
 
     Eigen::VectorXd prediction_speed_;
 
@@ -271,8 +274,8 @@ private:
                 double y_interp = XYdata[i].y + alpha * (XYdata[i + 1].y - XYdata[i].y);
 
                 yaw_interp = std::atan2((XYdata[i+1].y-XYdata[i].y),(XYdata[i+1].x-XYdata[i].x));
-
-                v_interp = std::max(3.0, vx_profile[i] + alpha * (vx_profile[i+1] - vx_profile[i]));
+                
+                v_interp = std::max(2.0, vx_profile[i] + alpha * (vx_profile[i+1] - vx_profile[i]));
 
                 point.x = x_interp;
                 point.y = y_interp;

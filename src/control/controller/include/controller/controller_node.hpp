@@ -53,7 +53,7 @@ private:
     double delta_;
 
     double v_delta_{0.0};
-    double prev_delta_;
+    double prev_delta_{0.0};
     double target_speed_;
 
     double acc_cmd_;
