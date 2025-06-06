@@ -52,12 +52,12 @@ private:
     double r_;
     double delta_;
 
-    double v_delta_;
+    double v_delta_{0.0};
     double prev_delta_;
     double target_speed_;
 
     double acc_cmd_;
-    double delta_cmd_;
+    double delta_cmd_{0.0};
     bool run_check_ = false;
     bool optimized_ = false;
 

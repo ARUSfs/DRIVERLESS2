@@ -12,6 +12,8 @@ public:
         C << 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0;    
     }
     
+    double target_r_{0.0};
+
     /**
      * @brief Calculate steering angle command using LTI-MPC
      */
@@ -76,6 +78,12 @@ public:
         U = A_mpc.llt().solve(b_mpc);
 
         double delta_target = delta_ + U(0,0);
+
+        linearize_model(prediction_speed_(0), A, B);
+        discretize_model(A, B, kTsMPC, Ad, Bd);
+
+        Eigen::VectorXd x_next = Ad* x_0_ + Bd * delta_target;
+        target_r_ = x_next(3);
 
         for (int i = 1; i < kCompensationSteps + 1; i++){
             delta_target += U(i,0);

@@ -22,17 +22,17 @@ controller:
     optimized_look_ahead_distance: 7.0
 
     # MPC
-    cost_lateral_error: 5.0
-    cost_angular_error: 15.0
+    cost_lateral_error: 10.0
+    cost_angular_error: 5.0
     cost_steering_delta: 2000.0
     compensation_steps: 2
-    cornering_stiffness_front: -22440.0
-    cornering_stiffness_rear: -18560.0
+    cornering_stiffness_front: -15060.0
+    cornering_stiffness_rear: -18053.0
     prediction_horizon: 65
     ts_mpc: 0.02                          # time step for the MPC   
-    steer_model_u: 224.1                  # input coef for steer model
-    steer_model_delta: -220.2             # delta coef for steer model 
-    steer_model_delta_v: -17.67           # delta vel coef for steer model 
+    steer_model_u: 183.1                  # input coef for steer model
+    steer_model_delta: -182.3             # delta coef for steer model 
+    steer_model_delta_v: -15.89           # delta vel coef for steer model 
 
     # PID
     target: 5.0
@@ -53,7 +53,7 @@ controller:
     CdA: 1.2                          # drag coefficient
     Crr: 0.01                         # rolling resistance coefficient
     mass: 260.0                       # mass of the vehicle
-    Izz: 180.0                        # yaw inertia
+    Izz: 190.0                        # yaw inertia
     g: 9.81                           # gravity
 
     debug: true
