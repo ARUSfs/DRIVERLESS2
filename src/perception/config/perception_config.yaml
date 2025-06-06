@@ -9,6 +9,8 @@ perception:
     filtered_cloud_topic: "/perception/filtered_cloud"
     clusters_cloud_topic: "/perception/clusters_cloud"
 
+    lidar_cog_x_offset: 1.5
+
 
     # Accumulation parameters
     accum_buffer_size: 10

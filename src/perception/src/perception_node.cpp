@@ -19,6 +19,7 @@ Perception::Perception() : Node("Perception")
     this->declare_parameter<std::string>("accum_cloud_topic", "/perception/accumulated_cloud");
     this->declare_parameter<std::string>("filtered_cloud_topic", "/perception/filtered_cloud");
     this->declare_parameter<std::string>("clusters_cloud_topic", "/perception/clusters_cloud");
+    this->declare_parameter<double>("lidar_cog_x_offset", 1.5);
     this->declare_parameter<int>("accum_buffer_size", 10);
     this->declare_parameter<bool>("voxel_filter", false);
     this->declare_parameter<double>("voxel_size_x", 0.1);
@@ -50,6 +51,7 @@ Perception::Perception() : Node("Perception")
     this->get_parameter("accum_cloud_topic", kAccumCloudTopic);
     this->get_parameter("filtered_cloud_topic", kFilteredCloudTopic);
     this->get_parameter("clusters_cloud_topic", kClustersCloudTopic);
+    this->get_parameter("lidar_cog_x_offset", kLidarCogX);
     this->get_parameter("accum_buffer_size", kAccumBufferSize);
     this->get_parameter("voxel_filter", kVoxelFilter);
     this->get_parameter("voxel_size_x", kVoxelSizeX);
@@ -120,7 +122,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
     Eigen::Matrix4f T_lidar_to_cog = Eigen::Matrix4f::Identity();
-    T_lidar_to_cog(0, 3) = 1.5; // x translation
+    T_lidar_to_cog(0, 3) = kLidarCogX; // x translation
     pcl::transformPointCloud(*cloud, *cloud, T_lidar_to_cog);
 
     if (cloud->size() == 0)

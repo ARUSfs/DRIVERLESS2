@@ -61,6 +61,8 @@ class Perception : public rclcpp::Node
         std::string kAccumCloudTopic;
         std::string kFilteredCloudTopic;
         std::string kClustersCloudTopic;
+        
+        double kLidarCogX;
 
         // Accumulation
         int kAccumBufferSize;
