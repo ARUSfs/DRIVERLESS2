@@ -94,7 +94,6 @@ class GraphSlam : public rclcpp::Node
     int kMaxPoseEdges;
     int kMaxLandmarkEdges;
     bool kDebug;
-    double kPosLidarX;
     std::string kPerceptionTopic;
 
     rclcpp::CallbackGroup::SharedPtr collector_callback_group_;

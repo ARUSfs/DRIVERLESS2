@@ -28,7 +28,7 @@ namespace GroundFiltering
         segmentation.setOptimizeCoefficients(true);
         segmentation.setModelType(pcl::SACMODEL_PLANE);
         segmentation.setMethodType(pcl::SAC_RANSAC);
-        segmentation.setMaxIterations(50);
+        segmentation.setMaxIterations(200);
         segmentation.setDistanceThreshold(threshold);
 
         // Aply the segmentation
@@ -144,4 +144,44 @@ namespace GroundFiltering
             }
         }
     }
+
+    void pillar_ground_filter(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, 
+        pcl::PointCloud<pcl::PointXYZI>::Ptr& ground_cloud, double threshold, double Mx, double My,
+        int number_sections)
+    {
+        cloud_filtered->clear();
+        ground_cloud->clear();
+        std::map<std::pair<int, int>, pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_grid;
+    
+
+
+        for (const auto& point : cloud->points) {
+            int x_index = static_cast<int>((point.x/Mx) * number_sections);
+            int y_index = static_cast<int>((point.y + My) / (2 * My) * number_sections);
+
+            if (x_index < 0 || x_index >= number_sections || y_index < 0 || y_index >= number_sections)
+                continue;
+
+            std::pair<int, int> grid_key(x_index, y_index);
+            if (cloud_grid.find(grid_key) == cloud_grid.end()) {
+                cloud_grid[grid_key] = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+            }
+            cloud_grid[grid_key]->points.push_back(point);
+        }
+
+        pcl::PointXYZI min_pt, max_pt;
+        for (const auto& [key, cell_cloud] : cloud_grid) {
+            pcl::getMinMax3D(*cell_cloud, min_pt, max_pt);
+
+            if (max_pt.z - min_pt.z < threshold) {
+                *ground_cloud += *cell_cloud;
+            } else if (max_pt.z - min_pt.z < 0.4 && max_pt.z < 1.0) { // Avoid high pillars such as walls or buildings
+                *cloud_filtered += *cell_cloud;
+            }
+        }
+    }
+
+
+    
+
 } 

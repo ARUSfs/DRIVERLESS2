@@ -21,6 +21,13 @@
 #include "color_estimation.h"
 #include "utils.h"
 #include "common_msgs/msg/state.hpp"
+#include <pcl/registration/icp.h>
+#include "fast_euclidean_clustering.h"
+
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/registration/transformation_estimation_svd.h>
+
+#include <pcl/filters/voxel_grid.h>
 
 
 /**
@@ -37,42 +44,63 @@ class Perception : public rclcpp::Node
 
     private:
         // Variables
-        double vx;
-        double vy;
-        double yaw_rate;
+        double vx_;
+        double vy_;
+        double r_;
         double dt;
         std::vector<double> final_times;
+        std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_buffer_;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cones_;
+        pcl::PointCloud<pcl::PointXYZI>::Ptr acum_cloud_;
 
 
         // Topics
         std::string kLidarTopic;
         std::string kStateTopic;
+        std::string kPerceptionTopic;
+        std::string kAccumCloudTopic;
+        std::string kFilteredCloudTopic;
+        std::string kClustersCloudTopic;
+        
+        double kLidarCogX;
 
-        // Parameters of cropping
+        // Accumulation
+        int kAccumBufferSize;
+        bool kVoxelFilter;
+        double kVoxelSizeX;
+        double kVoxelSizeY;
+        double kVoxelSizeZ;
+
+        // Cropping
         bool kCrop;
         double kMaxXFov;
         double kMaxYFov;
         double kMaxZFov;
 
-        // Parameters of ground filtering
+        // Ground filtering
+        std::string kGroundFilterType;
         double kThresholdGroundFilter;
         int kNumberSections;
         double kAngleThreshold;
 
-        // Parameters of clustering and filtering
+        // Clustering
         int kMinClusterSize;
         int kMaxClusterSize;
-        double kRadius;
+        double kTolerance;
 
-        // Parameters of scroring
+        // Reconstruction
+        bool kReconstruction;
+        double kRecRadius;
+
+        // Scoring
         double kThresholdScoring;
         
-        // Parameters of coloring
+        // Coloring
         bool kColor;
         double kDistanceThreshold;
         double kColoringThreshold;
 
-        // Parameters of debugging
+        
         bool kDebug;
 
 
@@ -82,6 +110,7 @@ class Perception : public rclcpp::Node
 
 
         // Publishers
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr accumulation_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr clusters_pub_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
@@ -96,4 +125,7 @@ class Perception : public rclcpp::Node
          * @brief Callback function for the lidar topic.
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
+
+        void accumulate(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud);
+
 };

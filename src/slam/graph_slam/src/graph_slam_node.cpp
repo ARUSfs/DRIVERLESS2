@@ -23,7 +23,6 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->declare_parameter("max_pose_edges", 10000);
     this->declare_parameter("max_landmark_edges", 10000);
     this->declare_parameter("debug", true);
-    this->declare_parameter("pos_lidar_x", 1.5);
 
     // Get parameters
     this->get_parameter("perception_topic", kPerceptionTopic);
@@ -40,7 +39,6 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->get_parameter("max_pose_edges", kMaxPoseEdges);
     this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
     this->get_parameter("debug", kDebug);
-    this->get_parameter("pos_lidar_x", kPosLidarX);
 
     DA.logger_ = this->get_logger();
     DA.debug_ = kDebug;
@@ -169,7 +167,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
         //Extract the cone position
         ConeXYZColorScore cone = cloud.points[i];
 
-        observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x+kPosLidarX, cone.y), vehicle_pose_));
+        observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_));
     }
 
     if (observed_landmarks.size() == 0) {
