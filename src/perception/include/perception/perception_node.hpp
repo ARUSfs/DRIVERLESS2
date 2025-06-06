@@ -18,11 +18,13 @@
 #include "scoring.h"
 #include "accumulation.h"
 #include "PointXYZColorScore.h"
+#include "PointXYZProbColorScore.h"
 #include "color_estimation.h"
 #include "utils.h"
 #include "common_msgs/msg/state.hpp"
 #include <pcl/registration/icp.h>
 #include "fast_euclidean_clustering.h"
+#include "kmeans_coloring.h"
 
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/registration/transformation_estimation_svd.h>

@@ -15,7 +15,7 @@ namespace Accumulation
     static bool buffer_cloud_initialized = false;
 
     static std::deque<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>> cluster_buffer;
-    static std::deque<std::vector<PointXYZColorScore>> center_buffer;
+    static std::deque<std::vector<PointXYZProbColorScore>> center_buffer;
     static bool buffer_cluster_initialized = false;
 
     /**
@@ -94,11 +94,11 @@ namespace Accumulation
     * @brief Accumulates the clusters of the last 5 frames of the lidar call back.
     */
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>accumulate_clusters(
-            std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& cluster_points, std::vector<PointXYZColorScore>&
+            std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& cluster_points, std::vector<PointXYZProbColorScore>&
             clusters_centers, int kBufferSize, double AccumulationThreshold,double vx, double vy, double yaw_rate, double dt)
     {
         std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> final_clusters;
-        std::vector<PointXYZColorScore> final_centers;
+        std::vector<PointXYZProbColorScore> final_centers;
 
         // Clean the buffer the first time
         if (!buffer_cluster_initialized) {
@@ -118,7 +118,7 @@ namespace Accumulation
         center_buffer.push_back(clusters_centers);
 
         std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> all_clusters;
-        std::vector<PointXYZColorScore> all_centers;
+        std::vector<PointXYZProbColorScore> all_centers;
 
         // Iterate over all stored frames (except the latest one)
         for (size_t i = 0; i < center_buffer.size() - 1; ++i) {  

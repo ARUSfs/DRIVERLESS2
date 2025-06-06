@@ -183,7 +183,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     // Extract the clusters from the point cloud
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_clouds;
-    Clustering::FEC<pcl::PointXYZI>(cloud_filtered, &cluster_clouds, kTolerance, kMinClusterSize, kMaxClusterSize);
+    Clustering::FEC<pcl::PointXYZI>(cloud_filtered, &cluster_clouds, kTolerance, kMinClusterSize, kMaxClusterSize + 100*kAccumBufferSize);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Clustering time: %f", this->now().seconds() - start_time);
 
 
@@ -212,7 +212,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 
     // Score the clusters and keep the ones that will be considered cones
-    pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
+    pcl::PointCloud<PointXYZProbColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZProbColorScore>);
     Scoring::scoring_surface(final_map, cluster_clouds, clusters_centers, kThresholdScoring);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Scoring time: %f", this->now().seconds() - start_time);
 
@@ -224,30 +224,18 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     }
 
 
-    // // Estimate the color of the closest cones
-    // if (kColor)
-    // {
-    //     ColorEstimation::color_estimation(cluster_clouds, clusters_centers, kDistanceThreshold, kColoringThreshold);
-    //     if (kDebug) RCLCPP_INFO(this->get_logger(), "Color estimation time: %f", this->now().seconds() - start_time);
-
-
-    //     // Update the colors of final map points
-    //     for (auto& point : final_map->points)
-    //     {
-    //         for (const auto& center : clusters_centers)
-    //         {
-    //             if (point.x == center.x && point.y == center.y && point.z == center.z)
-    //             {
-    //                 point.color = center.color;
-    //             }
-    //         }
-    //     }
-    // }
+    // Estimate the color of the closest cones
+    if (kColor)
+    {
+        KMeansColoring::color_estimation(final_map, cluster_clouds, clusters_centers, kDistanceThreshold);
+        if (kDebug) RCLCPP_INFO(this->get_logger(), "Color estimation time: %f", this->now().seconds() - start_time);
+    }
 
 
     // Motion correction
     double dt = this->now().seconds() - start_time; // Estimate SDK delay
-    Utils::motion_correction(final_map, vx_, vy_, r_, dt);
+    // Remove or adapt this if Utils::motion_correction expects a different point type
+    // Utils::motion_correction(final_map, vx_, vy_, r_, dt);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Motion correction time: %f", this->now().seconds() - start_time);
 
 
@@ -364,7 +352,7 @@ void Perception::accumulate(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud){
     acum_cloud_->clear();
     for (auto& pcl : cloud_buffer_)
     {
-        pcl::PointCloud<PointXYZColorScore>::Ptr cones_map(new pcl::PointCloud<PointXYZColorScore>);
+        pcl::PointCloud<PointXYZProbColorScore>::Ptr cones_map(new pcl::PointCloud<PointXYZProbColorScore>);
         pcl::transformPointCloud(*pcl, *pcl, transform);
         pcl::transformPointCloud(*pcl, *pcl, transform2);
         *acum_cloud_ += *pcl;
