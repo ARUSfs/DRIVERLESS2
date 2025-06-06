@@ -44,7 +44,7 @@ namespace Utils
     */
     void filter_clusters(std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>* cluster_clouds,
         std::vector<pcl::PointXYZI>* clusters_centers, double min_height = 0.10, double max_height = 0.4,
-        double top_z = 1.0, double max_width = 0.5)
+        double max_width = 0.5, double top_z = 1.0)
     {
         // Inverse loop to erase safely
         for (int i = (int) cluster_clouds->size() - 1; i >= 0; --i) {
@@ -83,36 +83,21 @@ namespace Utils
     /**
     * @brief Recover falsely ground filtered points.
     */
-    void reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, 
-        std::vector<pcl::PointIndices>& cluster_indices, std::vector<PointXYZColorScore> clusters_centers, 
-        double radius)
-    {
-        for (size_t i = 0; i < clusters_centers.size(); ++i)
-        {
-            // Convert from PointXYZColorScore to PointXYZI
-            pcl::PointXYZI center;
-            center.x = clusters_centers[i].x;
-            center.y = clusters_centers[i].y;
-            center.z = clusters_centers[i].z;
-            center.intensity = clusters_centers[i].score;
+    void reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>* cluster_clouds,
+        std::vector<pcl::PointXYZI>* clusters_centers, double radius) {
+        for (int i=0; i<clusters_centers->size(); ++i) {
+            pcl::PointXYZI center = clusters_centers->at(i);
             
-            for (size_t j = 0; j < cloud_plane->size(); ++j)
-            {
-                pcl::PointXYZI point = cloud_plane->points[j];
+            for (auto point : cloud_plane->points) {
 
                 // Check if the point lies inside the cylinder
                 double dx = point.x - center.x;
                 double dy = point.y - center.y;
-                double radial_distance = std::sqrt(dx * dx + dy * dy);
+                double sq_dist = dx * dx + dy * dy;
 
-                if (radial_distance <= radius)
-                {
+                if (sq_dist <= radius*radius) {
                     // Add the point to the filtered cloud
-                    cloud_filtered->points.push_back(point);
-                    cloud_filtered->width++;
-
-                    // Add the index of the recovered point to cluster indices
-                    cluster_indices[i].indices.push_back(cloud_filtered->points.size() - 1);
+                    cluster_clouds->at(i)->points.push_back(point);
                 }
             }
         }

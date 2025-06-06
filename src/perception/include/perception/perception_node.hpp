@@ -57,32 +57,48 @@ class Perception : public rclcpp::Node
         // Topics
         std::string kLidarTopic;
         std::string kStateTopic;
+        std::string kPerceptionTopic;
+        std::string kAccumCloudTopic;
+        std::string kFilteredCloudTopic;
+        std::string kClustersCloudTopic;
 
-        // Parameters of cropping
+        // Accumulation
+        int kAccumBufferSize;
+        bool kVoxelFilter;
+        double kVoxelSizeX;
+        double kVoxelSizeY;
+        double kVoxelSizeZ;
+
+        // Cropping
         bool kCrop;
         double kMaxXFov;
         double kMaxYFov;
         double kMaxZFov;
 
-        // Parameters of ground filtering
+        // Ground filtering
+        std::string kGroundFilterType;
         double kThresholdGroundFilter;
         int kNumberSections;
         double kAngleThreshold;
 
-        // Parameters of clustering and filtering
+        // Clustering
         int kMinClusterSize;
         int kMaxClusterSize;
-        double kRadius;
+        double kTolerance;
 
-        // Parameters of scroring
+        // Reconstruction
+        bool kReconstruction;
+        double kRecRadius;
+
+        // Scoring
         double kThresholdScoring;
         
-        // Parameters of coloring
+        // Coloring
         bool kColor;
         double kDistanceThreshold;
         double kColoringThreshold;
 
-        // Parameters of debugging
+        
         bool kDebug;
 
 
@@ -108,6 +124,6 @@ class Perception : public rclcpp::Node
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
 
-        void accumulation(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud);
+        void accumulate(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud);
 
 };

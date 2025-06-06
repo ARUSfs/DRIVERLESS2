@@ -8,7 +8,6 @@
 #include "perception/perception_node.hpp"
 
 
-int BUFF_SIZE = 10;
 
 
 Perception::Perception() : Node("Perception")
@@ -16,16 +15,28 @@ Perception::Perception() : Node("Perception")
     // Declare parameters
     this->declare_parameter<std::string>("lidar_topic", "/rslidar_points");
     this->declare_parameter<std::string>("state_topic", "/car_state/state");
+    this->declare_parameter<std::string>("perception_topic", "/perception/map");
+    this->declare_parameter<std::string>("accum_cloud_topic", "/perception/accumulated_cloud");
+    this->declare_parameter<std::string>("filtered_cloud_topic", "/perception/filtered_cloud");
+    this->declare_parameter<std::string>("clusters_cloud_topic", "/perception/clusters_cloud");
+    this->declare_parameter<int>("accum_buffer_size", 10);
+    this->declare_parameter<bool>("voxel_filter", false);
+    this->declare_parameter<double>("voxel_size_x", 0.1);
+    this->declare_parameter<double>("voxel_size_y", 0.1);
+    this->declare_parameter<double>("voxel_size_z", 0.1);
     this->declare_parameter<bool>("crop", true);
     this->declare_parameter<double>("max_x_fov", 30.0);
     this->declare_parameter<double>("max_y_fov", 15.0);
     this->declare_parameter<double>("max_z_fov", 0.5);
+    this->declare_parameter<std::string>("ground_filter_type", "Z_FILTER");
     this->declare_parameter<double>("threshold_ground_filter", 0.075);
     this->declare_parameter<int>("number_sections", 8);
     this->declare_parameter<double>("angle_threshold", 35.0);
     this->declare_parameter<int>("min_cluster_size", 4);
     this->declare_parameter<int>("max_cluster_size", 200);
-    this->declare_parameter<double>("radius", 0.15);
+    this->declare_parameter<double>("tolerance", 0.5);
+    this->declare_parameter<bool>("reconstruction", true);
+    this->declare_parameter<double>("reconstruction_radius", 0.15);
     this->declare_parameter<double>("threshold_scoring", 0.7);
     this->declare_parameter<bool>("color", true);
     this->declare_parameter<double>("distance_threshold", 5.0);
@@ -35,16 +46,28 @@ Perception::Perception() : Node("Perception")
     // Get the parameters
     this->get_parameter("lidar_topic", kLidarTopic);
     this->get_parameter("state_topic", kStateTopic);
+    this->get_parameter("perception_topic", kPerceptionTopic);
+    this->get_parameter("accum_cloud_topic", kAccumCloudTopic);
+    this->get_parameter("filtered_cloud_topic", kFilteredCloudTopic);
+    this->get_parameter("clusters_cloud_topic", kClustersCloudTopic);
+    this->get_parameter("accum_buffer_size", kAccumBufferSize);
+    this->get_parameter("voxel_filter", kVoxelFilter);
+    this->get_parameter("voxel_size_x", kVoxelSizeX);
+    this->get_parameter("voxel_size_y", kVoxelSizeY);
+    this->get_parameter("voxel_size_z", kVoxelSizeZ);
     this->get_parameter("crop", kCrop);
     this->get_parameter("max_x_fov", kMaxXFov);
     this->get_parameter("max_y_fov", kMaxYFov);
     this->get_parameter("max_z_fov", kMaxZFov);
+    this->get_parameter("ground_filter_type", kGroundFilterType);
     this->get_parameter("threshold_ground_filter", kThresholdGroundFilter);
     this->get_parameter("number_sections", kNumberSections);
     this->get_parameter("angle_threshold", kAngleThreshold);
     this->get_parameter("min_cluster_size", kMinClusterSize);
     this->get_parameter("max_cluster_size", kMaxClusterSize);
-    this->get_parameter("radius", kRadius);
+    this->get_parameter("tolerance", kTolerance);
+    this->get_parameter("reconstruction", kReconstruction);
+    this->get_parameter("reconstruction_radius", kRecRadius);
     this->get_parameter("threshold_scoring", kThresholdScoring);
     this->get_parameter("color", kColor);
     this->get_parameter("distance_threshold", kDistanceThreshold);
@@ -68,14 +91,14 @@ Perception::Perception() : Node("Perception")
             kStateTopic, 10, std::bind(&Perception::state_callback, this, std::placeholders::_1));
 
     // Create the publishers
-    filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/filtered_cloud", 10);
     accumulation_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/accumulation_cloud", 10);
+        kAccumCloudTopic, 10);
+    filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+        kFilteredCloudTopic, 10);
     clusters_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/clusters", 10);
+        kClustersCloudTopic, 10);
     map_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "/perception/map2", 10);
+        kPerceptionTopic, 10);
 }
 
 
@@ -107,8 +130,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     }
 
     
-    if (BUFF_SIZE > 0) {
-        this->accumulation(cloud);
+    if (kAccumBufferSize > 0) {
+        this->accumulate(cloud);
         if (kDebug) {
             // Publish the accumulation cloud
             sensor_msgs::msg::PointCloud2 acum_msg;
@@ -118,29 +141,47 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
             RCLCPP_INFO(this->get_logger(), "Accumulation time: %f", this->now().seconds() - start_time);
         }
+
+        cloud = acum_cloud_; // Use the accumulated cloud for processing
     }
 
-    // if (kCrop)
-    // {
-    //     // Crop the point cloud
-    //     double min_x = 0.0;
-    //     double min_y = -kMaxYFov;
-    //     double min_z = 0.08;
-    //     Cropping::box_filter<pcl::PointXYZI>(acum_cloud, acum_cloud, min_x, min_y, min_z, kMaxXFov, kMaxYFov, kMaxZFov);
-    //     if (kDebug) RCLCPP_INFO(this->get_logger(), "Cropping Time: %f", this->now().seconds() - start_time);
-    // }
+    if (kCrop)
+    {
+        // Crop the point cloud
+        double min_x = 0.0;
+        double min_y = -kMaxYFov;
+        double min_z = -1.0;
+        Cropping::box_filter<pcl::PointXYZI>(cloud, cloud, min_x, min_y, min_z, kMaxXFov, kMaxYFov, kMaxZFov);
+        if (kDebug) RCLCPP_INFO(this->get_logger(), "Cropping Time: %f", this->now().seconds() - start_time);
+    }
 
 
     // Apply the ground filter function
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZI>);
-    Cropping::axis_filter<pcl::PointXYZI>(acum_cloud_, cloud_filtered, "z", 0.08, 0.4);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr ground_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+
+    if (kGroundFilterType == "Z_FILTER") {
+        Cropping::axis_filter<pcl::PointXYZI>(cloud, cloud_filtered, "z", 0.08, 0.4);
+    } else if (kGroundFilterType == "RANSAC") {
+        pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+        GroundFiltering::ransac_ground_filter(cloud, cloud_filtered, ground_cloud, coefficients, kThresholdGroundFilter);
+    } else if (kGroundFilterType == "RANSAC_GRID") {
+        pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+        GroundFiltering::grid_ground_filter(cloud, cloud_filtered, ground_cloud, coefficients, kThresholdGroundFilter,
+                                            kMaxXFov, kMaxYFov, kMaxZFov, kNumberSections, kAngleThreshold);
+    } else if (kGroundFilterType == "PILLAR") {
+        GroundFiltering::pillar_ground_filter(cloud, cloud_filtered, ground_cloud, kThresholdGroundFilter, 
+                                              kMaxXFov, kMaxYFov, kNumberSections);
+    } else {
+        RCLCPP_ERROR(this->get_logger(), "Unknown ground filter type: %s", kGroundFilterType.c_str());
+        return;
+    }
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Ground Filter Time: %f", this->now().seconds() - start_time);
 
 
     // Extract the clusters from the point cloud
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_clouds;
-    Clustering::FEC<pcl::PointXYZI>(cloud_filtered, &cluster_clouds, 0.5, kMinClusterSize, kMaxClusterSize);
+    Clustering::FEC<pcl::PointXYZI>(cloud_filtered, &cluster_clouds, kTolerance, kMinClusterSize, kMaxClusterSize);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Clustering time: %f", this->now().seconds() - start_time);
 
 
@@ -150,19 +191,22 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         return;
     }
 
-    
-
-
     std::vector<pcl::PointXYZI> clusters_centers;
     Utils::get_clusters_centers(&cluster_clouds, &clusters_centers);
+    
 
-    // // Recover ground points
-    // Utils::reconstruction(cloud_plane, cloud_filtered, cluster_indices, clusters_centers, kRadius);
-    // if (kDebug) RCLCPP_INFO(this->get_logger(), "Reconstruction time: %f", this->now().seconds() - start_time);
+    if (kReconstruction && !ground_cloud->empty())
+    {   
+        // Filter too big clusters
+        Utils::filter_clusters(&cluster_clouds, &clusters_centers, 0.0, 0.4, 0.5, 1.0);
 
-
+        // Recover ground points
+        Utils::reconstruction(ground_cloud, &cluster_clouds, &clusters_centers, kRecRadius);
+        if (kDebug) RCLCPP_INFO(this->get_logger(), "Reconstruction time: %f", this->now().seconds() - start_time);
+    }
+    
+    // Filter too big and too small clusters
     Utils::filter_clusters(&cluster_clouds, &clusters_centers);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Filtering time: %f", this->now().seconds() - start_time);
 
 
     // Score the clusters and keep the ones that will be considered cones
@@ -240,12 +284,12 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 
 
-void Perception::accumulation(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud){
+void Perception::accumulate(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud){
     // Get ground plane with RANSAC and align the cloud
     pcl::PointCloud<pcl::PointXYZI>::Ptr actual_cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr actual_cloud_plane(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr actual_ground_cloud(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-    GroundFiltering::ransac_ground_filter(cloud,  actual_cloud_filtered,  actual_cloud_plane,  coefficients, 0.05);
+    GroundFiltering::ransac_ground_filter(cloud,  actual_cloud_filtered,  actual_ground_cloud,  coefficients, 0.05);
     Utils::ground_align(cloud, coefficients);
 
     // Filter the ground points
@@ -253,7 +297,7 @@ void Perception::accumulation(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud){
 
     // Extract clusters estimation
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_clouds;
-    Clustering::FEC<pcl::PointXYZI>(cloud, &cluster_clouds, 0.5, kMinClusterSize, kMaxClusterSize);
+    Clustering::FEC<pcl::PointXYZI>(cloud, &cluster_clouds, kTolerance, kMinClusterSize, kMaxClusterSize);
 
     std::vector<pcl::PointXYZI> clusters_centers;
     Utils::get_clusters_centers(&cluster_clouds, &clusters_centers);
@@ -325,17 +369,19 @@ void Perception::accumulation(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud){
     }
 
 
-    if (cloud_buffer_.size() > BUFF_SIZE)
+    if (cloud_buffer_.size() > kAccumBufferSize)
     {
         cloud_buffer_.pop_back();
     }
     cloud_buffer_.insert(cloud_buffer_.begin(), cloud);
 
-    // Optionally apply a voxel grid filter to downsample the accumulated point cloud
-    // pcl::VoxelGrid<pcl::PointXYZI> voxel_filter;
-    // voxel_filter.setInputCloud(acum_cloud);
-    // voxel_filter.setLeafSize(0.1f, 0.1f, 0.1f); // Adjust leaf size as needed
-    // voxel_filter.filter(*acum_cloud);
+    if (kVoxelFilter) {
+        pcl::VoxelGrid<pcl::PointXYZI> voxel_filter;
+        voxel_filter.setInputCloud(acum_cloud_);
+        voxel_filter.setLeafSize(kVoxelSizeX, kVoxelSizeY, kVoxelSizeZ);
+        voxel_filter.filter(*acum_cloud_);
+    }
+    
 }
 
 
