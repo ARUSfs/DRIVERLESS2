@@ -1,0 +1,7 @@
+<map id="CDT::locatePointTriangle" name="CDT::locatePointTriangle">
+<area shape="rect" id="Node000001" title="Check if point a lies inside of, outside of, or on an edge of a triangle." alt="" coords="251,45,431,70"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1Triangulation.html#a9cbb8e1a9faf7c11a4e526640fc5de92" title=" " alt="" coords="34,5,174,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="236,46,174,37,174,32,237,41"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1Triangulation.html#a7f0ed1c2005cf1531ebb79f576818424" title=" " alt="" coords="5,69,203,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="238,74,203,79,202,73,237,69"/>
+</map>

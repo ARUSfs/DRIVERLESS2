@@ -1,0 +1,5 @@
+<map id="GraphSlam::check_finish_line" name="GraphSlam::check_finish_line">
+<area shape="rect" id="Node000001" title="Check if the vehicle has crossed the finish line." alt="" coords="5,5,219,31"/>
+<area shape="rect" id="Node000002" href="$classGraphSlam.html#aefc01f8aaa2335c15f9ff2ed9f32bb8e" title="Fix all landmarks in the graph." alt="" coords="267,5,421,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="219,15,253,15,253,21,219,21"/>
+</map>

@@ -1,0 +1,11 @@
+<map id="SpeedEstimator::initialize_speed_estimator" name="SpeedEstimator::initialize_speed_estimator">
+<area shape="rect" id="Node000001" title="Speed Estimator initializer Initializes both Kinematic and Dynamic Bicycle kalman filters." alt="" coords="5,85,195,125"/>
+<area shape="rect" id="Node000002" href="$classKalmanFilter.html#ad5557854b1d0d9c2d95d381217e5d999" title="Initial data initializer Initializes x, P, u and t for the first iteration, checking that dimensions ..." alt="" coords="251,5,465,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="141,82,189,61,242,41,275,31,277,36,243,46,191,66,143,87"/>
+<area shape="rect" id="Node000003" href="$classKalmanFilter.html#ae91af035952acef113c8c7ec46c3b8ad" title="Measurement matrices initializer Initializes measurement matrices H and R, checking that dimensions a..." alt="" coords="243,55,473,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="195,91,229,87,229,93,195,97"/>
+<area shape="rect" id="Node000004" href="$classKalmanFilter.html#aa4212a2ce92e873184ce736fa40aca47" title="Problem size initializer Initializes n, m and p." alt="" coords="245,120,471,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="195,112,231,116,231,122,195,118"/>
+<area shape="rect" id="Node000005" href="$classKalmanFilter.html#ab130c4f251088ca4e256c037f7ff0edb" title="Process matrices initializer Initializes process matrices M, B and Q, checking that dimensions are co..." alt="" coords="263,170,453,210"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="154,122,244,154,273,163,271,169,242,159,152,127"/>
+</map>

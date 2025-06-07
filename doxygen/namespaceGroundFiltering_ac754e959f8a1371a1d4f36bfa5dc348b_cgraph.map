@@ -1,0 +1,6 @@
+<map id="GroundFiltering::ransac_checking_normal_vectors" name="GroundFiltering::ransac_checking_normal_vectors">
+<area shape="rect" id="Node000001" title="Apply ransac in the square specified and check if the result plane is in accordance with the previus ..." alt="" coords="5,29,200,69"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="59,30,57,20,64,10,79,5,103,3,130,6,144,13,142,18,128,11,103,8,80,10,67,15,62,21,64,28"/>
+<area shape="rect" id="Node000002" href="$namespaceGroundFiltering.html#a309b709ff242b65b04b5f22ad501fa08" title="Implements ground filtering using ransac segmentation." alt="" coords="248,29,421,69"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="201,47,234,47,234,52,201,52"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="CanInterface::dl_timer_callback" name="CanInterface::dl_timer_callback">
+<area shape="rect" id="Node000001" title="Callback associated with a timer to periodically send the Data Logger message over CAN." alt="" coords="5,69,172,109"/>
+<area shape="rect" id="Node000002" href="$classCanInterface.html#aa611c4703f6b57340badcfe9fcb6d21c" title="Configure and send the CAN message from the Data Logger with ID 500." alt="" coords="220,5,364,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="152,67,214,47,216,52,154,72"/>
+<area shape="rect" id="Node000003" href="$classCanInterface.html#a9fb6fe92aa22bdcec85d47d004958089" title="Configure and send the CAN message from the Data Logger with ID 501." alt="" coords="220,69,364,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="172,87,206,87,206,92,172,92"/>
+<area shape="rect" id="Node000004" href="$classCanInterface.html#a7caa7d6a3ad334e7deeee9d577bc4253" title="Configure and send the CAN message from the Data Logger with ID 502." alt="" coords="220,133,364,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="154,107,216,127,214,132,152,112"/>
+</map>

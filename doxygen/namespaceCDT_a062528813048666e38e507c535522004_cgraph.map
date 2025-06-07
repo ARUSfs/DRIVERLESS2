@@ -1,0 +1,5 @@
+<map id="CDT::opposedVertex" name="CDT::opposedVertex">
+<area shape="rect" id="Node000001" title="Given two triangles, return vertex of first triangle opposed to the second." alt="" coords="5,5,159,31"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT.html#ae670571f2331af35b407dc5e83a80cc4" title="Index of triangle&#39;s vertex opposed to a triangle." alt="" coords="207,5,380,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="159,15,193,15,193,21,159,21"/>
+</map>

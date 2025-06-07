@@ -1,0 +1,11 @@
+<map id="Perception::accumulate" name="Perception::accumulate">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,92,180,117"/>
+<area shape="rect" id="Node000002" href="$namespaceUtils.html#a3e19df2b69bce738606b4d7a42b732bb" title="Filter the final clusters by size to delete the ones that are too small or too large to be considered..." alt="" coords="241,5,389,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="118,89,227,41,252,32,254,37,229,46,120,94"/>
+<area shape="rect" id="Node000003" href="$namespaceUtils.html#a608edc26ec08b8d2ddd8f5c4cb53f78d" title="Extract the center of each cluster." alt="" coords="245,55,384,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="180,91,231,84,232,89,180,96"/>
+<area shape="rect" id="Node000004" href="$namespaceUtils.html#a8cd0223b3bcd872ec13a3dbfbda3f27a" title=" " alt="" coords="243,120,387,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="180,113,229,119,229,125,180,118"/>
+<area shape="rect" id="Node000005" href="$namespaceGroundFiltering.html#a309b709ff242b65b04b5f22ad501fa08" title="Implements ground filtering using ransac segmentation." alt="" coords="228,170,401,210"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="128,115,250,163,248,168,126,120"/>
+</map>

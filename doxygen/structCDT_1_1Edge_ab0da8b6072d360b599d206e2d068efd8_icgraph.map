@@ -1,0 +1,27 @@
+<map id="CDT::Edge::v1" name="CDT::Edge::v1">
+<area shape="rect" id="Node000001" title="V1 getter." alt="" coords="564,183,676,209"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1Triangulation.html#a17af27aa97967ea79b5e3fe29b2eff41" title=" " alt="" coords="271,5,502,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="605,172,569,115,544,85,514,60,493,48,495,43,518,55,548,81,574,112,609,170"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1Triangulation.html#aef165a8fe97c3d4dd77d3fda91eb5a90" title=" " alt="" coords="257,69,516,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="592,176,557,149,515,124,484,112,486,107,517,119,560,144,596,172"/>
+<area shape="rect" id="Node000004" href="$namespaceCDT.html#a1f5839f3c84d7cdb0ff4fe0f77281601" title="Get edge first vertex." alt="" coords="317,134,456,159"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="556,183,515,173,456,161,457,156,517,168,557,177"/>
+<area shape="rect" id="Node000009" href="$group__helpers.html#ga1aa8e45f3833854876f05911f1bccd14" title=" " alt="" coords="295,183,478,209"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="550,199,478,199,478,193,550,193"/>
+<area shape="rect" id="Node000010" href="$group__Advanced.html#ga9a1d8ebf3635d129ff36cf3c1d2b0807" title=" " alt="" coords="309,233,465,273"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="555,215,466,237,464,232,554,209"/>
+<area shape="rect" id="Node000011" href="$namespaceCDT.html#ac103d8306528fba2874d0cb44c50232a" title="Remap removing super&#45;triangle: subtract 3 from vertices." alt="" coords="283,298,491,323"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="601,221,564,256,517,288,483,300,481,295,515,283,561,252,597,217"/>
+<area shape="rect" id="Node000013" href="$classCDT_1_1Triangulation.html#aaf46ba4c6ca1f5da85a22500ac3a98d0" title=" " alt="" coords="317,348,457,388"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="610,222,574,281,548,312,517,338,488,353,458,362,456,357,486,348,515,334,545,308,570,278,605,219"/>
+<area shape="rect" id="Node000005" href="$classCDT_1_1Triangulation.html#aa3cdd6eb5ac29f84ce5e3ae123c926e1" title=" " alt="" coords="37,27,177,67"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="303,140,256,124,241,113,231,102,222,91,208,81,176,67,179,62,211,76,226,88,235,99,244,109,259,119,304,135"/>
+<area shape="rect" id="Node000006" href="$classCDT_1_1Triangulation.html#a1864bbe18731181ee5c0d91690d1e296" title=" " alt="" coords="37,91,177,131"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="304,139,177,122,178,117,304,133"/>
+<area shape="rect" id="Node000007" href="$group__helpers.html#ga5e1bc1f0d135e78f5888fb4a596ad02b" title=" " alt="" coords="37,155,178,181"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="304,156,179,165,178,160,303,150"/>
+<area shape="rect" id="Node000008" href="$group__helpers.html#gaed3044b5b3c4bb21d1c86227fb90ca09" title=" " alt="" coords="5,205,209,245"/>
+<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="304,162,258,173,234,183,210,194,173,208,171,203,208,190,232,178,256,168,303,156"/>
+<area shape="rect" id="Node000012" href="$classCDT_1_1Triangulation.html#a7e19c82f35a633f53ac6e905bf2e2ce7" title=" " alt="" coords="27,291,188,331"/>
+<area shape="poly" id="edge11_Node000011_Node000012" title=" " alt="" coords="269,313,188,313,188,308,269,308"/>
+</map>

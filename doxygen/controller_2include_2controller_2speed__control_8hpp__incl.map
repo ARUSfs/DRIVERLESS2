@@ -1,0 +1,9 @@
+<map id="src/control/controller/include/controller/speed_control.hpp" name="src/control/controller/include/controller/speed_control.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,188,60"/>
+<area shape="rect" id="Node000002" href="$controller_2include_2controller_2PID_8hpp.html" title="PID control implementation for ARUS Team Driverless pipeline." alt="" coords="27,108,166,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="99,60,99,94,94,94,94,60"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="19,181,81,207"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="91,135,67,171,63,168,87,132"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="106,181,181,207"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="107,132,130,168,126,171,102,135"/>
+</map>

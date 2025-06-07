@@ -1,0 +1,14 @@
+<map id="_1D::InterpolatorBase::setData" name="_1D::InterpolatorBase::setData">
+<area shape="rect" id="Node000001" title=" " alt="" coords="912,37,1075,77"/>
+<area shape="poly" id="edge5_Node000001_Node000001" title=" " alt="" coords="1032,26,1018,19,993,16,972,18,958,23,954,29,956,36,951,38,948,28,955,18,970,13,993,11,1020,14,1034,21"/>
+<area shape="rect" id="Node000002" href="$namespaceMinCurvaturepath.html#adca76c06304d18b6768470c99c52f910" title="Interpolates the given path to increase the number of trajectory points and returns the interpolated ..." alt="" coords="667,5,864,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="898,47,864,42,865,37,899,41"/>
+<area shape="rect" id="Node000006" href="$class__1D_1_1InterpolatorBase.html#a2e4315915d6ee760bc840f2108f0847a" title=" " alt="" coords="684,69,847,109"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="899,73,847,81,846,75,898,68"/>
+<area shape="rect" id="Node000003" href="$namespaceMinCurvaturepath.html#a11bc9f8cfc440827fa4d5783dfb196a4" title="Calculates an optimized path for the given midpoints and track width, minimizing curvature." alt="" coords="451,5,619,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="653,28,619,28,619,23,653,23"/>
+<area shape="rect" id="Node000004" href="$classTrajectoryOptimization.html#a555f0889b66aba42faa004d1f2d18b63" title="Callback function for the track limits topic. It receives the midpath and tracklimits and calculates ..." alt="" coords="232,5,403,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="437,28,403,28,403,23,437,23"/>
+<area shape="rect" id="Node000005" href="$classTrajectoryOptimization.html#a1459e86041c97ed22034381e17cd060c" title="Constructor for the TrajectoryOptimization node." alt="" coords="5,5,184,45"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="218,28,184,28,184,23,218,23"/>
+</map>

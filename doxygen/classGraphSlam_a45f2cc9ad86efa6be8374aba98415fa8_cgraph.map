@@ -1,0 +1,9 @@
+<map id="GraphSlam::optimizer_callback" name="GraphSlam::optimizer_callback">
+<area shape="rect" id="Node000001" title="Callback function for the optimizer timer." alt="" coords="5,55,169,95"/>
+<area shape="rect" id="Node000002" href="$classGraphSlam.html#a92f864fc1ff387f8e55fa41ab8b122b5" title="Load vertices and edges to add to the optimizer." alt="" coords="229,5,391,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="165,53,246,32,247,37,166,58"/>
+<area shape="rect" id="Node000003" href="$classGraphSlam.html#a92e33bd5df987aa22d7cd161d9a153ad" title="Update the world position of the landmarks in the data association map after optimization Landmarks m..." alt="" coords="219,55,401,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="169,73,205,73,205,78,169,78"/>
+<area shape="rect" id="Node000004" href="$classGraphSlam.html#a8d7063711a8075a6d407bf24b588b3c9" title="Update vehicle_pose after optimization." alt="" coords="217,119,403,159"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="158,93,227,113,226,118,157,98"/>
+</map>

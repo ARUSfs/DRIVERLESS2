@@ -1,0 +1,7 @@
+<map id="CDT::opposedTriangleInd" name="CDT::opposedTriangleInd">
+<area shape="rect" id="Node000001" title="Index of triangle&#39;s neighbor opposed to a vertex." alt="" coords="432,13,615,38"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT.html#abbfe49d0f78efb1e6f453991aab021b7" title="Given triangle and a vertex find opposed triangle." alt="" coords="221,13,384,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="418,28,384,28,384,23,418,23"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1Triangulation.html#a1b51dc99b47094abe6abce147676cdff" title=" " alt="" coords="5,5,173,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="207,28,173,28,173,23,207,23"/>
+</map>

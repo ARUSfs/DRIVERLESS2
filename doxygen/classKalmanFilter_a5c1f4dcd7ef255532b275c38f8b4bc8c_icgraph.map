@@ -1,0 +1,9 @@
+<map id="KalmanFilter::update_control_matrix" name="KalmanFilter::update_control_matrix">
+<area shape="rect" id="Node000001" title="Control matrix updater Updates control matrix B for this iteration." alt="" coords="627,5,785,45"/>
+<area shape="rect" id="Node000002" href="$classSpeedEstimator.html#ac8495272b4a326926b84571846ddee07" title="Speed estimation Estimates car&#39;s longitudinal and lateral velocities combining kinematic and dynamic ..." alt="" coords="388,5,579,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="613,28,579,28,579,23,613,23"/>
+<area shape="rect" id="Node000003" href="$classCarState.html#a124969045ec36cad09e148afa8372e35" title="Periodically processes sensor data, estimates vehicle speed, and publishes the current state and car ..." alt="" coords="196,13,340,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="374,28,341,28,341,23,374,23"/>
+<area shape="rect" id="Node000004" href="$classCarState.html#af69b7ada77b367d0f5934e6d10b454aa" title="Constructor of CarState node." alt="" coords="5,13,148,38"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="182,28,149,28,149,23,182,23"/>
+</map>

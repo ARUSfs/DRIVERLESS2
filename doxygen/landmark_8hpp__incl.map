@@ -1,0 +1,9 @@
+<map id="src/slam/graph_slam/include/graph_slam/landmark.hpp" name="src/slam/graph_slam/include/graph_slam/landmark.hpp">
+<area shape="rect" id="Node000001" title="Landmark class for GraphSlam." alt="" coords="63,5,220,60"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,108,85,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="114,62,70,101,67,97,110,58"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="110,108,173,133"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="144,60,144,94,139,94,139,60"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="197,108,299,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="176,58,224,97,221,101,172,62"/>
+</map>

@@ -1,0 +1,10 @@
+<map id="CDT::distanceSquared" name="CDT::distanceSquared">
+<area shape="rect" id="Node000001" title="Squared distance between two 2D points." alt="" coords="408,35,572,60"/>
+<area shape="poly" id="edge2_Node000001_Node000001" title=" " alt="" coords="527,25,517,17,490,13,468,15,456,20,454,26,460,33,456,36,449,26,452,16,467,10,490,8,519,12,530,21"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT.html#a37776031d1a613ba7d8f09bf53ebf960" title=" " alt="" coords="227,5,337,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="394,36,337,28,338,23,395,31"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1KDTree_1_1KDTree.html#aaee62f9d986d9e315ab9ffaa737143ef" title=" " alt="" coords="204,55,360,95"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="394,63,361,67,360,62,394,58"/>
+<area shape="rect" id="Node000004" href="$classCDT_1_1LocatorKDTree.html#ad54ac43f959d4f7e55c11a0426806f30" title="Find nearest point using R&#45;tree." alt="" coords="5,55,156,95"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="190,78,157,78,157,73,190,73"/>
+</map>

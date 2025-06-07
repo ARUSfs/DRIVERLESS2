@@ -1,0 +1,16 @@
+<map id="src/perception/include/perception/PointXYZColorScore.h" name="src/perception/include/perception/PointXYZColorScore.h">
+<area shape="rect" id="Node000001" title="Defines the structure of the custom type PointXYZColorScore." alt="" coords="203,5,443,45"/>
+<area shape="rect" id="Node000002" href="$color__estimation_8h.html" title="Contains auxiliar functions used in the algorithm to estimate the color of the closest cones." alt="" coords="5,93,225,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="266,53,162,96,160,91,264,48"/>
+<area shape="rect" id="Node000003" href="$perception__node_8hpp.html" title="Contains the class definition and the declaration of the methods used in the algorithm." alt="" coords="239,181,407,236"/>
+<area shape="poly" id="edge4_Node000001_Node000003" title=" " alt="" coords="306,58,291,94,288,113,291,133,299,157,310,180,305,182,294,159,286,134,283,113,286,93,301,56"/>
+<area shape="rect" id="Node000005" href="$scoring_8h.html" title="Contains auxiliar functions used in the algorithm to score every cluster in order to determine the re..." alt="" coords="301,93,466,133"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="347,55,372,92,368,95,342,58"/>
+<area shape="rect" id="Node000006" href="$utils_8h.html" title=" " alt="" coords="490,93,655,133"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="392,47,519,91,517,96,390,52"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="171,137,266,179,264,184,169,141"/>
+<area shape="rect" id="Node000004" href="$perception__node_8cpp.html" title=" " alt="" coords="243,284,404,324"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="326,250,326,284,321,284,321,250"/>
+<area shape="poly" id="edge6_Node000005_Node000003" title=" " alt="" coords="366,146,342,183,338,180,362,143"/>
+<area shape="poly" id="edge8_Node000006_Node000003" title=" " alt="" coords="511,141,394,184,393,179,509,136"/>
+</map>

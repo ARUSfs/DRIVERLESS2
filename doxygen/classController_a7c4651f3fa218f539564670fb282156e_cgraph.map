@@ -1,0 +1,9 @@
+<map id="Controller::on_speed_timer" name="Controller::on_speed_timer">
+<area shape="rect" id="Node000001" title="Speed control timer callback." alt="" coords="5,37,161,77"/>
+<area shape="rect" id="Node000002" href="$classSpeedControl.html#a5670269340ed49c00cedd8308ea0cc4d" title="Get acceleration command using PID and feedforward control." alt="" coords="209,5,376,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="161,43,195,37,196,43,162,48"/>
+<area shape="rect" id="Node000004" href="$classController.html#aa5126580846cc850843aa1fb772e38b3" title="Get the global index of the vehicle in the trajectory. Use the global position to calculate the speed..." alt="" coords="211,69,374,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="162,67,198,72,197,77,161,72"/>
+<area shape="rect" id="Node000003" href="$classPID.html#a8bba3d08835ccb725176a7596c879eef" title="Compute PID control." alt="" coords="424,13,585,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="376,23,410,23,410,28,376,28"/>
+</map>

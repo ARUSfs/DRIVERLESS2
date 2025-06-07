@@ -1,0 +1,13 @@
+<map id="CDT::KDTree::KDTree::calcSplitInfo" name="CDT::KDTree::KDTree::calcSplitInfo">
+<area shape="rect" id="Node000001" title="Calculate split location, direction, and children boxes." alt="" coords="408,101,564,141"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1KDTree_1_1KDTree.html#a60406d0c4c13d5dc36dfff83e65175d5" title=" " alt="" coords="204,69,360,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="394,110,360,104,361,99,395,104"/>
+<area shape="rect" id="Node000005" href="$classCDT_1_1KDTree_1_1KDTree.html#aaee62f9d986d9e315ab9ffaa737143ef" title=" " alt="" coords="204,133,360,173"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="395,138,361,144,360,138,394,133"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1LocatorKDTree.html#a4c8b04ce02d2552a419cf9881d843e83" title="Add point to KD&#45;tree." alt="" coords="5,5,156,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="204,68,143,48,145,43,206,63"/>
+<area shape="rect" id="Node000004" href="$classCDT_1_1LocatorKDTree.html#a13e747c71ae5342bad399298f6feec7e" title="Initialize KD&#45;tree with points." alt="" coords="5,69,156,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="190,92,157,92,157,87,190,87"/>
+<area shape="rect" id="Node000006" href="$classCDT_1_1LocatorKDTree.html#ad54ac43f959d4f7e55c11a0426806f30" title="Find nearest point using R&#45;tree." alt="" coords="5,133,156,173"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="190,156,157,156,157,151,190,151"/>
+</map>

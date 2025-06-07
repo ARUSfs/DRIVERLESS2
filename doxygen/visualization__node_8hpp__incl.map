@@ -1,0 +1,21 @@
+<map id="src/visualization/include/visualization/visualization_node.hpp" name="src/visualization/include/visualization/visualization_node.hpp">
+<area shape="rect" id="Node000001" title="Visualization node header for ARUS Team Driverless pipeline." alt="" coords="835,5,1031,60"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,115,137,141"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="835,42,528,64,339,84,150,111,128,115,127,110,150,105,339,79,528,59,834,36"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="162,108,333,148"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="835,47,615,73,347,110,346,105,615,68,834,42"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="357,108,503,148"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="835,53,517,110,516,105,834,48"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="528,115,775,141"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="854,63,700,114,698,109,853,58"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="799,115,1067,141"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="935,60,935,101,930,101,930,60"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="1091,115,1329,141"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="1012,58,1164,109,1162,114,1010,63"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="1353,108,1544,148"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1031,49,1340,104,1339,110,1030,54"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="1568,108,1759,148"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="1031,41,1266,67,1555,105,1554,110,1265,73,1030,47"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="1783,115,1976,141"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="1031,37,1360,62,1566,81,1772,105,1806,110,1805,116,1771,111,1565,87,1360,67,1031,43"/>
+</map>
