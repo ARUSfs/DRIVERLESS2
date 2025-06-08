@@ -41,10 +41,10 @@ perception:
     reconstruction_radius: 0.15
 
     # Scoring parameters
-    threshold_scoring: 0.0
+    threshold_scoring: 0.0  # Not fufing right now
 
     # Coloring parameters
-    kColor: false
+    kColor: true
     distance_threshold: 25.0
     coloring_threshold: 15.0
 

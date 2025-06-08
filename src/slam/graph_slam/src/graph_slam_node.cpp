@@ -160,14 +160,18 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     std::vector<Landmark> unmatched_landmarks;
 
     g2o::VertexSE2* last_pose_vertex = pose_vertices_.back();
-    pcl::PointCloud<ConeXYZColorScore> cloud;
+    pcl::PointCloud<PointXYZProbColorScore> cloud;
     pcl::fromROSMsg(*msg, cloud);
    
     for (int i = 0; i < msg->width; i++) {
         //Extract the cone position
-        ConeXYZColorScore cone = cloud.points[i];
+        PointXYZProbColorScore cone = cloud.points[i];
 
-        observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_));
+        if (lap_count_ == 0) {
+            observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_, cone.prob_blue, cone.prob_yellow));
+        } else {
+            observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_));
+        }
     }
 
     if (observed_landmarks.size() == 0) {
@@ -176,7 +180,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
 
     
     double t0 = this->now().seconds();
-    DA.match_observations(observed_landmarks, unmatched_landmarks);
+    DA.match_observations(observed_landmarks, unmatched_landmarks, lap_count_);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Data Association time: %f", this->now().seconds() - t0);
 
 
@@ -369,13 +373,14 @@ void GraphSlam::publish_map(){
         }
         if(landmark->color_==UNCOLORED){
             Eigen::Vector2d local_pos = global_to_local(landmark->world_position_);
-            if(local_pos.norm() < 6 && local_pos[0] < 0){
+            if(local_pos.norm() < 6 && local_pos[0] < 0 && local_pos[0] > -2){
 
                 if(local_pos.y() > 0.5){
                     landmark->color_ = BLUE;
                 } else if (local_pos.y() < -0.5){
                     landmark->color_ = YELLOW;
                 }
+                landmark->passed_ = true;
             }
         }
         ConeXYZColorScore cone;

@@ -28,6 +28,7 @@
 #include <cstdlib> 
 #include <filesystem>
 #include "ConeXYZColorScore.h"
+#include "PointXYZProbColorScore.h"
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
