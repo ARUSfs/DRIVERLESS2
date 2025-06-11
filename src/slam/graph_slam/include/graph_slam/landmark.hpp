@@ -102,7 +102,7 @@ class Landmark {
         /**
          * @brief Update the color of the landmark based on the average of the accumulated probabilities
          */
-        void update_color(int min_color_observations = 20, double min_prob = 0.6) {
+        void update_color(int min_color_observations, double min_prob) {
             if (num_color_observations_ == 0 || world_position_.norm() < 7.0) {
                 color_ = UNCOLORED;
                 return;
@@ -111,9 +111,9 @@ class Landmark {
             double avg_blue   = sum_prob_blue_   / num_color_observations_;
             double avg_yellow = sum_prob_yellow_ / num_color_observations_;
             if (num_color_observations_ >= min_color_observations) {
-                if (avg_blue > min_prob) {
+                if (avg_blue > min_prob && avg_blue > avg_yellow) {
                     color_ = BLUE;
-                } else if (avg_yellow > min_prob) {
+                } else if (avg_yellow > min_prob && avg_yellow > avg_blue) {
                     color_ = YELLOW;
                 } else {
                     color_ = UNCOLORED;

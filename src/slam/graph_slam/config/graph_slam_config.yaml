@@ -16,7 +16,7 @@ graph_slam:
     max_landmark_edges: 5000
 
     # Parameters of Coloring
-    kMinColorObservations: 10
+    kMinColorObservations: 5
     kMinProb: 0.6
 
     debug: true
