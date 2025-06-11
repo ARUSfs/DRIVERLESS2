@@ -24,7 +24,7 @@
 #include "common_msgs/msg/state.hpp"
 #include <pcl/registration/icp.h>
 #include "fast_euclidean_clustering.h"
-#include "kmeans_coloring.h"
+#include "statistical_coloring.h"
 
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/registration/transformation_estimation_svd.h>

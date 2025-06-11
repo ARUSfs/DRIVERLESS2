@@ -227,7 +227,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     // Estimate the color of the closest cones
     if (kColor)
     {
-        KMeansColoring::color_estimation(final_map, cluster_clouds, clusters_centers, kDistanceThreshold);
+        StatisticalColoring::color_estimation(final_map, cluster_clouds, clusters_centers, kDistanceThreshold, kDebug);
         if (kDebug) RCLCPP_INFO(this->get_logger(), "Color estimation time: %f", this->now().seconds() - start_time);
     }
 
