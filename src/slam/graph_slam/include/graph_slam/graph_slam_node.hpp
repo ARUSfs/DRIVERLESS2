@@ -94,6 +94,8 @@ class GraphSlam : public rclcpp::Node
     double kMinLapDistance;
     int kMaxPoseEdges;
     int kMaxLandmarkEdges;
+    int kMinColorObservations;
+    double kMinProb;
     bool kDebug;
     std::string kPerceptionTopic;
 

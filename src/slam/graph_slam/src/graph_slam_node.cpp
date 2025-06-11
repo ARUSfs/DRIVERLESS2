@@ -22,6 +22,8 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->declare_parameter("min_lap_distance", 30.0);
     this->declare_parameter("max_pose_edges", 10000);
     this->declare_parameter("max_landmark_edges", 10000);
+    this->declare_parameter("min_color_observations", 20);
+    this->declare_parameter("min_prob", 0.6);
     this->declare_parameter("debug", true);
 
     // Get parameters
@@ -38,6 +40,8 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->get_parameter("min_lap_distance", kMinLapDistance);
     this->get_parameter("max_pose_edges", kMaxPoseEdges);
     this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
+    this->get_parameter("min_color_observations", kMinColorObservations);
+    this->get_parameter("min_prob", kMinProb);
     this->get_parameter("debug", kDebug);
 
     DA.logger_ = this->get_logger();
@@ -167,7 +171,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
         //Extract the cone position
         PointXYZProbColorScore cone = cloud.points[i];
 
-        if (lap_count_ == 0) {
+        if (lap_count_ == 0 && (u.norm() > 0.5)) {
             observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_, cone.prob_blue, cone.prob_yellow));
         } else {
             observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_));
@@ -180,7 +184,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
 
     
     double t0 = this->now().seconds();
-    DA.match_observations(observed_landmarks, unmatched_landmarks, lap_count_);
+    DA.match_observations(observed_landmarks, unmatched_landmarks, lap_count_, u.norm(), kMinColorObservations, kMinProb);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Data Association time: %f", this->now().seconds() - t0);
 
 

@@ -93,23 +93,31 @@ class Landmark {
             prob_yellow_ = prob_yellow;
             sum_prob_blue_ = prob_blue;
             sum_prob_yellow_ = prob_yellow;
-            num_observations_ = 1;
-            num_color_observations_ = 1;
+            num_observations_ = 0;
+            num_color_observations_ = 0;
             disabled_ = false;
             last_observation_time_ = time(0);  
-            update_color();
         }
 
         /**
          * @brief Update the color of the landmark based on the average of the accumulated probabilities
          */
-        void update_color() {
+        void update_color(int min_color_observations = 20, double min_prob = 0.6) {
+            if (num_color_observations_ == 0 || world_position_.norm() < 7.0) {
+                color_ = UNCOLORED;
+                return;
+            }
+
             double avg_blue   = sum_prob_blue_   / num_color_observations_;
             double avg_yellow = sum_prob_yellow_ / num_color_observations_;
-            if (avg_blue > avg_yellow) {
-                color_ = BLUE;
-            } else {
-                color_ = YELLOW;
+            if (num_color_observations_ >= min_color_observations) {
+                if (avg_blue > min_prob) {
+                    color_ = BLUE;
+                } else if (avg_yellow > min_prob) {
+                    color_ = YELLOW;
+                } else {
+                    color_ = UNCOLORED;
+                }
             }
         }
 
