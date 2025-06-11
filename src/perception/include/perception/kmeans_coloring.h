@@ -37,8 +37,9 @@ namespace KMeansColoring
             }
             
             r = std::sqrt(std::pow(clusters_centers[i].x, 2) + std::pow(clusters_centers[i].y, 2));
-            avg_yellow_intensity = ayellow * r + byellow; // Linear function for yellow intensity
-            avg_blue_intensity   = ablue * r + bblue; // Linear function for blue intensity
+            double p_r = std::exp(-0.015 * r);              // Exponential decay
+            avg_yellow_intensity = ayellow * r + byellow;   // Linear function for yellow intensity
+            avg_blue_intensity   = ablue * r + bblue;       // Linear function for blue intensity
             std::cout << "Average blue intensity: "  << avg_blue_intensity  << std::endl;
             std::cout << "Average yellow intensity: " << avg_yellow_intensity << std::endl;
 
@@ -56,8 +57,8 @@ namespace KMeansColoring
             double cdf_blue   = boost::math::cdf(dist_blue, clusters_centers[i].intensity+ sigma_blue*sigma_blue) 
                                 - boost::math::cdf(dist_blue, clusters_centers[i].intensity - sigma_blue*sigma_blue);
 
-            final_map->points[i].prob_yellow = cdf_yellow;
-            final_map->points[i].prob_blue   = cdf_blue;
+            final_map->points[i].prob_yellow = cdf_yellow * p_r;
+            final_map->points[i].prob_blue   = cdf_blue   * p_r;
 
             std::cout << "x: " << final_map->points[i].x << "; y: " << final_map->points[i].y << "; prob_yellow = " << final_map->points[i].prob_yellow
             << ", prob_blue = " << final_map->points[i].prob_blue << "; avg_cluster_intensity:" << clusters_centers[i].intensity << std::endl;
