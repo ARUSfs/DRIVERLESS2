@@ -61,7 +61,7 @@ class Landmark {
             world_position_ = world_position;
             covariance_ = Eigen::Matrix2d::Identity();
             color_ = UNCOLORED;
-            num_observations_ = 0;
+            num_observations_ = 1;
             disabled_ = false;
             last_observation_time_ = time(0);  
         }
@@ -75,7 +75,7 @@ class Landmark {
             get_world_pos(vehicle_pose);
             covariance_ = Eigen::Matrix2d::Identity();
             color_ = UNCOLORED;
-            num_observations_ = 0;
+            num_observations_ = 1;
             disabled_ = false;
             last_observation_time_ = time(0);  
         }
@@ -83,7 +83,8 @@ class Landmark {
         /**
          * @brief Constructor for Landmark with given local position, vehicle pose and color probabilities
          */
-        Landmark(const Eigen::Vector2d& local_position, const Eigen::Vector3d vehicle_pose, double prob_blue, double prob_yellow) {
+        Landmark(const Eigen::Vector2d& local_position, const Eigen::Vector3d vehicle_pose, double prob_blue, double prob_yellow,
+                int min_color_observations, double min_prob) {
             id_ = UNMATCHED_ID;
             local_position_ = local_position;
             get_world_pos(vehicle_pose);
@@ -93,10 +94,11 @@ class Landmark {
             prob_yellow_ = prob_yellow;
             sum_prob_blue_ = prob_blue;
             sum_prob_yellow_ = prob_yellow;
-            num_observations_ = 0;
-            num_color_observations_ = 0;
+            num_observations_ = 1;
+            num_color_observations_ = 1;
             disabled_ = false;
             last_observation_time_ = time(0);  
+            update_color(min_color_observations, min_prob);
         }
 
         /**

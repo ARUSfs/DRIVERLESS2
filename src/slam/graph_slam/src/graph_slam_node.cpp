@@ -172,7 +172,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
         PointXYZProbColorScore cone = cloud.points[i];
 
         if (lap_count_ == 0 && (u.norm() > 0.5)) {
-            observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_, cone.prob_blue, cone.prob_yellow));
+            observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_, cone.prob_blue, cone.prob_yellow, kMinColorObservations, kMinProb));
         } else {
             observed_landmarks.push_back(Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_));
         }
@@ -233,6 +233,14 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
         landmark_edges_.push_back(edge);
         edges_to_add_.push_back(edge);
     }
+
+        if (kDebug) {
+            for (Landmark* landmark : DA.map_) {
+                RCLCPP_INFO(this->get_logger(), "Landmark %d: World Position: (%f, %f), Color: %d, Observations: %d, Probabilities: (Blue: %f, Yellow: %f)",
+                            landmark->id_, landmark->world_position_.x(), landmark->world_position_.y(),
+                            landmark->color_, landmark->num_color_observations_, landmark->prob_blue_, landmark->prob_yellow_);
+            }
+        }
 
     publish_map();
 }
