@@ -183,7 +183,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
     // Extract the clusters from the point cloud
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_clouds;
-    Clustering::FEC<pcl::PointXYZI>(cloud_filtered, &cluster_clouds, kTolerance, kMinClusterSize, kMaxClusterSize + 100*kAccumBufferSize);
+    Clustering::FEC<pcl::PointXYZI>(cloud_filtered, &cluster_clouds, kTolerance, kMinClusterSize + 1*kAccumBufferSize, kMaxClusterSize + 100*kAccumBufferSize);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Clustering time: %f", this->now().seconds() - start_time);
 
 

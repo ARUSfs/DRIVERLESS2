@@ -61,16 +61,8 @@ namespace Utils
             // Filter the cluster by size and keep the center of the cluster
             if (height < min_height || height > max_height || width_x > max_width || width_y > max_width || max_point.z > top_z)
             {
-                // Remove the cluster from both vectors
-                cluster_clouds->at(i)->clear();
                 clusters_centers->erase(clusters_centers->begin() + i);
                 cluster_clouds->erase(cluster_clouds->begin() + i);
-            }
-            else if (height < min_height) // If the height is too small, remove it
-            {
-                clusters_centers->erase(clusters_centers->begin() + i);
-                cluster_clouds->erase(cluster_clouds->begin() + i);
-
             }
         }
     
