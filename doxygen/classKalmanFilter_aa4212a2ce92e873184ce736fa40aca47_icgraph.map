@@ -1,0 +1,7 @@
+<map id="KalmanFilter::set_problem_size" name="KalmanFilter::set_problem_size">
+<area shape="rect" id="Node000001" title="Problem size initializer Initializes n, m and p." alt="" coords="433,13,660,38"/>
+<area shape="rect" id="Node000002" href="$classSpeedEstimator.html#a90264ec9430eab294261adb3eda3b75b" title="Speed Estimator initializer Initializes both Kinematic and Dynamic Bicycle kalman filters." alt="" coords="196,5,385,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="420,28,386,28,386,23,420,23"/>
+<area shape="rect" id="Node000003" href="$classCarState.html#af69b7ada77b367d0f5934e6d10b454aa" title="Constructor of CarState node." alt="" coords="5,13,148,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="182,28,148,28,148,23,182,23"/>
+</map>

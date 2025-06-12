@@ -1,0 +1,7 @@
+<map id="PathPlanning::get_final_route" name="PathPlanning::get_final_route">
+<area shape="rect" id="Node000001" title="Get the final route after comparing with previous routes to avoid outliers." alt="" coords="5,5,176,45"/>
+<area shape="rect" id="Node000002" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#af869e5da95e6454a17f019d05041acfe" title="Calculate the similarity between two lists of points. Similarity is defined as the number of points i..." alt="" coords="224,13,337,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="176,23,210,23,210,28,176,28"/>
+<area shape="rect" id="Node000003" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#a35877fef1adaeca4db6df0211ca81f2b" title="Calculate the euclidean distance between two cones." alt="" coords="385,13,463,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="338,23,372,23,372,28,338,28"/>
+</map>

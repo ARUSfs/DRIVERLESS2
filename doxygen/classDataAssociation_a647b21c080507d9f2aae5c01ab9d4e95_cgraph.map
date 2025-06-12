@@ -1,0 +1,7 @@
+<map id="DataAssociation::match_observations" name="DataAssociation::match_observations">
+<area shape="rect" id="Node000001" title="Match given observations to the map using ICP and nearest neighbor search. Unmatched landmarks are re..." alt="" coords="5,23,183,63"/>
+<area shape="rect" id="Node000002" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#a35877fef1adaeca4db6df0211ca81f2b" title="Calculate the euclidean distance between two cones." alt="" coords="281,5,359,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="183,31,267,21,268,26,183,36"/>
+<area shape="rect" id="Node000003" href="$classLandmark.html#a4c7758c345ece332c2a64b56aeae6ac0" title="Update the color of the landmark based on the average of the accumulated probabilities." alt="" coords="231,55,409,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="183,50,218,54,217,59,183,55"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="src/planning/path_planning/include/path_planning/simplex_node.hpp" name="src/planning/path_planning/include/path_planning/simplex_node.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,231,60"/>
+<area shape="rect" id="Node000002" href="$simplex__tree_8hpp.html" title="Creates a tree structure using information about neighbor triangles." alt="" coords="5,108,231,163"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="121,74,121,108,115,108,115,74"/>
+<area shape="rect" id="Node000003" href="$path__planning__node_8hpp.html" title="Header file for the Path Planning node. Contains the class definition and the declaration of the meth..." alt="" coords="17,211,219,265"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="121,176,121,211,115,211,115,176"/>
+<area shape="rect" id="Node000004" href="$path__planning__node_8cpp.html" title="Main file for the Path Planning node. Contains the main function and the implementation of the method..." alt="" coords="15,313,221,353"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="121,279,121,313,115,313,115,279"/>
+</map>

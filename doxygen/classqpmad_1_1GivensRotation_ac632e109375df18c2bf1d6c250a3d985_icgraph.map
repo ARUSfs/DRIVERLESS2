@@ -1,0 +1,11 @@
+<map id="qpmad::GivensRotation::swap" name="qpmad::GivensRotation::swap">
+<area shape="rect" id="Node000001" title=" " alt="" coords="465,37,640,77"/>
+<area shape="rect" id="Node000002" href="$classqpmad_1_1GivensRotation.html#aee6053ebec2d7b7f9c57b3865cfbc763" title=" " alt="" coords="243,5,417,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="451,45,417,40,418,35,452,40"/>
+<area shape="rect" id="Node000003" href="$classqpmad_1_1GivensRotation.html#a99d248fbba7c52db069db25c1d8c22d1" title=" " alt="" coords="243,69,417,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="452,74,418,79,417,74,451,69"/>
+<area shape="rect" id="Node000004" href="$classqpmad_1_1FactorizationData.html#a80a7ede9d31329ef48150bf2bc2b0a5e" title=" " alt="" coords="5,37,195,77"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="228,78,195,73,195,68,229,73"/>
+<area shape="rect" id="Node000005" href="$classqpmad_1_1FactorizationData.html#af4b312428b53e1bc55689334d35e25d6" title=" " alt="" coords="5,101,195,141"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="229,106,195,111,195,106,228,101"/>
+</map>

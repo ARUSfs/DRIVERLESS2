@@ -1,0 +1,7 @@
+<map id="Visualization::optimized_trajectory_callback" name="Visualization::optimized_trajectory_callback">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,184,77"/>
+<area shape="rect" id="Node000002" href="$classVisualization.html#ae9f07a2534d6bb33fbf6bee9fdd8ee32" title="Creates a 3D trajectory marker." alt="" coords="232,5,403,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="184,42,218,37,219,42,185,47"/>
+<area shape="rect" id="Node000003" href="$classVisualization.html#a84638e76334c4a6f7c04cd049a4785e6" title="Creates markers for trajectory messages." alt="" coords="240,69,395,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="185,68,227,74,226,79,184,73"/>
+</map>

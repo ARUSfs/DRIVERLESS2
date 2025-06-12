@@ -1,0 +1,7 @@
+<map id="Landmark::Landmark" name="Landmark::Landmark">
+<area shape="rect" id="Node000001" title="Constructor for Landmark with given local position, vehicle pose and color probabilities." alt="" coords="5,31,165,56"/>
+<area shape="rect" id="Node000002" href="$classLandmark.html#aa50683e0d26920037dd9c44eabb0f0ed" title="Get the world position of the landmark from the local position and vehicle pose." alt="" coords="213,5,403,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="165,32,199,28,200,33,166,37"/>
+<area shape="rect" id="Node000003" href="$classLandmark.html#a4c7758c345ece332c2a64b56aeae6ac0" title="Update the color of the landmark based on the average of the accumulated probabilities." alt="" coords="219,55,397,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="166,49,205,54,204,59,165,55"/>
+</map>

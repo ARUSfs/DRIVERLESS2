@@ -1,0 +1,6 @@
+<map id="delaunator::Delaunator::get_hull_area" name="delaunator::Delaunator::get_hull_area">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,22,177,62"/>
+<area shape="rect" id="Node000002" href="$namespacedelaunator.html#aeca82c5b5df9230a0547e39c0e633165" title=" " alt="" coords="225,29,353,55"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,39,211,39,211,45,178,45"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="257,31,250,21,253,11,267,5,289,3,316,6,328,15,324,19,314,11,289,8,268,10,257,15,255,20,261,28"/>
+</map>

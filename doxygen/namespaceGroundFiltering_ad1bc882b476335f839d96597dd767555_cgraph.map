@@ -1,0 +1,8 @@
+<map id="GroundFiltering::grid_ground_filter" name="GroundFiltering::grid_ground_filter">
+<area shape="rect" id="Node000001" title="Divide the cloud in the specified numbers of squares as a grid and call the function ransac_checking_..." alt="" coords="5,29,160,69"/>
+<area shape="rect" id="Node000002" href="$namespaceGroundFiltering.html#ac754e959f8a1371a1d4f36bfa5dc348b" title="Apply ransac in the square specified and check if the result plane is in accordance with the previus ..." alt="" coords="208,29,403,69"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="160,47,194,47,194,52,160,52"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="264,30,261,20,268,10,283,5,305,3,331,6,345,13,343,18,330,11,305,8,284,10,271,15,267,21,269,28"/>
+<area shape="rect" id="Node000003" href="$namespaceGroundFiltering.html#a309b709ff242b65b04b5f22ad501fa08" title="Implements ground filtering using ransac segmentation." alt="" coords="451,29,624,69"/>
+<area shape="poly" id="edge3_Node000002_Node000003" title=" " alt="" coords="403,47,437,47,437,52,403,52"/>
+</map>

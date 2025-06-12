@@ -1,0 +1,21 @@
+<map id="CarState::on_timer" name="CarState::on_timer">
+<area shape="rect" id="Node000001" title="Periodically processes sensor data, estimates vehicle speed, and publishes the current state and car ..." alt="" coords="5,234,149,259"/>
+<area shape="rect" id="Node000002" href="$classSpeedEstimator.html#ac8495272b4a326926b84571846ddee07" title="Speed estimation Estimates car&#39;s longitudinal and lateral velocities combining kinematic and dynamic ..." alt="" coords="197,197,388,237"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="149,234,183,230,184,235,150,240"/>
+<area shape="rect" id="Node000010" href="$classCarState.html#a73e035162ca38fb29c07f16509d2e51e" title="Retrieves the vehicle&#39;s current position and orientation from TF. Uses the transform between &quot;arussim..." alt="" coords="201,262,384,287"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="150,253,188,258,187,264,149,259"/>
+<area shape="rect" id="Node000003" href="$classKalmanFilter.html#a77b04a23c464ed286382fc7e81b14f9b" title="State estimator Performs the Kalman filter process to estimate the current state and saves estimated ..." alt="" coords="454,5,625,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="305,195,356,127,393,88,434,55,445,49,448,54,438,60,396,92,360,130,309,199"/>
+<area shape="rect" id="Node000004" href="$classKalmanFilter.html#a62af8c24b66e4431801f202bb8a59774" title="Estimated state covariance getter Returns last estimated state covariance matrix." alt="" coords="436,69,643,109"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="317,195,370,157,435,119,451,112,454,117,437,124,373,161,320,199"/>
+<area shape="rect" id="Node000005" href="$classKalmanFilter.html#a296e06a909fcec4acd348cba00fcc6ca" title="Estimated state getter Returns last estimated state vector." alt="" coords="436,133,643,173"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="370,195,448,174,449,179,371,200"/>
+<area shape="rect" id="Node000006" href="$classKalmanFilter.html#a5c1f4dcd7ef255532b275c38f8b4bc8c" title="Control matrix updater Updates control matrix B for this iteration." alt="" coords="460,197,619,237"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="388,215,446,215,446,220,388,220"/>
+<area shape="rect" id="Node000007" href="$classKalmanFilter.html#a918039a5873206503fc5452f4a7afae2" title="Covariance matrix updater Updates covariance matrix P for this iteration." alt="" coords="460,261,619,301"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="371,235,449,255,448,260,370,240"/>
+<area shape="rect" id="Node000008" href="$classKalmanFilter.html#af360ad0eef3a2172ccc846725ff3da0f" title="Model matrix updater Updates model matrix M for this iteration." alt="" coords="460,325,619,365"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="369,235,390,247,406,264,414,280,422,296,438,311,449,318,446,323,434,315,418,299,410,283,401,267,386,251,366,240"/>
+<area shape="rect" id="Node000009" href="$classKalmanFilter.html#a6de37d38d613878f35150ca24c55a261" title="State vector updater Updates state vector x for this iteration." alt="" coords="460,389,619,429"/>
+<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="374,235,390,247,403,264,410,281,414,313,419,345,425,360,438,375,450,385,446,389,434,379,421,363,413,346,409,314,405,282,398,267,386,251,371,240"/>
+</map>

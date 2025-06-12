@@ -1,0 +1,9 @@
+<map id="CDT::locatePointTriangle" name="CDT::locatePointTriangle">
+<area shape="rect" id="Node000001" title="Check if point a lies inside of, outside of, or on an edge of a triangle." alt="" coords="5,31,185,56"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT.html#aa50e3fa54c376fb436336558b90765d4" title="Check if point lies to the left of, to the right of, or on a line." alt="" coords="233,31,389,56"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="186,41,220,41,220,46,186,46"/>
+<area shape="rect" id="Node000003" href="$namespaceCDT.html#a27dd09660015f286569d4be2819f498e" title="Classify value of orient2d predicate." alt="" coords="437,5,616,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="389,32,423,27,424,33,390,37"/>
+<area shape="rect" id="Node000004" href="$namespaceCDT.html#a4ddf1f4cbc942a9614a2dfbccba5bd8b" title="Orient p against line v1&#45;v2 2D: robust geometric predicate." alt="" coords="471,55,583,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="390,49,457,57,456,62,389,55"/>
+</map>

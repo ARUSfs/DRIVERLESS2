@@ -1,0 +1,7 @@
+<map id="src/perception/include/perception/accumulation.h" name="src/perception/include/perception/accumulation.h">
+<area shape="rect" id="Node000001" title="Contains auxiliar functions used in the algorithm to accumulate the point cloud received from the lid..." alt="" coords="5,5,204,45"/>
+<area shape="rect" id="Node000002" href="$perception__node_8hpp.html" title="Contains the class definition and the declaration of the methods used in the algorithm." alt="" coords="21,93,189,148"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="107,59,107,93,102,93,102,59"/>
+<area shape="rect" id="Node000003" href="$perception__node_8cpp.html" title=" " alt="" coords="24,196,185,236"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="107,162,107,196,102,196,102,162"/>
+</map>

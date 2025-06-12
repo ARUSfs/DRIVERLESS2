@@ -1,0 +1,11 @@
+<map id="Landmark::update_color" name="Landmark::update_color">
+<area shape="rect" id="Node000001" title="Update the color of the landmark based on the average of the accumulated probabilities." alt="" coords="672,35,851,60"/>
+<area shape="rect" id="Node000002" href="$classLandmark.html#aefbd0040f74fc4aaba73f5922dec1246" title="Constructor for Landmark with given local position, vehicle pose and color probabilities." alt="" coords="455,5,615,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="658,37,615,31,616,26,658,31"/>
+<area shape="rect" id="Node000003" href="$classDataAssociation.html#a647b21c080507d9f2aae5c01ab9d4e95" title="Match given observations to the map using ICP and nearest neighbor search. Unmatched landmarks are re..." alt="" coords="447,55,624,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="659,63,625,67,624,62,658,57"/>
+<area shape="rect" id="Node000004" href="$classGraphSlam.html#a3ad340569b4fcc859e0319d733a3692e" title="Callback function for the perception subscriber." alt="" coords="228,55,399,95"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="432,78,399,78,399,73,432,73"/>
+<area shape="rect" id="Node000005" href="$classGraphSlam.html#a98e4aa1fc7023189c67bbdb3a3909fce" title=" " alt="" coords="5,63,180,88"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="214,78,180,78,180,73,214,73"/>
+</map>

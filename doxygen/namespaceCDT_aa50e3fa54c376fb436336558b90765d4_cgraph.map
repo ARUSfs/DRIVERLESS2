@@ -1,0 +1,7 @@
+<map id="CDT::locatePointLine" name="CDT::locatePointLine">
+<area shape="rect" id="Node000001" title="Check if point lies to the left of, to the right of, or on a line." alt="" coords="5,31,161,56"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT.html#a27dd09660015f286569d4be2819f498e" title="Classify value of orient2d predicate." alt="" coords="209,5,388,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="161,32,195,27,196,33,162,37"/>
+<area shape="rect" id="Node000003" href="$namespaceCDT.html#a4ddf1f4cbc942a9614a2dfbccba5bd8b" title="Orient p against line v1&#45;v2 2D: robust geometric predicate." alt="" coords="243,55,355,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="162,49,229,57,228,62,161,55"/>
+</map>

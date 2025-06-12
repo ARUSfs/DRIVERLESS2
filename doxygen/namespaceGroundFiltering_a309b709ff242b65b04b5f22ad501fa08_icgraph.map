@@ -1,0 +1,16 @@
+<map id="GroundFiltering::ransac_ground_filter" name="GroundFiltering::ransac_ground_filter">
+<area shape="rect" id="Node000001" title="Implements ground filtering using ransac segmentation." alt="" coords="924,49,1097,89"/>
+<area shape="rect" id="Node000002" href="$classPerception.html#adc23cc0d2e3ae4d8c10c46e6841c36e8" title=" " alt="" coords="459,5,633,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="910,57,876,53,633,28,634,23,876,47,911,52"/>
+<area shape="rect" id="Node000003" href="$classPerception.html#a7c6f9e4953d3780c1827f3cc0cbed09e" title="Callback function for the lidar topic." alt="" coords="221,56,411,81"/>
+<area shape="poly" id="edge4_Node000001_Node000003" title=" " alt="" coords="910,71,411,71,411,66,910,66"/>
+<area shape="rect" id="Node000005" href="$namespaceGroundFiltering.html#ac754e959f8a1371a1d4f36bfa5dc348b" title="Apply ransac in the square specified and check if the result plane is in accordance with the previus ..." alt="" coords="681,130,876,170"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="941,96,837,132,836,127,939,91"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="475,36,375,59,374,53,473,31"/>
+<area shape="rect" id="Node000004" href="$classPerception.html#a8bcf74df62599f91509d3fd2df14c5f7" title="Construct a new Perception object." alt="" coords="5,56,173,81"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="208,71,174,71,174,66,208,66"/>
+<area shape="poly" id="edge8_Node000005_Node000005" title=" " alt="" coords="818,118,804,111,779,109,756,111,743,115,738,121,740,129,735,130,733,120,740,111,755,105,779,103,806,106,820,113"/>
+<area shape="rect" id="Node000006" href="$namespaceGroundFiltering.html#ad1bc882b476335f839d96597dd767555" title="Divide the cloud in the specified numbers of squares as a grid and call the function ransac_checking_..." alt="" coords="469,118,623,158"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="667,147,623,145,624,139,668,142"/>
+<area shape="poly" id="edge7_Node000006_Node000003" title=" " alt="" coords="465,117,358,84,360,79,467,111"/>
+</map>

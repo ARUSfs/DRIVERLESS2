@@ -1,0 +1,5 @@
+<map id="PathPlanning::add_to_track_limits" name="PathPlanning::add_to_track_limits">
+<area shape="rect" id="Node000001" title="Add the back edge to the track limits." alt="" coords="5,5,164,45"/>
+<area shape="rect" id="Node000002" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#a35877fef1adaeca4db6df0211ca81f2b" title="Calculate the euclidean distance between two cones." alt="" coords="212,13,289,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="164,23,198,23,198,28,164,28"/>
+</map>

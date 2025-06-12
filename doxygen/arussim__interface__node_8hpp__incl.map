@@ -1,0 +1,27 @@
+<map id="src/interfaces/arussim_interface/include/arussim_interface/arussim_interface_node.hpp" name="src/interfaces/arussim_interface/include/arussim_interface/arussim_interface_node.hpp">
+<area shape="rect" id="Node000001" title="ARUSSim Interface node header for ARUS Team Driverless pipeline." alt="" coords="1186,5,1394,75"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,130,137,155"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1186,46,992,52,734,66,443,89,295,105,150,125,128,130,127,124,150,120,295,100,443,84,734,60,992,47,1186,40"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="162,130,375,155"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="1186,51,832,79,610,100,388,125,349,131,349,125,387,120,610,95,831,74,1186,46"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="400,123,593,163"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="1186,55,927,83,607,125,607,120,927,78,1186,49"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="617,123,800,163"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="1186,61,814,125,814,120,1185,56"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="824,123,1015,163"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="1186,72,1003,122,1001,116,1185,67"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="1039,130,1285,155"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="1249,77,1189,124,1186,119,1245,73"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="1310,130,1529,155"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1335,73,1395,119,1392,124,1332,77"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="1553,130,1761,155"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="1395,67,1603,124,1601,129,1393,72"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="1785,123,1973,163"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="1395,56,1772,120,1771,125,1394,61"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="1998,123,2177,163"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="1394,49,1658,77,1985,120,1984,125,1657,82,1394,54"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="2201,130,2443,155"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="1395,46,1747,76,2189,120,2233,126,2232,131,2188,125,1747,81,1394,52"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="2467,130,2681,155"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="1394,43,1855,68,2154,91,2456,120,2495,125,2494,131,2455,125,2153,96,1855,74,1394,48"/>
+</map>

@@ -1,0 +1,38 @@
+<map id="distance" name="distance">
+<area shape="rect" id="Node000001" title="Calculate the euclidean distance between two cones." alt="" coords="989,211,1067,237"/>
+<area shape="rect" id="Node000002" href="$classPathPlanning.html#a72c0c43a19a16d42f270ae4fc9cc34ad" title="Add the back edge to the track limits." alt="" coords="531,5,689,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1018,198,1008,167,992,130,970,95,940,66,911,50,880,37,814,21,748,16,689,18,689,13,749,11,815,16,882,32,913,45,943,62,974,91,997,128,1013,165,1023,197"/>
+<area shape="rect" id="Node000003" href="$classPathPlanning.html#a8f5aef1f05ed86270a445a63bae07573" title="Callback function for the perception topic." alt="" coords="252,206,456,231"/>
+<area shape="poly" id="edge18_Node000001_Node000003" title=" " alt="" coords="1014,200,986,152,965,128,940,110,910,104,857,102,715,107,576,118,505,127,465,144,427,166,371,208,368,204,424,161,462,139,503,121,576,112,714,102,857,97,911,99,942,106,969,124,990,148,1019,197"/>
+<area shape="rect" id="Node000005" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#af869e5da95e6454a17f019d05041acfe" title="Calculate the similarity between two lists of points. Similarity is defined as the number of points i..." alt="" coords="796,121,909,146"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="1002,204,973,180,940,160,909,148,911,143,943,155,976,176,1005,199"/>
+<area shape="rect" id="Node000007" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#a05024ff8b8521007b29f819db1bd9126" title="Calculate the similarity between two lists of points. Overloaded for ConeXYZColorScore...." alt="" coords="796,170,909,195"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="976,215,906,198,908,193,977,209"/>
+<area shape="rect" id="Node000008" href="$classSimplexTree.html#adc5e56b70501b5747234cee45a7856a8" title="Recursive function to create the tree structure. From a triangle list and an index from which to star..." alt="" coords="777,244,928,284"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="977,238,929,249,928,244,975,233"/>
+<area shape="rect" id="Node000010" href="$classPathPlanning.html#afca0773706191fa14f4ffb0fc05985d7" title="Create a triangulation object from the point cloud and delete triangles with long edges." alt="" coords="775,308,930,348"/>
+<area shape="poly" id="edge11_Node000001_Node000010" title=" " alt="" coords="1007,248,977,274,943,298,918,310,916,305,940,294,974,270,1003,244"/>
+<area shape="rect" id="Node000012" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#af7cf56fd6aa1fe03ddc9399edee44398" title="Get the index of a given vertex in the triangulation. Returns 0 if not found." alt="" coords="785,373,920,398"/>
+<area shape="poly" id="edge15_Node000001_Node000012" title=" " alt="" coords="1020,251,991,307,969,337,943,362,920,375,917,370,940,358,965,333,987,304,1015,248"/>
+<area shape="rect" id="Node000013" href="$classDataAssociation.html#a647b21c080507d9f2aae5c01ab9d4e95" title="Match given observations to the map using ICP and nearest neighbor search. Unmatched landmarks are re..." alt="" coords="764,423,941,463"/>
+<area shape="poly" id="edge19_Node000001_Node000013" title=" " alt="" coords="1024,251,1014,287,998,330,975,374,943,413,926,425,923,420,940,409,970,371,993,328,1009,285,1019,250"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="529,53,505,66,460,101,421,141,366,208,362,204,417,138,457,97,503,62,527,48"/>
+<area shape="rect" id="Node000004" href="$classPathPlanning.html#a314735f239a01515a3450205dd144619" title="Construct a new Path Planning object." alt="" coords="5,206,204,231"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="239,221,204,221,204,216,239,216"/>
+<area shape="rect" id="Node000006" href="$classPathPlanning.html#a5750a22fae6c97bdf0c1d643521d65ec" title="Get the final route after comparing with previous routes to avoid outliers." alt="" coords="525,136,695,176"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="783,143,696,151,695,145,782,137"/>
+<area shape="poly" id="edge6_Node000006_Node000003" title=" " alt="" coords="515,182,407,209,406,203,514,177"/>
+<area shape="poly" id="edge9_Node000008_Node000008" title=" " alt="" coords="882,232,871,225,853,223,836,225,827,229,823,235,825,243,820,244,818,234,823,225,835,219,853,217,873,220,884,228"/>
+<area shape="rect" id="Node000009" href="$classSimplexTree.html#a8a8fe3e9f3be5a4427773a6cab6cd43c" title="Construct a new simplex tree object and expand it." alt="" coords="515,217,705,242"/>
+<area shape="poly" id="edge10_Node000008_Node000009" title=" " alt="" coords="763,254,699,245,700,239,764,249"/>
+<area shape="poly" id="edge14_Node000010_Node000003" title=" " alt="" coords="761,312,503,256,408,234,410,229,505,251,762,307"/>
+<area shape="rect" id="Node000011" href="$classPathPlanning.html#a4168d313d26085bd2f4319d33c2f5b57" title="Get the back edge given the position of the car." alt="" coords="504,318,716,343"/>
+<area shape="poly" id="edge12_Node000010_Node000011" title=" " alt="" coords="761,332,716,332,716,327,761,326"/>
+<area shape="poly" id="edge13_Node000011_Node000003" title=" " alt="" coords="546,317,503,301,431,266,375,234,377,229,434,262,505,296,548,312"/>
+<area shape="poly" id="edge17_Node000012_Node000003" title=" " alt="" coords="771,396,711,397,642,393,571,381,503,358,456,331,416,296,384,261,362,233,366,230,388,257,420,292,460,326,505,354,572,376,643,387,711,391,771,390"/>
+<area shape="poly" id="edge16_Node000012_Node000011" title=" " alt="" coords="782,372,667,346,668,341,783,367"/>
+<area shape="rect" id="Node000014" href="$classGraphSlam.html#a3ad340569b4fcc859e0319d733a3692e" title="Callback function for the perception subscriber." alt="" coords="525,423,695,463"/>
+<area shape="poly" id="edge20_Node000013_Node000014" title=" " alt="" coords="750,445,696,445,696,440,750,440"/>
+<area shape="rect" id="Node000015" href="$classGraphSlam.html#a98e4aa1fc7023189c67bbdb3a3909fce" title=" " alt="" coords="267,430,441,455"/>
+<area shape="poly" id="edge21_Node000014_Node000015" title=" " alt="" coords="511,445,442,445,442,440,511,440"/>
+</map>

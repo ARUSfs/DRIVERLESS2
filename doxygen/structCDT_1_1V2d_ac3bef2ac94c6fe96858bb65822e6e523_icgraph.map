@@ -1,0 +1,20 @@
+<map id="CDT::V2d::make" name="CDT::V2d::make">
+<area shape="rect" id="Node000001" title="Create vector from X and Y coordinates." alt="" coords="967,69,1092,94"/>
+<area shape="rect" id="Node000002" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#ab496b095a5711abab6ec306806e7097f" title="Calculate the centroid of a triangle given its index in the triangulation. Centroid is calculated as ..." alt="" coords="772,69,911,94"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="953,84,911,84,911,79,953,79"/>
+<area shape="rect" id="Node000003" href="$classPathPlanning.html#a9c1a10ac2e4b9f189bbe97258304aef9" title="Create a track limits msg object from a given route of triangles and the triangulation." alt="" coords="533,5,687,45"/>
+<area shape="poly" id="edge8_Node000001_Node000003" title=" " alt="" coords="966,68,918,59,797,43,687,33,688,28,797,37,919,53,967,63"/>
+<area shape="rect" id="Node000007" href="$classPathPlanning.html#afca0773706191fa14f4ffb0fc05985d7" title="Create a triangulation object from the point cloud and delete triangles with long edges." alt="" coords="764,119,919,159"/>
+<area shape="poly" id="edge9_Node000001_Node000007" title=" " alt="" coords="975,101,908,121,907,116,973,96"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="775,68,687,47,688,41,776,63"/>
+<area shape="rect" id="Node000004" href="$classPathPlanning.html#a8f5aef1f05ed86270a445a63bae07573" title="Callback function for the perception topic." alt="" coords="252,95,456,121"/>
+<area shape="poly" id="edge7_Node000002_Node000004" title=" " alt="" coords="758,89,456,105,456,100,758,83"/>
+<area shape="rect" id="Node000006" href="$classPathPlanning.html#a4168d313d26085bd2f4319d33c2f5b57" title="Get the back edge given the position of the car." alt="" coords="504,121,716,146"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="771,100,668,123,666,118,770,94"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="535,52,395,98,394,93,533,47"/>
+<area shape="rect" id="Node000005" href="$classPathPlanning.html#a314735f239a01515a3450205dd144619" title="Construct a new Path Planning object." alt="" coords="5,95,204,121"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="239,111,204,111,204,105,239,105"/>
+<area shape="poly" id="edge6_Node000006_Node000004" title=" " alt="" coords="490,124,456,121,456,115,491,119"/>
+<area shape="poly" id="edge11_Node000007_Node000004" title=" " alt="" coords="751,157,633,168,568,168,504,161,438,144,383,123,385,118,439,139,504,156,568,163,633,163,750,152"/>
+<area shape="poly" id="edge10_Node000007_Node000006" title=" " alt="" coords="750,139,716,138,716,133,750,134"/>
+</map>

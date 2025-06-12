@@ -1,0 +1,9 @@
+<map id="CDT::Triangulation::peelLayer" name="CDT::Triangulation::peelLayer">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,47,145,87"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT.html#a71e51d357ff08262d1bb774ce23b0c29" title="Advance vertex or neighbor index counter&#45;clockwise." alt="" coords="204,5,285,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="144,45,190,31,192,36,145,50"/>
+<area shape="rect" id="Node000003" href="$namespaceCDT.html#a36f349a95810a0abb13c81e7386fceb5" title="Advance vertex or neighbor index clockwise." alt="" coords="207,55,282,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="145,65,194,65,194,70,145,70"/>
+<area shape="rect" id="Node000004" href="$namespaceCDT.html#a5b2af2372b08611f8accaffe1fd3e51e" title="Opposed neighbor index from vertex index." alt="" coords="193,104,296,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="145,85,188,98,187,103,144,90"/>
+</map>
