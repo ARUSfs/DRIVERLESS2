@@ -3,8 +3,6 @@
 * @author Rafael Guil Valero (rafaguilvalero@gmail.com)
 * @brief Auxiliar file for the Perception node.
 * Defines the structure of the custom type PointXYZProbColorScore.
-* @version 0.1
-* @date 8-6-2025
 */
 
 #include <pcl/point_types.h>
