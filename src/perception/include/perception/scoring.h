@@ -6,6 +6,7 @@
 
 
 #include "PointXYZProbColorScore.h"
+#include "PointXYZIRingTime.h"
 
 
 namespace Scoring
@@ -14,8 +15,8 @@ namespace Scoring
     * @brief Score every cluster by how similar its to a cone and based on the distance between
     * its points and what would be the real cone, and then only keep the ones that a have a certain similarity to be considered cones.
     */
-    void scoring_surface(pcl::PointCloud<PointXYZProbColorScore>::Ptr& final_map, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points, 
-        std::vector<pcl::PointXYZI>& cluster_centers, double threshold)
+    void scoring_surface(pcl::PointCloud<PointXYZProbColorScore>::Ptr& final_map, std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr> cluster_points, 
+        std::vector<PointXYZIRingTime>& cluster_centers, double threshold)
     {
         // Define the cone
         const double kBaseRadius = 0.07525;  
@@ -24,7 +25,7 @@ namespace Scoring
         for (size_t i = 0; i < cluster_points.size(); ++i) 
         {
             // Define the variables
-            pcl::PointXYZI& center = cluster_centers[i];
+            PointXYZIRingTime& center = cluster_centers[i];
             const auto& cluster = cluster_points[i];
             double total_score = 0.0;
             double cone_radius_at_z;

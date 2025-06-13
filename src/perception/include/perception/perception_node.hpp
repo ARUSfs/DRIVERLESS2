@@ -5,6 +5,9 @@
  */
 
 
+#define PCL_NO_PRECOMPILE
+
+
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl/point_cloud.h>
@@ -24,6 +27,7 @@
 #include <pcl/registration/icp.h>
 #include "fast_euclidean_clustering.h"
 #include "coloring.h"
+#include "PointXYZIRingTime.h"
 
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/registration/transformation_estimation_svd.h>
@@ -50,9 +54,9 @@ class Perception : public rclcpp::Node
         double r_;
         double dt;
         std::vector<double> final_times;
-        std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_buffer_;
+        std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr> cloud_buffer_;
         pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cones_;
-        pcl::PointCloud<pcl::PointXYZI>::Ptr acum_cloud_;
+        pcl::PointCloud<PointXYZIRingTime>::Ptr acum_cloud_;
 
 
         // Topics
@@ -127,6 +131,6 @@ class Perception : public rclcpp::Node
          */
         void lidar_callback(sensor_msgs::msg::PointCloud2::SharedPtr lidar_msg);
 
-        void accumulate(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud);
+        void accumulate(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud);
 
 };

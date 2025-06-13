@@ -8,6 +8,7 @@
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
 #include "PointXYZColorScore.h"
+#include "PointXYZIRingTime.h"
  
 
 namespace Utils 
@@ -15,20 +16,20 @@ namespace Utils
     /**
     * @brief Extract the center of each cluster.
     */
-    void get_clusters_centers(std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>* cluster_clouds,
-        std::vector<pcl::PointXYZI>* clusters_centers)
+    void get_clusters_centers(std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr>* cluster_clouds,
+        std::vector<PointXYZIRingTime>* clusters_centers)
     {
         for (auto cluster : *cluster_clouds)
         {
             if (!cluster || cluster->empty()) continue;
 
             // Compute the centroid of the cluster
-            pcl::CentroidPoint<pcl::PointXYZI> centroid_filter;
+            pcl::CentroidPoint<PointXYZIRingTime> centroid_filter;
             for (const auto& point : cluster->points)
             {
                 centroid_filter.add(point);
             }
-            pcl::PointXYZI centroid;
+            PointXYZIRingTime centroid;
             centroid_filter.get(centroid);
 
             // Add the center point to the clusters_centers cloud
@@ -42,8 +43,8 @@ namespace Utils
     /**
     * @brief Filter the final clusters by size to delete the ones that are too small or too large to be considered cones.
     */
-    void filter_clusters(std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>* cluster_clouds,
-        std::vector<pcl::PointXYZI>* clusters_centers, double min_height = 0.10, double max_height = 0.4,
+    void filter_clusters(std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr>* cluster_clouds,
+        std::vector<PointXYZIRingTime>* clusters_centers, double min_height = 0.10, double max_height = 0.4,
         double max_width = 0.5, double top_z = 1.0)
     {
         // Inverse loop to erase safely
@@ -52,7 +53,7 @@ namespace Utils
             if (!cluster || cluster->empty()) continue;
 
             // Obtain the new bounding box of the cluster
-            pcl::PointXYZI min_point, max_point;
+            PointXYZIRingTime min_point, max_point;
             pcl::getMinMax3D(*cluster, min_point, max_point);
             double height = max_point.z - min_point.z;
             double width_x = max_point.x - min_point.x;
@@ -75,10 +76,10 @@ namespace Utils
     /**
     * @brief Recover falsely ground filtered points.
     */
-    void reconstruction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_plane, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>* cluster_clouds,
-        std::vector<pcl::PointXYZI>* clusters_centers, double radius) {
+    void reconstruction(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_plane, std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr>* cluster_clouds,
+        std::vector<PointXYZIRingTime>* clusters_centers, double radius) {
         for (int i=0; i<clusters_centers->size(); ++i) {
-            pcl::PointXYZI center = clusters_centers->at(i);
+            PointXYZIRingTime center = clusters_centers->at(i);
             
             for (auto point : cloud_plane->points) {
 
@@ -95,26 +96,32 @@ namespace Utils
         }
     }
 
-
-
     /**
     * @brief Correct the motion of the points in the final map.
     */
-    void motion_correction(pcl::PointCloud<PointXYZColorScore>::Ptr cloud, double vx, double vy, double yaw_rate, double dt)
+    void motion_correction(pcl::PointCloud<PointXYZIRingTime>::Ptr cloud, std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr>* cluster_clouds, 
+        double vx, double vy, double yaw_rate, double global_time)
     {
-        // Estimate the motion of the points
-        double theta = -yaw_rate * dt; // Estimate DSK delay
-
-        // Apply the estimated motion to the points
-        for (auto& p : cloud->points)
+        for (auto cluster : *cluster_clouds)
         {
-            double dx = vx * dt, dy = vy * dt;
-            p.x = p.x * std::cos(theta) - p.y * std::sin(theta) - dx;
-            p.y = p.x * std::sin(theta) + p.y * std::cos(theta) - dy;
-        }
-    } 
+            if (!cluster || cluster->empty()) continue;
 
-    void ground_align(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::ModelCoefficients::Ptr& coefficients) {
+            for (PointXYZIRingTime p : cluster->points)
+            {
+                // Estimate the motion of the points
+                double dt = global_time + p.timestamp;
+                double point_theta = -yaw_rate * dt;
+
+                double dx = vx * dt, dy = vy * dt;
+
+                // Apply the estimated motion to the points
+                p.x = p.x * std::cos(point_theta) - p.y * std::sin(point_theta) - dx;
+                p.y = p.x * std::sin(point_theta) + p.y * std::cos(point_theta) - dy;
+            }
+        }
+    }
+
+    void ground_align(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud, pcl::ModelCoefficients::Ptr& coefficients) {
 
         if (coefficients->values.size() != 4) {
             std::cout << "Invalid coefficients size: " << coefficients->values.size() << std::endl;

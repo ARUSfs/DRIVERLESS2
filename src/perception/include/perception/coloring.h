@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <boost/math/distributions/normal.hpp>
 #include <fstream>
+#include "PointXYZIRingTime.h"
 
 
 namespace Coloring
@@ -15,7 +16,7 @@ namespace Coloring
     /**
     * @brief Estimates the color of detected cones based on intensity. 
     */
-    void color_estimation(pcl::PointCloud<PointXYZProbColorScore>::Ptr final_map, std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_points, std::vector<pcl::PointXYZI>& clusters_centers,
+    void color_estimation(pcl::PointCloud<PointXYZProbColorScore>::Ptr final_map, std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr> cluster_points, std::vector<PointXYZIRingTime>& clusters_centers,
         double distance_threshold, bool kDebug)
     {
         double ayellow = -0.33;

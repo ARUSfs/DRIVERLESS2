@@ -5,9 +5,10 @@
  * Team, which extracts the location of the cones on the track.
  */
 
+#define PCL_NO_PRECOMPILE
+
+
 #include "perception/perception_node.hpp"
-
-
 
 
 Perception::Perception() : Node("Perception")
@@ -83,7 +84,7 @@ Perception::Perception() : Node("Perception")
     dt = 0.1;
 
     prev_cones_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    acum_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    acum_cloud_ = std::make_shared<pcl::PointCloud<PointXYZIRingTime>>();
 
     // Create the subscribers
     lidar_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -119,7 +120,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 
     // Transform the message into a pcl point cloud
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::fromROSMsg(*lidar_msg, *cloud);
     Eigen::Matrix4f T_lidar_to_cog = Eigen::Matrix4f::Identity();
     T_lidar_to_cog(0, 3) = kLidarCogX; // x translation
@@ -153,17 +154,17 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         double min_x = 0.0;
         double min_y = -kMaxYFov;
         double min_z = -1.0;
-        Cropping::box_filter<pcl::PointXYZI>(cloud, cloud, min_x, min_y, min_z, kMaxXFov, kMaxYFov, kMaxZFov);
+        Cropping::box_filter<PointXYZIRingTime>(cloud, cloud, min_x, min_y, min_z, kMaxXFov, kMaxYFov, kMaxZFov);
         if (kDebug) RCLCPP_INFO(this->get_logger(), "Cropping Time: %f", this->now().seconds() - start_time);
     }
 
 
     // Apply the ground filter function
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr ground_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr cloud_filtered(new pcl::PointCloud<PointXYZIRingTime>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr ground_cloud(new pcl::PointCloud<PointXYZIRingTime>);
 
     if (kGroundFilterType == "Z_FILTER") {
-        Cropping::axis_filter<pcl::PointXYZI>(cloud, cloud_filtered, "z", 0.08, 0.4);
+        Cropping::axis_filter<PointXYZIRingTime>(cloud, cloud_filtered, "z", 0.08, 0.4);
     } else if (kGroundFilterType == "RANSAC") {
         pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
         GroundFiltering::ransac_ground_filter(cloud, cloud_filtered, ground_cloud, coefficients, kThresholdGroundFilter);
@@ -182,8 +183,8 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 
     // Extract the clusters from the point cloud
-    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_clouds;
-    Clustering::FEC<pcl::PointXYZI>(cloud_filtered, &cluster_clouds, kTolerance, kMinClusterSize + 1*kAccumBufferSize, kMaxClusterSize + 100*kAccumBufferSize);
+    std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr> cluster_clouds;
+    Clustering::FEC<PointXYZIRingTime>(cloud_filtered, &cluster_clouds, kTolerance, kMinClusterSize + 1*kAccumBufferSize, kMaxClusterSize + 100*kAccumBufferSize);
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Clustering time: %f", this->now().seconds() - start_time);
 
 
@@ -193,7 +194,13 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         return;
     }
 
-    std::vector<pcl::PointXYZI> clusters_centers;
+    // Motion correction
+    double time = this->now().seconds() - start_time;
+    Utils::motion_correction(cloud_filtered, &cluster_clouds, vx_, vy_, r_, time);
+    if (kDebug) RCLCPP_INFO(this->get_logger(), "Motion correction time: %f", this->now().seconds() - start_time);
+
+
+    std::vector<PointXYZIRingTime> clusters_centers;
     Utils::get_clusters_centers(&cluster_clouds, &clusters_centers);
     
 
@@ -232,13 +239,6 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     }
 
 
-    // Motion correction
-    double dt = this->now().seconds() - start_time; // Estimate SDK delay
-    // Remove or adapt this if Utils::motion_correction expects a different point type
-    // Utils::motion_correction(final_map, vx_, vy_, r_, dt);
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Motion correction time: %f", this->now().seconds() - start_time);
-
-
     final_times.push_back(this->now().seconds() - start_time);
     double average_time = std::accumulate(final_times.begin(), final_times.end(), 0.0) / final_times.size();
     if (kDebug && final_map->size() > 0) RCLCPP_INFO(this->get_logger(), "Number of cones: %zu", final_map->size());
@@ -256,7 +256,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         filtered_pub_->publish(filtered_msg);
 
         // Publish the clusters cloud
-        pcl::PointCloud<pcl::PointXYZI>::Ptr all_clusters_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<PointXYZIRingTime>::Ptr all_clusters_cloud(new pcl::PointCloud<PointXYZIRingTime>);
         for (const auto& c : cluster_clouds) *all_clusters_cloud += *c;
         sensor_msgs::msg::PointCloud2 clusters_msg;
         pcl::toROSMsg(*all_clusters_cloud, clusters_msg);
@@ -274,22 +274,22 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
 
 
 
-void Perception::accumulate(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud){
+void Perception::accumulate(pcl::PointCloud<PointXYZIRingTime>::Ptr& cloud){
     // Get ground plane with RANSAC and align the cloud
-    pcl::PointCloud<pcl::PointXYZI>::Ptr actual_cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr actual_ground_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr actual_cloud_filtered(new pcl::PointCloud<PointXYZIRingTime>);
+    pcl::PointCloud<PointXYZIRingTime>::Ptr actual_ground_cloud(new pcl::PointCloud<PointXYZIRingTime>);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
     GroundFiltering::ransac_ground_filter(cloud,  actual_cloud_filtered,  actual_ground_cloud,  coefficients, 0.05);
     Utils::ground_align(cloud, coefficients);
 
     // Filter the ground points
-    Cropping::axis_filter<pcl::PointXYZI>(cloud, cloud, "z", 0.08, 1.0);
+    Cropping::axis_filter<PointXYZIRingTime>(cloud, cloud, "z", 0.08, 1.0);
 
     // Extract clusters estimation
-    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_clouds;
-    Clustering::FEC<pcl::PointXYZI>(cloud, &cluster_clouds, kTolerance, kMinClusterSize, kMaxClusterSize);
+    std::vector<pcl::PointCloud<PointXYZIRingTime>::Ptr> cluster_clouds;
+    Clustering::FEC<PointXYZIRingTime>(cloud, &cluster_clouds, kTolerance, kMinClusterSize, kMaxClusterSize);
 
-    std::vector<pcl::PointXYZI> clusters_centers;
+    std::vector<PointXYZIRingTime> clusters_centers;
     Utils::get_clusters_centers(&cluster_clouds, &clusters_centers);
     Utils::filter_clusters(&cluster_clouds, &clusters_centers);
 
@@ -366,7 +366,7 @@ void Perception::accumulate(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud){
     cloud_buffer_.insert(cloud_buffer_.begin(), cloud);
 
     if (kVoxelFilter) {
-        pcl::VoxelGrid<pcl::PointXYZI> voxel_filter;
+        pcl::VoxelGrid<PointXYZIRingTime> voxel_filter;
         voxel_filter.setInputCloud(acum_cloud_);
         voxel_filter.setLeafSize(kVoxelSizeX, kVoxelSizeY, kVoxelSizeZ);
         voxel_filter.filter(*acum_cloud_);
