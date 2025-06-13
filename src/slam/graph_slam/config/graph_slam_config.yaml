@@ -17,6 +17,6 @@ graph_slam:
 
     # Parameters of Coloring
     min_color_observations: 5
-    min_prob: 0.6
+    min_prob: 0.7
 
     debug: true

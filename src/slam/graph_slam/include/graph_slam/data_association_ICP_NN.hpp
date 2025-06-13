@@ -40,8 +40,7 @@ class DataAssociation{
          * @brief Match given observations to the map using ICP and nearest neighbor search. 
          * Unmatched landmarks are returned in the unmatched_landmarks vector.
          */
-        void match_observations(std::vector<Landmark>& observed_landmarks, std::vector<Landmark>& unmatched_landmarks, 
-                                int lap_count, double u_norm, int min_color_observations, double min_prob)
+        void match_observations(std::vector<Landmark>& observed_landmarks, std::vector<Landmark>& unmatched_landmarks)
         {
             // Perform ICP to match observed landmarks to map
             pcl::PointCloud<pcl::PointXYZ>::Ptr obs_pcl = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
@@ -84,15 +83,8 @@ class DataAssociation{
                     obs.covariance_ = closest_landmark->covariance_;
                     closest_landmark->num_observations_++;
                     closest_landmark->last_observation_time_ = time(0);
-                    if (lap_count == 0 && u_norm > 0.5 && obs.prob_blue_ >= 0 && obs.prob_yellow_ >= 0
-                        && !obs.passed_ && !closest_landmark->passed_) {
-                        closest_landmark->num_color_observations_++;
-                        closest_landmark->sum_prob_blue_   += obs.prob_blue_;
-                        closest_landmark->sum_prob_yellow_ += obs.prob_yellow_;
-                        closest_landmark->update_color(min_color_observations, min_prob);
-                    }
-                }
-                else{
+                    closest_landmark->update_color(obs.prob_blue_, obs.prob_yellow_);
+                } else{
                     obs.id_ = Landmark::UNMATCHED_ID;
                     unmatched_landmarks.emplace_back(obs);
                 }
