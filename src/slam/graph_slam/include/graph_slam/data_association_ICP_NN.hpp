@@ -19,7 +19,7 @@
 
 class DataAssociation{
     public:
-        std::vector<Landmark*> map_;
+        std::vector<std::shared_ptr<Landmark>> map_;
         rclcpp::Logger logger_ = rclcpp::get_logger("DataAssociation");
         bool debug_ = true;
         
@@ -48,7 +48,7 @@ class DataAssociation{
             for (Landmark& obs : observed_landmarks){
                 obs_pcl->push_back(pcl::PointXYZ(obs.world_position_.x(), obs.world_position_.y(), 0));
             }
-            for (Landmark* landmark : map_){
+            for (auto landmark : map_){
                 map_pcl->push_back(pcl::PointXYZ(landmark->world_position_.x(), landmark->world_position_.y(), 0));
             }
 
@@ -70,8 +70,8 @@ class DataAssociation{
             // Get nearest neighbor for each observed landmark
             for(Landmark& obs : observed_landmarks){
                 double min_distance = std::numeric_limits<double>::max();
-                Landmark* closest_landmark = nullptr;
-                for(Landmark* landmark : map_){
+                std::shared_ptr<Landmark> closest_landmark = nullptr;
+                for(auto landmark : map_){
                     double distance = (obs.world_position_ - landmark->world_position_).norm();
                     if(distance < min_distance && !landmark->disabled_){
                         min_distance = distance;
@@ -91,7 +91,7 @@ class DataAssociation{
             }
 
             // Disable landmarks that might be false positives
-            for (Landmark* landmark : map_){
+            for (auto landmark : map_){
                 if (time(0) - landmark->last_observation_time_ > 1.0 && landmark->num_observations_ < 3){
                     landmark->disabled_ = true;
                 }

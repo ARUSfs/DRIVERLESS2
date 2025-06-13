@@ -191,7 +191,7 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     if(!map_fixed_){
         for (auto landmark : unmatched_landmarks) {
             landmark.id_ = 2*DA.map_.size(); // Use even ids for landmark vertices
-            Landmark* new_landmark = new Landmark(landmark); // Copy the landmark to avoid memory issues
+            auto new_landmark = std::make_shared<Landmark>(landmark); // Copy to avoid memory issues
             DA.map_.push_back(new_landmark);
 
             // Add a new landmark vertex 
@@ -264,7 +264,7 @@ void GraphSlam::optimizer_callback(){
 
 
 void GraphSlam::update_data_association_map(){
-    for (Landmark* landmark : DA.map_){
+    for (auto landmark : DA.map_){
         for (auto vertex : optimizer_.activeVertices()) {
             g2o::VertexPointXY* landmark_vertex = dynamic_cast<g2o::VertexPointXY*>(vertex);
             if (landmark_vertex != nullptr && landmark_vertex->id() == landmark->id_) {
@@ -372,7 +372,7 @@ void GraphSlam::fix_map(){
 
 void GraphSlam::publish_map(){
     pcl::PointCloud<ConeXYZColorScore> map;
-    for (Landmark* landmark : DA.map_){
+    for (auto landmark : DA.map_){
         if (landmark->disabled_ || landmark->num_observations_ <= 2){
             continue;
         }
