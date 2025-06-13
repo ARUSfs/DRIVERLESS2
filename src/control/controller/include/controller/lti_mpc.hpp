@@ -12,6 +12,8 @@ public:
         C << 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0;    
     }
     
+    double target_r_{0.0};
+
     /**
      * @brief Calculate steering angle command using LTI-MPC
      */
@@ -28,7 +30,7 @@ public:
         A = Eigen::MatrixXd::Zero(6,6);
         B = Eigen::MatrixXd::Zero(6,1);
 
-        linearize_model(v_linearisation, A, B);
+        linearize_model(prediction_speed_(0), A, B);
 
         discretize_model(A, B, kTsMPC, Ad, Bd);
 
@@ -55,8 +57,13 @@ public:
 
             Apow *= Ad;
 
+            linearize_model(prediction_speed_(i+1), A, B);
+
+            discretize_model(A, B, kTsMPC, Ad, Bd);  
+
             PSI.middleRows(i * C.rows(), C.rows()) = C * Apow;
             Q_YPS.middleRows(i * Q.rows(), Q.rows()) = Q * YPS.middleRows(i * C.rows(), C.rows());            
+
         }
 
         for (int i = 0; i < kPredictionHorizon; i++){
@@ -73,6 +80,14 @@ public:
 
         double delta_target = delta_ + U(0,0);
 
+        if (prediction_speed_(0) > 2.0){
+            linearize_model(prediction_speed_(0), A, B);
+            discretize_model(A, B, kTsMPC, Ad, Bd);
+            Eigen::VectorXd x_next = Ad* x_0_ + Bd * delta_target;
+            target_r_ = x_next(3);  // Desired yawrate from mpc
+        }
+
+        // Delay compensation
         for (int i = 1; i < kCompensationSteps + 1; i++){
             delta_target += U(i,0);
         }
@@ -83,7 +98,7 @@ public:
     /**
      * @brief Create discrete local reference trajectory
      */
-    void set_reference_trajectory(const std::vector<Point> &global_reference_trajectory, const std::vector<float> &s, 
+    void set_reference_trajectory(const std::vector<Point> &global_reference_trajectory, const std::vector<float> &vx_profile, const std::vector<float> &s, 
         const Point &position, double &yaw, double &vx, size_t index_global){
 
         if (vx >= 2.0){
@@ -91,22 +106,27 @@ public:
         } else {
             v_linearisation = 2.0;
         }
+        prediction_speed_ = Eigen::VectorXd::Zero(kPredictionHorizon+1);
+        prediction_speed_(0) = v_linearisation;
 
         double s_predicted = s[index_global];
-        double ds = v_linearisation * kTsMPC;
+
+        // Target trajectory consists of lateral and angular deviation from car frame of reference trajectory
 
         target_trajectory_.resize(2*kPredictionHorizon);
 
         for (int i = 0; i < kPredictionHorizon; i++){
            
-            Point xy_interp = interpolate_data(global_reference_trajectory, s, s_predicted);
+            Point xy_interp = interpolate_data(global_reference_trajectory, vx_profile, s, s_predicted);
 
             target_trajectory_(2*i) = - (xy_interp.x - position.x) * std::sin(yaw) + (xy_interp.y - position.y) * std::cos(yaw);
             target_trajectory_(2*i+1) = (std::abs(yaw_interp - yaw)<1) ? yaw_interp - yaw : 0.0;
 
-            s_predicted += ds;
+            prediction_speed_(i+1) = v_interp;
+
+            s_predicted += v_interp * kTsMPC;
             
-            if (s_predicted >= s[s.size()-1]) {s_predicted -= s[s.size()-1];}
+            if (s_predicted >= s[s.size()-1]) {s_predicted -= s[s.size()-1];} // Global reference can be a closed lap
         }
     }
 
@@ -120,21 +140,24 @@ public:
         kCostAngularDeviation = cost_angular;
         kCostLateralDeviation = cost_lateral;
         kCostSteeringDelta = cost_delta;
+
         kCompensationSteps = compensation_steps;
         kPredictionHorizon = prediction_horizon;
         kTsMPC = ts_mpc;
+
         kMass = mass;
         kWheelbase = wheelbase;
         kIzz = Izz;
         kWeightDistributionRear = r_cdg;
         kCorneringStiffnessF = cornering_stiffness_front;
         kCorneringStiffnessR = cornering_stiffness_rear;
+        kLf = kWheelbase * kWeightDistributionRear;
+        kLr = kWheelbase - kLf;
+
         kSteerModelU = steer_u;
         kSteerModelDelta = steer_delta;
         kSteerModelDeltaV = steer_delta_v;
 
-        kLf = kWheelbase * kWeightDistributionRear;
-        kLr = kWheelbase - kLf;
     }
 
 private:
@@ -143,6 +166,9 @@ private:
     double delta_{0.0};
     double delta_v_{0.0};
     double yaw_interp{0.0};
+    double v_interp{2.0};
+
+    Eigen::VectorXd prediction_speed_;
 
     Eigen::VectorXd x_0_;
     Eigen::VectorXd target_trajectory_;
@@ -189,6 +215,14 @@ private:
         Ac.resize(6, 6);
         Bc.resize(6, 1);
 
+        /** Linear bicycle model with extended 2nd order steering dynamics
+
+            dx/dt = A*x + B*u
+
+            x = [y, vy, yaw, yawrate, delta, d(delta)/dt]
+            u = [0, 0, 0, 0, 0, input_delta]
+        */
+        
         Ac << 0, 1, v_linearisation, 0, 0, 0,
         0, (kCorneringStiffnessF+kCorneringStiffnessR)/(kMass*v_linearisation), 0, 
         (kLf*kCorneringStiffnessF - kLr*kCorneringStiffnessR)/(kMass*v_linearisation) - v_linearisation, -kCorneringStiffnessF/kMass, 0, 
@@ -226,7 +260,7 @@ private:
     /**
      * @brief Interpolate variables to match with predicted position
      */
-    Point interpolate_data(const std::vector<Point> &XYdata, const std::vector<float> &s, const double &s0) {
+    Point interpolate_data(const std::vector<Point> &XYdata, const std::vector<float> &vx_profile, const std::vector<float> &s, const double &s0) {
 
         if (s0 <= s.front()) return XYdata.front();
         if (s0 >= s.back()) return XYdata.back();
@@ -240,6 +274,8 @@ private:
                 double y_interp = XYdata[i].y + alpha * (XYdata[i + 1].y - XYdata[i].y);
 
                 yaw_interp = std::atan2((XYdata[i+1].y-XYdata[i].y),(XYdata[i+1].x-XYdata[i].x));
+                
+                v_interp = std::max(2.0, vx_profile[i] + alpha * (vx_profile[i+1] - vx_profile[i]));
 
                 point.x = x_interp;
                 point.y = y_interp;

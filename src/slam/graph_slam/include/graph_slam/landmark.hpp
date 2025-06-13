@@ -29,8 +29,16 @@ class Landmark {
         Eigen::Matrix2d covariance_;        // Covariance of the landmark position
         int color_;                         // UNCOLORED, BLUE, YELLOW, ORANGE, ORANGE_BIG         
         int num_observations_;
+        int num_color_observations_;
         time_t last_observation_time_;
         bool disabled_;
+        bool passed_ = false;
+
+        // Probabilities for data association
+        double prob_blue_;
+        double prob_yellow_;
+        double sum_prob_blue_;
+        double sum_prob_yellow_;
 
         /**
          * @brief Default constructor for Landmark. Initialized as UNCOLORED at origin
@@ -53,7 +61,7 @@ class Landmark {
             world_position_ = world_position;
             covariance_ = Eigen::Matrix2d::Identity();
             color_ = UNCOLORED;
-            num_observations_ = 0;
+            num_observations_ = 1;
             disabled_ = false;
             last_observation_time_ = time(0);  
         }
@@ -67,9 +75,52 @@ class Landmark {
             get_world_pos(vehicle_pose);
             covariance_ = Eigen::Matrix2d::Identity();
             color_ = UNCOLORED;
-            num_observations_ = 0;
+            num_observations_ = 1;
             disabled_ = false;
             last_observation_time_ = time(0);  
+        }
+
+        /**
+         * @brief Constructor for Landmark with given local position, vehicle pose and color probabilities
+         */
+        Landmark(const Eigen::Vector2d& local_position, const Eigen::Vector3d vehicle_pose, double prob_blue, double prob_yellow,
+                int min_color_observations, double min_prob) {
+            id_ = UNMATCHED_ID;
+            local_position_ = local_position;
+            get_world_pos(vehicle_pose);
+            covariance_ = Eigen::Matrix2d::Identity();
+            color_ = UNCOLORED;
+            prob_blue_ = prob_blue;
+            prob_yellow_ = prob_yellow;
+            sum_prob_blue_ = prob_blue;
+            sum_prob_yellow_ = prob_yellow;
+            num_observations_ = 1;
+            num_color_observations_ = 1;
+            disabled_ = false;
+            last_observation_time_ = time(0);  
+            update_color(min_color_observations, min_prob);
+        }
+
+        /**
+         * @brief Update the color of the landmark based on the average of the accumulated probabilities
+         */
+        void update_color(int min_color_observations, double min_prob) {
+            if (num_color_observations_ == 0 || world_position_.norm() < 7.0) {
+                color_ = UNCOLORED;
+                return;
+            }
+
+            double avg_blue   = sum_prob_blue_   / num_color_observations_;
+            double avg_yellow = sum_prob_yellow_ / num_color_observations_;
+            if (num_color_observations_ >= min_color_observations) {
+                if (avg_blue > min_prob && avg_blue > avg_yellow) {
+                    color_ = BLUE;
+                } else if (avg_yellow > min_prob && avg_yellow > avg_blue) {
+                    color_ = YELLOW;
+                } else {
+                    color_ = UNCOLORED;
+                }
+            }
         }
 
     private:

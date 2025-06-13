@@ -1,31 +1,51 @@
 perception:
   ros__parameters:
-    # Parameters of topic
+    # Topics
     lidar_topic: "/rslidar_points"
     state_topic: "/car_state/state"
+    perception_topic: "/perception/map"
 
-    # Parameters of cropping
-    crop: true
-    max_x_fov: 30.0
-    max_y_fov: 15.0
-    max_z_fov: 0.5
+    accum_cloud_topic: "/perception/accumulated_cloud"
+    filtered_cloud_topic: "/perception/filtered_cloud"
+    clusters_cloud_topic: "/perception/clusters_cloud"
 
-    # Parameters of ground filter
-    threshold_ground_filter: 0.075
-    number_sections: 8
+    lidar_cog_x_offset: 1.5
+
+
+    # Accumulation parameters
+    accum_buffer_size: 10
+    voxel_filter: false
+    voxel_size_x: 0.1
+    voxel_size_y: 0.1
+    voxel_size_z: 0.1
+
+    # Cropping parameters
+    crop: false
+    max_x_fov: 50.0
+    max_y_fov: 25.0
+    max_z_fov: 10.0
+
+    # Ground filter parameters
+    ground_filter_type: "Z_FILTER"        # Options: "RANSAC", " RANSAC_GRID", "PILLAR", "Z_FILTER"
+    threshold_ground_filter: 0.05
+    number_sections: 30
     angle_threshold: 35.0
 
-    # Parameters of clustering and filtering
+    # Clustering parameters
     min_cluster_size: 4
     max_cluster_size: 200
-    radius: 0.15
+    tolerance: 0.5
 
-    #Parameters of scoring
-    threshold_scoring: 0.7
+    # Reconstruction parameters
+    reconstruction: false
+    reconstruction_radius: 0.15
 
-    #Parameters of coloring
+    # Scoring parameters
+    threshold_scoring: 0.0  # Not fufing right now
+
+    # Coloring parameters
     kColor: true
-    distance_threshold: 5.0
+    distance_threshold: 25.0
     coloring_threshold: 15.0
 
     # Parameters of debugging

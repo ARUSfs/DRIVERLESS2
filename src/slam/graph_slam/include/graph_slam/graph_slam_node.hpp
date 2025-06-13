@@ -28,6 +28,7 @@
 #include <cstdlib> 
 #include <filesystem>
 #include "ConeXYZColorScore.h"
+#include "PointXYZProbColorScore.h"
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
@@ -93,8 +94,9 @@ class GraphSlam : public rclcpp::Node
     double kMinLapDistance;
     int kMaxPoseEdges;
     int kMaxLandmarkEdges;
+    int kMinColorObservations;
+    double kMinProb;
     bool kDebug;
-    double kPosLidarX;
     std::string kPerceptionTopic;
 
     rclcpp::CallbackGroup::SharedPtr collector_callback_group_;

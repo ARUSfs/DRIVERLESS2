@@ -46,6 +46,7 @@ void ARUSSimInterface::cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg)
     cmd_msg.header = msg->header;
     cmd_msg.acc = msg->acc;
     cmd_msg.delta = msg->delta;
+    cmd_msg.target_r = msg->target_r;
     cmd_pub_->publish(cmd_msg);
 }
 
