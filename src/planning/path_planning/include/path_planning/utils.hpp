@@ -139,3 +139,17 @@ bool in(unsigned int& value, CDT::VerticesArr3& container) {
 bool in(unsigned int& value, std::vector<int>& container) {
     return std::find(container.begin(), container.end(), value) != container.end();
 }
+
+std::vector<double> laplacian_smoothing(std::vector<double> input, double coef = 0.5) {
+    std::vector<double> output;
+    if (input.size() < 3) {
+        return input; // Not enough points to smooth
+    }
+    output.push_back(input[0]); // First element remains unchanged
+    for (int i = 1; i < input.size() - 1; i++) {
+        double smoothed_value = 0.5*(1-coef)*input[i-1] + coef*input[i] + 0.5*(1-coef)*input[i+1];
+        output.push_back(smoothed_value);
+    }
+    output.push_back(input.back()); // Last element remains unchanged
+    return output;
+}

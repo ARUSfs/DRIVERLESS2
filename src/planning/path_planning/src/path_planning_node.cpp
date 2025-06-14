@@ -7,6 +7,8 @@
  */
 #include "path_planning/path_planning_node.hpp"
 
+typedef Eigen::Spline<double, 1> Spline1d;
+
 PathPlanning::PathPlanning() : Node("path_planning")
 {
     // Declare and get parameters
@@ -79,9 +81,6 @@ PathPlanning::PathPlanning() : Node("path_planning")
     triangulation_pub_ = this->create_publisher<common_msgs::msg::Triangulation>(kTriangulationTopic, 10);
     trajectory_pub_ = this->create_publisher<common_msgs::msg::Trajectory>(kTrajectoryTopic, 10);
     track_limits_pub_ = this->create_publisher<common_msgs::msg::TrackLimits>(kTrackLimitsTopic, 10);
-    
-    time_pub_ = this->create_publisher<std_msgs::msg::Float32>(
-        "/path_planning/time", 10);
 }
 
 void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr per_msg)
@@ -273,6 +272,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         } else {
             if (full_route.size() > 0.5*pcl_cloud_.size()){
                 route_closed = true;
+                std::cout << "route closed" << std::endl;
             }
             full_route.erase(full_route.begin());
             full_route.push_back(full_route[0]);
@@ -302,7 +302,6 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         RCLCPP_INFO(this->get_logger(), "Trajectory time: %f", trajectory_time);
         auto time_msg = std_msgs::msg::Float32();
         time_msg.data = trajectory_time;
-        time_pub_->publish(time_msg);
     }
 }
 
@@ -459,9 +458,9 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     common_msgs::msg::Trajectory trajectory_msg;
     double acum = 0.0;
 
-    std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, speed_profile, acc_profile, k1;
+    std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, k_input, speed_profile, acc_profile;
     std::vector<double> indices;
-
+    std::cout << "route size: " << route_size << std::endl;
 
     if (route_size <= 3){
         return trajectory_msg;
@@ -502,14 +501,24 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
         control_points, degree);
 
     // Add the points to the trajectory message
-    for (double i = 0; i<route_size*15-1; i++){
-        Eigen::Vector2d point_1 = b_spline(i/(15*route_size));
-        Eigen::Vector2d point_2 = b_spline((i+1)/(15*route_size));
+    for (double i = 0; i<route_size*10-1; i++){
+        Eigen::Vector2d point_1 = b_spline(i/(10*route_size));
+        Eigen::Vector2d point_2 = b_spline((i+1)/(10*route_size));
+        auto xp1 = b_spline.derivatives(i/(10*route_size), 2);
         double x = point_1(0);
         double y = point_1(1);
         double dx = point_2(0)-x;
         double dy = point_2(1)-y;
         double dist = hypot(dx, dy);
+        
+        double den = pow(pow(xp1(2), 2) + pow(xp1(3), 2), 1.5);
+        double val;
+        if (den < 0.001){
+            val = 0;
+        } else{
+            val = (xp1(2)*xp1(5)-xp1(3)*xp1(4))/den;
+        }
+        k.push_back(val);
         common_msgs::msg::PointXY point;
         point.x = x;
         point.y = y;
@@ -519,11 +528,11 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
         acum += dist;
         s.push_back(acum);
         speed_profile.push_back(0.0);
-        indices.push_back(i/(15*route_size));
+        indices.push_back(i/(10*route_size));
     }
 
-    // xp.push_back(xp.back());
-    // yp.push_back(yp.back());
+    xp.push_back(xp.back());
+    yp.push_back(yp.back());
 
     // for (int i = 0; i<xp.size()-1; i++){
     //     xpp.push_back(xp[i+1]-xp[i]);
@@ -543,54 +552,62 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     //     k.push_back(val);
     // }
 
-    for (int i = 1; i < trajectory_msg.points.size()-1; i++){
-        double k_val_1, k_val_2;
+    // for (int i = 1; i < trajectory_msg.points.size()-1; i++){
+    //     double k_val_1, k_val_2;
 
-        auto p1 = trajectory_msg.points[i-1];
-        auto p2 = trajectory_msg.points[i];
-        auto p3 = trajectory_msg.points[i+1];
+    //     auto p1 = trajectory_msg.points[i-1];
+    //     auto p2 = trajectory_msg.points[i];
+    //     auto p3 = trajectory_msg.points[i+1];
 
-        double a = hypot(p2.x-p1.x, p2.y-p1.y);
-        double b = hypot(p3.x-p2.x, p3.y-p2.y);
-        double c = hypot(p3.x-p1.x, p3.y-p1.y);
+    //     double a = hypot(p2.x-p1.x, p2.y-p1.y);
+    //     double b = hypot(p3.x-p2.x, p3.y-p2.y);
+    //     double c = hypot(p3.x-p1.x, p3.y-p1.y);
         
-        if (a < 0.001 || b < 0.001 || c < 0.001) { // Avoid division by zero
-            k_val_1 = 0.0;
-        } else {
-            double area = 0.5 * (p1.x*(p2.y-p3.y) + p2.x*(p3.y-p1.y) + p3.x*(p1.y-p2.y));
-            k_val_1 = 4*area/(a*b*c);
-        }
+    //     if (a < 0.001 || b < 0.001 || c < 0.001) { // Avoid division by zero
+    //         k_val_1 = 0.0;
+    //     } else {
+    //         double area = 0.5 * (p1.x*(p2.y-p3.y) + p2.x*(p3.y-p1.y) + p3.x*(p1.y-p2.y));
+    //         k_val_1 = 4*area/(a*b*c);
+    //     }
 
-        auto p4 = trajectory_msg.points[i-2];
-        auto p5 = trajectory_msg.points[i+2];
+        // auto p4 = trajectory_msg.points[i-2];
+        // auto p5 = trajectory_msg.points[i+2];
+        // std::cout << "i-2: " << (i-2) << std::endl;
         
-        double d = hypot(p2.x-p4.x, p2.y-p4.y);
-        double e = hypot(p5.x-p2.x, p5.y-p2.y);
-        double f = hypot(p5.x-p4.x, p5.y-p4.y);
-        if (d < 0.001 || e < 0.001 || f < 0.001) { // Avoid division by zero
-            k_val_2 = 0.0;
-        } else {
-            double area_2 = 0.5 * (p4.x*(p2.y-p5.y) + p2.x*(p5.y-p4.y) + p5.x*(p4.y-p2.y));
-            k_val_2 = 4*area_2/(d*e*f);
-        }
+        // double d = hypot(p2.x-p4.x, p2.y-p4.y);
+        // double e = hypot(p5.x-p2.x, p5.y-p2.y);
+        // double f = hypot(p5.x-p4.x, p5.y-p4.y);
+        // if (d < 0.001 || e < 0.001 || f < 0.001) { // Avoid division by zero
+        //     k_val_2 = 0.0;
+        // } else {
+        //     double area_2 = 0.5 * (p4.x*(p2.y-p5.y) + p2.x*(p5.y-p4.y) + p5.x*(p4.y-p2.y));
+        //     k_val_2 = 4*area_2/(d*e*f);
+        // }
+        
+    //     k.push_back(k_val_1);
+    // }
 
-        k.push_back(k_val_1);
-    }
-
-    k.push_back(k.back());
-    k.push_back(k.back());
-    k.insert(k.begin(), k.front());
-    k.insert(k.begin(), k.front());
+    // k.push_back(k.back());
+    // k.push_back(k.back());
+    // k.insert(k.begin(), k.front());
+    // k.insert(k.begin(), k.front());
     
-    std::vector<double> k_new;
-    k_new.push_back(k[0]);
-    for (int i = 1; i<k.size()-1; i++){
-        k_new.push_back(0.25*k[i-1] + 0.5*k[i] + 0.25*k[i+1]);
-    }
-    k_new.push_back(k.back());
-    
-    //k = k_new;
+    // Eigen::MatrixXd k_input_vec(2, k_input.size());
+    // for (int i = 0; i<k_input.size(); i++){
+    //     k_input_vec(0, i) = k_input[i];
+    //     k_input_vec(1, i) = 0.0;
+    // }
 
+    // auto k_spline = Eigen::SplineFitting<Eigen::Spline<double, 2>>::Interpolate(k_input_vec, 2);
+
+    // std::vector<double> k2;
+    // for (auto i : indices){
+    //     auto k_val = k_spline(i);
+    //     k2.push_back(k_val(0));
+    // }
+
+    //k = laplacian_smoothing(k, 0.5);
+   
     for (const auto &val : k){
         double v = std::min(kMaxVel, sqrt(kMaxYAcc/std::max(abs(val), 0.001)));
         v_grip.push_back(v);
