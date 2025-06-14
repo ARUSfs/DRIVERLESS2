@@ -6,6 +6,7 @@
 
 #include "graph_slam/graph_slam_node.hpp"
 
+
 GraphSlam::GraphSlam() : Node("graph_slam")
 { 
     // Declare parameters
@@ -164,12 +165,13 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     std::vector<Landmark> unmatched_landmarks;
 
     g2o::VertexSE2* last_pose_vertex = pose_vertices_.back();
-    pcl::PointCloud<PointXYZProbColorScore> cloud;
-    pcl::fromROSMsg(*msg, cloud);
+    pcl::PointCloud<PointXYZProbColorScore>::Ptr cloud(new pcl::PointCloud<PointXYZProbColorScore>);
+    pcl::fromROSMsg(*msg, *cloud);
+
    
     for (int i = 0; i < msg->width; i++) {
         //Extract the cone position
-        PointXYZProbColorScore cone = cloud.points[i];
+        PointXYZProbColorScore cone = cloud->points[i];
 
         Landmark l = Landmark(Eigen::Vector2d(cone.x, cone.y), vehicle_pose_);
         l.kMinProb = kMinProb;

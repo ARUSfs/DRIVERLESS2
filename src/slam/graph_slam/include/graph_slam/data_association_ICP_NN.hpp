@@ -15,6 +15,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/registration/correspondence_estimation.h>
+#include <pcl/kdtree/kdtree_flann.h>
 
 
 class DataAssociation{
@@ -52,6 +53,35 @@ class DataAssociation{
                 map_pcl->push_back(pcl::PointXYZ(landmark->world_position_.x(), landmark->world_position_.y(), 0));
             }
 
+
+            // Merge observations that are too close together
+            int i = 0;
+            while (i < obs_pcl->size()) {
+                pcl::PointXYZ obs_point = obs_pcl->points[i];
+
+                pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+                kdtree.setInputCloud(obs_pcl);
+                std::vector<int> indices(2);
+                std::vector<float> distances(2);
+
+                if (kdtree.nearestKSearch(obs_pcl->points[i], 2, indices, distances) > 0 && distances[1] < 1.0) {
+                    // Found a match
+                    obs_pcl->points[i].x = (obs_pcl->points[i].x + obs_pcl->points[indices[1]].x)/2;
+                    obs_pcl->points[i].y = (obs_pcl->points[i].y + obs_pcl->points[indices[1]].y)/2;
+                    obs_pcl->points[i].z = (obs_pcl->points[i].z + obs_pcl->points[indices[1]].z)/2;
+
+                    observed_landmarks[i].world_position_ = Eigen::Vector2d(obs_pcl->points[i].x, obs_pcl->points[i].y);
+                    
+                    obs_pcl->erase(obs_pcl->points.begin() + indices[1]); // Remove the second point
+                    observed_landmarks.erase(observed_landmarks.begin() + indices[1]); // Remove the corresponding landmark
+                    std::cout << "Merged points at index " << i << " and " << indices[1] << std::endl;
+                }
+                i++;
+            }
+
+
+
+
             icp_.setInputSource(obs_pcl);
             icp_.setInputTarget(map_pcl);
             pcl::PointCloud<pcl::PointXYZ>::Ptr corrected_obs = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
@@ -67,28 +97,45 @@ class DataAssociation{
             }
 
 
+
             // Get nearest neighbor for each observed landmark
-            for(Landmark& obs : observed_landmarks){
-                double min_distance = std::numeric_limits<double>::max();
-                std::shared_ptr<Landmark> closest_landmark = nullptr;
-                for(auto landmark : map_){
-                    double distance = (obs.world_position_ - landmark->world_position_).norm();
-                    if(distance < min_distance && !landmark->disabled_){
-                        min_distance = distance;
-                        closest_landmark = landmark;
-                    }
-                }
-                if(min_distance < 1 && closest_landmark != nullptr){
-                    obs.id_ = closest_landmark->id_;
-                    obs.covariance_ = closest_landmark->covariance_;
-                    closest_landmark->num_observations_++;
-                    closest_landmark->last_observation_time_ = time(0);
-                    closest_landmark->update_color(obs.prob_blue_, obs.prob_yellow_);
-                } else{
+            if (map_pcl->size() == 0) {
+                for(Landmark& obs : observed_landmarks){
                     obs.id_ = Landmark::UNMATCHED_ID;
                     unmatched_landmarks.emplace_back(obs);
                 }
+            } else {
+                pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+                kdtree.setInputCloud(map_pcl);
+
+                for (int i = 0; i < corrected_obs->size(); i++) {
+                    pcl::PointXYZ obs_point = corrected_obs->points[i];
+                    std::vector<int> indices(1);
+                    std::vector<float> distances(1);
+
+                    if (kdtree.nearestKSearch(obs_point, 1, indices, distances) > 0 && distances[0] < 1.0) {
+                        // Found a match
+                        Landmark& obs = observed_landmarks[i];
+                        auto closest_landmark = map_[indices[0]];
+                        obs.id_ = closest_landmark->id_;
+                        obs.covariance_ = closest_landmark->covariance_;
+                        closest_landmark->num_observations_++;
+                        closest_landmark->last_observation_time_ = time(0);
+                        closest_landmark->update_color(obs.prob_blue_, obs.prob_yellow_);
+                    } else {
+                        // No match found, mark as unmatched
+                        Landmark& obs = observed_landmarks[i];
+                        obs.id_ = Landmark::UNMATCHED_ID;
+                        unmatched_landmarks.emplace_back(obs);
+                    }
+                        
+                }
             }
+            
+
+
+
+
 
             // Disable landmarks that might be false positives
             for (auto landmark : map_){
