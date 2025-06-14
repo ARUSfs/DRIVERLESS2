@@ -38,11 +38,13 @@ class ARUSSimInterface : public rclcpp::Node
         std::string kSimWheelSpeedsTopic;
         std::string kSimTrajectoryTopic;
         std::string kSimStateTopic;
+        std::string kSimEstimatedStateTopic;
         std::string kPipelineCmdTopic;
         std::string kPipelineCmd4WDTopic;
         std::string kPipelineWheelSpeedsTopic;
         std::string kPipelineTrajectoryTopic;
         std::string kPipelineGroundTruthTopic;
+        std::string kPipelineEstimationTopic;
 
         // Subscribers
         rclcpp::Subscription<common_msgs::msg::Cmd>::SharedPtr cmd_sub_;
@@ -50,6 +52,7 @@ class ARUSSimInterface : public rclcpp::Node
         rclcpp::Subscription<arussim_msgs::msg::FourWheelDrive>::SharedPtr sim_wheel_speeds_sub_;
         rclcpp::Subscription<arussim_msgs::msg::Trajectory>::SharedPtr sim_trajectory_sub_;
         rclcpp::Subscription<arussim_msgs::msg::State>::SharedPtr sim_state_sub_;
+        rclcpp::Subscription<arussim_msgs::msg::State>::SharedPtr sim_estimated_state_sub_;
 
         // Publishers
         rclcpp::Publisher<arussim_msgs::msg::Cmd>::SharedPtr cmd_pub_;
@@ -57,6 +60,7 @@ class ARUSSimInterface : public rclcpp::Node
         rclcpp::Publisher<common_msgs::msg::FourWheelDrive>::SharedPtr wheel_speeds_pub_;
         rclcpp::Publisher<common_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
         rclcpp::Publisher<common_msgs::msg::State>::SharedPtr ground_truth_pub_;
+        rclcpp::Publisher<common_msgs::msg::State>::SharedPtr estimation_pub_;
 
         //Callbacks
         void cmd_callback(const common_msgs::msg::Cmd::SharedPtr msg);
@@ -64,6 +68,7 @@ class ARUSSimInterface : public rclcpp::Node
         void sim_wheel_speeds_callback(const arussim_msgs::msg::FourWheelDrive::SharedPtr msg);
         void sim_trajectory_callback(const arussim_msgs::msg::Trajectory::SharedPtr msg);
         void sim_state_callback(const arussim_msgs::msg::State::SharedPtr msg);
+        void sim_estimated_state_callback(const arussim_msgs::msg::State::SharedPtr msg);
 
         /**
          * @brief Declarations of the parameters for the node.
@@ -74,21 +79,25 @@ class ARUSSimInterface : public rclcpp::Node
             this->declare_parameter("sim_wheel_speeds_topic", "/arussim/wheel_speeds");
             this->declare_parameter("sim_trajectory_topic", "/arussim/fixed_trajectory");
             this->declare_parameter("sim_state_topic", "/arussim/state");
+            this->declare_parameter("sim_estimated_state_topic", "/controller_sim/estimated_state");
             this->declare_parameter("pipeline_cmd_topic", "/controller/cmd");
             this->declare_parameter("pipeline_cmd4wd_topic", "/controller/cmd4wd");
             this->declare_parameter("pipeline_wheel_speeds_topic", "/arussim_interface/wheel_speeds");
             this->declare_parameter("pipeline_trajectory_topic", "/arussim_interface/fixed_trajectory");
             this->declare_parameter("pipeline_ground_truth_topic", "/arussim_interface/arussim_ground_truth");
+            this->declare_parameter("pipeline_estimation_topic", "/arussim_interface/estimated_state");
 
             this->get_parameter("sim_cmd_topic", kSimCmdTopic);
             this->get_parameter("sim_cmd4wd_topic", kSimCmd4WDTopic);
             this->get_parameter("sim_wheel_speeds_topic", kSimWheelSpeedsTopic);
             this->get_parameter("sim_trajectory_topic", kSimTrajectoryTopic);
             this->get_parameter("sim_state_topic", kSimStateTopic);
+            this->get_parameter("sim_estimated_state_topic", kSimEstimatedStateTopic);
             this->get_parameter("pipeline_cmd_topic", kPipelineCmdTopic);
             this->get_parameter("pipeline_cmd4wd_topic", kPipelineCmd4WDTopic);
             this->get_parameter("pipeline_wheel_speeds_topic", kPipelineWheelSpeedsTopic);
             this->get_parameter("pipeline_trajectory_topic", kPipelineTrajectoryTopic);
             this->get_parameter("pipeline_ground_truth_topic", kPipelineGroundTruthTopic);
+            this->get_parameter("pipeline_estimation_topic", kPipelineEstimationTopic);
         }
 };

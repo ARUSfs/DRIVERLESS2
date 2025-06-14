@@ -52,6 +52,7 @@ CarState::CarState(): Node("car_state")
     this->declare_parameter<std::string>("perception_map_topic", "/perception/map");
     this->declare_parameter<std::string>("slam_map_topic", "/slam/map");
     this->declare_parameter<std::string>("arussim_ground_truth_topic", "/arussim_interface/arussim_ground_truth");
+    this->declare_parameter<std::string>("estimated_state_topic", "/arussim_interface/estimated_state");
 
     this->get_parameter("extensometer_topic", kExtensometerTopic);
     this->get_parameter("imu_ax_topic", kIMUaxTopic);
@@ -70,6 +71,7 @@ CarState::CarState(): Node("car_state")
     this->get_parameter("perception_map_topic", kPerceptionMap);
     this->get_parameter("slam_map_topic", kSlamMap);
     this->get_parameter("arussim_ground_truth_topic", kArussimGroundTruthTopic);
+    this->get_parameter("estimated_state_topic", kEstimatedStateTopic);
 
     //   Publishers
     this->declare_parameter<std::string>("state_topic", "/car_state/state");
@@ -185,10 +187,14 @@ CarState::CarState(): Node("car_state")
             cones_count_all_callback, this, std::placeholders::_1));
 
     if(kSimulation && kGetArussimGroundTruth){
-    arussim_ground_truth_sub_ = this->create_subscription<common_msgs::msg::State>(
-        kArussimGroundTruthTopic, 1, std::bind(&CarState::
-            arussim_ground_truth_callback, this, std::placeholders::_1));
+        arussim_ground_truth_sub_ = this->create_subscription<common_msgs::msg::State>(
+            kArussimGroundTruthTopic, 1, std::bind(&CarState::
+                arussim_ground_truth_callback, this, std::placeholders::_1));
     }
+
+    estimated_state_sub_ = this->create_subscription<common_msgs::msg::State>(
+            kEstimatedStateTopic, 1, std::bind(&CarState::
+                estimated_state_callback, this, std::placeholders::_1));
 
     extensometer_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         kExtensometerTopic, 1, std::bind(&CarState::
@@ -274,40 +280,30 @@ void CarState::on_timer()
        
     // Estimate vx, vy
     double avg_vx;
-    if(kSimulation){
+    if(!kSimulation){
+        if (kUseWheelspeeds && inv_speed_ > 2.0 && std::abs(v_front_right_) < 1.5*kMaxVx  && std::abs(v_rear_right_) < 1.5*kMaxVx) {
 
-        double sin = std::sin(delta_);
-        double cos = std::cos(delta_);
+            double sin = std::sin(delta_);
+            double cos = std::cos(delta_);
 
-        double vx_fl_cog = (v_front_left_ - sin*vy_ -(kLf*sin - 0.5*kTf*cos)*r_) / cos;
-        double vx_fr_cog = (v_front_right_ - sin*vy_ -(kLf*sin + 0.5*kTf*cos)*r_) / cos;
-        double vx_rl_cog = v_rear_left_ + 0.5*kTr*r_;
-        double vx_rr_cog = v_rear_right_ - 0.5*kTr*r_;
+            // double vx_fl_cog = (v_front_left_ - sin*vy_ -(kLf*sin - 0.5*kTf*cos)*r_) / cos;
+            double vx_fr_cog = (v_front_right_ - sin*vy_ -(kLf*sin + 0.5*kTf*cos)*r_) / cos;
+            // double vx_rl_cog = v_rear_left_ + 0.5*kTr*r_;
+            double vx_rr_cog = v_rear_right_ - 0.5*kTr*r_;
 
-        avg_vx = (vx_fl_cog+vx_fr_cog+vx_rl_cog+vx_rr_cog)/4;
+            avg_vx = (vx_fr_cog + vx_rr_cog)/2;
 
-    } else if (!kSimulation && kUseWheelspeeds 
-        && inv_speed_ > 2.0 && std::abs(v_front_right_) < 1.5*kMaxVx  && std::abs(v_rear_right_) < 1.5*kMaxVx) {
+        } else {
 
-        double sin = std::sin(delta_);
-        double cos = std::cos(delta_);
+            avg_vx = inv_speed_;
 
-        // double vx_fl_cog = (v_front_left_ - sin*vy_ -(kLf*sin - 0.5*kTf*cos)*r_) / cos;
-        double vx_fr_cog = (v_front_right_ - sin*vy_ -(kLf*sin + 0.5*kTf*cos)*r_) / cos;
-        // double vx_rl_cog = v_rear_left_ + 0.5*kTr*r_;
-        double vx_rr_cog = v_rear_right_ - 0.5*kTr*r_;
+        }
 
-        avg_vx = (vx_fr_cog + vx_rr_cog)/2;
-
-    } else {
-
-        avg_vx = inv_speed_;
-
+        Vector2d x_est = speed_estimator_.estimate_speed(ax_, r_, delta_, delta_der_, avg_vx);
+        vx_ = x_est(0);
+        vy_ = x_est(1); 
     }
-
-    Vector2d x_est = speed_estimator_.estimate_speed(ax_, r_, delta_, delta_der_, avg_vx);
-    vx_ = x_est(0);
-    vy_ = x_est(1); 
+    
 
     // Publish state message
     auto state_msg = common_msgs::msg::State();
@@ -578,7 +574,12 @@ void CarState::arussim_ground_truth_callback(const common_msgs::msg::State::Shar
     yaw_ = msg->yaw;
 }
 
-
+void CarState::estimated_state_callback(const common_msgs::msg::State::SharedPtr msg)
+{
+    vx_ = msg->vx;
+    vy_ = msg->vy;
+    r_ = msg->r;
+}
 
 void CarState::ami_callback(const std_msgs::msg::Float32::SharedPtr msg)
 {

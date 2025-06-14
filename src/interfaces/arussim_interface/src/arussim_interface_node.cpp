@@ -21,6 +21,8 @@ ARUSSimInterface::ARUSSimInterface() : Node("arussim_interface")
         kPipelineTrajectoryTopic, 10);
     ground_truth_pub_ = this->create_publisher<common_msgs::msg::State>(
         kPipelineGroundTruthTopic, 10);
+    estimation_pub_ = this->create_publisher<common_msgs::msg::State>(
+        kPipelineEstimationTopic, 10);
 
     cmd_sub_ = this->create_subscription<common_msgs::msg::Cmd>(
         kPipelineCmdTopic, 10, 
@@ -37,6 +39,9 @@ ARUSSimInterface::ARUSSimInterface() : Node("arussim_interface")
     sim_state_sub_ = this->create_subscription<arussim_msgs::msg::State>(
         kSimStateTopic, 10, 
         std::bind(&ARUSSimInterface::sim_state_callback, this, std::placeholders::_1));
+    sim_estimated_state_sub_ = this->create_subscription<arussim_msgs::msg::State>(
+        kSimStateTopic, 10, 
+        std::bind(&ARUSSimInterface::sim_estimated_state_callback, this, std::placeholders::_1));
      
 }
 
@@ -101,6 +106,16 @@ void ARUSSimInterface::sim_state_callback(const arussim_msgs::msg::State::Shared
     state_msg.ay = msg->ay;
     state_msg.delta = msg->delta;
     ground_truth_pub_->publish(state_msg);
+}
+
+void ARUSSimInterface::sim_estimated_state_callback(const arussim_msgs::msg::State::SharedPtr msg)
+{
+    common_msgs::msg::State state_msg;
+    state_msg.header = msg->header;
+    state_msg.vx = msg->vx;
+    state_msg.vy = msg->vy;
+    state_msg.r = msg->r;
+    estimation_pub_->publish(state_msg);
 }
 
 int main(int argc, char * argv[])

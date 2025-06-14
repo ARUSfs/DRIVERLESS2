@@ -135,6 +135,7 @@ private:
     std::string kPerceptionMap;
     std::string kSlamMap;
     std::string kArussimGroundTruthTopic;
+    std::string kEstimatedStateTopic;
 
     std::string kStateTopic;
     std::string kCarInfoTopic;
@@ -165,6 +166,7 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr rr_wheelspeed_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr inv_speed_sub_;
     rclcpp::Subscription<common_msgs::msg::State>::SharedPtr arussim_ground_truth_sub_;
+    rclcpp::Subscription<common_msgs::msg::State>::SharedPtr estimated_state_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr as_status_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr ami_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr target_speed_sub_;
@@ -247,6 +249,11 @@ private:
      * @brief Callback that receives ground-truth state from the ARUSSim simulator.
      */
     void arussim_ground_truth_callback(const common_msgs::msg::State::SharedPtr msg);
+
+    /**
+     * @brief Callback that receives estimated state from controller_sim.
+     */
+    void estimated_state_callback(const common_msgs::msg::State::SharedPtr msg);
 
     /**
      * @brief Callback that receives AMI status from the system interface.

@@ -61,6 +61,7 @@ car_state:
     perception_map_topic: "/perception/map"
     slam_map_topic: "/slam/map"
     arussim_ground_truth_topic: "/arussim_interface/arussim_ground_truth"
+    estimated_state_topic: "/arussim_interface/estimated_state"
 
     #  Publishers
     state_topic: "/car_state/state"
