@@ -79,6 +79,8 @@ class GraphSlam : public rclcpp::Node
     int pose_edges_deactivated_ = 0;
     int landmark_edges_deactivated_ = 0;
 		rclcpp::Time prev_t_;
+    int pose_edges_counter_ = 1;
+    int landmark_edges_counter_ = 1;
 
     // Parameters
     std::string kMapTopic;
@@ -94,6 +96,8 @@ class GraphSlam : public rclcpp::Node
     double kMinLapDistance;
     int kMaxPoseEdges;
     int kMaxLandmarkEdges;
+    int kPoseEdgesSpacing;
+    int kLandmarkEdgesSpacing;
     int kMinColorObs;
     double kMinProb;
     bool kDebug;

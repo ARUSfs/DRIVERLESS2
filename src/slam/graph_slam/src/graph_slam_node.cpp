@@ -22,6 +22,8 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->declare_parameter("track_width", 3.0);
     this->declare_parameter("min_lap_distance", 30.0);
     this->declare_parameter("max_pose_edges", 10000);
+    this->declare_parameter("pose_edges_spacing", 2);
+    this->declare_parameter("landmark_edges_spacing", 2);
     this->declare_parameter("max_landmark_edges", 10000);
     this->declare_parameter("min_color_observations", 5);
     this->declare_parameter("min_prob", 0.7);
@@ -40,6 +42,8 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->get_parameter("track_width", kTrackWidth);
     this->get_parameter("min_lap_distance", kMinLapDistance);
     this->get_parameter("max_pose_edges", kMaxPoseEdges);
+    this->get_parameter("pose_edges_spacing", kPoseEdgesSpacing);
+    this->get_parameter("landmark_edges_spacing", kLandmarkEdgesSpacing);
     this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
     this->get_parameter("min_color_observations", kMinColorObs);
     this->get_parameter("min_prob", kMinProb);
@@ -136,23 +140,29 @@ void GraphSlam::state_callback(const common_msgs::msg::State::SharedPtr msg)
         return;
     }
 
-    // Get the previous pose vertex
-    g2o::VertexSE2* prev_pose_vertex = pose_vertices_[pose_vertices_.size()-2];
+    if (pose_edges_counter_ % kPoseEdgesSpacing == 0) {
+        // Get the previous pose vertex
+        g2o::VertexSE2* prev_pose_vertex = pose_vertices_[pose_vertices_.size()-2];
 
-    // Add an edge between the previous pose vertex and the new pose vertex
-    g2o::EdgeSE2* pose_edge = new g2o::EdgeSE2();
-    pose_edge->vertices()[0] = prev_pose_vertex;
-    pose_edge->vertices()[1] = pose_vertex;
-    // The weight of the edge is the transform between the two poses
-    g2o::SE2 transform = prev_pose_vertex->estimate().inverse() * pose_vertex->estimate();
-    pose_edge->setMeasurement(transform);
-    // The information matrix is the inverse of the covariance matrix
-    pose_edge->setInformation(Q.inverse());
-    g2o::RobustKernelHuber* rkPose = new g2o::RobustKernelHuber();
-    pose_edge->setRobustKernel(rkPose);
-    rkPose->setDelta(0.3);
-    pose_edges_.push_back(pose_edge);
-    edges_to_add_.push_back(pose_edge);
+        // Add an edge between the previous pose vertex and the new pose vertex
+        g2o::EdgeSE2* pose_edge = new g2o::EdgeSE2();
+        pose_edge->vertices()[0] = prev_pose_vertex;
+        pose_edge->vertices()[1] = pose_vertex;
+        // The weight of the edge is the transform between the two poses
+        g2o::SE2 transform = prev_pose_vertex->estimate().inverse() * pose_vertex->estimate();
+        pose_edge->setMeasurement(transform);
+        // The information matrix is the inverse of the covariance matrix
+        pose_edge->setInformation(Q.inverse());
+        g2o::RobustKernelHuber* rkPose = new g2o::RobustKernelHuber();
+        pose_edge->setRobustKernel(rkPose);
+        rkPose->setDelta(0.3);
+        pose_edges_.push_back(pose_edge);
+        edges_to_add_.push_back(pose_edge);
+
+        pose_edges_counter_ = 0;
+    }
+    pose_edges_counter_++;
+
 }
 
 void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
@@ -218,23 +228,27 @@ void GraphSlam::perception_callback(const sensor_msgs::msg::PointCloud2::SharedP
     }
     
 
-    for (auto landmark : observed_landmarks) {
-        if (landmark.id_ == Landmark::UNMATCHED_ID) {
-            continue;
+    if(landmark_edges_counter_ % kLandmarkEdgesSpacing == 0){
+        for (auto landmark : observed_landmarks) {
+            if (landmark.id_ == Landmark::UNMATCHED_ID) {
+                continue;
+            }
+            // Add an edge between the last pose vertex and the matched landmark vertex
+            g2o::VertexPointXY* landmark_vertex = landmark_vertices_[landmark.id_/2];
+            g2o::EdgeSE2PointXY* edge = new g2o::EdgeSE2PointXY();
+            edge->vertices()[0] = last_pose_vertex;
+            edge->vertices()[1] = landmark_vertex;
+            edge->setMeasurement(landmark.local_position_);
+            edge->setInformation(R.inverse());
+            g2o::RobustKernelHuber* rkLandmark = new g2o::RobustKernelHuber();
+            edge->setRobustKernel(rkLandmark);
+            rkLandmark->setDelta(0.3);
+            landmark_edges_.push_back(edge);
+            edges_to_add_.push_back(edge);
         }
-        // Add an edge between the last pose vertex and the matched landmark vertex
-        g2o::VertexPointXY* landmark_vertex = landmark_vertices_[landmark.id_/2];
-        g2o::EdgeSE2PointXY* edge = new g2o::EdgeSE2PointXY();
-        edge->vertices()[0] = last_pose_vertex;
-        edge->vertices()[1] = landmark_vertex;
-        edge->setMeasurement(landmark.local_position_);
-        edge->setInformation(R.inverse());
-        g2o::RobustKernelHuber* rkLandmark = new g2o::RobustKernelHuber();
-        edge->setRobustKernel(rkLandmark);
-        rkLandmark->setDelta(0.3);
-        landmark_edges_.push_back(edge);
-        edges_to_add_.push_back(edge);
+        landmark_edges_counter_ = 0;
     }
+    landmark_edges_counter_++;
 
 
     publish_map();

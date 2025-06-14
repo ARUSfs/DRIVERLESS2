@@ -81,7 +81,17 @@ class DataAssociation{
 
 
 
+            if (map_pcl->size() == 0) {
+                for(Landmark& obs : observed_landmarks){
+                    obs.id_ = Landmark::UNMATCHED_ID;
+                    unmatched_landmarks.emplace_back(obs);
+                }
+                observed_landmarks.clear();
+                return;
+            } 
+                    
 
+            // Perform ICP to align the observed landmarks with the map
             icp_.setInputSource(obs_pcl);
             icp_.setInputTarget(map_pcl);
             pcl::PointCloud<pcl::PointXYZ>::Ptr corrected_obs = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
@@ -97,40 +107,33 @@ class DataAssociation{
             }
 
 
-
             // Get nearest neighbor for each observed landmark
-            if (map_pcl->size() == 0) {
-                for(Landmark& obs : observed_landmarks){
+            pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+            kdtree.setInputCloud(map_pcl);
+
+            for (int i = 0; i < corrected_obs->size(); i++) {
+                pcl::PointXYZ obs_point = corrected_obs->points[i];
+                std::vector<int> indices(1);
+                std::vector<float> distances(1);
+
+                if (kdtree.nearestKSearch(obs_point, 1, indices, distances) > 0 && distances[0] < 1.0) {
+                    // Found a match
+                    Landmark& obs = observed_landmarks[i];
+                    auto closest_landmark = map_[indices[0]];
+                    obs.id_ = closest_landmark->id_;
+                    obs.covariance_ = closest_landmark->covariance_;
+                    closest_landmark->num_observations_++;
+                    closest_landmark->last_observation_time_ = time(0);
+                    closest_landmark->update_color(obs.prob_blue_, obs.prob_yellow_);
+                } else {
+                    // No match found, mark as unmatched
+                    Landmark& obs = observed_landmarks[i];
                     obs.id_ = Landmark::UNMATCHED_ID;
                     unmatched_landmarks.emplace_back(obs);
                 }
-            } else {
-                pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
-                kdtree.setInputCloud(map_pcl);
-
-                for (int i = 0; i < corrected_obs->size(); i++) {
-                    pcl::PointXYZ obs_point = corrected_obs->points[i];
-                    std::vector<int> indices(1);
-                    std::vector<float> distances(1);
-
-                    if (kdtree.nearestKSearch(obs_point, 1, indices, distances) > 0 && distances[0] < 1.0) {
-                        // Found a match
-                        Landmark& obs = observed_landmarks[i];
-                        auto closest_landmark = map_[indices[0]];
-                        obs.id_ = closest_landmark->id_;
-                        obs.covariance_ = closest_landmark->covariance_;
-                        closest_landmark->num_observations_++;
-                        closest_landmark->last_observation_time_ = time(0);
-                        closest_landmark->update_color(obs.prob_blue_, obs.prob_yellow_);
-                    } else {
-                        // No match found, mark as unmatched
-                        Landmark& obs = observed_landmarks[i];
-                        obs.id_ = Landmark::UNMATCHED_ID;
-                        unmatched_landmarks.emplace_back(obs);
-                    }
-                        
-                }
+                    
             }
+            
             
 
 
@@ -140,7 +143,7 @@ class DataAssociation{
             // Disable landmarks that might be false positives
             for (auto landmark : map_){
                 if (time(0) - landmark->last_observation_time_ > 1.0 && landmark->num_observations_ < 3){
-                    landmark->disabled_ = true;
+                    // landmark->disabled_ = true;
                 }
             }
 
