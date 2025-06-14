@@ -179,7 +179,11 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
         return;
     }
     if (kDebug) RCLCPP_INFO(this->get_logger(), "Ground Filter Time: %f", this->now().seconds() - start_time);
-
+    
+        sensor_msgs::msg::PointCloud2 filtered_msg;
+        pcl::toROSMsg(*cloud_filtered, filtered_msg);
+        filtered_msg.header.frame_id = "/rslidar";
+        filtered_pub_->publish(filtered_msg);
 
     // Extract the clusters from the point cloud
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cluster_clouds;
@@ -210,6 +214,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     // Filter too big and too small clusters
     Utils::filter_clusters(&cluster_clouds, &clusters_centers);
 
+    cluster_clouds = Utils::colorClusters(cluster_clouds);
 
     // Score the clusters and keep the ones that will be considered cones
     pcl::PointCloud<PointXYZColorScore>::Ptr final_map(new pcl::PointCloud<PointXYZColorScore>);
@@ -262,10 +267,7 @@ void Perception::lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr l
     if (kDebug)
     {
         // Publish the filtered cloud
-        sensor_msgs::msg::PointCloud2 filtered_msg;
-        pcl::toROSMsg(*cloud_filtered, filtered_msg);
-        filtered_msg.header.frame_id = "/rslidar";
-        filtered_pub_->publish(filtered_msg);
+
 
         // Publish the clusters cloud
         pcl::PointCloud<pcl::PointXYZI>::Ptr all_clusters_cloud(new pcl::PointCloud<pcl::PointXYZI>);

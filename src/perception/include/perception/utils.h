@@ -4,12 +4,17 @@
  * @brief Auxiliar file for the Perception node.
  */
 #include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
+#include <vector>
+#include <random>
+#include <cmath>
+#include <algorithm>
 #include "PointXYZColorScore.h"
- 
 
+ 
 namespace Utils 
 {
     /**
@@ -39,6 +44,72 @@ namespace Utils
 
 
     
+    void filter_clusters2(std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>* cluster_clouds,
+                        std::vector<pcl::PointXYZI>* clusters_centers,
+                        double min_height = 0.10, double max_height = 0.4,
+                        double max_width = 0.5, double top_z = 1.0,
+                        double proximity_threshold = 1)
+    {
+        // ---------- Primer filtro: tamaño y forma ----------
+        for (int i = static_cast<int>(cluster_clouds->size()) - 1; i >= 0; --i) {
+            auto cluster = (*cluster_clouds)[i];
+            if (!cluster || cluster->empty()) continue;
+
+            pcl::PointXYZI min_point, max_point;
+            pcl::getMinMax3D(*cluster, min_point, max_point);
+            double height = max_point.z - min_point.z;
+            double width_x = max_point.x - min_point.x;
+            double width_y = max_point.y - min_point.y;
+
+            if (height < min_height || height > max_height ||
+                width_x > max_width || width_y > max_width ||
+                max_point.z > top_z)
+            {
+                cluster_clouds->erase(cluster_clouds->begin() + i);
+                clusters_centers->erase(clusters_centers->begin() + i);
+            }
+        }
+
+        // ---------- Segundo filtro: clusters cercanos ----------
+        std::set<int> indices_to_remove;
+
+        for (size_t i = 0; i < clusters_centers->size(); ++i) {
+            if (indices_to_remove.count(i)) continue;
+
+            const auto& center_i = (*clusters_centers)[i];
+
+            for (size_t j = i + 1; j < clusters_centers->size(); ++j) {
+                if (indices_to_remove.count(j)) continue;
+
+                const auto& center_j = (*clusters_centers)[j];
+
+                double dx = center_i.x - center_j.x;
+                double dy = center_i.y - center_j.y;
+                double dz = center_i.z - center_j.z;
+                double distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+                if (distance < proximity_threshold) {
+                    // Marca ambos para eliminar
+                    indices_to_remove.insert(i);
+                    indices_to_remove.insert(j);
+                }
+            }
+        }
+
+        // Eliminar marcados (en orden inverso para no invalidar índices)
+        std::vector<int> sorted_indices(indices_to_remove.begin(), indices_to_remove.end());
+        std::sort(sorted_indices.begin(), sorted_indices.end(), std::greater<int>());
+        for (int idx : sorted_indices) {
+            cluster_clouds->erase(cluster_clouds->begin() + idx);
+            clusters_centers->erase(clusters_centers->begin() + idx);
+        }
+
+        // ---------- Ajuste final ----------
+        cluster_clouds->resize(clusters_centers->size());
+    }
+
+
+
     /**
     * @brief Filter the final clusters by size to delete the ones that are too small or too large to be considered cones.
     */
@@ -78,6 +149,10 @@ namespace Utils
         cluster_clouds->resize(clusters_centers->size());
         clusters_centers->resize(clusters_centers->size());
     }
+
+
+
+
 
 
     /**
@@ -147,5 +222,38 @@ namespace Utils
         transform.block<3,1>(0,3) = -rotated_point;
 
         pcl::transformPointCloud(*cloud, *cloud, transform);
+    }
+
+
+    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> colorClusters(
+        const std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>& cluster_clouds)
+    {
+        std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> modified_clusters;
+
+        for (size_t i = 0; i < cluster_clouds.size(); ++i)
+        {
+            float cluster_id = static_cast<float>(i + 1);
+
+            pcl::PointCloud<pcl::PointXYZI>::Ptr cluster(new pcl::PointCloud<pcl::PointXYZI>);
+
+            for (const auto& pt : cluster_clouds[i]->points)
+            {
+                pcl::PointXYZI modified_pt;
+                modified_pt.x = pt.x;
+                modified_pt.y = pt.y;
+                modified_pt.z = pt.z;
+                modified_pt.intensity = cluster_id;  
+
+                cluster->points.push_back(modified_pt);
+            }
+
+            cluster->width = cluster->points.size();
+            cluster->height = 1;
+            cluster->is_dense = true;
+
+            modified_clusters.push_back(cluster);
+        }
+
+        return modified_clusters;
     }
 }

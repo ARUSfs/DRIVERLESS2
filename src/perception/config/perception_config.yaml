@@ -3,11 +3,11 @@ perception:
     # Topics
     lidar_topic: "/rslidar_points"
     state_topic: "/car_state/state"
-    perception_topic: "/perception/map"
+    perception_topic: "/perception2/map"
 
-    accum_cloud_topic: "/perception/accumulated_cloud"
-    filtered_cloud_topic: "/perception/filtered_cloud"
-    clusters_cloud_topic: "/perception/clusters_cloud"
+    accum_cloud_topic: "/perception2/accumulated_cloud"
+    filtered_cloud_topic: "/perception2/filtered_cloud"
+    clusters_cloud_topic: "/perception2/clusters_cloud"
 
     lidar_cog_x_offset: 1.5
 
@@ -26,9 +26,9 @@ perception:
     max_z_fov: 10.0
 
     # Ground filter parameters
-    ground_filter_type: "Z_FILTER"        # Options: "RANSAC", " RANSAC_GRID", "PILLAR", "Z_FILTER"
-    threshold_ground_filter: 0.05
-    number_sections: 30
+    ground_filter_type: "PILLAR"        # Options: "RANSAC", " RANSAC_GRID", "PILLAR", "Z_FILTER"
+    threshold_ground_filter: 0.35
+    number_sections: 10
     angle_threshold: 35.0
 
     # Clustering parameters

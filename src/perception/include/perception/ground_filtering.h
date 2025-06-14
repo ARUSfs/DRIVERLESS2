@@ -9,6 +9,7 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/filters/crop_box.h>
+#include <pcl/filters/passthrough.h>
 
 
 namespace GroundFiltering
@@ -173,10 +174,16 @@ namespace GroundFiltering
         for (const auto& [key, cell_cloud] : cloud_grid) {
             pcl::getMinMax3D(*cell_cloud, min_pt, max_pt);
 
-            if (max_pt.z - min_pt.z < threshold) {
-                *ground_cloud += *cell_cloud;
-            } else if (max_pt.z - min_pt.z < 0.4 && max_pt.z < 1.0) { // Avoid high pillars such as walls or buildings
+            if (max_pt.z - min_pt.z < threshold && max_pt.z < 1.0) {
+                pcl::PassThrough<pcl::PointXYZI> pass;
+                pass.setInputCloud(cell_cloud);
+                pass.setFilterFieldName("z");
+                pass.setFilterLimits(0.08, 0.4);
+                pass.filter(*cell_cloud);
+
                 *cloud_filtered += *cell_cloud;
+            } else {
+                *ground_cloud += *cell_cloud;
             }
         }
     }
