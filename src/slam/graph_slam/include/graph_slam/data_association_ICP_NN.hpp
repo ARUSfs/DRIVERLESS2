@@ -135,18 +135,14 @@ class DataAssociation{
             }
             
             
-
-
-
-
-
             // Disable landmarks that might be false positives
             for (auto landmark : map_){
                 if (time(0) - landmark->last_observation_time_ > 1.0 && landmark->num_observations_ < 3){
-                    // landmark->disabled_ = true;
+                    landmark->disabled_ = true;
                 }
             }
 
+            // Remove unmatched landmarks from the observed list
             observed_landmarks.erase(std::remove_if(observed_landmarks.begin(), 
                                     observed_landmarks.end(), 
                                     [](Landmark& obs){return obs.id_ == Landmark::UNMATCHED_ID;}), 
