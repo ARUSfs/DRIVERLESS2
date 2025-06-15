@@ -391,29 +391,28 @@ bool CanInterface::filter_subID(const struct can_frame& frame, const std::string
     }
 }
 
-void intToBytes(int16_t val, int8_t* bytes)
-{
-    std::memcpy(bytes, &val, sizeof(val));
-}           
-
 void CanInterface::control_callback(common_msgs::msg::Cmd msg)
 {   
     if(run_check_){
         float torque = msg.acc * kCarMass * kWheelRadius * kTransmissionRatio / kMaxInvTorque;
         this->motor_moment_target_ = torque;
         
-        int16_t intValue = static_cast<int16_t>(torque * (1<<15))-1;
-
-        int8_t bytesCMD[2];
-        intToBytes(intValue, bytesCMD);
+        int16_t acc_scaled = static_cast<int16_t>(msg.acc * 100.0f);
+        int16_t steering_act_scaled = static_cast<int16_t>(steering_angle_actual_ * 1000.0f);
+        int16_t steering_tgt_scaled = static_cast<int16_t>(steering_angle_target_ * 1000.0f);
 
         struct can_frame frame;
-        frame.can_id = 0x201;             
-        frame.can_dlc = 3;                
-        frame.data[0] = 0x90;
-        frame.data[1] = bytesCMD[0];
-        frame.data[2] = bytesCMD[1];
-        write(socket_can1_, &frame, sizeof(struct can_frame));  
+        frame.can_id = 0x222;    
+        frame.can_dlc = 6;    
+        frame.data[0] = acc_scaled & 0xFF;
+        frame.data[1] = (acc_scaled >> 8) & 0xFF;
+        frame.data[2] = steering_act_scaled & 0xFF;
+        frame.data[3] = (steering_act_scaled >> 8) & 0xFF;
+        frame.data[4] = steering_tgt_scaled & 0xFF;
+        frame.data[5] = (steering_tgt_scaled >> 8) & 0xFF;
+
+        // Enviar por CAN
+        write(socket_can1_, &frame, sizeof(struct can_frame));
     }
 }
 
@@ -425,8 +424,6 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
     steering_angle_target_ = msg.target_delta;
     brake_hydr_actual_ = msg.brake_hydr_pressure;
     brake_hydr_target_ = msg.brake_hydr_pressure;
-    motor_moment_actual_ = msg.torque_actual;
-    motor_moment_target_ = msg.torque_target;
  
     ax_ = msg.ax;
     ay_ = msg.ay;
@@ -436,7 +433,7 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
     asb_ebs_state_ = 0;
     ami_state_ = msg.ami;
     steering_state_ = msg.steering_state;
-    asb_redundancy_state_ = 0;
+    asb_redundancy_state_ = 1;
     lap_counter_ = msg.lap_count;
     cones_count_actual_ = msg.cones_count_actual;
     cones_count_all_ = msg.cones_count_all;
@@ -545,6 +542,8 @@ void CanInterface::send_dl500()
 
     float clamped_brake_hydr_target_ = std::clamp(brake_hydr_target_, 0.0f, 255.0f);
     frame.data[5] = static_cast<uint8_t>(clamped_brake_hydr_target_);
+
+    motor_moment_actual_ = ax_ * kCarMass * kWheelRadius * kTransmissionRatio / kMaxInvTorque;
 
     float clamped_motor_moment_actual_ = std::clamp(motor_moment_actual_, -128.0f, 127.0f);
     frame.data[6] = static_cast<int8_t>(clamped_motor_moment_actual_);
