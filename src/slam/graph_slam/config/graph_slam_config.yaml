@@ -14,9 +14,16 @@ graph_slam:
     min_lap_distance: 30.0      # m
     max_pose_edges: 2500
     max_landmark_edges: 5000
+    pose_edges_spacing: 1       # Only register every Nth pose edge
+    landmark_edges_spacing: 2   # Only register every Nth landmark edge
 
-    # Parameters of Coloring
+    # Coloring parameters
+    perception_coloring: true
     min_color_observations: 5
-    min_prob: 0.6
+    min_prob: 0.5
+    pass_coloring: true
 
+    # Clustering parameters
+    map_max_cluster_filter: true  # Only publish the largest cluster of the final map
+    cluster_tolerance: 6.0
     debug: true

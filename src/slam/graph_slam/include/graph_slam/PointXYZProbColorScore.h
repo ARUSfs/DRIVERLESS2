@@ -29,7 +29,7 @@ struct PointXYZProbColorScore
     }
 
     //Constructor with parameters
-    PointXYZProbColorScore(float x, float y, float z, double prob_yellow, double prob_blue, float score) {
+    PointXYZProbColorScore(float x, float y, float z, float prob_yellow, float prob_blue, float score) {
         this->x = x;
         this->y = y;
         this->z = z;
