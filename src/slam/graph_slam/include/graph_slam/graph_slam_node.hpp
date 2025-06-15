@@ -23,6 +23,7 @@
 #include <std_msgs/msg/int16.hpp>
 
 #include <pcl/io/pcd_io.h>
+#include <pcl/segmentation/extract_clusters.h>
 #include <iostream>
 #include <fstream>
 #include <cstdlib> 
@@ -98,8 +99,12 @@ class GraphSlam : public rclcpp::Node
     int kMaxLandmarkEdges;
     int kPoseEdgesSpacing;
     int kLandmarkEdgesSpacing;
+    bool kPerceptionColoring;
     int kMinColorObs;
     double kMinProb;
+    bool kPassColoring;
+    bool kMapMaxClusterFilter;
+    double kClusterTolerance;
     bool kDebug;
     std::string kPerceptionTopic;
 

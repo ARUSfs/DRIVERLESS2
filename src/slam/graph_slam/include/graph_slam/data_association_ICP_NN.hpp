@@ -5,7 +5,6 @@
  */
 
 #pragma once
-#define PCL_NO_PRECOMPILE
 #include <iostream>
 #include <vector>
 #include <Eigen/Dense>
@@ -16,6 +15,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/registration/correspondence_estimation.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/segmentation/extract_clusters.h>
+
 
 
 class DataAssociation{
@@ -74,7 +75,6 @@ class DataAssociation{
                     
                     obs_pcl->erase(obs_pcl->points.begin() + indices[1]); // Remove the second point
                     observed_landmarks.erase(observed_landmarks.begin() + indices[1]); // Remove the corresponding landmark
-                    std::cout << "Merged points at index " << i << " and " << indices[1] << std::endl;
                 }
                 i++;
             }

@@ -25,8 +25,12 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->declare_parameter("pose_edges_spacing", 2);
     this->declare_parameter("landmark_edges_spacing", 2);
     this->declare_parameter("max_landmark_edges", 10000);
+    this->declare_parameter("perception_coloring", true);
     this->declare_parameter("min_color_observations", 5);
     this->declare_parameter("min_prob", 0.7);
+    this->declare_parameter("pass_coloring", true);
+    this->declare_parameter("map_max_cluster_filter", true);
+    this->declare_parameter("cluster_tolerance", 6.0);
     this->declare_parameter("debug", true);
 
     // Get parameters
@@ -45,8 +49,12 @@ GraphSlam::GraphSlam() : Node("graph_slam")
     this->get_parameter("pose_edges_spacing", kPoseEdgesSpacing);
     this->get_parameter("landmark_edges_spacing", kLandmarkEdgesSpacing);
     this->get_parameter("max_landmark_edges", kMaxLandmarkEdges);
+    this->get_parameter("perception_coloring", kPerceptionColoring);
     this->get_parameter("min_color_observations", kMinColorObs);
     this->get_parameter("min_prob", kMinProb);
+    this->get_parameter("pass_coloring", kPassColoring);
+    this->get_parameter("map_max_cluster_filter", kMapMaxClusterFilter);
+    this->get_parameter("cluster_tolerance", kClusterTolerance);
     this->get_parameter("debug", kDebug);
 
     DA.logger_ = this->get_logger();
@@ -387,12 +395,52 @@ void GraphSlam::fix_map(){
 
 
 void GraphSlam::publish_map(){
-    pcl::PointCloud<ConeXYZColorScore> map;
+
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr map_pcl(new pcl::PointCloud<pcl::PointXYZ>);
     for (auto landmark : DA.map_){
+        map_pcl->push_back(pcl::PointXYZ(landmark->world_position_(0), landmark->world_position_(1), 0));
+    }
+
+
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+    tree->setInputCloud(map_pcl);
+
+    // Cluster indices
+    std::vector<pcl::PointIndices> cluster_indices;
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+    ec.setClusterTolerance(kClusterTolerance);         
+    ec.setMinClusterSize(1);
+    ec.setMaxClusterSize(500);
+    ec.setSearchMethod(tree);
+    ec.setInputCloud(map_pcl);
+    ec.extract(cluster_indices);
+
+    std::vector<int> pub_indices;
+    if (kMapMaxClusterFilter && cluster_indices.size() > 0) {
+        // If clustering is enabled, find the largest cluster
+        for (auto& indices : cluster_indices) {
+            if (indices.indices.size() > pub_indices.size()) {
+                pub_indices = indices.indices;
+            }
+        }
+    } else {
+        // If clustering is not enabled, use all points
+        for (int i = 0; i < map_pcl->size(); i++) {
+            pub_indices.push_back(i);
+        }
+    }
+
+
+    pcl::PointCloud<ConeXYZColorScore> map;
+    for (int i : pub_indices) {
+        auto landmark = DA.map_[i];
         if (landmark->disabled_ || landmark->num_observations_ <= 2){
             continue;
         }
-        if(landmark->color_==UNCOLORED){
+
+        if (!kPerceptionColoring && !landmark->passed_) landmark->color_ = UNCOLORED; // Reset color if not coloring by perception
+        if(kPassColoring && landmark->color_== UNCOLORED){
             Eigen::Vector2d local_pos = global_to_local(landmark->world_position_);
             if(local_pos.norm() < 6 && local_pos[0] < 0 && local_pos[0] > -2){
 

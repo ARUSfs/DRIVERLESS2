@@ -85,6 +85,8 @@ class Landmark {
             prob_blue_ = (pB+prob_blue_*(num_observations_ - 1)) / num_observations_;
             prob_yellow_ = (pY+prob_yellow_*(num_observations_ - 1)) / num_observations_;
 
+            if (passed_) return; // Do not update color if the landmark has already been passed
+
             if (num_observations_ >= kMinColorObs) {
                 if (prob_blue_ > kMinProb && prob_blue_ > prob_yellow_) {
                     color_ = BLUE;
