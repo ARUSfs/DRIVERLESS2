@@ -109,6 +109,9 @@ class CanInterface : public rclcpp::Node
         // Run Check
         bool run_check_ = false;
 
+        // PC Temperature
+        uint16_t pc_temp_ = 250;
+
         // Key-vector pairs from the csv files
         std::map<std::string, std::vector<std::string>> csvdata_main_;
         std::map<std::string, std::vector<std::string>> csvdata_aux_;
@@ -136,6 +139,7 @@ class CanInterface : public rclcpp::Node
 
         // Timers
         rclcpp::TimerBase::SharedPtr heart_beat_timer_;
+        rclcpp::TimerBase::SharedPtr pc_temperature_timer_;
         rclcpp::TimerBase::SharedPtr dl_timer_;
 
         // Suscribers
@@ -152,6 +156,11 @@ class CanInterface : public rclcpp::Node
          * @brief Callback, which in a loop send a CAN message to let the rest of the devices connected to the bus know that the PC is alive.
          */
         void heart_beat_callback();
+
+        /**
+         * @brief Callback executed periodically to send the PC temperature over the CAN bus.
+         */
+        void pc_temperature_callback();
 
         /**
          * @brief Callback associated with a timer to periodically send the Data Logger message over CAN

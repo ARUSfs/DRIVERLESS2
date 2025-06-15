@@ -176,6 +176,7 @@ CanInterface::CanInterface() : Node("can_interface"){
 
 
     heart_beat_timer_ = this->create_wall_timer(0.1s, std::bind(&CanInterface::heart_beat_callback, this));
+    pc_temperature_timer_ = this->create_wall_timer(0.1s, std::bind(&CanInterface::pc_temperature_callback, this));
     dl_timer_ = this->create_wall_timer(0.1s, std::bind(&CanInterface::dl_timer_callback, this));
 
 
@@ -442,11 +443,10 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
 
     if(as_status_ == 5){ // Finished
         struct can_frame frame;
-        frame.can_id = 0x202;             
-        frame.can_dlc = 3;                
+        frame.can_id = 0x261;             
+        frame.can_dlc = 2;                
         frame.data[0] = 0x01;
-        frame.data[1] = 0x01;
-        frame.data[2] = 0x05;
+        frame.data[1] = 0x05;
 
         write(socket_can1_, &frame, sizeof(struct can_frame));  
 
@@ -457,11 +457,10 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
 
     }else if(as_status_ == 4){ // Emergency 
         struct can_frame frame;
-        frame.can_id = 0x202;             
-        frame.can_dlc = 3;                
+        frame.can_id = 0x261;             
+        frame.can_dlc = 2;                
         frame.data[0] = 0x01;
-        frame.data[1] = 0x01;
-        frame.data[2] = 0x04;
+        frame.data[1] = 0x04;
 
         write(socket_can1_, &frame, sizeof(struct can_frame));   
         
@@ -481,8 +480,37 @@ void CanInterface::heart_beat_callback()
 {
     struct can_frame frame;
     frame.can_id = 0x140;             
-    frame.can_dlc = 1;                
-    frame.data[0] = 0x00;
+    frame.can_dlc = 2;                
+    frame.data[0] = 0x50;
+    frame.data[1] = 0x43;
+
+    write(socket_can0_, &frame, sizeof(struct can_frame));
+}
+
+
+void CanInterface::pc_temperature_callback()
+{
+    uint16_t temp_scaled = 0;
+    
+    std::ifstream temp_file("/sys/class/thermal/thermal_zone0/temp");
+
+    if (temp_file.is_open()) {
+        int temp_milli;
+        temp_file >> temp_milli;
+        temp_file.close();
+
+        float temp_celsius = temp_milli / 1000.0f;
+        temp_scaled = static_cast<uint16_t>(std::round(temp_celsius * 10.0f));
+        pc_temp_ = temp_scaled;
+    } else {
+        temp_scaled = pc_temp_;
+    }
+
+    struct can_frame frame;
+    frame.can_id = 0x141;
+    frame.can_dlc = 2;
+    frame.data[0] = temp_scaled & 0xFF;
+    frame.data[1] = (temp_scaled >> 8) & 0xFF;
 
     write(socket_can0_, &frame, sizeof(struct can_frame));
 }
