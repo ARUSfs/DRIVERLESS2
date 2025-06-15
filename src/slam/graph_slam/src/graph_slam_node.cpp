@@ -396,37 +396,42 @@ void GraphSlam::fix_map(){
 
 void GraphSlam::publish_map(){
 
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr map_pcl(new pcl::PointCloud<pcl::PointXYZ>);
-    for (auto landmark : DA.map_){
-        map_pcl->push_back(pcl::PointXYZ(landmark->world_position_(0), landmark->world_position_(1), 0));
+    std::vector<int> pub_indices;
+    for (int i = 0; i < DA.map_.size(); i++) {
+        pub_indices.push_back(i);
     }
 
+    // If clustering is enabled, filter the map to only include the largest cluster
+    if (kMapMaxClusterFilter) {
+        pcl::PointCloud<pcl::PointXYZ>::Ptr map_pcl(new pcl::PointCloud<pcl::PointXYZ>);
+        for (auto landmark : DA.map_){
+            map_pcl->push_back(pcl::PointXYZ(landmark->world_position_(0), landmark->world_position_(1), 0));
+        }
 
-    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-    tree->setInputCloud(map_pcl);
+        pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+        tree->setInputCloud(map_pcl);
 
-    // Cluster indices
-    std::vector<pcl::PointIndices> cluster_indices;
-    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-    ec.setClusterTolerance(kClusterTolerance);         
-    ec.setMinClusterSize(1);
-    ec.setMaxClusterSize(500);
-    ec.setSearchMethod(tree);
-    ec.setInputCloud(map_pcl);
-    ec.extract(cluster_indices);
+        // Cluster indices
+        std::vector<pcl::PointIndices> cluster_indices;
+        pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+        ec.setClusterTolerance(kClusterTolerance);         
+        ec.setMinClusterSize(1);
+        ec.setMaxClusterSize(500);
+        ec.setSearchMethod(tree);
+        ec.setInputCloud(map_pcl);
+        ec.extract(cluster_indices);
 
-    std::vector<int> pub_indices;
-    if (kMapMaxClusterFilter && cluster_indices.size() > 0) {
-        // If clustering is enabled, find the largest cluster
-        for (auto& indices : cluster_indices) {
-            if (indices.indices.size() > pub_indices.size()) {
-                pub_indices = indices.indices;
+        if (cluster_indices.size() > 0) {
+            pub_indices.clear();
+            for (auto& indices : cluster_indices) {
+                if (indices.indices.size() > pub_indices.size()) {
+                    pub_indices = indices.indices;
+                }
             }
         }
-    } else {
-        // If clustering is not enabled, use all points
-        for (int i = 0; i < map_pcl->size(); i++) {
+        
+    } else {    // If clustering is not enabled, use all points
+        for (int i = 0; i < DA.map_.size(); i++) {
             pub_indices.push_back(i);
         }
     }
