@@ -129,8 +129,14 @@ void AccPlanning::generate_planning() {
         for (int idx = 0; idx < cones_.points.size(); ++idx) {
             const auto& cone = cones_.points[idx];
             double d = std::abs(a1 * cone.x + b1_1 - cone.y) / std::sqrt(a1 * a1 + 1);
+
+            double weight = 0.25;  
+            if (cone.x >= 0.0) {
+                weight = std::exp(-cone.x / 6.0);  
+            }
+
             if (d < kRansacThreshold) {
-                score += 1.0 - (d / kRansacThreshold);
+                score += weight * (1.0 - (d / kRansacThreshold));
                 temp_inliers_indices.push_back(idx);
             }
         }
@@ -175,8 +181,14 @@ void AccPlanning::generate_planning() {
         double score = 0.0;
         for (const auto& cone : remaining_cones.points) {
             double d = std::abs(a2 * cone.x + b2_1 - cone.y) / std::sqrt(a2 * a2 + 1);
+
+            double weight = 0.25;  
+            if (cone.x >= 0.0) {
+                weight = std::exp(-cone.x / 6.0); 
+            }
+
             if (d < kRansacThreshold) {
-                score += 1.0 - (d / kRansacThreshold);
+                score += weight * (1.0 - (d / kRansacThreshold));
             }
         }
 
