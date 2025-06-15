@@ -13,8 +13,8 @@ CanInterface::CanInterface() : Node("can_interface"){
     this->get_parameter("run_check_topic", kRunCheckTopic);
 
     //  Files Path
-    this->declare_parameter<std::string>("csv_main_file", "/can24.csv");
-    this->declare_parameter<std::string>("csv_aux_file", "/can_aux24.csv");
+    this->declare_parameter<std::string>("csv_main_file", "/can.csv");
+    this->declare_parameter<std::string>("csv_aux_file", "/can_aux.csv");
     this->declare_parameter<std::string>("killer_script_file", "/killer.sh");
 
     this->get_parameter("csv_main_file", kCsvMainFile);
