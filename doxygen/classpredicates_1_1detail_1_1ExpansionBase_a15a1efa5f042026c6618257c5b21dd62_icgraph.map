@@ -1,0 +1,32 @@
+<map id="predicates::detail::ExpansionBase::TwoTwoDiff" name="predicates::detail::ExpansionBase::TwoTwoDiff">
+<area shape="rect" id="Node000001" title=" " alt="" coords="669,241,880,281"/>
+<area shape="rect" id="Node000002" href="$namespacepredicates_1_1exact.html#a3605a072d8a9084178ffa1dcae149424" title=" " alt="" coords="445,12,587,52"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="753,231,699,152,662,110,620,73,586,55,589,50,623,68,666,106,704,149,757,228"/>
+<area shape="rect" id="Node000004" href="$namespacepredicates_1_1adaptive.html#a8a96c205d27624f828dec5ebdf369a5d" title=" " alt="" coords="208,69,363,109"/>
+<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="750,232,696,171,660,141,620,117,555,96,487,85,421,82,363,84,363,78,421,76,488,79,557,90,622,112,663,136,700,167,754,228"/>
+<area shape="rect" id="Node000006" href="$namespacepredicates_1_1exact.html#ac163b91c53cd5057620ed6bf851e806f" title=" " alt="" coords="445,127,587,167"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="723,237,620,188,574,169,576,164,622,183,725,232"/>
+<area shape="rect" id="Node000007" href="$namespacepredicates_1_1adaptive.html#a1480f4d7cb9f988349aa15c5a9ef3348" title=" " alt="" coords="208,155,363,195"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="668,241,621,232,362,189,363,183,622,227,669,236"/>
+<area shape="rect" id="Node000008" href="$namespacepredicates_1_1exact.html#a222fa3927f531f81065d101d4f8bfa51" title=" " alt="" coords="445,241,587,281"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="656,264,588,264,588,259,656,259"/>
+<area shape="rect" id="Node000010" href="$namespacepredicates_1_1adaptive.html#aa5c4b8da0a9cf68adea5415a8c52ef03" title=" " alt="" coords="439,305,593,345"/>
+<area shape="poly" id="edge11_Node000001_Node000010" title=" " alt="" coords="680,287,594,309,593,304,679,282"/>
+<area shape="rect" id="Node000012" href="$namespacepredicates_1_1exact.html#aea71c9b2b42b343197bca286736dcc39" title=" " alt="" coords="445,369,587,409"/>
+<area shape="poly" id="edge13_Node000001_Node000012" title=" " alt="" coords="737,291,684,326,622,360,589,373,587,368,620,355,681,322,734,287"/>
+<area shape="rect" id="Node000013" href="$namespacepredicates_1_1adaptive.html#aaf307e5ffa009a228d94addb2395358c" title=" " alt="" coords="208,459,363,499"/>
+<area shape="poly" id="edge14_Node000001_Node000013" title=" " alt="" coords="755,294,701,361,664,396,623,424,575,440,508,454,363,474,363,469,507,449,574,435,620,419,661,391,697,358,751,291"/>
+<area shape="rect" id="Node000014" href="$classpredicates_1_1detail_1_1ExpansionBase.html#aa2ba80d8480a7093dc9629076f91a6f0" title=" " alt="" coords="411,485,621,539"/>
+<area shape="poly" id="edge15_Node000001_Node000014" title=" " alt="" coords="759,295,705,379,667,426,623,467,593,487,590,482,620,463,663,422,700,376,754,292"/>
+<area shape="rect" id="Node000003" href="$namespacepredicates_1_1exact.html#a01fae36ac5b8de1b19d65dcac48c53e6" title=" " alt="" coords="214,5,357,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="431,32,357,30,357,25,431,27"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="432,56,364,73,362,68,431,50"/>
+<area shape="rect" id="Node000005" href="$namespacepredicates_1_1adaptive.html#afc57e7d85278bcbe9707565ae7e370ea" title=" " alt="" coords="5,69,160,109"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="194,92,161,92,161,87,194,87"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="431,160,363,168,363,163,431,154"/>
+<area shape="rect" id="Node000009" href="$namespacepredicates_1_1exact.html#ad27178dac65ade76d1cbce2837053fea" title=" " alt="" coords="214,241,357,281"/>
+<area shape="poly" id="edge10_Node000008_Node000009" title=" " alt="" coords="431,264,357,264,357,259,431,259"/>
+<area shape="rect" id="Node000011" href="$namespacepredicates_1_1adaptive.html#a8de7a8e76ab39201f33f4dab7f12b879" title=" " alt="" coords="208,305,363,345"/>
+<area shape="poly" id="edge12_Node000010_Node000011" title=" " alt="" coords="424,328,363,328,363,323,424,323"/>
+<area shape="poly" id="edge16_Node000014_Node000013" title=" " alt="" coords="396,497,362,492,363,487,397,492"/>
+</map>

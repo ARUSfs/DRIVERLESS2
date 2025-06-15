@@ -1,0 +1,21 @@
+<map id="SkidpadPlanning::SkidpadPlanning" name="SkidpadPlanning::SkidpadPlanning">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,196,109"/>
+<area shape="rect" id="Node000002" href="$classSkidpadPlanning.html#aac07eedbbf22ded3edfacd84031a71a7" title="Initializes the skidpad trajectory template and speed/acceleration profiles." alt="" coords="250,37,445,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="196,74,236,69,237,74,197,80"/>
+<area shape="rect" id="Node000003" href="$classSkidpadPlanning.html#a3020175de64cd6861e1791f4fa444ce6" title="Callback function for processing the perception data." alt="" coords="244,101,451,141"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="197,99,231,104,230,109,196,104"/>
+<area shape="rect" id="Node000004" href="$classSkidpadPlanning.html#a65e46f4dab5ce92e2480cc30cb3b13ad" title="Converts a ROS PointCloud2 message to a PCL point cloud." alt="" coords="499,5,685,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="421,99,449,87,473,71,497,55,512,48,514,53,500,60,476,76,452,92,423,104"/>
+<area shape="rect" id="Node000005" href="$classSkidpadPlanning.html#adf051bf869589e4fbb124089162d2baa" title="Finds the center and radius of a circle given three points." alt="" coords="511,69,673,109"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="451,105,496,99,497,104,451,110"/>
+<area shape="rect" id="Node000006" href="$classSkidpadPlanning.html#ac165a123c884c8192753fef58c27a9e0" title="Publishes the computed skidpad trajectory to the corresponding topic." alt="" coords="499,133,685,173"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="451,132,486,137,485,142,451,138"/>
+<area shape="rect" id="Node000007" href="$classDBSCAN.html#ad5ac256913e9eced883e63c4a41fbb04" title=" " alt="" coords="539,198,645,223"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="392,139,500,183,527,192,525,197,498,188,390,144"/>
+<area shape="rect" id="Node000008" href="$classDBSCAN.html#a5663f367e50e65b957299d1ace804c65" title=" " alt="" coords="733,198,912,223"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="646,208,719,208,719,213,646,213"/>
+<area shape="rect" id="Node000009" href="$classDBSCAN.html#a9815249cff336ae597541e7a8165bf07" title=" " alt="" coords="960,198,1151,223"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="912,208,946,208,946,213,912,213"/>
+<area shape="rect" id="Node000010" href="$classDBSCAN.html#a7e84847737e075ee900418bc9970bc5f" title=" " alt="" coords="1199,198,1400,223"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="1151,208,1185,208,1185,213,1151,213"/>
+</map>

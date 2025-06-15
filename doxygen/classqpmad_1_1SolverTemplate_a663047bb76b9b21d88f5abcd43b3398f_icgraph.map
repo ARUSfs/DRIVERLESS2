@@ -1,0 +1,17 @@
+<map id="qpmad::SolverTemplate::solve1" name="qpmad::SolverTemplate::solve1">
+<area shape="rect" id="Node000001" title=" " alt="" coords="1355,37,1531,77"/>
+<area shape="rect" id="Node000002" href="$classqpmad_1_1SolverTemplate.html#a8f1166de6f212a8ff967a878c7d0f115" title=" " alt="" coords="1131,5,1307,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1341,45,1307,41,1307,35,1342,40"/>
+<area shape="rect" id="Node000008" href="$classqpmad_1_1SolverTemplate.html#af6c407693502ed754bbbeaf1ba2aa2f4" title=" " alt="" coords="1131,69,1307,109"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1342,74,1307,79,1307,74,1341,69"/>
+<area shape="rect" id="Node000003" href="$classqpmad_1_1SolverTemplate.html#ab039a3c8878fcd62e18765283e4acede" title="Solve QP." alt="" coords="907,5,1083,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="1117,28,1083,28,1083,23,1117,23"/>
+<area shape="rect" id="Node000004" href="$namespaceMinCurvaturepath.html#ac4f2e95714c95b2589221d28902d65b1" title="Solves the quadratic optimization problem using qpmad solver." alt="" coords="667,5,859,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="893,28,859,28,859,23,893,23"/>
+<area shape="rect" id="Node000005" href="$namespaceMinCurvaturepath.html#a11bc9f8cfc440827fa4d5783dfb196a4" title="Calculates an optimized path for the given midpoints and track width, minimizing curvature." alt="" coords="451,5,619,45"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="653,28,619,28,619,23,653,23"/>
+<area shape="rect" id="Node000006" href="$classTrajectoryOptimization.html#a555f0889b66aba42faa004d1f2d18b63" title="Callback function for the track limits topic. It receives the midpath and tracklimits and calculates ..." alt="" coords="232,5,403,45"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="437,28,403,28,403,23,437,23"/>
+<area shape="rect" id="Node000007" href="$classTrajectoryOptimization.html#a1459e86041c97ed22034381e17cd060c" title="Constructor for the TrajectoryOptimization node." alt="" coords="5,5,184,45"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="218,28,184,28,184,23,218,23"/>
+</map>

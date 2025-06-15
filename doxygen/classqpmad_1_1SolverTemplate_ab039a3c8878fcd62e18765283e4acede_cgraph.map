@@ -1,0 +1,19 @@
+<map id="qpmad::SolverTemplate::solve" name="qpmad::SolverTemplate::solve">
+<area shape="rect" id="Node000001" title="Solve QP." alt="" coords="5,13,181,53"/>
+<area shape="rect" id="Node000002" href="$classqpmad_1_1SolverTemplate.html#a8f1166de6f212a8ff967a878c7d0f115" title=" " alt="" coords="229,13,405,53"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="182,30,215,30,215,35,182,35"/>
+<area shape="rect" id="Node000003" href="$classqpmad_1_1SolverTemplate.html#a663047bb76b9b21d88f5abcd43b3398f" title=" " alt="" coords="453,13,629,53"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="406,30,439,30,439,35,406,35"/>
+<area shape="rect" id="Node000004" href="$classqpmad_1_1SolverTemplate.html#a77a4209388bdf2ee64903d6b6baefc8d" title=" " alt="" coords="677,13,853,53"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="630,30,663,30,663,35,630,35"/>
+<area shape="rect" id="Node000005" href="$classqpmad_1_1SolverTemplate.html#af170fa6893b4c369d3d68baf19eb76d9" title=" " alt="" coords="901,13,1077,53"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="854,30,887,30,887,35,854,35"/>
+<area shape="rect" id="Node000006" href="$classqpmad_1_1SolverTemplate.html#a9faa000213e88a9a35b0cac4278b39a2" title=" " alt="" coords="1125,13,1301,53"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="1078,30,1111,30,1111,35,1078,35"/>
+<area shape="rect" id="Node000007" href="$classqpmad_1_1SolverTemplate.html#aad1050b66867e66f80210e2166527ce9" title=" " alt="" coords="1349,13,1525,53"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="1302,30,1335,30,1335,35,1302,35"/>
+<area shape="rect" id="Node000008" href="$classqpmad_1_1SolverTemplate.html#aae45c43fe1aa4f2b216c2f5437ed0a2b" title=" " alt="" coords="1573,13,1749,53"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="1526,30,1559,30,1559,35,1526,35"/>
+<area shape="rect" id="Node000009" href="$classqpmad_1_1SolverBase.html#a2cb53896a581805d1bf69a4501354904" title=" " alt="" coords="1797,5,1981,60"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="1750,30,1783,30,1783,35,1750,35"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="AccPlanning::compute_profiles" name="AccPlanning::compute_profiles">
+<area shape="rect" id="Node000001" title="Calculates the speed and acceleration profiles for the trajectory." alt="" coords="241,5,408,45"/>
+<area shape="rect" id="Node000002" href="$classAccPlanning.html#a5042cbee46a9f0b51fab1d4897763519" title="Constructor for the AccPlanning node." alt="" coords="5,13,193,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="227,28,193,28,193,23,227,23"/>
+</map>

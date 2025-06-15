@@ -1,0 +1,17 @@
+<map id="src/perception/include/perception/coloring.h" name="src/perception/include/perception/coloring.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="388,5,553,45"/>
+<area shape="rect" id="Node000002" href="$perception_2include_2perception_2PointXYZProbColorScore_8h.html" title="Auxiliar file for the Perception node. Defines the structure of the custom type PointXYZProbColorScor..." alt="" coords="133,101,325,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="419,48,275,99,274,94,417,43"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="349,101,435,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="455,47,414,92,410,88,451,44"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="459,93,640,133"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="490,44,525,81,521,85,486,47"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="665,101,738,126"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="523,43,653,91,659,93,658,98,651,96,521,48"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,189,139,214"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="209,129,107,184,104,180,207,124"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="163,189,295,214"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="232,126,232,174,227,174,227,126"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="320,181,469,221"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="253,124,347,173,345,177,250,129"/>
+</map>

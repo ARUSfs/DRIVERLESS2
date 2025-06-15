@@ -1,0 +1,13 @@
+<map id="DBSCAN::calculateDistance" name="DBSCAN::calculateDistance">
+<area shape="rect" id="Node000001" title=" " alt="" coords="1119,13,1320,38"/>
+<area shape="rect" id="Node000002" href="$classDBSCAN.html#a9815249cff336ae597541e7a8165bf07" title=" " alt="" coords="880,13,1071,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1105,28,1071,28,1071,23,1105,23"/>
+<area shape="rect" id="Node000003" href="$classDBSCAN.html#a5663f367e50e65b957299d1ace804c65" title=" " alt="" coords="653,13,832,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="866,28,832,28,832,23,866,23"/>
+<area shape="rect" id="Node000004" href="$classDBSCAN.html#ad5ac256913e9eced883e63c4a41fbb04" title=" " alt="" coords="499,13,605,38"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="639,28,606,28,606,23,639,23"/>
+<area shape="rect" id="Node000005" href="$classSkidpadPlanning.html#a3020175de64cd6861e1791f4fa444ce6" title="Callback function for processing the perception data." alt="" coords="244,5,451,45"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="485,28,451,28,451,23,485,23"/>
+<area shape="rect" id="Node000006" href="$classSkidpadPlanning.html#a88321d4bb2673e3a6f1d55a018f128ad" title=" " alt="" coords="5,5,196,45"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="231,28,196,28,196,23,231,23"/>
+</map>

@@ -1,0 +1,10 @@
+<map id="src/planning/path_planning/include/path_planning/utils.hpp" name="src/planning/path_planning/include/path_planning/utils.hpp">
+<area shape="rect" id="Node000001" title="Header file containing common functions to use in several files." alt="" coords="5,5,235,45"/>
+<area shape="rect" id="Node000002" href="$path__planning__node_8hpp.html" title="Header file for the Path Planning node. Contains the class definition and the declaration of the meth..." alt="" coords="19,196,221,251"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="94,58,82,75,73,94,68,121,73,147,84,172,99,194,95,197,80,175,68,149,63,121,68,93,77,72,90,55"/>
+<area shape="rect" id="Node000004" href="$simplex__tree_8hpp.html" title="Creates a tree structure using information about neighbor triangles." alt="" coords="82,93,307,148"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="146,54,176,92,172,95,141,57"/>
+<area shape="rect" id="Node000003" href="$path__planning__node_8cpp.html" title="Main file for the Path Planning node. Contains the main function and the implementation of the method..." alt="" coords="17,299,223,339"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="123,264,123,299,117,299,117,264"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="169,161,142,197,137,194,165,158"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="Controller::braking_procedure_callback" name="Controller::braking_procedure_callback">
+<area shape="rect" id="Node000001" title="Braking procedure callback. Subscribe to the braking procedure topic and trigger braking procedure." alt="" coords="212,5,367,45"/>
+<area shape="rect" id="Node000002" href="$classController.html#a95c56822d667e94b031451729ce069a9" title="Constructor for the Controller class." alt="" coords="5,13,164,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="198,28,164,28,164,23,198,23"/>
+</map>

@@ -1,0 +1,25 @@
+<map id="PathPlanning::get_back_edge" name="PathPlanning::get_back_edge">
+<area shape="rect" id="Node000001" title="Get the back edge given the position of the car." alt="" coords="5,156,217,181"/>
+<area shape="rect" id="Node000002" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#ab496b095a5711abab6ec306806e7097f" title="Calculate the centroid of a triangle given its index in the triangulation. Centroid is calculated as ..." alt="" coords="285,37,424,63"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="137,154,314,66,316,71,140,158"/>
+<area shape="rect" id="Node000004" href="$classPathPlanning.html#afca0773706191fa14f4ffb0fc05985d7" title="Create a triangulation object from the point cloud and delete triangles with long edges." alt="" coords="277,119,432,159"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="217,153,264,148,264,153,217,159"/>
+<area shape="rect" id="Node000010" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#ad365fe1d573ce311f6581d2b0ef1dd77" title="Get the triangles adjacent to a vertex from its index." alt="" coords="265,184,444,209"/>
+<area shape="poly" id="edge10_Node000001_Node000010" title=" " alt="" coords="218,178,252,182,251,187,217,184"/>
+<area shape="rect" id="Node000011" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#af7cf56fd6aa1fe03ddc9399edee44398" title="Get the index of a given vertex in the triangulation. Returns 0 if not found." alt="" coords="287,240,422,265"/>
+<area shape="poly" id="edge11_Node000001_Node000011" title=" " alt="" coords="150,179,305,233,303,238,148,184"/>
+<area shape="rect" id="Node000003" href="$structCDT_1_1V2d.html#ac3bef2ac94c6fe96858bb65822e6e523" title="Create vector from X and Y coordinates." alt="" coords="507,5,632,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="424,37,492,27,493,32,425,42"/>
+<area shape="poly" id="edge8_Node000004_Node000003" title=" " alt="" coords="381,117,440,74,491,41,509,33,511,38,493,46,443,78,384,121"/>
+<area shape="rect" id="Node000005" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#a35877fef1adaeca4db6df0211ca81f2b" title="Calculate the euclidean distance between two cones." alt="" coords="531,248,608,273"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="425,157,446,169,462,186,470,202,478,218,494,233,519,246,516,251,490,237,474,221,466,205,457,189,442,173,423,162"/>
+<area shape="rect" id="Node000006" href="$classCDT_1_1Triangulation.html#acd71abb1fcb1202d34ba52ecca56ce38" title=" " alt="" coords="492,55,647,95"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="422,117,488,97,489,102,423,122"/>
+<area shape="rect" id="Node000008" href="$classCDT_1_1Triangulation.html#a9a549def9b96626bd01d89cc7dc92bda" title=" " alt="" coords="499,119,639,159"/>
+<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="433,137,486,137,486,142,433,142"/>
+<area shape="rect" id="Node000009" href="$group__Advanced.html#gadd8e67d8c9310858ef72a8c6ebf73f4f" title=" " alt="" coords="499,183,639,223"/>
+<area shape="poly" id="edge9_Node000004_Node000009" title=" " alt="" coords="423,157,489,177,488,182,422,162"/>
+<area shape="rect" id="Node000007" href="$namespaceCDT.html#a3e56faea8cec2713ed31dbcae80c878b" title="Check if any of triangle&#39;s vertices belongs to a super&#45;triangle." alt="" coords="695,63,889,88"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="647,73,681,73,681,78,647,78"/>
+<area shape="poly" id="edge12_Node000011_Node000005" title=" " alt="" coords="423,253,517,256,516,261,422,258"/>
+</map>

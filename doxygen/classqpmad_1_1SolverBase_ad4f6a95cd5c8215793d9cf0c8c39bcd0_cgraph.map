@@ -1,0 +1,7 @@
+<map id="qpmad::SolverBase::chooseConstraint" name="qpmad::SolverBase::chooseConstraint">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,37,161,77"/>
+<area shape="rect" id="Node000002" href="$classqpmad_1_1SolverBase.html#a1d7403d49d9dd762dba6b90f2a62c049" title=" " alt="" coords="212,5,397,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="161,43,198,38,199,43,162,49"/>
+<area shape="rect" id="Node000003" href="$classqpmad_1_1ChosenConstraint.html#a694df3aa06515bef7c8623bd1448af25" title=" " alt="" coords="209,69,400,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="162,66,196,71,195,76,161,71"/>
+</map>

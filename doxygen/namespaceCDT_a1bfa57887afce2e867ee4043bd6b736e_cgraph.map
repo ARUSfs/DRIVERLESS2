@@ -1,0 +1,5 @@
+<map id="CDT::envelopBox" name="CDT::envelopBox">
+<area shape="rect" id="Node000001" title="Bounding box of a collection of custom 2D points given coordinate getters." alt="" coords="5,5,139,31"/>
+<area shape="rect" id="Node000002" href="$structCDT_1_1Box2d.html#afbc07dd0c0d3e4ed20737d629b780d04" title="Envelop box around a point." alt="" coords="187,5,377,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="139,15,173,15,173,21,139,21"/>
+</map>

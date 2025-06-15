@@ -1,0 +1,9 @@
+<map id="CDT::opposedVertexInd" name="CDT::opposedVertexInd">
+<area shape="rect" id="Node000001" title="Index of triangle&#39;s vertex opposed to a triangle." alt="" coords="212,77,385,102"/>
+<area shape="rect" id="Node000002" href="$group__Advanced.html#ga45c33584023bfde51f984fa3ff34b211" title=" " alt="" coords="15,5,155,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="241,75,152,48,153,43,243,70"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1Triangulation.html#a02076dafba248457f71ec151b8feb3ab" title="Returns indices of four resulting triangles." alt="" coords="5,69,164,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="199,92,164,92,164,87,199,87"/>
+<area shape="rect" id="Node000004" href="$namespaceCDT.html#a062528813048666e38e507c535522004" title="Given two triangles, return vertex of first triangle opposed to the second." alt="" coords="8,134,161,159"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="238,108,133,137,132,131,237,103"/>
+</map>

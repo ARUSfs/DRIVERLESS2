@@ -1,0 +1,19 @@
+<map id="src/planning/path_planning/include/path_planning/CDT/remove_at.hpp" name="src/planning/path_planning/include/path_planning/CDT/remove_at.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="143,5,343,60"/>
+<area shape="rect" id="Node000002" href="$CDT_8h.html" title=" " alt="" coords="121,108,364,148"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="245,74,245,108,240,108,240,74"/>
+<area shape="rect" id="Node000003" href="$CDT_8hpp.html" title=" " alt="" coords="5,196,205,251"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="198,157,137,198,134,194,195,153"/>
+<area shape="rect" id="Node000004" href="$path__planning__node_8hpp.html" title="Header file for the Path Planning node. Contains the class definition and the declaration of the meth..." alt="" coords="291,401,493,456"/>
+<area shape="poly" id="edge4_Node000002_Node000004" title=" " alt="" coords="240,162,237,204,239,253,248,305,257,329,269,352,293,379,324,399,321,403,290,383,264,355,252,331,243,306,233,253,232,203,235,162"/>
+<area shape="rect" id="Node000006" href="$simplex__tree_8hpp.html" title="Creates a tree structure using information about neighbor triangles." alt="" coords="279,299,505,353"/>
+<area shape="poly" id="edge6_Node000002_Node000006" title=" " alt="" coords="262,159,288,203,321,249,365,297,361,300,317,252,284,205,257,161"/>
+<area shape="rect" id="Node000007" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html" title="Header file containing common functions to use in several files." alt="" coords="331,203,560,243"/>
+<area shape="poly" id="edge8_Node000002_Node000007" title=" " alt="" coords="297,151,405,201,403,206,295,156"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="162,186,221,146,224,150,165,191"/>
+<area shape="rect" id="Node000005" href="$path__planning__node_8cpp.html" title="Main file for the Path Planning node. Contains the main function and the implementation of the method..." alt="" coords="289,504,495,544"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="395,470,395,504,389,504,389,470"/>
+<area shape="poly" id="edge7_Node000006_Node000004" title=" " alt="" coords="395,367,395,401,389,401,389,367"/>
+<area shape="poly" id="edge9_Node000007_Node000004" title=" " alt="" coords="484,250,503,272,518,298,527,326,525,340,518,355,495,383,464,403,461,399,491,379,514,352,520,338,521,327,514,300,499,275,480,254"/>
+<area shape="poly" id="edge10_Node000007_Node000006" title=" " alt="" coords="431,257,408,300,404,297,427,254"/>
+</map>

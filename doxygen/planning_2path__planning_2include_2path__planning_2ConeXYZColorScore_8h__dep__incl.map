@@ -1,0 +1,13 @@
+<map id="src/planning/path_planning/include/path_planning/ConeXYZColorScore.h" name="src/planning/path_planning/include/path_planning/ConeXYZColorScore.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,272,60"/>
+<area shape="rect" id="Node000002" href="$path__planning__node_8hpp.html" title="Header file for the Path Planning node. Contains the class definition and the declaration of the meth..." alt="" coords="12,299,215,353"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="109,72,91,109,82,160,85,212,95,260,106,298,101,299,90,261,80,213,77,160,85,107,105,70"/>
+<area shape="rect" id="Node000004" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html" title="Header file containing common functions to use in several files." alt="" coords="100,108,329,148"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="171,69,201,106,197,110,167,72"/>
+<area shape="rect" id="Node000003" href="$path__planning__node_8cpp.html" title="Main file for the Path Planning node. Contains the main function and the implementation of the method..." alt="" coords="10,401,217,441"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="116,367,116,401,111,401,111,367"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="176,158,157,176,141,197,130,223,122,249,116,299,111,298,117,248,125,221,136,195,153,173,172,155"/>
+<area shape="rect" id="Node000005" href="$simplex__tree_8hpp.html" title="Creates a tree structure using information about neighbor triangles." alt="" coords="150,196,375,251"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="233,159,252,195,247,197,228,161"/>
+<area shape="poly" id="edge6_Node000005_Node000002" title=" " alt="" coords="214,260,154,301,151,296,211,256"/>
+</map>

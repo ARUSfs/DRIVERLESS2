@@ -1,0 +1,54 @@
+<map id="PathPlanning::map_callback" name="PathPlanning::map_callback">
+<area shape="rect" id="Node000001" title="Callback function for the perception topic." alt="" coords="5,341,209,366"/>
+<area shape="rect" id="Node000002" href="$classPathPlanning.html#a72c0c43a19a16d42f270ae4fc9cc34ad" title="Add the back edge to the track limits." alt="" coords="284,60,443,100"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="110,340,127,296,157,234,200,168,226,137,256,110,270,101,273,105,259,114,230,141,204,171,161,237,132,298,115,342"/>
+<area shape="rect" id="Node000003" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#a35877fef1adaeca4db6df0211ca81f2b" title="Calculate the euclidean distance between two cones." alt="" coords="783,132,860,157"/>
+<area shape="poly" id="edge19_Node000001_Node000003" title=" " alt="" coords="108,340,118,283,143,201,162,157,187,114,218,77,256,46,290,28,326,15,363,7,401,4,478,8,555,23,627,46,692,72,789,122,786,127,690,77,625,51,553,28,478,13,401,9,364,13,327,20,292,33,259,50,222,80,191,117,167,159,148,203,123,284,113,341"/>
+<area shape="rect" id="Node000004" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#ab496b095a5711abab6ec306806e7097f" title="Calculate the centroid of a triangle given its index in the triangulation. Centroid is calculated as ..." alt="" coords="537,392,676,417"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="210,361,524,393,523,399,210,366"/>
+<area shape="rect" id="Node000006" href="$classPathPlanning.html#a9c1a10ac2e4b9f189bbe97258304aef9" title="Create a track limits msg object from a given route of triangles and the triangulation." alt="" coords="286,442,441,482"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="135,364,258,420,294,434,292,439,256,425,133,369"/>
+<area shape="rect" id="Node000007" href="$classPathPlanning.html#aba96dce96342acb7a6b85775f365a583" title="Create a trajectory msg object from a given route, adding the speed and acceleration profiles...." alt="" coords="529,492,684,532"/>
+<area shape="poly" id="edge10_Node000001_Node000007" title=" " alt="" coords="119,365,141,393,172,428,212,464,258,491,323,511,390,521,456,524,516,521,516,527,456,529,390,527,322,517,256,496,209,468,168,432,136,396,115,368"/>
+<area shape="rect" id="Node000008" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#a57ef61727cf33c9e0c2e039bad307888" title="Check if a value is contained in a vector. Overloaded function." alt="" coords="587,557,626,582"/>
+<area shape="poly" id="edge31_Node000001_Node000008" title=" " alt="" coords="117,365,136,399,167,445,208,491,232,512,259,529,299,547,342,559,431,573,512,575,573,571,574,576,512,580,430,578,341,565,297,552,256,533,229,516,205,495,163,448,132,402,113,368"/>
+<area shape="rect" id="Node000009" href="$classPathPlanning.html#afca0773706191fa14f4ffb0fc05985d7" title="Create a triangulation object from the point cloud and delete triangles with long edges." alt="" coords="529,254,684,294"/>
+<area shape="poly" id="edge11_Node000001_Node000009" title=" " alt="" coords="126,338,182,305,219,289,257,276,324,264,392,259,516,261,516,267,392,264,324,270,258,281,221,294,185,310,129,343"/>
+<area shape="rect" id="Node000014" href="$classPathPlanning.html#a2c49bb0c8ee8f00257fd2226df1e1223" title="Create a triangulation msg object from the triangulation." alt="" coords="286,607,441,647"/>
+<area shape="poly" id="edge18_Node000001_Node000014" title=" " alt="" coords="116,365,133,407,163,466,205,530,231,560,259,586,278,598,275,603,256,590,227,564,201,533,159,469,128,409,111,367"/>
+<area shape="rect" id="Node000015" href="$classPathPlanning.html#a4168d313d26085bd2f4319d33c2f5b57" title="Get the back edge given the position of the car." alt="" coords="257,290,469,316"/>
+<area shape="poly" id="edge20_Node000001_Node000015" title=" " alt="" coords="172,338,285,316,286,321,173,343"/>
+<area shape="rect" id="Node000016" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#ad365fe1d573ce311f6581d2b0ef1dd77" title="Get the triangles adjacent to a vertex from its index." alt="" coords="517,330,696,356"/>
+<area shape="poly" id="edge29_Node000001_Node000016" title=" " alt="" coords="210,349,504,342,504,348,210,354"/>
+<area shape="rect" id="Node000017" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#af7cf56fd6aa1fe03ddc9399edee44398" title="Get the index of a given vertex in the triangulation. Returns 0 if not found." alt="" coords="539,189,674,214"/>
+<area shape="poly" id="edge30_Node000001_Node000017" title=" " alt="" coords="121,338,177,293,215,269,256,248,325,227,397,212,465,204,525,200,526,205,466,209,398,218,327,232,258,253,218,273,180,298,124,343"/>
+<area shape="rect" id="Node000018" href="$classPathPlanning.html#a5750a22fae6c97bdf0c1d643521d65ec" title="Get the final route after comparing with previous routes to avoid outliers." alt="" coords="278,124,449,164"/>
+<area shape="poly" id="edge26_Node000001_Node000018" title=" " alt="" coords="115,339,168,265,209,220,256,181,279,168,281,172,259,185,212,224,172,269,119,342"/>
+<area shape="rect" id="Node000020" href="$classCDT_1_1Triangulation.html#a58b6c2a15144e2c46a8ed1bf6b53ba2e" title=" " alt="" coords="293,671,433,711"/>
+<area shape="poly" id="edge32_Node000001_Node000020" title=" " alt="" coords="114,366,127,420,154,498,173,541,197,583,226,623,259,657,282,671,279,676,256,661,221,626,193,586,169,544,149,500,122,421,109,367"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="443,85,563,98,696,116,769,130,768,135,696,121,562,103,443,90"/>
+<area shape="rect" id="Node000005" href="$structCDT_1_1V2d.html#ac3bef2ac94c6fe96858bb65822e6e523" title="Create vector from X and Y coordinates." alt="" coords="759,392,884,417"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="676,402,745,402,745,407,676,407"/>
+<area shape="poly" id="edge6_Node000006_Node000004" title=" " alt="" coords="440,441,538,417,540,423,441,446"/>
+<area shape="poly" id="edge9_Node000006_Node000005" title=" " alt="" coords="441,454,561,443,696,427,750,417,751,422,696,432,562,449,442,459"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="441,475,517,491,516,496,440,480"/>
+<area shape="poly" id="edge8_Node000006_Node000008" title=" " alt="" coords="398,479,454,511,518,542,575,560,573,565,516,547,451,516,396,484"/>
+<area shape="poly" id="edge12_Node000009_Node000003" title=" " alt="" coords="649,251,694,223,718,199,742,175,770,160,772,165,746,180,722,203,698,228,652,256"/>
+<area shape="poly" id="edge16_Node000009_Node000005" title=" " alt="" coords="655,291,698,317,712,330,722,343,731,355,746,367,774,384,771,388,742,372,727,358,718,346,708,334,694,321,653,296"/>
+<area shape="rect" id="Node000010" href="$classCDT_1_1Triangulation.html#acd71abb1fcb1202d34ba52ecca56ce38" title=" " alt="" coords="744,190,899,230"/>
+<area shape="poly" id="edge13_Node000009_Node000010" title=" " alt="" coords="674,251,740,231,741,236,675,256"/>
+<area shape="rect" id="Node000012" href="$classCDT_1_1Triangulation.html#a9a549def9b96626bd01d89cc7dc92bda" title=" " alt="" coords="751,254,891,294"/>
+<area shape="poly" id="edge15_Node000009_Node000012" title=" " alt="" coords="685,271,738,271,738,276,685,276"/>
+<area shape="rect" id="Node000013" href="$group__Advanced.html#gadd8e67d8c9310858ef72a8c6ebf73f4f" title=" " alt="" coords="751,318,891,358"/>
+<area shape="poly" id="edge17_Node000009_Node000013" title=" " alt="" coords="675,291,741,311,740,316,674,296"/>
+<area shape="rect" id="Node000011" href="$namespaceCDT.html#a3e56faea8cec2713ed31dbcae80c878b" title="Check if any of triangle&#39;s vertices belongs to a super&#45;triangle." alt="" coords="947,197,1141,222"/>
+<area shape="poly" id="edge14_Node000010_Node000011" title=" " alt="" coords="899,207,933,207,933,212,899,212"/>
+<area shape="poly" id="edge21_Node000015_Node000004" title=" " alt="" coords="395,313,518,366,563,384,560,389,516,371,393,318"/>
+<area shape="poly" id="edge22_Node000015_Node000009" title=" " alt="" coords="469,288,516,282,516,287,469,293"/>
+<area shape="poly" id="edge23_Node000015_Node000016" title=" " alt="" coords="442,313,516,325,515,331,441,318"/>
+<area shape="poly" id="edge24_Node000015_Node000017" title=" " alt="" coords="394,288,561,217,563,222,396,292"/>
+<area shape="poly" id="edge25_Node000017_Node000003" title=" " alt="" coords="654,186,769,155,770,160,656,191"/>
+<area shape="rect" id="Node000019" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#af869e5da95e6454a17f019d05041acfe" title="Calculate the similarity between two lists of points. Similarity is defined as the number of points i..." alt="" coords="550,132,663,157"/>
+<area shape="poly" id="edge27_Node000018_Node000019" title=" " alt="" coords="449,142,536,142,536,147,449,147"/>
+<area shape="poly" id="edge28_Node000019_Node000003" title=" " alt="" coords="664,142,769,142,769,147,664,147"/>
+</map>

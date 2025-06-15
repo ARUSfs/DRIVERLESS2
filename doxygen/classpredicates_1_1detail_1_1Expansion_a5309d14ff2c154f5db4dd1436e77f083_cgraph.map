@@ -1,0 +1,13 @@
+<map id="predicates::detail::Expansion::operator+" name="predicates::detail::Expansion::operator+">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,69,176,109"/>
+<area shape="rect" id="Node000002" href="$classpredicates_1_1stdx_1_1array.html#ad9a65f6f42c8e1f412f40e1f964b7c62" title=" " alt="" coords="257,5,425,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="169,67,248,46,250,51,170,72"/>
+<area shape="rect" id="Node000003" href="$classpredicates_1_1detail_1_1ExpansionBase.html#a99220b5a01d3ffbe7a9c76485e8ed1b0" title=" " alt="" coords="224,69,457,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="176,87,210,87,210,92,176,92"/>
+<area shape="rect" id="Node000006" href="$classpredicates_1_1detail_1_1Expansion.html#ac36d656fc31bc9714d371ecb96a4f5f7" title=" " alt="" coords="273,133,408,173"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="170,107,261,130,260,135,169,112"/>
+<area shape="rect" id="Node000004" href="$classpredicates_1_1detail_1_1ExpansionBase.html#a652f4de0a896124ddb9ed7318dee3769" title=" " alt="" coords="505,37,717,77"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="457,73,491,69,492,74,458,78"/>
+<area shape="rect" id="Node000005" href="$classpredicates_1_1detail_1_1ExpansionBase.html#a95d4cb8c7d558fefc69d192c412e8382" title=" " alt="" coords="518,101,705,141"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="458,100,505,106,504,111,457,106"/>
+</map>

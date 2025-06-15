@@ -1,0 +1,7 @@
+<map id="Accumulation::rigidTransformation" name="Accumulation::rigidTransformation">
+<area shape="rect" id="Node000001" title="Function to apply rigid transformation to a point cloud." alt="" coords="248,45,495,70"/>
+<area shape="rect" id="Node000002" href="$namespaceAccumulation.html#adf3c269e5f4899b2839184aface581e1" title="Accumulate the clouds of the last frames." alt="" coords="5,5,200,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="251,46,200,40,201,34,251,40"/>
+<area shape="rect" id="Node000003" href="$namespaceAccumulation.html#a62f94ffce1c146f89f151ae2f4cb9de2" title="Accumulates the clusters of the last 5 frames of the lidar call back." alt="" coords="5,69,200,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="251,74,201,80,200,75,251,69"/>
+</map>

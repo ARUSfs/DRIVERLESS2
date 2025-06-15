@@ -1,0 +1,5 @@
+<map id="Perception::lidar_callback" name="Perception::lidar_callback">
+<area shape="rect" id="Node000001" title="Callback function for the lidar topic." alt="" coords="221,5,411,31"/>
+<area shape="rect" id="Node000002" href="$classPerception.html#a8bcf74df62599f91509d3fd2df14c5f7" title="Construct a new Perception object." alt="" coords="5,5,173,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="208,21,174,21,174,15,208,15"/>
+</map>

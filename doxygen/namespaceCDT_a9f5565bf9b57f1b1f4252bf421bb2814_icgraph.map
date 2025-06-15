@@ -1,0 +1,9 @@
+<map id="CDT::edgeNeighbor" name="CDT::edgeNeighbor">
+<area shape="rect" id="Node000001" title=" " alt="" coords="312,77,459,102"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1Triangulation.html#aef165a8fe97c3d4dd77d3fda91eb5a90" title=" " alt="" coords="5,5,264,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="323,76,263,60,216,48,218,43,265,55,324,70"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1Triangulation.html#a9cbb8e1a9faf7c11a4e526640fc5de92" title=" " alt="" coords="65,69,205,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="299,92,205,92,205,87,299,87"/>
+<area shape="rect" id="Node000004" href="$classCDT_1_1Triangulation.html#a7f0ed1c2005cf1531ebb79f576818424" title=" " alt="" coords="36,133,233,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="324,108,265,124,218,136,216,131,263,119,323,103"/>
+</map>

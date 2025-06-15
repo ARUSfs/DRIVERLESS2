@@ -1,0 +1,11 @@
+<map id="src/perception/include/perception/scoring.h" name="src/perception/include/perception/scoring.h">
+<area shape="rect" id="Node000001" title="Contains auxiliar functions used in the algorithm to score every cluster in order to determine the re..." alt="" coords="147,5,312,45"/>
+<area shape="rect" id="Node000002" href="$perception_2include_2perception_2PointXYZProbColorScore_8h.html" title="Auxiliar file for the Perception node. Defines the structure of the custom type PointXYZProbColorScor..." alt="" coords="133,93,325,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="232,46,232,79,227,79,227,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,174,139,199"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="208,121,108,170,106,166,205,116"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="163,174,295,199"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="232,119,232,160,227,160,227,119"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="320,167,469,207"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="255,116,343,158,341,163,252,121"/>
+</map>
