@@ -398,18 +398,15 @@ void CanInterface::control_callback(common_msgs::msg::Cmd msg)
         this->motor_moment_target_ = torque;
         
         int16_t acc_scaled = static_cast<int16_t>(msg.acc * 100.0f);
-        int16_t steering_act_scaled = static_cast<int16_t>(steering_angle_actual_ * 1000.0f);
-        int16_t steering_tgt_scaled = static_cast<int16_t>(steering_angle_target_ * 1000.0f);
+        int16_t yaw_rate_target_scaled = static_cast<int16_t>(msg.target_r * 1000.0f);
 
         struct can_frame frame;
         frame.can_id = 0x222;    
-        frame.can_dlc = 6;    
+        frame.can_dlc = 4;    
         frame.data[0] = acc_scaled & 0xFF;
         frame.data[1] = (acc_scaled >> 8) & 0xFF;
-        frame.data[2] = steering_act_scaled & 0xFF;
-        frame.data[3] = (steering_act_scaled >> 8) & 0xFF;
-        frame.data[4] = steering_tgt_scaled & 0xFF;
-        frame.data[5] = (steering_tgt_scaled >> 8) & 0xFF;
+        frame.data[2] = yaw_rate_target_scaled & 0xFF;
+        frame.data[3] = (yaw_rate_target_scaled >> 8) & 0xFF;
 
         // Enviar por CAN
         write(socket_can1_, &frame, sizeof(struct can_frame));
