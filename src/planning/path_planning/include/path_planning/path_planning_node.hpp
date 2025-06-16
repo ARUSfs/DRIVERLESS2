@@ -33,6 +33,9 @@
 
 #include <std_msgs/msg/float32.hpp>
 
+#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
+
 /**
  * @brief Class containing the Path Planning node.
  * Manages subscribers and publisher for the different topics used in the algorithm.
@@ -79,6 +82,7 @@ class PathPlanning : public rclcpp::Node
         std::vector<ConeXYZColorScore> back_points_;
         CDT::TriangleVec TL_triang_; 
         std::vector<int> TL_tri_indices_;
+        common_msgs::msg::Trajectory closing_trajectory_;
 
         // Track limits
         std::vector<ConeXYZColorScore> left_limit_;

@@ -19,7 +19,7 @@
 
 
 /**
- * @brief Get the index of a given vertex in the triangulation. Returns 0 if not found.
+ * @brief Get the index of a given vertex in the triangulation. Returns -1 if not found.
  */
 int get_vertex_index(CDT::V2d<double> vertex, CDT::Triangulation<double> triangulation, double tolerance = 0.0){
     int o_ind;

@@ -89,15 +89,23 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     // Get the track limits in the second lap
     if (lap_count_ > 0 && x_>3 && !track_limits_sent_){
         common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(TL_triang_, TL_tri_indices_);
-        if (track_limits_msg.right_limit.size()>0) track_limits_pub_->publish(track_limits_msg);
-        track_limits_sent_ = true;
+        if (track_limits_msg.right_limit.size()>0) {
+            track_limits_pub_->publish(track_limits_msg);
+            track_limits_sent_ = true;
+        }
     }
-
 
     // Publish the closing route if selected in config file and shutdown the node
     if (closing_route_.size() > 0){
-        common_msgs::msg::Trajectory trajectory_msg = this->create_trajectory_msg(closing_route_);
-        if (trajectory_msg.points.size()>0) trajectory_pub_->publish(trajectory_msg);
+        if (closing_trajectory_.points.size() == 0) {
+            common_msgs::msg::Trajectory trajectory_msg = this->create_trajectory_msg(closing_route_);
+            if (trajectory_msg.points.size()>0) {
+                trajectory_pub_->publish(trajectory_msg);
+                closing_trajectory_ = trajectory_msg;
+            }
+        } else {
+            trajectory_pub_->publish(closing_trajectory_);
+        }
         
         if (kStopAfterClosing){   
             common_msgs::msg::TrackLimits track_limits_msg = this->create_track_limits_msg(TL_triang_, TL_tri_indices_);
@@ -182,7 +190,8 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     // Get passed vertices from the back route
     std::vector<int> passed_vertices;
     for (auto p : back_points_){
-        int ind_1 = get_vertex_index(CDT::V2d<double>::make(p.x, p.y), triang, 0.95);
+        if (p.score == -1) continue; // Skip artificial points
+        int ind_1 = get_vertex_index(CDT::V2d<double>::make(p.x, p.y), triang, 0.99);
         if (ind_1 == -1) continue;
         if (in(ind_1, passed_vertices)) continue;
         passed_vertices.push_back(ind_1);
@@ -225,6 +234,8 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
     ConeXYZColorScore back_point;
     bool route_closed = false;
     bool append_point = true;
+    bool append_back_0 = true;
+    bool append_back_1 = true;
     if (back_edge.size() == 2) {
         back_point = ConeXYZColorScore((back_edge[0].x+back_edge[1].x)/2,
                                        (back_edge[0].y+back_edge[1].y)/2, 0, UNCOLORED, 1);
@@ -238,8 +249,17 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
         if (append_point) {
             back_route_.push_back(back_point);
-            back_points_.push_back(back_edge[0]);
-            back_points_.push_back(back_edge[1]);
+            for (auto b: back_points_) {
+                if (distance(back_edge[0], b) < 0.5){
+                    append_back_0 = false;
+                }
+                if (distance(back_edge[1], b) < 0.5){
+                    append_back_1 = false;
+                }
+                if (!append_back_0 && !append_back_1) break;
+            }
+            if (append_back_0) back_points_.push_back(back_edge[0]);
+            if (append_back_1) back_points_.push_back(back_edge[1]);
         } else if (back_route_.size() > 10 && distance(back_point, back_route_[0]) < 3.0){
             route_closed = true;
         }
@@ -255,8 +275,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         double angle_diff = std::abs(atan2(c.y-full_route.back().y, c.x-full_route.back().x)-prev_angle);
         angle_diff = std::min(angle_diff, 2*M_PI-angle_diff);
 
-        if ( distance(c, ConeXYZColorScore()) > 3.0 || back_route_.size()<10){
-
+        if (distance(c, ConeXYZColorScore()) > 5.0 || back_route_.size()<10){
             // Check if the point is too close to the last 10 points in the route
             for (int j=1; j<=10; j++){
                 if (distance(c, full_route[full_route.size()-j]) < 0.5){
@@ -272,7 +291,6 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
         } else {
             if (full_route.size() > 0.5*pcl_cloud_.size()){
                 route_closed = true;
-                std::cout << "route closed" << std::endl;
             }
             full_route.erase(full_route.begin());
             full_route.push_back(full_route[0]);
@@ -296,7 +314,7 @@ void PathPlanning::map_callback(const sensor_msgs::msg::PointCloud2::SharedPtr p
 
     // Publish the best trajectory
     trajectory_pub_ -> publish(this->create_trajectory_msg(full_route));
-    
+
     if (kDebug) {
         double trajectory_time = this->now().seconds() - start;
         RCLCPP_INFO(this->get_logger(), "Trajectory time: %f", trajectory_time);
@@ -411,6 +429,13 @@ std::vector<ConeXYZColorScore> PathPlanning::get_back_edge(){
             if (back_edge.size() == 2 && back_edge[0].color == back_edge[1].color){
                 back_edge.clear();
             }
+            if (back_edge.size() == 2 &&
+               (distance(ConeXYZColorScore(x_, y_, 0, UNCOLORED, -1), 
+                         ConeXYZColorScore(back_edge[0].x, back_edge[0].y, 0, UNCOLORED, -1)) > 5 ||
+                distance(ConeXYZColorScore(x_, y_, 0, UNCOLORED, -1),
+                         ConeXYZColorScore(back_edge[1].x, back_edge[1].y, 0, UNCOLORED, -1)) > 5)){
+                back_edge.clear();
+            }
         }
     }
 
@@ -458,9 +483,7 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     common_msgs::msg::Trajectory trajectory_msg;
     double acum = 0.0;
 
-    std::vector<double> xp, yp, xpp, ypp, v_grip, s, k, k_input, speed_profile, acc_profile;
-    std::vector<double> indices;
-    std::cout << "route size: " << route_size << std::endl;
+    std::vector<double> v_grip, s, k, speed_profile, acc_profile;
 
     if (route_size <= 3){
         return trajectory_msg;
@@ -504,110 +527,30 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
     for (double i = 0; i<route_size*10-1; i++){
         Eigen::Vector2d point_1 = b_spline(i/(10*route_size));
         Eigen::Vector2d point_2 = b_spline((i+1)/(10*route_size));
-        auto xp1 = b_spline.derivatives(i/(10*route_size), 2);
+        auto fp = b_spline.derivatives(i/(10*route_size), 2);
         double x = point_1(0);
         double y = point_1(1);
         double dx = point_2(0)-x;
         double dy = point_2(1)-y;
         double dist = hypot(dx, dy);
         
-        double den = pow(pow(xp1(2), 2) + pow(xp1(3), 2), 1.5);
+        double den = pow(pow(fp(2), 2) + pow(fp(3), 2), 1.5);
         double val;
         if (den < 0.001){
             val = 0;
         } else{
-            val = (xp1(2)*xp1(5)-xp1(3)*xp1(4))/den;
+            val = (fp(2)*fp(5)-fp(3)*fp(4))/den;
         }
         k.push_back(val);
         common_msgs::msg::PointXY point;
         point.x = x;
         point.y = y;
         trajectory_msg.points.push_back(point);
-        xp.push_back(dx);
-        yp.push_back(dy);
         acum += dist;
         s.push_back(acum);
         speed_profile.push_back(0.0);
-        indices.push_back(i/(10*route_size));
     }
 
-    xp.push_back(xp.back());
-    yp.push_back(yp.back());
-
-    // for (int i = 0; i<xp.size()-1; i++){
-    //     xpp.push_back(xp[i+1]-xp[i]);
-    //     ypp.push_back(yp[i+1]-yp[i]);
-    // }
-    // xpp.push_back(xpp.back());
-    // ypp.push_back(ypp.back());
-
-    // for (int i = 0; i<xpp.size(); i++){
-    //     double den = pow(pow(xp[i],2)+pow(yp[i],2), 1.5);
-    //     double val;
-    //     if (std::abs(den) < 0.001){
-    //         val = 0;
-    //     } else{
-    //         val = (xp[i]*ypp[i]-yp[i]*xpp[i])/den;
-    //     }
-    //     k.push_back(val);
-    // }
-
-    // for (int i = 1; i < trajectory_msg.points.size()-1; i++){
-    //     double k_val_1, k_val_2;
-
-    //     auto p1 = trajectory_msg.points[i-1];
-    //     auto p2 = trajectory_msg.points[i];
-    //     auto p3 = trajectory_msg.points[i+1];
-
-    //     double a = hypot(p2.x-p1.x, p2.y-p1.y);
-    //     double b = hypot(p3.x-p2.x, p3.y-p2.y);
-    //     double c = hypot(p3.x-p1.x, p3.y-p1.y);
-        
-    //     if (a < 0.001 || b < 0.001 || c < 0.001) { // Avoid division by zero
-    //         k_val_1 = 0.0;
-    //     } else {
-    //         double area = 0.5 * (p1.x*(p2.y-p3.y) + p2.x*(p3.y-p1.y) + p3.x*(p1.y-p2.y));
-    //         k_val_1 = 4*area/(a*b*c);
-    //     }
-
-        // auto p4 = trajectory_msg.points[i-2];
-        // auto p5 = trajectory_msg.points[i+2];
-        // std::cout << "i-2: " << (i-2) << std::endl;
-        
-        // double d = hypot(p2.x-p4.x, p2.y-p4.y);
-        // double e = hypot(p5.x-p2.x, p5.y-p2.y);
-        // double f = hypot(p5.x-p4.x, p5.y-p4.y);
-        // if (d < 0.001 || e < 0.001 || f < 0.001) { // Avoid division by zero
-        //     k_val_2 = 0.0;
-        // } else {
-        //     double area_2 = 0.5 * (p4.x*(p2.y-p5.y) + p2.x*(p5.y-p4.y) + p5.x*(p4.y-p2.y));
-        //     k_val_2 = 4*area_2/(d*e*f);
-        // }
-        
-    //     k.push_back(k_val_1);
-    // }
-
-    // k.push_back(k.back());
-    // k.push_back(k.back());
-    // k.insert(k.begin(), k.front());
-    // k.insert(k.begin(), k.front());
-    
-    // Eigen::MatrixXd k_input_vec(2, k_input.size());
-    // for (int i = 0; i<k_input.size(); i++){
-    //     k_input_vec(0, i) = k_input[i];
-    //     k_input_vec(1, i) = 0.0;
-    // }
-
-    // auto k_spline = Eigen::SplineFitting<Eigen::Spline<double, 2>>::Interpolate(k_input_vec, 2);
-
-    // std::vector<double> k2;
-    // for (auto i : indices){
-    //     auto k_val = k_spline(i);
-    //     k2.push_back(k_val(0));
-    // }
-
-    //k = laplacian_smoothing(k, 0.5);
-   
     for (const auto &val : k){
         double v = std::min(kMaxVel, sqrt(kMaxYAcc/std::max(abs(val), 0.001)));
         v_grip.push_back(v);
@@ -656,8 +599,8 @@ common_msgs::msg::Trajectory PathPlanning::create_trajectory_msg(
 
 void PathPlanning::add_to_track_limits(std::vector<ConeXYZColorScore> back_edge){
     if (back_edge.size() != 2) return;
-    if (back_edge[0].score == -1 || back_edge[1].score == -1) return;
     for (int i = 0; i < 2; i++){
+        if (back_edge[i].score == -1) continue;
         if (back_edge[i].color == UNCOLORED) continue;
         switch (back_edge[i].color) {
             case YELLOW:
@@ -690,7 +633,7 @@ void PathPlanning::add_to_track_limits(std::vector<ConeXYZColorScore> back_edge)
 
 common_msgs::msg::TrackLimits PathPlanning::create_track_limits_msg(CDT::TriangleVec triang, 
                                                                 std::vector<int> triangles_route){
-    if (triangles_route.size() < 3 || triang.size() < 3) {
+    if (triangles_route.size() < 1 || triang.size() < 3 || closing_route_.size() < 3) {
         if (kDebug) RCLCPP_ERROR(this->get_logger(), "Final route is empty in track limits function");
         return common_msgs::msg::TrackLimits();
     }
