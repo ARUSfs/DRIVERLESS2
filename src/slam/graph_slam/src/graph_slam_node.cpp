@@ -430,10 +430,6 @@ void GraphSlam::publish_map(){
             }
         }
         
-    } else {    // If clustering is not enabled, use all points
-        for (int i = 0; i < DA.map_.size(); i++) {
-            pub_indices.push_back(i);
-        }
     }
 
 
