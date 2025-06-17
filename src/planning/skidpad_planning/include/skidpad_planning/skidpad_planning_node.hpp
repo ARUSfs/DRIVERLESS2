@@ -29,6 +29,7 @@ public:
 private:    
     // Variables
     rclcpp::Time start_time_;
+    rclcpp::Time start_time_2;
     double n1;
     double n2;
     std::pair<double, double> left_center;
@@ -44,6 +45,18 @@ private:
     pcl::PointCloud<ConeXYZColorScore> cones_;
     common_msgs::msg::Trajectory msg;
 
+    rclcpp::TimerBase::SharedPtr timer_;
+    int ransac_counter = 0;
+
+    //nuevas
+    double a_;
+    double b_;
+    std::vector<double> a_history_;
+    std::vector<double> b_history_;
+    double sum_a_ = 0.0;
+    double sum_b_ = 0.0;
+    const size_t history_size_ = 1;
+    //
 
     // Parameters
     std::string kPerceptionTopic;       // Topic for receiving perception data
@@ -94,6 +107,11 @@ private:
      */
 
     void compute_ransac_centers();
+
+    //borrar
+    void publish_aux_trajectory();
+
+    void calculate_aux_profiles();
     
     pcl::PointCloud<ConeXYZColorScore> convert_ros_to_pcl(
         const sensor_msgs::msg::PointCloud2::SharedPtr& ros_cloud);
