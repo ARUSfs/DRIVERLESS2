@@ -4,7 +4,7 @@
  * @brief Acceleration planning node for the ARUS Driverless pipeline.
  */
 
- #include "acc_planning_node.hpp"
+#include "acc_planning_node.hpp"
 
 AccPlanning::AccPlanning() : Node("acc_planning_node")
 {
@@ -52,7 +52,6 @@ void AccPlanning::perception_callback(sensor_msgs::msg::PointCloud2::SharedPtr p
         return;
     }
 
-
     AccPlanning::generate_planning();
 
     if (a_ == 0.0 && b_ == 0.0) {
@@ -95,66 +94,45 @@ void AccPlanning::compute_profiles() {
 
 
 void AccPlanning::generate_planning() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
-    double a_initial = 0.0;
-    double b_initial = 0.0;
-
-    double best_a1 = 0.0, best_b1 = 0.0;
-    double best_a2 = 0.0, best_b2 = 0.0;
-
-    double max_score = 0.0;
-
-    std::uniform_int_distribution<> distrib(0, cones_.points.size() - 1);
-
-    std::vector<int> inliers_indices1;
-
-    for (int iter = 0; iter < kMaxIterations; ++iter) {
-        int i = distrib(gen);
-        int j = distrib(gen);
-        auto& c1 = cones_.points[i];
-        auto& c2 = cones_.points[j];
-
-        if (std::abs(c1.x - c2.x) < 0.1) {
-            continue;
-        }
-
-        double a1 = (c2.y - c1.y) / (c2.x - c1.x);
-        double b1_1 = c1.y - c1.x * a1;
-
-        double score = 0.0;
-        std::vector<int> temp_inliers_indices;
-
-        for (int idx = 0; idx < cones_.points.size(); ++idx) {
-            const auto& cone = cones_.points[idx];
-            double d = std::abs(a1 * cone.x + b1_1 - cone.y) / std::sqrt(a1 * a1 + 1);
-
-            double weight = 0.25;  
-            if (cone.x >= 0.0) {
-                weight = std::exp(-cone.x / 6.0);  
-            }
-
-            if (d < kRansacThreshold) {
-                score += weight * (1.0 - (d / kRansacThreshold));
-                temp_inliers_indices.push_back(idx);
-            }
-        }
-        
-        if (score > max_score) {
-            best_a1 = a1;
-            best_b1 = b1_1;
-            max_score = score;
-            inliers_indices1 = temp_inliers_indices;
-        }
+    if (cones_.points.size() < kMinInliersRequired) {
+        if (kDebug) RCLCPP_WARN(this->get_logger(), "Not enough cones for line fitting.");
+        return;
     }
-    a_initial = best_a1;
-    b_initial = best_b1;
 
+    // Fit the first line
+    
+    double sum_x1 = 0.0, sum_y1 = 0.0, sum_xx1 = 0.0, sum_xy1 = 0.0;
+    int n1 = cones_.points.size();
+
+    for (const auto& cone : cones_.points) {
+        sum_x1 += cone.x;
+        sum_y1 += cone.y;
+        sum_xx1 += cone.x * cone.x;
+        sum_xy1 += cone.x * cone.y;
+    }
+
+    double mean_x1 = sum_x1 / n1;
+    double mean_y1 = sum_y1 / n1;
+
+    double a1 = (sum_xy1 - n1 * mean_x1 * mean_y1) / (sum_xx1 - n1 * mean_x1 * mean_x1);
+    double b1 = mean_y1 - a1 * mean_x1;
+
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "First line coefficients: a1 = %f, b1 = %f", a1, b1);
+    }
+
+    // Identify inliers for the first line
+    std::vector<int> inliers_indices1;
     pcl::PointCloud<ConeXYZColorScore> remaining_cones;
+
     for (int idx = 0; idx < cones_.points.size(); ++idx) {
-        if (std::find(inliers_indices1.begin(), inliers_indices1.end(), idx) == inliers_indices1.end()) {
-            remaining_cones.push_back(cones_.points[idx]);
+        const auto& cone = cones_.points[idx];
+        double d = std::abs(a1 * cone.x + b1 - cone.y) / std::sqrt(a1 * a1 + 1);
+
+        if (d < kRansacThreshold) {
+            inliers_indices1.push_back(idx);
+        } else {
+            remaining_cones.push_back(cone);
         }
     }
 
@@ -163,45 +141,32 @@ void AccPlanning::generate_planning() {
         return;
     }
 
-    max_score = 0;
-    std::uniform_int_distribution<> distrib_remaining(0, remaining_cones.size() - 1);
+    // Fit the second line
+    double sum_x2 = 0.0, sum_y2 = 0.0, sum_xx2 = 0.0, sum_xy2 = 0.0;
+    int n2 = remaining_cones.size();
 
-    for (int iter2 = 0; iter2 < kMaxIterations; ++iter2) {
-        int i = distrib_remaining(gen), j = distrib_remaining(gen);
-        const auto& c1 = remaining_cones.points[i];
-        const auto& c2 = remaining_cones.points[j];
-
-        if (std::abs(c1.x - c2.x) < 0.1) {
-            continue;
-        }
-
-        double a2 = (c2.y - c1.y) / (c2.x - c1.x);
-        double b2_1 = c1.y - c1.x * a2;
-
-        double score = 0.0;
-        for (const auto& cone : remaining_cones.points) {
-            double d = std::abs(a2 * cone.x + b2_1 - cone.y) / std::sqrt(a2 * a2 + 1);
-
-            double weight = 0.25;  
-            if (cone.x >= 0.0) {
-                weight = std::exp(-cone.x / 6.0); 
-            }
-
-            if (d < kRansacThreshold) {
-                score += weight * (1.0 - (d / kRansacThreshold));
-            }
-        }
-
-        if (score > max_score) {
-            best_a2 = a2;
-            best_b2 = b2_1;
-            max_score = score;
-        }
+    for (const auto& cone : remaining_cones) {
+        sum_x2 += cone.x;
+        sum_y2 += cone.y;
+        sum_xx2 += cone.x * cone.x;
+        sum_xy2 += cone.x * cone.y;
     }
 
-    double a_temp = (best_a1 + best_a2) / 2;
-    double b_temp = (best_b1 + best_b2) / 2;
-    if (std::abs(a_temp - a_initial) > kMaxAllowedDeviation || std::abs(b_temp - b_initial) > kMaxAllowedDeviation) {
+    double mean_x2 = sum_x2 / n2;
+    double mean_y2 = sum_y2 / n2;
+
+    double a2 = (sum_xy2 - n2 * mean_x2 * mean_y2) / (sum_xx2 - n2 * mean_x2 * mean_x2);
+    double b2 = mean_y2 - a2 * mean_x2;
+
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "Second line coefficients: a2 = %f, b2 = %f", a2, b2);
+    }
+
+    // Combine the two lines
+    double a_temp = (a1 + a2) / 2;
+    double b_temp = (b1 + b2) / 2;
+
+    if (std::abs(a_temp - a1) > kMaxAllowedDeviation || std::abs(b_temp - b1) > kMaxAllowedDeviation) {
         if (kDebug) RCLCPP_WARN(this->get_logger(), "Deviation too high. Keeping initial trajectory.");
         return;
     }
@@ -209,8 +174,12 @@ void AccPlanning::generate_planning() {
     a_ = a_temp;
     b_ = b_temp;
 
+    if (kDebug) {
+        RCLCPP_INFO(this->get_logger(), "Final trajectory coefficients: a = %f, b = %f", a_, b_);
+    }
 
-    if (kDebug) RCLCPP_INFO(this->get_logger(), "Acceleration trajectory coefficients: a = %f, b = %f", a_, b_);
+    // Publish the trajectory based on the fitted line
+    AccPlanning::publish_trajectory();
 }
 
 
