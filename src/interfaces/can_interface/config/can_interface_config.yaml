@@ -6,8 +6,8 @@ can_interface:
     run_check_topic: "/car_state/run_check"
 
     # Files path
-    csv_main_file: "/can24.csv"
-    csv_aux_file: "/can_aux24.csv"
+    csv_main_file: "/can.csv"
+    csv_aux_file: "/can_aux.csv"
     killer_script_file: "/killer.sh"
 
     # Car parameters

@@ -16,8 +16,6 @@ float32 ay     # m/s²
 float32 delta  # radians   
 float32 target_delta    # radians
 int16 steering_state
-float32 torque_actual   # Nm
-float32 torque_target   # Nm
 float32 brake_hydr_pressure    # bar
 int16 lap_count
 int16 cones_count_actual

@@ -350,8 +350,6 @@ void CarState::on_timer()
     car_info_msg.delta = delta_;
     car_info_msg.target_delta = target_delta_;
     car_info_msg.steering_state = steering_state_;
-    car_info_msg.torque_actual = torque_actual_;
-    car_info_msg.torque_target = torque_target_;
     car_info_msg.brake_hydr_pressure = brake_hydr_pressure_;
     car_info_msg.lap_count = lap_count_;
     car_info_msg.cones_count_actual = cones_count_actual_;

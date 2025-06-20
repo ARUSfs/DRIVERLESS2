@@ -13,8 +13,8 @@ CanInterface::CanInterface() : Node("can_interface"){
     this->get_parameter("run_check_topic", kRunCheckTopic);
 
     //  Files Path
-    this->declare_parameter<std::string>("csv_main_file", "/can24.csv");
-    this->declare_parameter<std::string>("csv_aux_file", "/can_aux24.csv");
+    this->declare_parameter<std::string>("csv_main_file", "/can.csv");
+    this->declare_parameter<std::string>("csv_aux_file", "/can_aux.csv");
     this->declare_parameter<std::string>("killer_script_file", "/killer.sh");
 
     this->get_parameter("csv_main_file", kCsvMainFile);
@@ -176,6 +176,7 @@ CanInterface::CanInterface() : Node("can_interface"){
 
 
     heart_beat_timer_ = this->create_wall_timer(0.1s, std::bind(&CanInterface::heart_beat_callback, this));
+    pc_temperature_timer_ = this->create_wall_timer(0.1s, std::bind(&CanInterface::pc_temperature_callback, this));
     dl_timer_ = this->create_wall_timer(0.1s, std::bind(&CanInterface::dl_timer_callback, this));
 
 
@@ -390,29 +391,25 @@ bool CanInterface::filter_subID(const struct can_frame& frame, const std::string
     }
 }
 
-void intToBytes(int16_t val, int8_t* bytes)
-{
-    std::memcpy(bytes, &val, sizeof(val));
-}           
-
 void CanInterface::control_callback(common_msgs::msg::Cmd msg)
 {   
     if(run_check_){
         float torque = msg.acc * kCarMass * kWheelRadius * kTransmissionRatio / kMaxInvTorque;
         this->motor_moment_target_ = torque;
         
-        int16_t intValue = static_cast<int16_t>(torque * (1<<15))-1;
-
-        int8_t bytesCMD[2];
-        intToBytes(intValue, bytesCMD);
+        int16_t acc_scaled = static_cast<int16_t>(msg.acc * 100.0f);
+        int16_t yaw_rate_target_scaled = static_cast<int16_t>(msg.target_r * 1000.0f);
 
         struct can_frame frame;
-        frame.can_id = 0x201;             
-        frame.can_dlc = 3;                
-        frame.data[0] = 0x90;
-        frame.data[1] = bytesCMD[0];
-        frame.data[2] = bytesCMD[1];
-        write(socket_can1_, &frame, sizeof(struct can_frame));  
+        frame.can_id = 0x222;    
+        frame.can_dlc = 4;    
+        frame.data[0] = acc_scaled & 0xFF;
+        frame.data[1] = (acc_scaled >> 8) & 0xFF;
+        frame.data[2] = yaw_rate_target_scaled & 0xFF;
+        frame.data[3] = (yaw_rate_target_scaled >> 8) & 0xFF;
+
+        // Enviar por CAN
+        write(socket_can1_, &frame, sizeof(struct can_frame));
     }
 }
 
@@ -424,8 +421,6 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
     steering_angle_target_ = msg.target_delta;
     brake_hydr_actual_ = msg.brake_hydr_pressure;
     brake_hydr_target_ = msg.brake_hydr_pressure;
-    motor_moment_actual_ = msg.torque_actual;
-    motor_moment_target_ = msg.torque_target;
  
     ax_ = msg.ax;
     ay_ = msg.ay;
@@ -435,18 +430,17 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
     asb_ebs_state_ = 0;
     ami_state_ = msg.ami;
     steering_state_ = msg.steering_state;
-    asb_redundancy_state_ = 0;
+    asb_redundancy_state_ = 1;
     lap_counter_ = msg.lap_count;
     cones_count_actual_ = msg.cones_count_actual;
     cones_count_all_ = msg.cones_count_all;
 
     if(as_status_ == 5){ // Finished
         struct can_frame frame;
-        frame.can_id = 0x202;             
-        frame.can_dlc = 3;                
+        frame.can_id = 0x261;             
+        frame.can_dlc = 2;                
         frame.data[0] = 0x01;
-        frame.data[1] = 0x01;
-        frame.data[2] = 0x05;
+        frame.data[1] = 0x05;
 
         write(socket_can1_, &frame, sizeof(struct can_frame));  
 
@@ -457,11 +451,10 @@ void CanInterface::car_info_callback(const common_msgs::msg::CarInfo msg)
 
     }else if(as_status_ == 4){ // Emergency 
         struct can_frame frame;
-        frame.can_id = 0x202;             
-        frame.can_dlc = 3;                
+        frame.can_id = 0x261;             
+        frame.can_dlc = 2;                
         frame.data[0] = 0x01;
-        frame.data[1] = 0x01;
-        frame.data[2] = 0x04;
+        frame.data[1] = 0x04;
 
         write(socket_can1_, &frame, sizeof(struct can_frame));   
         
@@ -481,8 +474,37 @@ void CanInterface::heart_beat_callback()
 {
     struct can_frame frame;
     frame.can_id = 0x140;             
-    frame.can_dlc = 1;                
-    frame.data[0] = 0x00;
+    frame.can_dlc = 2;                
+    frame.data[0] = 0x50;
+    frame.data[1] = 0x43;
+
+    write(socket_can0_, &frame, sizeof(struct can_frame));
+}
+
+
+void CanInterface::pc_temperature_callback()
+{
+    uint16_t temp_scaled = 0;
+    
+    std::ifstream temp_file("/sys/class/thermal/thermal_zone0/temp");
+
+    if (temp_file.is_open()) {
+        int temp_milli;
+        temp_file >> temp_milli;
+        temp_file.close();
+
+        float temp_celsius = temp_milli / 1000.0f;
+        temp_scaled = static_cast<uint16_t>(std::round(temp_celsius * 10.0f));
+        pc_temp_ = temp_scaled;
+    } else {
+        temp_scaled = pc_temp_;
+    }
+
+    struct can_frame frame;
+    frame.can_id = 0x141;
+    frame.can_dlc = 2;
+    frame.data[0] = temp_scaled & 0xFF;
+    frame.data[1] = (temp_scaled >> 8) & 0xFF;
 
     write(socket_can0_, &frame, sizeof(struct can_frame));
 }
@@ -517,6 +539,8 @@ void CanInterface::send_dl500()
 
     float clamped_brake_hydr_target_ = std::clamp(brake_hydr_target_, 0.0f, 255.0f);
     frame.data[5] = static_cast<uint8_t>(clamped_brake_hydr_target_);
+
+    motor_moment_actual_ = ax_ * kCarMass * kWheelRadius * kTransmissionRatio / kMaxInvTorque;
 
     float clamped_motor_moment_actual_ = std::clamp(motor_moment_actual_, -128.0f, 127.0f);
     frame.data[6] = static_cast<int8_t>(clamped_motor_moment_actual_);

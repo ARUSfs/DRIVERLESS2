@@ -31,8 +31,8 @@ install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME})
 
 install(FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/can_interface/can24.csv
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/can_interface/can_aux24.csv
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/can_interface/can.csv
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/can_interface/can_aux.csv
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()
