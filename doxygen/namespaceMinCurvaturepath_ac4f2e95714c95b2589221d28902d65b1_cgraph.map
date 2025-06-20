@@ -1,0 +1,21 @@
+<map id="MinCurvaturepath::qpmad_solver" name="MinCurvaturepath::qpmad_solver">
+<area shape="rect" id="Node000001" title="Solves the quadratic optimization problem using qpmad solver." alt="" coords="5,13,197,53"/>
+<area shape="rect" id="Node000002" href="$classqpmad_1_1SolverTemplate.html#ab039a3c8878fcd62e18765283e4acede" title="Solve QP." alt="" coords="245,13,421,53"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="198,30,232,30,232,35,198,35"/>
+<area shape="rect" id="Node000003" href="$classqpmad_1_1SolverTemplate.html#a8f1166de6f212a8ff967a878c7d0f115" title=" " alt="" coords="469,13,645,53"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="422,30,455,30,455,35,422,35"/>
+<area shape="rect" id="Node000004" href="$classqpmad_1_1SolverTemplate.html#a663047bb76b9b21d88f5abcd43b3398f" title=" " alt="" coords="693,13,869,53"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="646,30,679,30,679,35,646,35"/>
+<area shape="rect" id="Node000005" href="$classqpmad_1_1SolverTemplate.html#a77a4209388bdf2ee64903d6b6baefc8d" title=" " alt="" coords="917,13,1093,53"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="870,30,903,30,903,35,870,35"/>
+<area shape="rect" id="Node000006" href="$classqpmad_1_1SolverTemplate.html#af170fa6893b4c369d3d68baf19eb76d9" title=" " alt="" coords="1141,13,1317,53"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="1094,30,1127,30,1127,35,1094,35"/>
+<area shape="rect" id="Node000007" href="$classqpmad_1_1SolverTemplate.html#a9faa000213e88a9a35b0cac4278b39a2" title=" " alt="" coords="1365,13,1541,53"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="1318,30,1351,30,1351,35,1318,35"/>
+<area shape="rect" id="Node000008" href="$classqpmad_1_1SolverTemplate.html#aad1050b66867e66f80210e2166527ce9" title=" " alt="" coords="1589,13,1765,53"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="1542,30,1575,30,1575,35,1542,35"/>
+<area shape="rect" id="Node000009" href="$classqpmad_1_1SolverTemplate.html#aae45c43fe1aa4f2b216c2f5437ed0a2b" title=" " alt="" coords="1813,13,1989,53"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="1766,30,1799,30,1799,35,1766,35"/>
+<area shape="rect" id="Node000010" href="$classqpmad_1_1SolverBase.html#a2cb53896a581805d1bf69a4501354904" title=" " alt="" coords="2037,5,2221,60"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="1990,30,2023,30,2023,35,1990,35"/>
+</map>

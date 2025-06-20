@@ -1,0 +1,9 @@
+<map id="TrajectoryOptimization::ggv_ax_brake" name="TrajectoryOptimization::ggv_ax_brake">
+<area shape="rect" id="Node000001" title="Calculates maximum braking acceleration for given speed and curvature." alt="" coords="693,13,864,53"/>
+<area shape="rect" id="Node000002" href="$classTrajectoryOptimization.html#a6e68137f86fedc4b272766b30257c650" title="Generates speed and acceleration profiles for the trajectory." alt="" coords="451,5,645,60"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="679,35,646,35,646,30,679,30"/>
+<area shape="rect" id="Node000003" href="$classTrajectoryOptimization.html#a555f0889b66aba42faa004d1f2d18b63" title="Callback function for the track limits topic. It receives the midpath and tracklimits and calculates ..." alt="" coords="232,13,403,53"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="437,35,403,35,403,30,437,30"/>
+<area shape="rect" id="Node000004" href="$classTrajectoryOptimization.html#a1459e86041c97ed22034381e17cd060c" title="Constructor for the TrajectoryOptimization node." alt="" coords="5,13,184,53"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="218,35,184,35,184,30,218,30"/>
+</map>

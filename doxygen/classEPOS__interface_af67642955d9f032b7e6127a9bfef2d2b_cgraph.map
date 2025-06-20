@@ -1,0 +1,10 @@
+<map id="EPOS_interface::on_timer" name="EPOS_interface::on_timer">
+<area shape="rect" id="Node000001" title="Callback function for the timer." alt="" coords="5,23,151,63"/>
+<area shape="rect" id="Node000002" href="$classVSC.html#a3463b6e4584b43b6702df39691319256" title="Get EPOS4 information such as movement state, position, target position, velocity,..." alt="" coords="199,5,345,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="151,31,185,27,186,32,151,36"/>
+<area shape="rect" id="Node000004" href="$classVSC.html#a4adb218c505dbd1dd18d14e7c7d59695" title="Move EPOS4 to a specified position. Position is given in radians and transformed to increments." alt="" coords="215,55,329,80"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="151,50,202,56,201,61,151,55"/>
+<area shape="rect" id="Node000003" href="$classVSC.html#a664a26702546d7551ce057209b513723" title="Disable EPOS4 controller." alt="" coords="393,31,496,56"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="346,26,380,31,379,37,345,31"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="329,57,379,50,380,55,329,62"/>
+</map>

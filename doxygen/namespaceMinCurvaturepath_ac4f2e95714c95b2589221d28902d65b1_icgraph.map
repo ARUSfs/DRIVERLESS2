@@ -1,0 +1,9 @@
+<map id="MinCurvaturepath::qpmad_solver" name="MinCurvaturepath::qpmad_solver">
+<area shape="rect" id="Node000001" title="Solves the quadratic optimization problem using qpmad solver." alt="" coords="667,5,859,45"/>
+<area shape="rect" id="Node000002" href="$namespaceMinCurvaturepath.html#a11bc9f8cfc440827fa4d5783dfb196a4" title="Calculates an optimized path for the given midpoints and track width, minimizing curvature." alt="" coords="451,5,619,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="653,28,619,28,619,23,653,23"/>
+<area shape="rect" id="Node000003" href="$classTrajectoryOptimization.html#a555f0889b66aba42faa004d1f2d18b63" title="Callback function for the track limits topic. It receives the midpath and tracklimits and calculates ..." alt="" coords="232,5,403,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="437,28,403,28,403,23,437,23"/>
+<area shape="rect" id="Node000004" href="$classTrajectoryOptimization.html#a1459e86041c97ed22034381e17cd060c" title="Constructor for the TrajectoryOptimization node." alt="" coords="5,5,184,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="218,28,184,28,184,23,218,23"/>
+</map>

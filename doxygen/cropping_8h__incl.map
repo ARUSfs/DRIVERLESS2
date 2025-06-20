@@ -1,0 +1,7 @@
+<map id="src/perception/include/perception/cropping.h" name="src/perception/include/perception/cropping.h">
+<area shape="rect" id="Node000001" title="Contains auxiliar functions used in the algorithm to crop the point cloud received from the lidar." alt="" coords="97,5,263,45"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,93,163,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="158,48,110,87,107,82,155,43"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="187,93,365,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="205,43,253,82,250,87,202,48"/>
+</map>

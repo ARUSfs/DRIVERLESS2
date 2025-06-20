@@ -1,0 +1,7 @@
+<map id="EPOS_interface::clean_and_close" name="EPOS_interface::clean_and_close">
+<area shape="rect" id="Node000001" title="Function to disable and close the EPOS4 controller." alt="" coords="5,23,169,63"/>
+<area shape="rect" id="Node000002" href="$classVSC.html#a664a26702546d7551ce057209b513723" title="Disable EPOS4 controller." alt="" coords="254,5,357,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="169,31,240,23,240,28,170,36"/>
+<area shape="rect" id="Node000003" href="$classVSC.html#a52cef038cf3fc1b236f71d4c43a8e341" title="Disconnect EPOS4 controller." alt="" coords="217,55,393,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="170,50,204,53,203,59,169,55"/>
+</map>

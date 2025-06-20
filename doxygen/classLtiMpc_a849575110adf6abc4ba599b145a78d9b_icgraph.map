@@ -1,0 +1,9 @@
+<map id="LtiMpc::interpolate_data" name="LtiMpc::interpolate_data">
+<area shape="rect" id="Node000001" title="Interpolate variables to match with predicted position." alt="" coords="621,13,801,38"/>
+<area shape="rect" id="Node000002" href="$classLtiMpc.html#ae4b99cd95cbbd179c741789719df04d0" title="Create discrete local reference trajectory." alt="" coords="411,5,573,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="608,28,574,28,574,23,608,23"/>
+<area shape="rect" id="Node000003" href="$classController.html#a5648d68a83d9b45e33538902500ff731" title="Steering control timer callback." alt="" coords="212,5,363,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="397,28,363,28,363,23,397,23"/>
+<area shape="rect" id="Node000004" href="$classController.html#a95c56822d667e94b031451729ce069a9" title="Constructor for the Controller class." alt="" coords="5,13,164,38"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="198,28,164,28,164,23,198,23"/>
+</map>

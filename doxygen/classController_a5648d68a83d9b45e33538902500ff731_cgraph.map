@@ -1,0 +1,21 @@
+<map id="Controller::on_steer_timer" name="Controller::on_steer_timer">
+<area shape="rect" id="Node000001" title="Steering control timer callback." alt="" coords="5,177,156,217"/>
+<area shape="rect" id="Node000002" href="$classLtiMpc.html#aedaf980e0df216c3e734b5102d4e129f" title="Calculate steering angle command using LTI&#45;MPC." alt="" coords="208,70,392,95"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="103,175,147,140,203,106,224,97,226,102,205,110,150,144,106,179"/>
+<area shape="rect" id="Node000005" href="$classPure__pursuit.html#abceded84252999fc1dc2099bced1d641" title="Get steering angle to the pursuit point." alt="" coords="204,120,396,160"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="156,175,209,161,210,166,157,180"/>
+<area shape="rect" id="Node000007" href="$classPure__pursuit.html#a4f4716bf88e5e02e48e43ec4969a1544" title="Update the current trayectory." alt="" coords="217,185,383,210"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="157,195,203,195,203,200,157,200"/>
+<area shape="rect" id="Node000008" href="$classPure__pursuit.html#a0fddde2d2e5de83018e661920b3edc2c" title="Set the current position of the car." alt="" coords="205,234,395,259"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="157,212,230,228,229,234,156,217"/>
+<area shape="rect" id="Node000009" href="$classLtiMpc.html#ae4b99cd95cbbd179c741789719df04d0" title="Create discrete local reference trajectory." alt="" coords="219,284,381,324"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="112,215,155,243,205,270,221,276,219,281,203,274,152,247,109,220"/>
+<area shape="rect" id="Node000003" href="$classLtiMpc.html#a63570ab7a21b4a6647cc3873e3a47157" title="Discretize linear model using matrix exponential." alt="" coords="466,5,602,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="352,67,452,43,453,48,353,73"/>
+<area shape="rect" id="Node000004" href="$classLtiMpc.html#ad811f3977b8ff30f87b3f8b2a3c41a2c" title="Linearize vehicle model using current speed." alt="" coords="445,70,623,95"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="392,80,432,80,432,85,392,85"/>
+<area shape="rect" id="Node000006" href="$classPure__pursuit.html#a549055f92ad5ca4eeab90355a70976d5" title="Search pursuit point. Returns the point on the trajectory closest to the look&#45;ahead distance." alt="" coords="457,120,611,160"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="396,137,443,137,443,143,396,143"/>
+<area shape="rect" id="Node000010" href="$classLtiMpc.html#a849575110adf6abc4ba599b145a78d9b" title="Interpolate variables to match with predicted position." alt="" coords="444,291,624,317"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="382,301,430,301,430,307,382,307"/>
+</map>

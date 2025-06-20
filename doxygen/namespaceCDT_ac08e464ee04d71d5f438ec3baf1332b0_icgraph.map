@@ -1,0 +1,7 @@
+<map id="CDT::isInCircumcircle" name="CDT::isInCircumcircle">
+<area shape="rect" id="Node000001" title="Test if point lies in a circumscribed circle of a triangle." alt="" coords="203,45,363,70"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1Triangulation.html#a77284facb62e1dfa0fcfeb5942102e66" title=" " alt="" coords="5,5,155,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="189,45,155,40,156,35,189,40"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1Triangulation.html#a2dfbdada76166661f5507607d49a5b87" title=" " alt="" coords="10,69,150,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="189,75,151,81,150,76,188,70"/>
+</map>

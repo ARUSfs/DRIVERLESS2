@@ -1,0 +1,11 @@
+<map id="src/perception/include/perception/ground_filtering.h" name="src/perception/include/perception/ground_filtering.h">
+<area shape="rect" id="Node000001" title="Contains auxiliar functions used in the algorithm to remove the ground from the original point cloud." alt="" coords="238,5,451,45"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,93,167,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="289,48,157,92,155,86,287,43"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="191,93,323,133"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="327,48,288,86,284,82,323,44"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="347,101,521,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="366,44,414,89,410,93,363,48"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="546,101,703,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="407,43,575,94,573,99,405,48"/>
+</map>

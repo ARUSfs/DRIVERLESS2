@@ -1,0 +1,5 @@
+<map id="TrajectoryOptimization::trajectory_callback" name="TrajectoryOptimization::trajectory_callback">
+<area shape="rect" id="Node000001" title="Callback function for the track limits topic. It receives the midpath and tracklimits and calculates ..." alt="" coords="232,5,403,45"/>
+<area shape="rect" id="Node000002" href="$classTrajectoryOptimization.html#a1459e86041c97ed22034381e17cd060c" title="Constructor for the TrajectoryOptimization node." alt="" coords="5,5,184,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="218,28,184,28,184,23,218,23"/>
+</map>

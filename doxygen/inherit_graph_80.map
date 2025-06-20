@@ -1,0 +1,33 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,351,108,376"/>
+<area shape="rect" id="Node000001" href="$classARUSSimInterface.html" title="ARUSSimInterface class." alt="" coords="171,5,312,31"/>
+<area shape="poly" id="edge15_Node000000_Node000001" title=" " alt="" coords="55,336,60,276,74,197,86,154,103,113,126,74,154,40,170,29,174,33,158,44,130,77,108,115,91,156,79,198,65,277,61,337"/>
+<area shape="rect" id="Node000002" href="$classAccPlanning.html" title=" " alt="" coords="191,55,292,80"/>
+<area shape="poly" id="edge16_Node000000_Node000002" title=" " alt="" coords="57,337,64,285,80,218,109,149,129,117,154,89,171,78,189,71,191,76,173,83,158,93,134,121,114,152,85,220,69,286,62,337"/>
+<area shape="rect" id="Node000003" href="$classCanInterface.html" title="Class containing the CAN interface node. Manages subscribers and data from the csv files used in the ..." alt="" coords="189,104,294,129"/>
+<area shape="poly" id="edge17_Node000000_Node000003" title=" " alt="" coords="59,337,69,294,87,240,115,186,133,161,154,139,170,128,187,121,189,126,173,133,158,143,137,164,119,189,92,242,74,295,65,338"/>
+<area shape="rect" id="Node000004" href="$classCarState.html" title=" " alt="" coords="202,153,281,179"/>
+<area shape="poly" id="edge18_Node000000_Node000004" title=" " alt="" coords="63,337,75,303,95,263,121,223,154,188,177,175,201,168,203,173,179,180,158,192,125,226,99,266,80,305,68,339"/>
+<area shape="rect" id="Node000005" href="$classController.html" title="The Controller class." alt="" coords="198,203,285,228"/>
+<area shape="poly" id="edge19_Node000000_Node000005" title=" " alt="" coords="69,337,103,286,127,260,155,237,175,226,197,219,198,225,177,231,157,242,131,264,107,290,73,340"/>
+<area shape="rect" id="Node000006" href="$classEPOS__interface.html" title=" " alt="" coords="181,252,302,277"/>
+<area shape="poly" id="edge20_Node000000_Node000006" title=" " alt="" coords="80,339,114,312,155,286,183,275,185,280,157,291,117,316,83,343"/>
+<area shape="rect" id="Node000007" href="$classGraphSlam.html" title=" " alt="" coords="194,301,289,327"/>
+<area shape="poly" id="edge21_Node000000_Node000007" title=" " alt="" coords="117,345,193,324,195,329,119,350"/>
+<area shape="rect" id="Node000008" href="$classIcpSlam.html" title=" " alt="" coords="204,351,279,376"/>
+<area shape="poly" id="edge22_Node000000_Node000008" title=" " alt="" coords="122,361,204,361,204,366,122,366"/>
+<area shape="rect" id="Node000009" href="$classInspectionControl.html" title=" " alt="" coords="173,400,309,425"/>
+<area shape="poly" id="edge23_Node000000_Node000009" title=" " alt="" coords="119,377,193,397,192,402,117,382"/>
+<area shape="rect" id="Node000010" href="$classParamDumper.html" title=" " alt="" coords="184,449,299,475"/>
+<area shape="poly" id="edge24_Node000000_Node000010" title=" " alt="" coords="84,383,118,410,157,434,188,447,186,452,155,439,114,414,81,387"/>
+<area shape="rect" id="Node000011" href="$classPathPlanning.html" title="Class containing the Path Planning node. Manages subscribers and publisher for the different topics u..." alt="" coords="188,499,295,524"/>
+<area shape="poly" id="edge25_Node000000_Node000011" title=" " alt="" coords="74,387,108,436,131,462,157,484,189,498,186,503,155,488,127,466,104,439,69,390"/>
+<area shape="rect" id="Node000012" href="$classPerception.html" title="Class containing the Perception node." alt="" coords="196,548,287,573"/>
+<area shape="poly" id="edge26_Node000000_Node000012" title=" " alt="" coords="68,388,81,421,100,460,125,500,158,533,176,544,197,552,195,557,174,549,154,537,121,503,95,463,76,423,63,390"/>
+<area shape="rect" id="Node000013" href="$classSkidpadPlanning.html" title=" " alt="" coords="176,597,307,623"/>
+<area shape="poly" id="edge27_Node000000_Node000013" title=" " alt="" coords="65,389,75,431,93,484,120,537,137,561,158,583,177,595,174,599,154,587,133,565,115,540,88,486,70,433,60,390"/>
+<area shape="rect" id="Node000014" href="$classTrajectoryOptimization.html" title="TrajectoryOptimization class." alt="" coords="156,647,327,672"/>
+<area shape="poly" id="edge28_Node000000_Node000014" title=" " alt="" coords="63,389,70,441,86,506,114,574,134,605,158,632,176,644,173,649,154,636,130,608,109,576,81,508,65,442,57,390"/>
+<area shape="rect" id="Node000015" href="$classVisualization.html" title="Visualization class." alt="" coords="188,696,295,721"/>
+<area shape="poly" id="edge29_Node000000_Node000015" title=" " alt="" coords="61,390,65,449,79,528,92,569,108,610,130,648,158,681,172,692,189,699,187,704,169,696,154,685,126,651,104,612,87,571,74,529,60,450,56,390"/>
+</map>

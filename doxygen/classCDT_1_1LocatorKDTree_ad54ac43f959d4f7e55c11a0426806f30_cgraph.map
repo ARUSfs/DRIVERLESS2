@@ -1,0 +1,14 @@
+<map id="CDT::LocatorKDTree::nearPoint" name="CDT::LocatorKDTree::nearPoint">
+<area shape="rect" id="Node000001" title="Find nearest point using R&#45;tree." alt="" coords="5,116,156,156"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1KDTree_1_1KDTree.html#aaee62f9d986d9e315ab9ffaa737143ef" title=" " alt="" coords="204,116,360,156"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="157,133,190,133,190,139,157,139"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1KDTree_1_1KDTree.html#a30fb5e78fd83304b499fe06268ad2152" title="Calculate split location, direction, and children boxes." alt="" coords="412,5,568,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="310,114,355,85,407,55,420,48,423,53,409,60,358,89,313,118"/>
+<area shape="rect" id="Node000004" href="$namespaceCDT.html#aa78f2a846c74e9c937fb052a3b32d7a3" title="Squared distance between two 2D points." alt="" coords="408,94,572,119"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="360,122,394,117,395,123,361,128"/>
+<area shape="rect" id="Node000005" href="$structCDT_1_1KDTree_1_1KDTree_1_1Node.html#a59d5c389a214daae013e2cf538a24758" title="Check if node is a leaf (has no valid children)" alt="" coords="412,144,568,184"/>
+<area shape="poly" id="edge5_Node000002_Node000005" title=" " alt="" coords="361,144,399,149,398,154,360,149"/>
+<area shape="rect" id="Node000006" href="$classCDT_1_1KDTree_1_1KDTree.html#a80ba1384b6d4acd200758594c7e37e73" title=" " alt="" coords="412,208,568,248"/>
+<area shape="poly" id="edge6_Node000002_Node000006" title=" " alt="" coords="325,154,409,194,425,200,423,205,407,198,322,159"/>
+<area shape="poly" id="edge4_Node000004_Node000004" title=" " alt="" coords="456,96,449,86,452,76,467,70,490,67,519,71,530,80,527,84,517,76,490,73,468,75,456,79,454,85,460,92"/>
+</map>

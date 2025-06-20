@@ -1,0 +1,5 @@
+<map id="SkidpadPlanning::initialize_skidpad" name="SkidpadPlanning::initialize_skidpad">
+<area shape="rect" id="Node000001" title="Initializes the skidpad trajectory template and speed/acceleration profiles." alt="" coords="244,5,439,45"/>
+<area shape="rect" id="Node000002" href="$classSkidpadPlanning.html#a88321d4bb2673e3a6f1d55a018f128ad" title=" " alt="" coords="5,5,196,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="230,28,196,28,196,23,230,23"/>
+</map>

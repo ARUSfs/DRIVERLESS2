@@ -1,0 +1,13 @@
+<map id="InspectionControl::InspectionControl" name="InspectionControl::InspectionControl">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,101,149,141"/>
+<area shape="rect" id="Node000002" href="$classInspectionControl.html#a4d5d6ab079220e0b3f2c52b336560a9b" title="Callback function for the AS status subscriber." alt="" coords="197,5,343,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="113,99,196,55,209,49,211,54,199,60,115,104"/>
+<area shape="rect" id="Node000003" href="$classInspectionControl.html#a8c85813d124bd055e97708cf2de21abe" title="Callback function for the car state subscriber." alt="" coords="198,69,342,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="149,107,184,101,185,106,150,112"/>
+<area shape="rect" id="Node000004" href="$classInspectionControl.html#a3bc1434843e353f6dec65d42b1e8bce6" title="Callback function for the main control timer." alt="" coords="198,133,342,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="150,131,185,137,184,142,149,136"/>
+<area shape="rect" id="Node000006" href="$classPID.html#ad03423c2395505384ca64de5af3b12b3" title=" " alt="" coords="206,198,334,223"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="114,139,198,183,218,191,216,196,196,188,112,144"/>
+<area shape="rect" id="Node000005" href="$classPID.html#a8bba3d08835ccb725176a7596c879eef" title="Compute PID control." alt="" coords="391,141,552,166"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="342,151,377,151,377,156,342,156"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="CarState::cones_count_actual_callback" name="CarState::cones_count_actual_callback">
+<area shape="rect" id="Node000001" title="Callback that receives actual perceived cones and checks plausibility." alt="" coords="196,5,363,45"/>
+<area shape="rect" id="Node000002" href="$classCarState.html#af69b7ada77b367d0f5934e6d10b454aa" title="Constructor of CarState node." alt="" coords="5,13,148,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="182,28,148,28,148,23,182,23"/>
+</map>

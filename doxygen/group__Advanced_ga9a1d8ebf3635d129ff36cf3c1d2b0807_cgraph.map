@@ -1,0 +1,7 @@
+<map id="CDT::Triangulation::flipEdge" name="CDT::Triangulation::flipEdge">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,23,145,63"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT_1_1detail.html#a3d0029052f21c5ae87d2eb1084f6eb1f" title="Needed for c++03 compatibility (no uniform initialization available)" alt="" coords="205,5,332,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="145,32,191,25,192,31,146,37"/>
+<area shape="rect" id="Node000003" href="$structCDT_1_1Triangle.html#a8dba5775643ed59bc5477f441de82303" title=" " alt="" coords="193,55,344,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="146,49,180,54,179,59,145,55"/>
+</map>

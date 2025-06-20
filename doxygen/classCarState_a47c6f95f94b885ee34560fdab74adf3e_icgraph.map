@@ -1,0 +1,5 @@
+<map id="CarState::ax_callback" name="CarState::ax_callback">
+<area shape="rect" id="Node000001" title="Callback that receives and validates longitudinal acceleration from the IMU." alt="" coords="196,5,359,31"/>
+<area shape="rect" id="Node000002" href="$classCarState.html#af69b7ada77b367d0f5934e6d10b454aa" title="Constructor of CarState node." alt="" coords="5,5,148,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="182,21,148,21,148,15,182,15"/>
+</map>

@@ -1,0 +1,11 @@
+<map id="qpmad::SolverTemplate&lt; t_Scalar, t_Parameters &gt;" name="qpmad::SolverTemplate&lt; t_Scalar, t_Parameters &gt;">
+<area shape="rect" id="Node000001" title=" " alt="" coords="759,41,957,81"/>
+<area shape="rect" id="Node000002" href="$classqpmad_1_1SolverBase.html" title=" " alt="" coords="377,5,576,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="590,33,759,49,758,55,589,39"/>
+<area shape="rect" id="Node000003" href="$classqpmad_1_1ChosenConstraint.html" title=" " alt="" coords="5,13,196,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="210,23,377,23,377,28,210,28"/>
+<area shape="rect" id="Node000004" href="$structqpmad_1_1SolverTemplate_1_1InputPlaceholders.html" title=" " alt="" coords="385,70,568,125"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="581,85,758,68,759,73,582,90"/>
+<area shape="rect" id="Node000005" href="$classqpmad_1_1SolverParameters.html" title=" " alt="" coords="5,85,196,110"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="210,95,385,95,385,100,210,100"/>
+</map>

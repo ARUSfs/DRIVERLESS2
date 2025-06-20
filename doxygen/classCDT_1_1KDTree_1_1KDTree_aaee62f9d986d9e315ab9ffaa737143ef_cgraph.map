@@ -1,0 +1,12 @@
+<map id="CDT::KDTree::KDTree::nearest" name="CDT::KDTree::KDTree::nearest">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,116,161,156"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1KDTree_1_1KDTree.html#a30fb5e78fd83304b499fe06268ad2152" title="Calculate split location, direction, and children boxes." alt="" coords="213,5,369,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,114,156,85,208,55,222,48,224,53,211,60,159,89,114,118"/>
+<area shape="rect" id="Node000003" href="$namespaceCDT.html#aa78f2a846c74e9c937fb052a3b32d7a3" title="Squared distance between two 2D points." alt="" coords="209,94,373,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="161,122,195,117,196,123,162,128"/>
+<area shape="rect" id="Node000004" href="$structCDT_1_1KDTree_1_1KDTree_1_1Node.html#a59d5c389a214daae013e2cf538a24758" title="Check if node is a leaf (has no valid children)" alt="" coords="213,144,369,184"/>
+<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="162,144,200,149,199,154,161,149"/>
+<area shape="rect" id="Node000005" href="$classCDT_1_1KDTree_1_1KDTree.html#a80ba1384b6d4acd200758594c7e37e73" title=" " alt="" coords="213,208,369,248"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="126,154,210,194,226,200,224,205,208,198,124,159"/>
+<area shape="poly" id="edge3_Node000003_Node000003" title=" " alt="" coords="257,96,250,86,254,76,268,70,291,67,320,71,332,80,328,84,318,76,291,73,269,75,257,79,255,85,261,92"/>
+</map>

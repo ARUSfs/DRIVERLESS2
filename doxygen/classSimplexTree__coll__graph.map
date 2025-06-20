@@ -1,0 +1,6 @@
+<map id="SimplexTree" name="SimplexTree">
+<area shape="rect" id="Node000001" title="Class for the simplex tree structure. Nodes are indices of the triangles in the triangulation...." alt="" coords="9,97,111,123"/>
+<area shape="rect" id="Node000002" href="$classSimplexNode.html" title=" " alt="" coords="5,7,115,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="63,46,63,97,57,97,57,46"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="130,11,141,20,133,28,115,31,114,26,131,23,136,20,127,15"/>
+</map>

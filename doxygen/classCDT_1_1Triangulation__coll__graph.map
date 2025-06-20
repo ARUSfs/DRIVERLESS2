@@ -1,0 +1,15 @@
+<map id="CDT::Triangulation&lt; T, TNearPointLocator &gt;" name="CDT::Triangulation&lt; T, TNearPointLocator &gt;">
+<area shape="rect" id="Node000001" title=" " alt="" coords="960,87,1148,127"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="591,5,768,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="772,31,937,66,997,85,996,90,935,71,771,36"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="561,55,797,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="811,84,960,97,960,102,811,89"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="596,119,763,159"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="777,129,936,115,959,113,960,119,936,121,777,134"/>
+<area shape="rect" id="Node000005" href="$classCDT_1_1LocatorKDTree.html" title=" " alt="" coords="585,184,773,209"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="779,179,856,165,935,146,1001,125,1002,130,937,151,857,170,780,184"/>
+<area shape="rect" id="Node000006" href="$classCDT_1_1KDTree_1_1KDTree.html" title=" " alt="" coords="289,177,445,217"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="459,194,585,194,585,199,459,199"/>
+<area shape="rect" id="Node000007" href="$structCDT_1_1V2d.html" title=" " alt="" coords="5,184,188,209"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="202,194,289,194,289,199,202,199"/>
+</map>

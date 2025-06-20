@@ -1,0 +1,5 @@
+<map id="CanInterface::control_callback" name="CanInterface::control_callback">
+<area shape="rect" id="Node000001" title="Callback that send in a CAN message the motor inverter command that receive from Controller." alt="" coords="249,5,408,45"/>
+<area shape="rect" id="Node000002" href="$classCanInterface.html#a30b4be0d42ccab7b5a4b321f1dff2353" title="Construct the CAN interface node." alt="" coords="5,13,201,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="235,28,202,28,202,23,235,23"/>
+</map>

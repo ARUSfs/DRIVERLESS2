@@ -1,0 +1,7 @@
+<map id="InspectionControl" name="InspectionControl">
+<area shape="rect" id="Node000001" title=" " alt="" coords="37,93,173,119"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,108,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="72,41,100,91,96,94,67,44"/>
+<area shape="rect" id="Node000003" href="$classPID.html" title=" " alt="" coords="132,5,176,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="143,44,114,94,109,91,138,41"/>
+</map>

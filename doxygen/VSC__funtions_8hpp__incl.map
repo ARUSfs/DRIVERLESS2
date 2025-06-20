@@ -1,0 +1,17 @@
+<map id="src/interfaces/epos_interface/include/epos_interface/VSC_funtions.hpp" name="src/interfaces/epos_interface/include/epos_interface/VSC_funtions.hpp">
+<area shape="rect" id="Node000001" title="VSCfuntions implementation for ARUS Team Driverless pipeline." alt="" coords="375,5,581,60"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,115,137,141"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="376,59,151,111,133,115,131,110,149,105,375,54"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="162,108,327,148"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="413,63,305,105,303,100,411,58"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="351,115,418,141"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="453,62,408,107,404,103,450,58"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="443,115,513,141"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="481,60,481,101,475,101,475,60"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="538,115,605,141"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="506,58,552,103,548,107,503,62"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="629,115,687,141"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="530,58,625,107,623,112,527,62"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="712,115,783,141"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="560,58,700,105,707,108,705,113,698,111,558,63"/>
+</map>

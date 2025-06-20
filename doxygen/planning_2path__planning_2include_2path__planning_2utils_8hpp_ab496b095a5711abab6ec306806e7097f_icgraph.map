@@ -1,0 +1,13 @@
+<map id="compute_centroid" name="compute_centroid">
+<area shape="rect" id="Node000001" title="Calculate the centroid of a triangle given its index in the triangulation. Centroid is calculated as ..." alt="" coords="764,70,903,95"/>
+<area shape="rect" id="Node000002" href="$classPathPlanning.html#a9c1a10ac2e4b9f189bbe97258304aef9" title="Create a track limits msg object from a given route of triangles and the triangulation." alt="" coords="533,5,687,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="769,69,687,48,688,43,771,64"/>
+<area shape="rect" id="Node000003" href="$classPathPlanning.html#a8f5aef1f05ed86270a445a63bae07573" title="Callback function for the perception topic." alt="" coords="252,70,456,95"/>
+<area shape="poly" id="edge6_Node000001_Node000003" title=" " alt="" coords="750,85,456,85,456,80,750,80"/>
+<area shape="rect" id="Node000005" href="$classPathPlanning.html#a4168d313d26085bd2f4319d33c2f5b57" title="Get the back edge given the position of the car." alt="" coords="504,121,716,146"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="764,101,667,123,666,118,762,96"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="520,48,412,73,411,67,519,43"/>
+<area shape="rect" id="Node000004" href="$classPathPlanning.html#a314735f239a01515a3450205dd144619" title="Construct a new Path Planning object." alt="" coords="5,70,204,95"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="239,85,204,85,204,80,239,80"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="531,120,418,98,419,93,532,115"/>
+</map>

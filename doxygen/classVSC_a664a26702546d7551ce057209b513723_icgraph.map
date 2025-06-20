@@ -1,0 +1,16 @@
+<map id="VSC::disable" name="VSC::disable">
+<area shape="rect" id="Node000001" title="Disable EPOS4 controller." alt="" coords="651,70,753,95"/>
+<area shape="rect" id="Node000002" href="$classEPOS__interface.html#a12a43a34007a410e62782fc3eae64fd9" title="Function to disable and close the EPOS4 controller." alt="" coords="439,5,603,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="647,68,584,48,585,43,649,63"/>
+<area shape="rect" id="Node000004" href="$classVSC.html#a3463b6e4584b43b6702df39691319256" title="Get EPOS4 information such as movement state, position, target position, velocity,..." alt="" coords="447,70,594,95"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="637,85,594,85,594,80,637,80"/>
+<area shape="rect" id="Node000007" href="$classVSC.html#a4adb218c505dbd1dd18d14e7c7d59695" title="Move EPOS4 to a specified position. Position is given in radians and transformed to increments." alt="" coords="464,119,577,145"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="642,102,569,122,568,117,640,97"/>
+<area shape="rect" id="Node000003" href="$classEPOS__interface.html#a19641166a7eb34f58db2f2dff6352925" title="Destructor for the EPOS_interface class. Cleans up and closes the EPOS interface." alt="" coords="216,5,391,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="425,28,391,28,391,23,425,23"/>
+<area shape="rect" id="Node000005" href="$classEPOS__interface.html#af67642955d9f032b7e6127a9bfef2d2b" title="Callback function for the timer." alt="" coords="231,91,376,131"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="434,96,377,104,376,99,433,91"/>
+<area shape="rect" id="Node000006" href="$classEPOS__interface.html#ac8dde287b72cd078d7f7f52e52e07117" title="Constructor for the EPOS_interface class. Initializes the node, parameters, and subscriptions." alt="" coords="5,91,168,131"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="216,113,168,113,168,108,216,108"/>
+<area shape="poly" id="edge7_Node000007_Node000005" title=" " alt="" coords="450,128,376,120,376,115,450,122"/>
+</map>

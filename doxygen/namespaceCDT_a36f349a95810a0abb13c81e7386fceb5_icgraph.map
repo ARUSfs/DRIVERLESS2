@@ -1,0 +1,13 @@
+<map id="CDT::cw" name="CDT::cw">
+<area shape="rect" id="Node000001" title="Advance vertex or neighbor index clockwise." alt="" coords="212,141,287,166"/>
+<area shape="rect" id="Node000002" href="$group__Advanced.html#ga45c33584023bfde51f984fa3ff34b211" title=" " alt="" coords="15,5,155,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="230,131,201,94,162,59,143,48,145,43,166,55,204,91,234,127"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1Triangulation.html#a458f89538ea61a0593c9908a8fd79eb0" title=" " alt="" coords="15,69,155,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="202,138,136,112,138,107,204,133"/>
+<area shape="rect" id="Node000004" href="$classCDT_1_1Triangulation.html#a02076dafba248457f71ec151b8feb3ab" title="Returns indices of four resulting triangles." alt="" coords="5,133,164,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="198,156,165,156,165,151,198,151"/>
+<area shape="rect" id="Node000005" href="$classCDT_1_1Triangulation.html#a7628eea8601675dc0148f5ddcc6a9e87" title=" " alt="" coords="7,197,162,237"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="204,174,138,200,136,195,202,169"/>
+<area shape="rect" id="Node000006" href="$classCDT_1_1Triangulation.html#a1b51dc99b47094abe6abce147676cdff" title=" " alt="" coords="15,261,155,301"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="234,179,204,216,166,251,145,263,143,259,162,247,201,212,230,176"/>
+</map>

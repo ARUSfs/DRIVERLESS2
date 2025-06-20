@@ -1,0 +1,9 @@
+<map id="src/planning/skidpad_planning/include/skidpad_planning/dbscan/dbscan.h" name="src/planning/skidpad_planning/include/skidpad_planning/dbscan/dbscan.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="13,5,210,60"/>
+<area shape="rect" id="Node000002" href="$dbscan_8cpp.html" title=" " alt="" coords="5,108,217,163"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="114,74,114,108,109,108,109,74"/>
+<area shape="rect" id="Node000003" href="$skidpad__planning__node_8hpp.html" title=" " alt="" coords="10,211,213,280"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="114,177,114,210,109,210,109,177"/>
+<area shape="rect" id="Node000004" href="$skidpad__planning__node_8cpp.html" title="Skidpad planning node header for the ARUS Driverless pipeline." alt="" coords="30,328,193,383"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="114,294,114,328,109,328,109,294"/>
+</map>

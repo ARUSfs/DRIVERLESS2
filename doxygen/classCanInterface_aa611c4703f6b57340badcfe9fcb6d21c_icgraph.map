@@ -1,0 +1,7 @@
+<map id="CanInterface::send_dl500" name="CanInterface::send_dl500">
+<area shape="rect" id="Node000001" title="Configure and send the CAN message from the Data Logger with ID 500." alt="" coords="464,5,608,45"/>
+<area shape="rect" id="Node000002" href="$classCanInterface.html#aacccfdd63c865f2c75b3d2b573799140" title="Callback associated with a timer to periodically send the Data Logger message over CAN." alt="" coords="249,5,416,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="450,28,416,28,416,23,450,23"/>
+<area shape="rect" id="Node000003" href="$classCanInterface.html#a30b4be0d42ccab7b5a4b321f1dff2353" title="Construct the CAN interface node." alt="" coords="5,13,201,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="235,28,202,28,202,23,235,23"/>
+</map>

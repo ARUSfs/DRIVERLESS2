@@ -1,0 +1,7 @@
+<map id="src/control/controller/include/controller/pure_pursuit.hpp" name="src/control/controller/include/controller/pure_pursuit.hpp">
+<area shape="rect" id="Node000001" title="Pure Pursuit, header and implementation for ARUS Team Driverless pipeline." alt="" coords="22,5,194,60"/>
+<area shape="rect" id="Node000002" href="$controller__node_8hpp.html" title="Controller node header for ARUS Team Driverless pipeline." alt="" coords="5,108,211,163"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="111,74,111,108,105,108,105,74"/>
+<area shape="rect" id="Node000003" href="$controller__node_8cpp.html" title="Controller node implementation for ARUS Team Driverless pipeline." alt="" coords="19,211,197,251"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="111,176,111,211,105,211,105,176"/>
+</map>

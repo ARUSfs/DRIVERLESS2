@@ -1,0 +1,38 @@
+<map id="MinCurvaturepath::get_min_curvature_path" name="MinCurvaturepath::get_min_curvature_path">
+<area shape="rect" id="Node000001" title="Calculates an optimized path for the given midpoints and track width, minimizing curvature." alt="" coords="5,129,173,169"/>
+<area shape="rect" id="Node000002" href="$namespaceMinCurvaturepath.html#a6a11fe05f7020931a91ef8923411aef4" title="Generates the H matrix of our quadratic optimization problem." alt="" coords="221,47,421,72"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="126,126,170,104,220,82,248,73,249,78,222,87,173,108,128,131"/>
+<area shape="rect" id="Node000003" href="$namespaceMinCurvaturepath.html#adca76c06304d18b6768470c99c52f910" title="Interpolates the given path to increase the number of trajectory points and returns the interpolated ..." alt="" coords="223,97,420,137"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="173,134,209,130,209,135,174,140"/>
+<area shape="rect" id="Node000008" href="$namespaceMinCurvaturepath.html#ac4f2e95714c95b2589221d28902d65b1" title="Solves the quadratic optimization problem using qpmad solver." alt="" coords="225,161,417,201"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="174,158,212,163,211,168,173,163"/>
+<area shape="rect" id="Node000018" href="$namespaceMinCurvaturepath.html#a37194c6b7dd62f28ef01886fd2ae7455" title="Generates the B matrix of our quadratic optimization problem." alt="" coords="223,225,420,251"/>
+<area shape="poly" id="edge18_Node000001_Node000018" title=" " alt="" coords="128,167,173,189,222,210,249,219,248,224,220,215,170,194,126,171"/>
+<area shape="rect" id="Node000004" href="$planning_2trajectory__optimization_2include_2trajectory__optimization_2utils_8hpp.html#a2bad03a4456098b4b00e2f100729f88d" title="Calculates the cumulative sum of the vector elements at each index." alt="" coords="518,5,597,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="392,94,420,81,434,71,443,61,453,50,468,40,504,26,506,31,471,44,457,54,447,64,437,75,423,86,394,99"/>
+<area shape="rect" id="Node000005" href="$planning_2trajectory__optimization_2include_2trajectory__optimization_2utils_8hpp.html#ae612d7eb931313d050181e9a4fee6721" title="Calculates the difference between consecutive elements of the same column." alt="" coords="523,55,592,80"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="417,94,508,75,509,80,418,99"/>
+<area shape="rect" id="Node000006" href="$planning_2trajectory__optimization_2include_2trajectory__optimization_2utils_8hpp.html#a12abe11712f487001b4aaea5a0ab6bf1" title="Calculates numerical gradient of the vector f." alt="" coords="519,104,595,129"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="420,114,506,114,506,119,420,119"/>
+<area shape="rect" id="Node000007" href="$class__1D_1_1InterpolatorBase.html#a2402bc4d443834f8ce7d83fdeccc50f6" title=" " alt="" coords="476,178,639,218"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="387,134,422,146,490,171,488,176,420,151,385,139"/>
+<area shape="poly" id="edge7_Node000007_Node000007" title=" " alt="" coords="515,178,513,168,520,159,535,153,557,151,583,154,598,161,595,166,582,159,557,157,536,159,523,163,518,169,521,177"/>
+<area shape="rect" id="Node000009" href="$classqpmad_1_1SolverTemplate.html#ab039a3c8878fcd62e18765283e4acede" title="Solve QP." alt="" coords="469,242,645,282"/>
+<area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="384,198,422,211,488,235,487,240,420,217,382,203"/>
+<area shape="rect" id="Node000010" href="$classqpmad_1_1SolverTemplate.html#a8f1166de6f212a8ff967a878c7d0f115" title=" " alt="" coords="693,242,869,282"/>
+<area shape="poly" id="edge10_Node000009_Node000010" title=" " alt="" coords="646,259,679,259,679,265,646,265"/>
+<area shape="rect" id="Node000011" href="$classqpmad_1_1SolverTemplate.html#a663047bb76b9b21d88f5abcd43b3398f" title=" " alt="" coords="917,242,1093,282"/>
+<area shape="poly" id="edge11_Node000010_Node000011" title=" " alt="" coords="870,259,903,259,903,265,870,265"/>
+<area shape="rect" id="Node000012" href="$classqpmad_1_1SolverTemplate.html#a77a4209388bdf2ee64903d6b6baefc8d" title=" " alt="" coords="1141,242,1317,282"/>
+<area shape="poly" id="edge12_Node000011_Node000012" title=" " alt="" coords="1094,259,1127,259,1127,265,1094,265"/>
+<area shape="rect" id="Node000013" href="$classqpmad_1_1SolverTemplate.html#af170fa6893b4c369d3d68baf19eb76d9" title=" " alt="" coords="1365,242,1541,282"/>
+<area shape="poly" id="edge13_Node000012_Node000013" title=" " alt="" coords="1318,259,1351,259,1351,265,1318,265"/>
+<area shape="rect" id="Node000014" href="$classqpmad_1_1SolverTemplate.html#a9faa000213e88a9a35b0cac4278b39a2" title=" " alt="" coords="1589,242,1765,282"/>
+<area shape="poly" id="edge14_Node000013_Node000014" title=" " alt="" coords="1542,259,1575,259,1575,265,1542,265"/>
+<area shape="rect" id="Node000015" href="$classqpmad_1_1SolverTemplate.html#aad1050b66867e66f80210e2166527ce9" title=" " alt="" coords="1813,242,1989,282"/>
+<area shape="poly" id="edge15_Node000014_Node000015" title=" " alt="" coords="1766,259,1799,259,1799,265,1766,265"/>
+<area shape="rect" id="Node000016" href="$classqpmad_1_1SolverTemplate.html#aae45c43fe1aa4f2b216c2f5437ed0a2b" title=" " alt="" coords="2037,242,2213,282"/>
+<area shape="poly" id="edge16_Node000015_Node000016" title=" " alt="" coords="1990,259,2023,259,2023,265,1990,265"/>
+<area shape="rect" id="Node000017" href="$classqpmad_1_1SolverBase.html#a2cb53896a581805d1bf69a4501354904" title=" " alt="" coords="2261,235,2445,289"/>
+<area shape="poly" id="edge17_Node000016_Node000017" title=" " alt="" coords="2214,259,2247,259,2247,265,2214,265"/>
+</map>

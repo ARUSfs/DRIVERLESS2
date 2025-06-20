@@ -1,0 +1,38 @@
+<map id="predicates::detail::ExpansionBase::MinusTail" name="predicates::detail::ExpansionBase::MinusTail">
+<area shape="rect" id="Node000001" title=" " alt="" coords="928,328,1127,368"/>
+<area shape="rect" id="Node000002" href="$namespacepredicates_1_1adaptive.html#a8a96c205d27624f828dec5ebdf369a5d" title=" " alt="" coords="208,16,363,56"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1000,319,940,252,853,167,801,125,744,85,684,51,621,26,554,12,486,8,421,13,363,21,362,16,420,7,486,3,555,6,622,21,686,47,747,81,804,120,856,163,944,248,1004,316"/>
+<area shape="rect" id="Node000004" href="$namespacepredicates_1_1adaptive.html#a1480f4d7cb9f988349aa15c5a9ef3348" title=" " alt="" coords="208,440,363,480"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="988,379,922,421,833,472,731,520,676,540,622,555,562,570,514,578,466,575,409,555,392,541,383,526,375,510,361,495,342,483,345,478,364,490,380,507,388,523,396,538,412,550,467,570,513,573,561,565,621,550,675,534,728,515,831,467,919,417,985,374"/>
+<area shape="rect" id="Node000005" href="$namespacepredicates_1_1adaptive.html#aa5c4b8da0a9cf68adea5415a8c52ef03" title=" " alt="" coords="439,615,593,655"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="1020,382,1002,432,974,492,934,551,910,577,881,599,847,617,811,631,734,647,659,651,593,648,594,643,659,646,733,642,809,626,845,612,879,594,906,573,930,548,969,489,997,430,1015,381"/>
+<area shape="rect" id="Node000007" href="$namespacepredicates_1_1adaptive.html#aaf307e5ffa009a228d94addb2395358c" title=" " alt="" coords="208,263,363,303"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="978,324,910,289,823,248,724,210,621,182,562,169,514,163,468,166,412,182,379,198,349,220,304,265,301,261,346,216,376,193,410,177,467,160,515,158,563,164,622,177,725,205,825,243,913,284,981,319"/>
+<area shape="rect" id="Node000008" href="$classpredicates_1_1detail_1_1ExpansionBase.html#a15a1efa5f042026c6618257c5b21dd62" title=" " alt="" coords="669,328,880,368"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="914,351,880,351,880,346,914,346"/>
+<area shape="rect" id="Node000003" href="$namespacepredicates_1_1adaptive.html#afc57e7d85278bcbe9707565ae7e370ea" title=" " alt="" coords="5,16,160,56"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="194,39,161,39,161,34,194,34"/>
+<area shape="rect" id="Node000006" href="$namespacepredicates_1_1adaptive.html#a8de7a8e76ab39201f33f4dab7f12b879" title=" " alt="" coords="208,615,363,655"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="424,638,363,638,363,632,424,632"/>
+<area shape="poly" id="edge11_Node000008_Node000002" title=" " alt="" coords="764,316,748,259,720,190,701,155,678,122,651,92,620,67,590,50,558,38,490,24,423,22,363,26,363,21,423,16,491,19,559,33,592,45,623,62,655,88,682,118,705,152,724,188,753,258,769,314"/>
+<area shape="poly" id="edge14_Node000008_Node000004" title=" " alt="" coords="738,379,685,412,622,440,555,456,486,465,363,468,363,462,486,459,554,451,620,435,683,408,735,374"/>
+<area shape="poly" id="edge17_Node000008_Node000005" title=" " alt="" coords="756,382,699,463,663,510,623,554,585,589,548,617,545,613,582,585,619,551,659,506,695,460,751,379"/>
+<area shape="poly" id="edge19_Node000008_Node000007" title=" " alt="" coords="655,349,536,342,410,324,341,306,342,301,411,319,537,336,656,344"/>
+<area shape="rect" id="Node000009" href="$namespacepredicates_1_1exact.html#a3605a072d8a9084178ffa1dcae149424" title=" " alt="" coords="445,76,587,116"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="746,319,690,254,620,181,544,119,547,115,623,177,694,250,750,316"/>
+<area shape="rect" id="Node000011" href="$namespacepredicates_1_1exact.html#ac163b91c53cd5057620ed6bf851e806f" title=" " alt="" coords="445,386,587,426"/>
+<area shape="poly" id="edge12_Node000008_Node000011" title=" " alt="" coords="671,374,588,393,587,387,670,369"/>
+<area shape="rect" id="Node000012" href="$namespacepredicates_1_1exact.html#a222fa3927f531f81065d101d4f8bfa51" title=" " alt="" coords="445,500,587,540"/>
+<area shape="poly" id="edge15_Node000008_Node000012" title=" " alt="" coords="747,380,693,432,659,460,623,484,584,503,582,498,620,479,655,456,689,428,744,376"/>
+<area shape="rect" id="Node000014" href="$namespacepredicates_1_1exact.html#aea71c9b2b42b343197bca286736dcc39" title=" " alt="" coords="445,191,587,231"/>
+<area shape="poly" id="edge18_Node000008_Node000014" title=" " alt="" coords="737,322,684,283,620,246,587,232,589,227,623,241,687,278,741,318"/>
+<area shape="rect" id="Node000015" href="$classpredicates_1_1detail_1_1ExpansionBase.html#aa2ba80d8480a7093dc9629076f91a6f0" title=" " alt="" coords="411,256,621,310"/>
+<area shape="poly" id="edge20_Node000008_Node000015" title=" " alt="" coords="681,328,621,312,622,307,682,322"/>
+<area shape="poly" id="edge10_Node000009_Node000002" title=" " alt="" coords="431,77,362,59,364,54,432,72"/>
+<area shape="rect" id="Node000010" href="$namespacepredicates_1_1exact.html#a01fae36ac5b8de1b19d65dcac48c53e6" title=" " alt="" coords="214,80,357,120"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="431,101,357,102,357,97,431,95"/>
+<area shape="poly" id="edge13_Node000011_Node000004" title=" " alt="" coords="431,428,364,445,362,440,430,423"/>
+<area shape="rect" id="Node000013" href="$namespacepredicates_1_1exact.html#ad27178dac65ade76d1cbce2837053fea" title=" " alt="" coords="214,504,357,544"/>
+<area shape="poly" id="edge16_Node000012_Node000013" title=" " alt="" coords="431,525,357,526,357,521,431,519"/>
+<area shape="poly" id="edge21_Node000015_Node000007" title=" " alt="" coords="397,286,363,286,363,280,397,280"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="EPOS_interface::~EPOS_interface" name="EPOS_interface::~EPOS_interface">
+<area shape="rect" id="Node000001" title="Destructor for the EPOS_interface class. Cleans up and closes the EPOS interface." alt="" coords="5,23,180,63"/>
+<area shape="rect" id="Node000002" href="$classEPOS__interface.html#a12a43a34007a410e62782fc3eae64fd9" title="Function to disable and close the EPOS4 controller." alt="" coords="228,23,392,63"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="180,41,214,41,214,46,180,46"/>
+<area shape="rect" id="Node000003" href="$classVSC.html#a664a26702546d7551ce057209b513723" title="Disable EPOS4 controller." alt="" coords="477,5,579,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="392,31,462,23,463,28,392,36"/>
+<area shape="rect" id="Node000004" href="$classVSC.html#a52cef038cf3fc1b236f71d4c43a8e341" title="Disconnect EPOS4 controller." alt="" coords="440,55,616,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="392,50,427,53,426,59,392,55"/>
+</map>

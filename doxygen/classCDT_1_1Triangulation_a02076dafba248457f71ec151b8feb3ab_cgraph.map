@@ -1,0 +1,13 @@
+<map id="CDT::Triangulation::insertVertexOnEdge" name="CDT::Triangulation::insertVertexOnEdge">
+<area shape="rect" id="Node000001" title="Returns indices of four resulting triangles." alt="" coords="5,97,164,137"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT_1_1detail.html#a3d0029052f21c5ae87d2eb1084f6eb1f" title="Needed for c++03 compatibility (no uniform initialization available)" alt="" coords="235,5,362,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="113,94,158,66,211,40,230,32,232,37,213,44,161,71,116,99"/>
+<area shape="rect" id="Node000003" href="$namespaceCDT.html#a71e51d357ff08262d1bb774ce23b0c29" title="Advance vertex or neighbor index counter&#45;clockwise." alt="" coords="258,55,339,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="163,96,244,77,245,82,165,101"/>
+<area shape="rect" id="Node000004" href="$namespaceCDT.html#a36f349a95810a0abb13c81e7386fceb5" title="Advance vertex or neighbor index clockwise." alt="" coords="261,104,336,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="164,114,247,114,247,119,164,119"/>
+<area shape="rect" id="Node000005" href="$structCDT_1_1Triangle.html#a8dba5775643ed59bc5477f441de82303" title=" " alt="" coords="223,153,374,179"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="165,132,230,148,229,153,163,137"/>
+<area shape="rect" id="Node000006" href="$namespaceCDT.html#ae670571f2331af35b407dc5e83a80cc4" title="Index of triangle&#39;s vertex opposed to a triangle." alt="" coords="212,203,385,228"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="117,135,162,162,213,188,235,196,233,201,211,192,159,166,115,139"/>
+</map>

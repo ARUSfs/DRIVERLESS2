@@ -1,0 +1,9 @@
+<map id="src/slam/graph_slam/include/graph_slam/PointXYZProbColorScore.h" name="src/slam/graph_slam/include/graph_slam/PointXYZProbColorScore.h">
+<area shape="rect" id="Node000001" title="Auxiliar file for the Graph Slam node. Defines the structure of the custom type PointXYZProbColorScor..." alt="" coords="131,5,327,60"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,115,139,141"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="186,62,105,111,102,106,184,58"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="163,115,295,141"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="232,60,232,101,227,101,227,60"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="320,108,469,148"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="277,58,350,99,348,103,275,62"/>
+</map>

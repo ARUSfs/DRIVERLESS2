@@ -1,0 +1,5 @@
+<map id="VSC::move_to" name="VSC::move_to">
+<area shape="rect" id="Node000001" title="Move EPOS4 to a specified position. Position is given in radians and transformed to increments." alt="" coords="5,5,119,31"/>
+<area shape="rect" id="Node000002" href="$classVSC.html#a664a26702546d7551ce057209b513723" title="Disable EPOS4 controller." alt="" coords="167,5,269,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="119,15,153,15,153,21,119,21"/>
+</map>

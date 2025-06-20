@@ -1,0 +1,7 @@
+<map id="LtiMpc::calculate_control" name="LtiMpc::calculate_control">
+<area shape="rect" id="Node000001" title="Calculate steering angle command using LTI&#45;MPC." alt="" coords="5,42,189,67"/>
+<area shape="rect" id="Node000002" href="$classLtiMpc.html#a63570ab7a21b4a6647cc3873e3a47157" title="Discretize linear model using matrix exponential." alt="" coords="258,5,394,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="190,40,244,33,245,38,190,45"/>
+<area shape="rect" id="Node000003" href="$classLtiMpc.html#ad811f3977b8ff30f87b3f8b2a3c41a2c" title="Linearize vehicle model using current speed." alt="" coords="237,70,415,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="190,63,224,67,223,73,190,69"/>
+</map>

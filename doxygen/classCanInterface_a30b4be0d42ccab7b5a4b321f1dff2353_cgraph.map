@@ -1,0 +1,29 @@
+<map id="CanInterface::CanInterface" name="CanInterface::CanInterface">
+<area shape="rect" id="Node000001" title="Construct the CAN interface node." alt="" coords="5,237,201,262"/>
+<area shape="rect" id="Node000002" href="$classCanInterface.html#ac6ae96cbf64b54ccc5d6ca1b1ebcd287" title="Callback to update the datalogger&#39;s private variables from the car_info message." alt="" coords="275,5,440,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="108,235,127,199,158,151,198,99,248,55,261,47,264,52,251,59,202,103,162,154,132,202,113,238"/>
+<area shape="rect" id="Node000003" href="$classCanInterface.html#af7d76fdba2e138146a49a8d2217428a7" title="Callback that send in a CAN message the motor inverter command that receive from Controller." alt="" coords="278,69,437,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="114,235,168,179,206,147,248,119,264,111,266,116,251,124,209,151,171,183,118,238"/>
+<area shape="rect" id="Node000004" href="$classCanInterface.html#aacccfdd63c865f2c75b3d2b573799140" title="Callback associated with a timer to periodically send the Data Logger message over CAN." alt="" coords="274,133,441,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="130,234,248,183,271,175,273,180,250,188,132,239"/>
+<area shape="rect" id="Node000008" href="$classCanInterface.html#a14ae1bac32ff3fcc1002ccf5b44f563a" title="Callback, which in a loop send a CAN message to let the rest of the devices connected to the bus know..." alt="" coords="284,197,431,237"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="201,234,270,226,271,231,202,240"/>
+<area shape="rect" id="Node000009" href="$classCanInterface.html#a9c73eb8bf204a5af84a46a1e84a38fa3" title="Callback executed periodically to send the PC temperature over the CAN bus." alt="" coords="249,261,465,301"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="202,259,236,263,235,269,201,264"/>
+<area shape="rect" id="Node000010" href="$classCanInterface.html#a5028c3f68935ddc8e93e8a63a49e768e" title="Read the CAN messages from the specified SocketCan associated with a CAN bus." alt="" coords="269,326,446,351"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="131,260,185,285,250,311,282,320,280,325,248,316,183,290,129,265"/>
+<area shape="rect" id="Node000013" href="$classCanInterface.html#ad1d653aab54361ee231dce6b2617c814" title="Create the key&#45;value pairs from a csv file." alt="" coords="272,375,443,401"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="119,260,173,310,210,338,251,362,267,369,265,373,248,366,207,343,169,314,115,264"/>
+<area shape="rect" id="Node000014" href="$classCanInterface.html#aff8f4a66a7e8fe1d2f0c41e8cddb005d" title="Callback to update the run_check variables from the car_state node." alt="" coords="268,425,447,465"/>
+<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="115,261,166,332,205,375,251,411,262,417,259,422,248,416,201,378,162,335,110,264"/>
+<area shape="rect" id="Node000005" href="$classCanInterface.html#aa611c4703f6b57340badcfe9fcb6d21c" title="Configure and send the CAN message from the Data Logger with ID 500." alt="" coords="533,69,677,109"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="435,131,519,109,521,114,436,136"/>
+<area shape="rect" id="Node000006" href="$classCanInterface.html#a9fb6fe92aa22bdcec85d47d004958089" title="Configure and send the CAN message from the Data Logger with ID 501." alt="" coords="533,133,677,173"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="441,151,520,151,520,156,441,156"/>
+<area shape="rect" id="Node000007" href="$classCanInterface.html#a7caa7d6a3ad334e7deeee9d577bc4253" title="Configure and send the CAN message from the Data Logger with ID 502." alt="" coords="533,197,677,237"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="436,171,521,193,519,198,435,176"/>
+<area shape="rect" id="Node000011" href="$classCanInterface.html#aee256599030ead774c2ddfa5cae584f1" title="Filter the message if the subID matches the criteria in the csv." alt="" coords="534,291,677,331"/>
+<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="446,326,520,318,521,323,447,331"/>
+<area shape="rect" id="Node000012" href="$classCanInterface.html#a70137183c05658f7002c6b052cf73411" title="Parse the given CAN message according to the given configuration." alt="" coords="513,355,697,381"/>
+<area shape="poly" id="edge11_Node000010_Node000012" title=" " alt="" coords="447,346,500,353,499,358,446,352"/>
+</map>

@@ -1,0 +1,8 @@
+<map id="Controller::trajectory_callback" name="Controller::trajectory_callback">
+<area shape="rect" id="Node000001" title="Trajectory callback. Subscribe to the trajectory topic and update the trajectory." alt="" coords="419,5,576,45"/>
+<area shape="rect" id="Node000002" href="$classController.html#a95c56822d667e94b031451729ce069a9" title="Constructor for the Controller class." alt="" coords="5,13,164,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="405,25,371,24,212,24,164,25,164,20,212,19,371,19,405,19"/>
+<area shape="rect" id="Node000003" href="$classController.html#a7146728e926d6047d2796b59e94d60ec" title="Optimized trajectory callback. Subscribe to the optimized trajectory topic and trigger optimized cont..." alt="" coords="212,33,371,73"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="406,40,371,45,371,40,405,35"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="198,43,164,39,164,33,199,38"/>
+</map>

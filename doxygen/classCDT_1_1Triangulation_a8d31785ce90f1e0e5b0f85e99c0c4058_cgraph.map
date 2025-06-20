@@ -1,0 +1,7 @@
+<map id="CDT::Triangulation::insertVertexInsideTriangle" name="CDT::Triangulation::insertVertexInsideTriangle">
+<area shape="rect" id="Node000001" title="Returns indices of three resulting triangles." alt="" coords="5,23,204,63"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT_1_1detail.html#a3d0029052f21c5ae87d2eb1084f6eb1f" title="Needed for c++03 compatibility (no uniform initialization available)" alt="" coords="264,5,391,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="204,29,250,24,251,29,205,35"/>
+<area shape="rect" id="Node000003" href="$structCDT_1_1Triangle.html#a8dba5775643ed59bc5477f441de82303" title=" " alt="" coords="252,55,403,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="205,51,238,55,238,60,204,57"/>
+</map>

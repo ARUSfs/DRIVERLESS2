@@ -1,0 +1,16 @@
+<map id="CDT::KDTree::KDTree::addNewNode" name="CDT::KDTree::KDTree::addNewNode">
+<area shape="rect" id="Node000001" title="Add a new node and return it&#39;s index in nodes buffer." alt="" coords="612,95,768,135"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1KDTree_1_1KDTree.html#a51c5a4c255ad4b077e678b882f09d075" title=" " alt="" coords="408,8,564,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="628,92,533,51,535,46,630,87"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1KDTree_1_1KDTree.html#a60406d0c4c13d5dc36dfff83e65175d5" title=" " alt="" coords="204,37,360,77"/>
+<area shape="poly" id="edge5_Node000001_Node000003" title=" " alt="" coords="598,105,360,71,360,66,599,99"/>
+<area shape="rect" id="Node000006" href="$classCDT_1_1KDTree_1_1KDTree.html#a0919d7ac64bcc378b34443b06875aa15" title="Default constructor." alt="" coords="408,123,564,163"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="599,130,565,135,564,129,598,125"/>
+<area shape="rect" id="Node000007" href="$classCDT_1_1KDTree_1_1KDTree.html#ac520ae79a4f08d371c9260b5704f097f" title="Constructor with bounding box known in advance." alt="" coords="408,187,564,227"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="637,143,565,177,538,189,536,184,563,172,635,138"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="395,44,361,49,360,44,394,38"/>
+<area shape="rect" id="Node000004" href="$classCDT_1_1LocatorKDTree.html#a4c8b04ce02d2552a419cf9881d843e83" title="Add point to KD&#45;tree." alt="" coords="5,5,156,45"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="190,45,156,40,157,35,191,40"/>
+<area shape="rect" id="Node000005" href="$classCDT_1_1LocatorKDTree.html#a13e747c71ae5342bad399298f6feec7e" title="Initialize KD&#45;tree with points." alt="" coords="5,69,156,109"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="191,74,157,80,156,75,190,69"/>
+</map>

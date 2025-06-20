@@ -1,0 +1,5 @@
+<map id="get_vertex_index" name="get_vertex_index">
+<area shape="rect" id="Node000001" title="Get the index of a given vertex in the triangulation. Returns 0 if not found." alt="" coords="5,5,140,31"/>
+<area shape="rect" id="Node000002" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#a35877fef1adaeca4db6df0211ca81f2b" title="Calculate the euclidean distance between two cones." alt="" coords="188,5,265,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="140,15,174,15,174,21,140,21"/>
+</map>

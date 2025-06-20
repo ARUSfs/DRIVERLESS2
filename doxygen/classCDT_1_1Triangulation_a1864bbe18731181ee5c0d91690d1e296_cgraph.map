@@ -1,0 +1,11 @@
+<map id="CDT::Triangulation::insertEdges" name="CDT::Triangulation::insertEdges">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,23,145,63"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT.html#a1f5839f3c84d7cdb0ff4fe0f77281601" title="Get edge first vertex." alt="" coords="193,5,332,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="145,31,179,27,180,32,146,37"/>
+<area shape="rect" id="Node000004" href="$namespaceCDT.html#a1212a690b0ed75055d5305fec53c46b1" title="Get edge second vertex." alt="" coords="193,55,332,80"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="146,50,180,54,179,59,145,55"/>
+<area shape="rect" id="Node000003" href="$structCDT_1_1Edge.html#ab0da8b6072d360b599d206e2d068efd8" title="V1 getter." alt="" coords="380,5,492,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="332,15,366,15,366,21,332,21"/>
+<area shape="rect" id="Node000005" href="$structCDT_1_1Edge.html#a995bb5f916b7bdfb68cb1468d515c8f8" title="V2 getter." alt="" coords="380,55,492,80"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="332,65,366,65,366,70,332,70"/>
+</map>

@@ -1,0 +1,27 @@
+<map id="src/perception/include/perception/fast_euclidean_clustering.h" name="src/perception/include/perception/fast_euclidean_clustering.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="931,5,1125,60"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,115,152,141"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="931,41,591,63,378,83,164,111,139,115,138,110,164,105,377,78,590,58,930,36"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="176,115,344,141"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="931,45,671,71,356,111,328,115,327,110,356,105,670,65,930,40"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="368,115,515,141"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="931,49,743,75,527,111,504,115,503,110,526,105,743,70,930,44"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="539,115,653,141"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="931,55,666,111,650,114,649,109,665,105,930,50"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="678,108,847,148"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="954,63,830,106,828,101,953,58"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="872,108,1043,148"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="1010,62,982,99,978,96,1006,59"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="1067,115,1130,141"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1050,59,1083,102,1079,106,1046,62"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="1154,115,1217,141"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="1074,58,1155,106,1153,111,1071,62"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="1241,115,1311,141"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="1101,58,1230,106,1236,108,1234,113,1228,110,1099,63"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="1336,115,1395,141"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="1126,51,1223,75,1325,105,1331,108,1329,113,1323,111,1222,80,1125,56"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="1419,115,1479,141"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="1126,44,1261,68,1335,85,1407,105,1414,108,1412,113,1406,111,1334,90,1260,74,1125,50"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="1503,115,1566,141"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="1126,40,1298,63,1397,81,1493,105,1500,108,1498,113,1491,111,1395,86,1298,68,1125,45"/>
+</map>

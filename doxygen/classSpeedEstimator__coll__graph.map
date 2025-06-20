@@ -1,0 +1,5 @@
+<map id="SpeedEstimator" name="SpeedEstimator">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,108,131,133"/>
+<area shape="rect" id="Node000002" href="$classKalmanFilter.html" title="Class containing a generic Kalman filter. Allows you to initialize all of the filter atributes and pe..." alt="" coords="15,5,121,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="71,45,71,108,65,108,65,45"/>
+</map>

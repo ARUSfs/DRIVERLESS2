@@ -1,0 +1,11 @@
+<map id="CDT::Triangle::make" name="CDT::Triangle::make">
+<area shape="rect" id="Node000001" title=" " alt="" coords="252,109,403,134"/>
+<area shape="rect" id="Node000002" href="$group__Advanced.html#ga45c33584023bfde51f984fa3ff34b211" title=" " alt="" coords="35,5,175,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="292,104,203,60,172,48,173,43,205,55,294,100"/>
+<area shape="rect" id="Node000003" href="$group__Advanced.html#ga9a1d8ebf3635d129ff36cf3c1d2b0807" title=" " alt="" coords="35,69,175,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="238,111,174,102,175,97,238,106"/>
+<area shape="rect" id="Node000004" href="$classCDT_1_1Triangulation.html#a8d31785ce90f1e0e5b0f85e99c0c4058" title="Returns indices of three resulting triangles." alt="" coords="5,133,204,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="238,137,205,142,204,136,238,131"/>
+<area shape="rect" id="Node000005" href="$classCDT_1_1Triangulation.html#a02076dafba248457f71ec151b8feb3ab" title="Returns indices of four resulting triangles." alt="" coords="25,197,184,237"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="294,143,205,188,173,200,172,195,203,183,292,138"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="GroundFiltering::pillar_ground_filter" name="GroundFiltering::pillar_ground_filter">
+<area shape="rect" id="Node000001" title=" " alt="" coords="459,5,621,45"/>
+<area shape="rect" id="Node000002" href="$classPerception.html#a7c6f9e4953d3780c1827f3cc0cbed09e" title="Callback function for the lidar topic." alt="" coords="221,13,411,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="445,28,411,28,411,23,445,23"/>
+<area shape="rect" id="Node000003" href="$classPerception.html#a8bcf74df62599f91509d3fd2df14c5f7" title="Construct a new Perception object." alt="" coords="5,13,173,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="208,28,174,28,174,23,208,23"/>
+</map>

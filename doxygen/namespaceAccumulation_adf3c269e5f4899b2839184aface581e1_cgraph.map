@@ -1,0 +1,5 @@
+<map id="Accumulation::accumulate_cloud" name="Accumulation::accumulate_cloud">
+<area shape="rect" id="Node000001" title="Accumulate the clouds of the last frames." alt="" coords="5,5,200,45"/>
+<area shape="rect" id="Node000002" href="$namespaceAccumulation.html#a69daec807825376a1a5213d13f5468db" title="Function to apply rigid transformation to a point cloud." alt="" coords="248,13,495,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="200,23,234,23,234,28,200,28"/>
+</map>

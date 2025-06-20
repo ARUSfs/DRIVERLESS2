@@ -1,0 +1,7 @@
+<map id="CanInterface::read_CAN" name="CanInterface::read_CAN">
+<area shape="rect" id="Node000001" title="Read the CAN messages from the specified SocketCan associated with a CAN bus." alt="" coords="5,42,183,67"/>
+<area shape="rect" id="Node000002" href="$classCanInterface.html#aee256599030ead774c2ddfa5cae584f1" title="Filter the message if the subID matches the criteria in the csv." alt="" coords="251,5,394,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="182,41,237,34,238,39,183,46"/>
+<area shape="rect" id="Node000003" href="$classCanInterface.html#a70137183c05658f7002c6b052cf73411" title="Parse the given CAN message according to the given configuration." alt="" coords="231,70,415,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="183,63,217,67,217,72,182,68"/>
+</map>

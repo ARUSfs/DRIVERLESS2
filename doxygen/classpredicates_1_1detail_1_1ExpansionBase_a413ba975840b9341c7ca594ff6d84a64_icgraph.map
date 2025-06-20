@@ -1,0 +1,10 @@
+<map id="predicates::detail::ExpansionBase::Mult" name="predicates::detail::ExpansionBase::Mult">
+<area shape="rect" id="Node000001" title=" " alt="" coords="467,41,633,81"/>
+<area shape="rect" id="Node000002" href="$classpredicates_1_1detail_1_1ExpansionBase.html#a60851cfb784e57429f1afd09be848624" title=" " alt="" coords="212,5,415,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="452,49,414,43,415,38,453,44"/>
+<area shape="rect" id="Node000004" href="$classpredicates_1_1detail_1_1ExpansionBase.html#aa2ba80d8480a7093dc9629076f91a6f0" title=" " alt="" coords="208,70,419,125"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="453,79,419,84,419,79,452,73"/>
+<area shape="rect" id="Node000003" href="$namespacepredicates_1_1adaptive.html#aaf307e5ffa009a228d94addb2395358c" title=" " alt="" coords="5,41,160,81"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="199,46,161,52,160,47,198,41"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="193,81,160,76,161,71,194,76"/>
+</map>

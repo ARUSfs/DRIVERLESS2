@@ -1,0 +1,9 @@
+<map id="qpmad::SolverBase::reserveMachinery" name="qpmad::SolverBase::reserveMachinery">
+<area shape="rect" id="Node000001" title=" " alt="" coords="433,37,589,77"/>
+<area shape="rect" id="Node000002" href="$classqpmad_1_1SolverBase.html#a018673e07d92527de2588002ed53729b" title=" " alt="" coords="209,5,385,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="419,46,385,41,386,36,420,41"/>
+<area shape="rect" id="Node000004" href="$classqpmad_1_1SolverBase.html#aed37ff54b0d8445b3027cee94927fccd" title=" " alt="" coords="219,69,375,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="420,74,376,80,375,75,419,68"/>
+<area shape="rect" id="Node000003" href="$classqpmad_1_1SolverBase.html#a2cb53896a581805d1bf69a4501354904" title=" " alt="" coords="5,5,161,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="195,28,162,28,162,23,195,23"/>
+</map>

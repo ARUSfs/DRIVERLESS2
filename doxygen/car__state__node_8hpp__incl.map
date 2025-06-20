@@ -1,0 +1,40 @@
+<map id="src/car_state/include/car_state/car_state_node.hpp" name="src/car_state/include/car_state/car_state_node.hpp">
+<area shape="rect" id="Node000001" title="Car State node header for ARUS Team Driverless pipeline." alt="" coords="1238,5,1394,60"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="1182,269,1314,295"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1238,38,939,46,544,60,192,81,76,95,41,102,25,110,14,125,9,139,10,151,16,163,45,185,93,205,158,222,237,236,424,257,633,270,842,277,1168,279,1168,284,842,282,633,275,424,262,236,241,157,227,91,210,42,190,12,166,4,153,3,138,9,122,21,106,40,97,76,90,192,76,543,55,938,40,1238,33"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="36,115,229,141"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="1238,39,813,61,529,82,242,111,206,116,205,110,241,105,529,76,812,56,1238,34"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="254,115,435,141"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="1238,41,895,64,672,85,447,111,416,116,415,110,447,105,671,79,894,59,1238,36"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="459,115,635,141"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="1239,43,976,69,647,111,618,115,617,110,647,105,975,64,1238,38"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="659,108,835,148"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="1239,48,849,110,848,105,1238,43"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="859,115,1072,141"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="1239,57,1023,114,1021,109,1237,52"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="1096,115,1315,141"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1287,62,1232,108,1228,104,1283,58"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="1340,108,1517,148"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="1350,58,1397,97,1394,101,1346,62"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="1542,115,1662,141"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="1396,57,1555,109,1553,114,1394,62"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="1686,115,1888,141"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="1395,47,1717,110,1716,115,1394,52"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="1912,115,2118,141"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="1395,40,1622,68,1901,105,1935,111,1934,116,1900,111,1621,73,1394,46"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="2142,115,2341,141"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="1395,37,1716,62,1922,81,2130,105,2166,111,2165,116,2129,111,1921,87,1715,67,1394,42"/>
+<area shape="rect" id="Node000014" title=" " alt="" coords="2366,108,2592,148"/>
+<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="1395,35,1800,58,2072,79,2352,105,2352,111,2072,84,1800,64,1394,40"/>
+<area shape="rect" id="Node000015" href="$speed__estimator_8hpp.html" title="SpeedEstimator class header for ARUS Team Driverless pipeline. Contains combined instances of KalmanF..." alt="" coords="2617,115,2840,141"/>
+<area shape="poly" id="edge14_Node000001_Node000015" title=" " alt="" coords="1395,33,1904,54,2251,75,2605,105,2647,111,2647,116,2604,111,2251,80,1903,59,1394,39"/>
+<area shape="rect" id="Node000016" href="$kalman__filter_8hpp.html" title="KalmanFilter class header for ARUS Team Driverless pipeline. Contains the class definition and implem..." alt="" coords="2034,196,2169,221"/>
+<area shape="poly" id="edge15_Node000015_Node000016" title=" " alt="" coords="2656,143,2605,151,2183,201,2182,196,2604,145,2655,138"/>
+<area shape="poly" id="edge16_Node000016_Node000002" title=" " alt="" coords="2034,218,1329,277,1328,271,2034,213"/>
+<area shape="rect" id="Node000017" title=" " alt="" coords="1964,269,2044,295"/>
+<area shape="poly" id="edge17_Node000016_Node000017" title=" " alt="" coords="2088,224,2033,263,2030,259,2084,219"/>
+<area shape="rect" id="Node000018" title=" " alt="" coords="2068,269,2135,295"/>
+<area shape="poly" id="edge18_Node000016_Node000018" title=" " alt="" coords="2104,222,2104,256,2099,256,2099,222"/>
+<area shape="rect" id="Node000019" title=" " alt="" coords="2160,269,2262,295"/>
+<area shape="poly" id="edge19_Node000016_Node000019" title=" " alt="" coords="2121,219,2183,259,2180,264,2118,224"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="AccPlanning::perception_callback" name="AccPlanning::perception_callback">
+<area shape="rect" id="Node000001" title="Callback function for processing perception data." alt="" coords="5,69,184,109"/>
+<area shape="rect" id="Node000002" href="$classAccPlanning.html#a7f248d9b80114aabffb53fe939cd76d1" title="Converts a ROS PointCloud2 message to a PCL PointCloud." alt="" coords="236,5,395,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="164,67,232,47,234,52,165,72"/>
+<area shape="rect" id="Node000003" href="$classAccPlanning.html#ad15425404a90eba827e7b1a5bad74e74" title="Generates the trajectory planning based on the detected cones." alt="" coords="232,69,399,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="184,87,219,87,219,92,184,92"/>
+<area shape="rect" id="Node000004" href="$classAccPlanning.html#a9e266803d813ce86a91a55698f7f8011" title="Publishes the generated trajectory to the trajectory topic." alt="" coords="237,133,393,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="165,107,234,127,232,132,164,112"/>
+</map>

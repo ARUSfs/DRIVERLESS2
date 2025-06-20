@@ -1,0 +1,29 @@
+<map id="qpmad::SolverBase::solveGeneric" name="qpmad::SolverBase::solveGeneric">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,284,161,324"/>
+<area shape="rect" id="Node000002" href="$namespaceqpmad_1_1testing.html#a8987ba9cbf159c940c4e2898552a32fc" title=" " alt="" coords="219,5,446,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="86,283,99,236,123,175,158,110,181,81,208,55,214,50,217,55,211,59,185,84,162,113,127,177,104,238,91,285"/>
+<area shape="rect" id="Node000003" href="$classqpmad_1_1SolverBase.html#ad4f6a95cd5c8215793d9cf0c8c39bcd0" title=" " alt="" coords="255,69,411,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="90,282,107,247,132,203,166,157,208,119,240,103,242,107,211,124,170,161,137,205,112,249,95,285"/>
+<area shape="rect" id="Node000006" href="$namespaceqpmad_1_1testing.html#a2140c92969f91bd116c9b452a35cff00" title=" " alt="" coords="209,134,456,159"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="96,282,140,225,172,195,208,170,225,162,227,166,211,174,175,199,144,229,100,285"/>
+<area shape="rect" id="Node000007" href="$namespaceqpmad.html#a55f9a530995c46c1691f76a3ef8a14e9" title=" " alt="" coords="228,184,437,224"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="115,282,159,257,208,234,230,226,232,231,210,238,161,262,118,286"/>
+<area shape="rect" id="Node000008" href="$classqpmad_1_1SolverBase.html#a41c722d4b84751f7687146a35580ac53" title=" " alt="" coords="240,248,425,288"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="161,290,226,281,227,286,162,295"/>
+<area shape="rect" id="Node000009" href="$classqpmad_1_1SolverBase.html#a5112fa8f661d29ae8416df2757880450" title=" " alt="" coords="231,313,435,367"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="162,313,217,321,217,326,161,318"/>
+<area shape="rect" id="Node000010" href="$classqpmad_1_1SolverBase.html#a018673e07d92527de2588002ed53729b" title=" " alt="" coords="245,392,421,432"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="114,322,158,351,210,378,232,386,231,391,208,382,156,355,111,327"/>
+<area shape="rect" id="Node000012" href="$namespaceqpmad_1_1testing.html#a6732c471a4af7480e0ddddc09b71723c" title=" " alt="" coords="223,457,443,482"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="99,323,143,383,174,415,211,442,227,450,225,454,208,446,171,419,139,386,95,326"/>
+<area shape="rect" id="Node000013" href="$classqpmad_1_1SolverBase.html#a932e10ec939a1dc9dd12bbf8ca8abb41" title=" " alt="" coords="255,507,411,547"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="95,323,111,360,135,406,169,453,211,492,243,509,241,514,208,497,165,456,131,409,106,362,90,325"/>
+<area shape="rect" id="Node000014" href="$classqpmad_1_1SolverBase.html#a1c8fea8b3abdfa5aab6a9f822f1e760c" title=" " alt="" coords="255,571,411,611"/>
+<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="91,323,103,371,126,435,162,501,184,531,211,557,243,574,240,579,208,561,180,534,157,504,121,437,98,373,86,325"/>
+<area shape="rect" id="Node000004" href="$classqpmad_1_1SolverBase.html#a1d7403d49d9dd762dba6b90f2a62c049" title=" " alt="" coords="507,37,692,77"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="410,77,493,67,494,73,411,83"/>
+<area shape="rect" id="Node000005" href="$classqpmad_1_1ChosenConstraint.html#a694df3aa06515bef7c8623bd1448af25" title=" " alt="" coords="504,101,695,141"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="411,96,491,106,490,111,410,101"/>
+<area shape="rect" id="Node000011" href="$classqpmad_1_1SolverBase.html#aec51f3e3825ea805f5b50d58dcbc1043" title=" " alt="" coords="521,392,677,432"/>
+<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="421,409,507,409,507,415,421,415"/>
+</map>

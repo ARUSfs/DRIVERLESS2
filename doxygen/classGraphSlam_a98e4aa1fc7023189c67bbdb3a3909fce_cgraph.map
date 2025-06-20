@@ -1,0 +1,29 @@
+<map id="GraphSlam::GraphSlam" name="GraphSlam::GraphSlam">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,248,180,273"/>
+<area shape="rect" id="Node000002" href="$classGraphSlam.html#a45f2cc9ad86efa6be8374aba98415fa8" title="Callback function for the optimizer timer." alt="" coords="244,87,408,127"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,246,282,133,285,137,115,250"/>
+<area shape="rect" id="Node000006" href="$classGraphSlam.html#a3ad340569b4fcc859e0319d733a3692e" title="Callback function for the perception subscriber." alt="" coords="241,241,411,281"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="181,258,227,258,227,263,181,263"/>
+<area shape="rect" id="Node000011" href="$classGraphSlam.html#a5d2916a2fa81dae3b5f8fadfac52c9d6" title="Callback function for the state subscriber." alt="" coords="228,347,424,372"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="125,271,283,339,281,343,123,276"/>
+<area shape="rect" id="Node000003" href="$classGraphSlam.html#a92f864fc1ff387f8e55fa41ab8b122b5" title="Load vertices and edges to add to the optimizer." alt="" coords="497,5,660,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="367,85,416,62,471,41,502,32,504,37,473,46,418,67,369,90"/>
+<area shape="rect" id="Node000004" href="$classGraphSlam.html#a92e33bd5df987aa22d7cd161d9a153ad" title="Update the world position of the landmarks in the data association map after optimization Landmarks m..." alt="" coords="487,55,670,95"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="408,94,473,86,474,91,408,100"/>
+<area shape="rect" id="Node000005" href="$classGraphSlam.html#a8d7063711a8075a6d407bf24b588b3c9" title="Update vehicle_pose after optimization." alt="" coords="486,119,671,159"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="408,115,473,123,472,129,408,120"/>
+<area shape="rect" id="Node000007" href="$classDataAssociation.html#ab77f9b608ca3d0e91f3c81f5b7c44c97" title="Match given observations to the map using ICP and nearest neighbor search. Unmatched landmarks are re..." alt="" coords="490,183,667,223"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="411,239,476,224,477,229,412,244"/>
+<area shape="rect" id="Node000008" href="$classGraphSlam.html#abbb22426ae945a6dbac52a542d92f159" title="Publish the map as a PointCloud2 message." alt="" coords="486,248,671,273"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="412,258,472,258,472,263,412,263"/>
+<area shape="rect" id="Node000010" href="$classLandmark.html#aa0e9056866fd4c3a6b309c87e194f815" title="Update the color of the landmark based on the average of the accumulated probabilities." alt="" coords="489,297,668,323"/>
+<area shape="poly" id="edge9_Node000006_Node000010" title=" " alt="" coords="412,275,500,292,499,297,411,280"/>
+<area shape="rect" id="Node000009" href="$classGraphSlam.html#aad0f7a222cbbd63640c710000f4960bd" title="Get the local position relative to the actual vehicle pose given the global position." alt="" coords="733,241,896,281"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="672,258,719,258,719,263,672,263"/>
+<area shape="rect" id="Node000012" href="$classGraphSlam.html#ae07d926f5518d706cae247bbdcc168eb" title="Check if the vehicle has crossed the finish line." alt="" coords="472,347,685,372"/>
+<area shape="poly" id="edge11_Node000011_Node000012" title=" " alt="" coords="424,357,458,357,458,362,424,362"/>
+<area shape="rect" id="Node000014" href="$classGraphSlam.html#a4f4d25b280eb4b454f0c823f62fd0a57" title="Send frame transform to tf2." alt="" coords="503,396,654,421"/>
+<area shape="poly" id="edge13_Node000011_Node000014" title=" " alt="" coords="392,369,500,391,499,396,391,375"/>
+<area shape="rect" id="Node000013" href="$classGraphSlam.html#aefc01f8aaa2335c15f9ff2ed9f32bb8e" title="Fix all landmarks in the graph." alt="" coords="737,347,892,372"/>
+<area shape="poly" id="edge12_Node000012_Node000013" title=" " alt="" coords="685,357,724,357,724,362,685,362"/>
+</map>

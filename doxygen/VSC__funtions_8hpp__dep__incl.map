@@ -1,0 +1,7 @@
+<map id="src/interfaces/epos_interface/include/epos_interface/VSC_funtions.hpp" name="src/interfaces/epos_interface/include/epos_interface/VSC_funtions.hpp">
+<area shape="rect" id="Node000001" title="VSCfuntions implementation for ARUS Team Driverless pipeline." alt="" coords="5,5,211,60"/>
+<area shape="rect" id="Node000002" href="$epos__interface__node_8hpp.html" title="EPOS4 controller interface header for ARUS Team Driverless pipeline." alt="" coords="15,108,201,177"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="111,74,111,108,105,108,105,74"/>
+<area shape="rect" id="Node000003" href="$epos__interface__node_8cpp.html" title="EPOS4 controller interface for ARUS Team Driverless pipeline." alt="" coords="31,225,185,280"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="111,191,111,225,105,225,105,191"/>
+</map>

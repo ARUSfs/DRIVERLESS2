@@ -1,0 +1,48 @@
+<map id="Controller::Controller" name="Controller::Controller">
+<area shape="rect" id="Node000001" title="Constructor for the Controller class." alt="" coords="5,342,164,367"/>
+<area shape="rect" id="Node000002" href="$classController.html#ae8b51e7ce6726ffaae67dcbe081fdbc2" title="Braking procedure callback. Subscribe to the braking procedure topic and trigger braking procedure." alt="" coords="231,49,386,89"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="86,341,98,295,122,230,159,161,182,128,210,99,218,94,221,98,214,103,186,131,163,163,127,233,103,297,91,342"/>
+<area shape="rect" id="Node000003" href="$classController.html#ade754d2a65dbaca9d4b1ac01719f0c1e" title="Car state callback." alt="" coords="231,113,386,153"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="89,341,104,306,130,258,166,207,210,163,218,158,221,162,214,167,170,211,135,261,109,308,93,343"/>
+<area shape="rect" id="Node000004" href="$classController.html#a7c4651f3fa218f539564670fb282156e" title="Speed control timer callback." alt="" coords="231,177,387,217"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="94,340,140,286,173,255,211,227,222,221,224,226,213,232,177,259,144,290,98,343"/>
+<area shape="rect" id="Node000008" href="$classController.html#a5648d68a83d9b45e33538902500ff731" title="Steering control timer callback." alt="" coords="233,241,384,281"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="109,340,211,291,230,283,232,288,213,296,111,344"/>
+<area shape="rect" id="Node000018" href="$classController.html#a7146728e926d6047d2796b59e94d60ec" title="Optimized trajectory callback. Subscribe to the optimized trajectory topic and trigger optimized cont..." alt="" coords="229,305,388,345"/>
+<area shape="poly" id="edge17_Node000001_Node000018" title=" " alt="" coords="164,342,215,335,216,340,164,347"/>
+<area shape="rect" id="Node000019" href="$classController.html#a156784e088758c9173c7541eb66857f3" title="Trajectory callback. Subscribe to the trajectory topic and update the trajectory." alt="" coords="471,412,628,452"/>
+<area shape="poly" id="edge23_Node000001_Node000019" title=" " alt="" coords="163,365,406,405,457,414,457,419,405,411,162,370"/>
+<area shape="rect" id="Node000020" href="$classController.html#a5f63fc005367c43b5b545d085b7609ee" title="Run check callback. Checks whether the vehicle is able to run or not." alt="" coords="229,420,389,460"/>
+<area shape="poly" id="edge19_Node000001_Node000020" title=" " alt="" coords="120,365,244,413,242,418,118,370"/>
+<area shape="rect" id="Node000021" href="$classLtiMpc.html#afd214bacec0b9a1867c2d782fb812b50" title="Set configurable parameters from config file." alt="" coords="234,485,383,510"/>
+<area shape="poly" id="edge20_Node000001_Node000021" title=" " alt="" coords="98,366,144,416,177,445,213,470,231,478,228,483,211,474,174,449,141,420,94,369"/>
+<area shape="rect" id="Node000022" href="$classPID.html#ad03423c2395505384ca64de5af3b12b3" title=" " alt="" coords="245,534,373,559"/>
+<area shape="poly" id="edge21_Node000001_Node000022" title=" " alt="" coords="94,366,111,398,136,440,171,484,213,520,233,530,230,535,211,525,167,487,132,443,106,401,89,369"/>
+<area shape="rect" id="Node000023" href="$classSpeedControl.html#a54b441c0733445f26e7b8fb81046f901" title="Set vehicle parameters." alt="" coords="212,583,405,609"/>
+<area shape="poly" id="edge22_Node000001_Node000023" title=" " alt="" coords="92,367,106,407,130,462,166,521,188,547,214,570,221,575,218,579,210,574,184,551,161,524,125,465,101,409,87,369"/>
+<area shape="rect" id="Node000005" href="$classSpeedControl.html#a5670269340ed49c00cedd8308ea0cc4d" title="Get acceleration command using PID and feedforward control." alt="" coords="466,5,633,45"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="386,176,404,163,415,151,421,138,427,111,432,83,440,69,451,55,457,51,460,55,455,59,444,72,437,85,432,112,426,139,419,153,407,167,389,180"/>
+<area shape="rect" id="Node000007" href="$classController.html#aa5126580846cc850843aa1fb772e38b3" title="Get the global index of the vehicle in the trajectory. Use the global position to calculate the speed..." alt="" coords="468,69,631,109"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="380,175,404,163,418,152,427,142,437,130,452,119,464,113,466,117,455,124,441,134,431,145,422,156,407,168,382,180"/>
+<area shape="rect" id="Node000006" href="$classPID.html#a8bba3d08835ccb725176a7596c879eef" title="Compute PID control." alt="" coords="703,13,864,38"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="633,23,689,23,689,28,633,28"/>
+<area shape="rect" id="Node000009" href="$classLtiMpc.html#aedaf980e0df216c3e734b5102d4e129f" title="Calculate steering angle command using LTI&#45;MPC." alt="" coords="457,134,641,159"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="383,239,404,227,418,213,427,199,436,184,452,170,466,162,469,167,455,174,440,188,431,202,423,217,407,231,385,244"/>
+<area shape="rect" id="Node000012" href="$classPure__pursuit.html#abceded84252999fc1dc2099bced1d641" title="Get steering angle to the pursuit point." alt="" coords="453,184,645,224"/>
+<area shape="poly" id="edge11_Node000008_Node000012" title=" " alt="" coords="383,241,451,225,452,230,385,246"/>
+<area shape="rect" id="Node000014" href="$classPure__pursuit.html#a4f4716bf88e5e02e48e43ec4969a1544" title="Update the current trayectory." alt="" coords="466,249,633,274"/>
+<area shape="poly" id="edge13_Node000008_Node000014" title=" " alt="" coords="384,259,452,259,452,264,384,264"/>
+<area shape="rect" id="Node000015" href="$classPure__pursuit.html#a0fddde2d2e5de83018e661920b3edc2c" title="Set the current position of the car." alt="" coords="454,298,645,323"/>
+<area shape="poly" id="edge14_Node000008_Node000015" title=" " alt="" coords="385,274,474,293,473,298,383,279"/>
+<area shape="rect" id="Node000016" href="$classLtiMpc.html#ae4b99cd95cbbd179c741789719df04d0" title="Create discrete local reference trajectory." alt="" coords="468,348,631,388"/>
+<area shape="poly" id="edge15_Node000008_Node000016" title=" " alt="" coords="381,279,407,291,421,302,431,312,455,332,470,340,467,345,452,337,428,316,418,306,404,296,379,284"/>
+<area shape="rect" id="Node000010" href="$classLtiMpc.html#a63570ab7a21b4a6647cc3873e3a47157" title="Discretize linear model using matrix exponential." alt="" coords="715,69,851,109"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="601,131,701,107,703,112,603,137"/>
+<area shape="rect" id="Node000011" href="$classLtiMpc.html#ad811f3977b8ff30f87b3f8b2a3c41a2c" title="Linearize vehicle model using current speed." alt="" coords="695,134,872,159"/>
+<area shape="poly" id="edge10_Node000009_Node000011" title=" " alt="" coords="641,144,681,144,681,149,641,149"/>
+<area shape="rect" id="Node000013" href="$classPure__pursuit.html#a549055f92ad5ca4eeab90355a70976d5" title="Search pursuit point. Returns the point on the trajectory closest to the look&#45;ahead distance." alt="" coords="706,184,861,224"/>
+<area shape="poly" id="edge12_Node000012_Node000013" title=" " alt="" coords="645,201,692,201,692,207,645,207"/>
+<area shape="rect" id="Node000017" href="$classLtiMpc.html#a849575110adf6abc4ba599b145a78d9b" title="Interpolate variables to match with predicted position." alt="" coords="693,355,873,381"/>
+<area shape="poly" id="edge16_Node000016_Node000017" title=" " alt="" coords="631,365,680,365,680,371,631,371"/>
+<area shape="poly" id="edge18_Node000018_Node000019" title=" " alt="" coords="368,343,407,362,431,380,455,398,468,404,466,409,452,402,428,384,404,366,365,348"/>
+</map>

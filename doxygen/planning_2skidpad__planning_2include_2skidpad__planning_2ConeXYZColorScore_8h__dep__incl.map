@@ -1,0 +1,7 @@
+<map id="src/planning/skidpad_planning/include/skidpad_planning/ConeXYZColorScore.h" name="src/planning/skidpad_planning/include/skidpad_planning/ConeXYZColorScore.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,236,60"/>
+<area shape="rect" id="Node000002" href="$skidpad__planning__node_8hpp.html" title=" " alt="" coords="19,108,222,177"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="123,74,123,108,118,108,118,74"/>
+<area shape="rect" id="Node000003" href="$skidpad__planning__node_8cpp.html" title="Skidpad planning node header for the ARUS Driverless pipeline." alt="" coords="39,225,202,280"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="123,191,123,225,118,225,118,191"/>
+</map>

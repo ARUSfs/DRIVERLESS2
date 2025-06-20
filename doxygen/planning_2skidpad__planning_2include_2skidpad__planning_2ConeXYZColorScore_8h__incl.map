@@ -1,0 +1,9 @@
+<map id="src/planning/skidpad_planning/include/skidpad_planning/ConeXYZColorScore.h" name="src/planning/skidpad_planning/include/skidpad_planning/ConeXYZColorScore.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="114,5,345,60"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,115,139,141"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="186,62,105,111,102,106,184,58"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="163,115,295,141"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="232,60,232,101,227,101,227,60"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="320,108,469,148"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="277,58,350,99,348,103,275,62"/>
+</map>

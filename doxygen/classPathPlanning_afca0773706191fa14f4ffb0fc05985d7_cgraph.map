@@ -1,0 +1,15 @@
+<map id="PathPlanning::create_triangulation" name="PathPlanning::create_triangulation">
+<area shape="rect" id="Node000001" title="Create a triangulation object from the point cloud and delete triangles with long edges." alt="" coords="5,119,160,159"/>
+<area shape="rect" id="Node000002" href="$planning_2path__planning_2include_2path__planning_2utils_8hpp.html#a35877fef1adaeca4db6df0211ca81f2b" title="Calculate the euclidean distance between two cones." alt="" coords="247,5,324,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="104,117,149,79,207,41,233,30,235,34,209,46,152,83,107,121"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1Triangulation.html#acd71abb1fcb1202d34ba52ecca56ce38" title=" " alt="" coords="208,55,363,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="146,117,208,97,209,102,148,122"/>
+<area shape="rect" id="Node000005" href="$classCDT_1_1Triangulation.html#a9a549def9b96626bd01d89cc7dc92bda" title=" " alt="" coords="215,119,355,159"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="160,137,202,137,202,142,160,142"/>
+<area shape="rect" id="Node000006" href="$structCDT_1_1V2d.html#ac3bef2ac94c6fe96858bb65822e6e523" title="Create vector from X and Y coordinates." alt="" coords="223,184,348,209"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="155,157,227,178,226,183,153,162"/>
+<area shape="rect" id="Node000007" href="$group__Advanced.html#gadd8e67d8c9310858ef72a8c6ebf73f4f" title=" " alt="" coords="215,234,355,274"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="113,157,158,187,209,218,224,226,221,230,207,223,155,192,110,162"/>
+<area shape="rect" id="Node000004" href="$namespaceCDT.html#a3e56faea8cec2713ed31dbcae80c878b" title="Check if any of triangle&#39;s vertices belongs to a super&#45;triangle." alt="" coords="411,63,605,88"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="363,73,397,73,397,78,363,78"/>
+</map>

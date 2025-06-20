@@ -1,0 +1,11 @@
+<map id="CDT::Triangulation::isFlipNeeded" name="CDT::Triangulation::isFlipNeeded">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,23,145,63"/>
+<area shape="rect" id="Node000002" href="$namespaceCDT.html#aaec66697478c6fc41f7b8fed718fd6c7" title="Test if point lies in a circumscribed circle of a triangle." alt="" coords="193,5,353,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="145,32,179,27,180,33,146,37"/>
+<area shape="rect" id="Node000003" href="$namespaceCDT.html#aa50e3fa54c376fb436336558b90765d4" title="Check if point lies to the left of, to the right of, or on a line." alt="" coords="195,55,351,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="146,49,182,54,181,59,145,54"/>
+<area shape="rect" id="Node000004" href="$namespaceCDT.html#a27dd09660015f286569d4be2819f498e" title="Classify value of orient2d predicate." alt="" coords="401,29,580,55"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="351,56,388,51,388,57,352,61"/>
+<area shape="rect" id="Node000005" href="$namespaceCDT.html#a4ddf1f4cbc942a9614a2dfbccba5bd8b" title="Orient p against line v1&#45;v2 2D: robust geometric predicate." alt="" coords="435,79,547,104"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="352,73,421,81,421,86,351,79"/>
+</map>

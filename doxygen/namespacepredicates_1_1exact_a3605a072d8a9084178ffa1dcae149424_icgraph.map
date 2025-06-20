@@ -1,0 +1,9 @@
+<map id="predicates::exact::incircle" name="predicates::exact::incircle">
+<area shape="rect" id="Node000001" title=" " alt="" coords="411,37,553,77"/>
+<area shape="rect" id="Node000002" href="$namespacepredicates_1_1exact.html#a01fae36ac5b8de1b19d65dcac48c53e6" title=" " alt="" coords="214,5,357,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="397,46,357,40,358,34,398,41"/>
+<area shape="rect" id="Node000003" href="$namespacepredicates_1_1adaptive.html#a8a96c205d27624f828dec5ebdf369a5d" title=" " alt="" coords="208,69,363,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="398,74,364,79,363,74,397,68"/>
+<area shape="rect" id="Node000004" href="$namespacepredicates_1_1adaptive.html#afc57e7d85278bcbe9707565ae7e370ea" title=" " alt="" coords="5,69,160,109"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="194,92,161,92,161,87,194,87"/>
+</map>

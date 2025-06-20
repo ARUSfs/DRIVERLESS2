@@ -1,0 +1,7 @@
+<map id="CDT::KDTree::KDTree::Node::isLeaf" name="CDT::KDTree::KDTree::Node::isLeaf">
+<area shape="rect" id="Node000001" title="Check if node is a leaf (has no valid children)" alt="" coords="408,5,564,45"/>
+<area shape="rect" id="Node000002" href="$classCDT_1_1KDTree_1_1KDTree.html#aaee62f9d986d9e315ab9ffaa737143ef" title=" " alt="" coords="204,5,360,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="395,28,360,28,360,23,395,23"/>
+<area shape="rect" id="Node000003" href="$classCDT_1_1LocatorKDTree.html#ad54ac43f959d4f7e55c11a0426806f30" title="Find nearest point using R&#45;tree." alt="" coords="5,5,156,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="190,28,157,28,157,23,190,23"/>
+</map>
